@@ -23,6 +23,7 @@ class FacebookPluginConfig {
   const ADMIN_PRIVACY_URL = 'https://developers.facebook.com/docs/privacy/';
   const ADMIN_SECTION_ID = 'facebook_settings_section';
 
+  const DEFAULT_PIXEL_ID = null;
   const PIXEL_ID_KEY = 'pixel_id';
   const SETTINGS_KEY = 'facebook_config';
   const USE_PII_KEY = 'use_pii';
