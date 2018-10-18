@@ -1,0 +1,25 @@
+{
+    "name": "facebook/pixel-for-wordpress",
+    "description": "Facebook Pixel plugins for wordpress",
+    "type": "project",
+    "require-dev": {
+        "phpunit/phpunit": "^6.5",
+        "phing/phing": "3.0.x-dev"
+    },
+    "license": "GPL",
+    "require": {
+    },
+    "autoload": {
+        "psr-4": {
+            "FacebookPixelPlugin\\":"./",
+            "FacebookPixelPlugin\\Core\\":"src/",
+            "FacebookPixelPlugin\\integration\\":"integration/"
+        }
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/",
+            "./"
+        ]
+    }
+}

@@ -1,0 +1,101 @@
+<?xml version="1.0"  encoding="UTF-8" ?>
+<?xml-model xlink:href="/usr/share/php5/PEAR/data/phing/etc/phing-grammar.rng"
+        type="application/xml"
+        schematypens="http://relaxng.org/ns/structure/1.0" ?>
+
+<project name="pixel-plugins" basedir="." default="main">
+    <property file="./build.properties" />
+
+    <!-- Fileset for all files -->
+    <fileset dir="${basedir}" id="sourcedir">
+        <exclude name=".gitignore" />
+        <exclude name="build.properties" />
+        <exclude name="build.xml" />
+        <exclude name="vendor/**" />
+        <exclude name="task/**" />
+        <exclude name="tests/**" />
+    </fileset>
+
+    <!-- ============================================  -->
+    <!-- Target: Clean                                 -->
+    <!-- ============================================  -->
+    <target name="Clean" description="Clean the environment">
+        <echo msg="Running Prepare..." />
+        <echo msg="Cleaning build folder..." />
+        <delete dir="${builddir}" />
+        <echo msg="Build folder deleted" />
+        <echo msg="Prepare complete" />
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: Build                                 -->
+    <!-- ============================================  -->
+    <target name="Build" description="rebuilds this package" depends="Clean">
+        <echo msg="Running Build..." />
+        <echo msg="Copy files into build folder..." />
+        <copy todir="${buildsourcedir}">
+            <fileset refid="sourcedir" />
+        </copy>
+        <echo msg="Copy complete" />
+        <echo msg="Run compose install..." />
+        <composer command="install">
+            <arg value="--working-dir=${buildsourcedir}" />
+            <arg value="--no-dev" />
+        </composer>
+        <echo msg="composer install complete" />
+        <echo msg="Build complete" />
+        <echo msg="Adding Version Number..." />
+        <taskdef name="addversion" classname="FacebookWordpressAddVersionNumberTask" classpath="${taskdir}" />
+        <addversion path="${facebookforwordpress}" />
+        <addversion path="${languagesfile}" />
+        <echo msg="Adding version number complete" />
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: Test                                  -->
+    <!-- ============================================  -->
+    <target name="Test" description="Run tests" depends="Clean">
+        <echo msg="Running Test..." />
+        <phpunit bootstrap="${testdir}/bootstrap.php" haltonfailure="true" printsummary="true">
+            <batchtest>
+                <fileset dir="${testdir}">
+                    <include name="*Test.php" />
+                </fileset>
+            </batchtest>
+        </phpunit>
+        <echo msg="Test complete" />
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: Package                               -->
+    <!-- ============================================  -->
+    <target name="Package" description="Create package" depends="Build">
+        <echo msg="Running Package..." />
+            <!--TODO: add version-->
+            <zip destfile="${builddir}/${packagename}">
+                <fileset dir="${builddir}/" defaultexcludes="true">
+                    <include name="**" />
+                    <exclude name="./test" />
+                </fileset>
+            </zip>
+        <echo msg="Package complete" />
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: Help                                  -->
+    <!-- ============================================  -->
+    <target name="Help" description="Usage help">
+        <echo msg="Available Targets: " />
+        <echo msg="Clean  : Clean the environment." />
+        <echo msg="Build  : Build the project." />
+        <echo msg="Test   : Run all tests." />
+        <echo msg="Package: Create plugin package (zip)." />
+        <echo msg="If you run phing without providing any target, following targets will run in order: Clean, Test, Build, Package." />
+    </target>
+
+    <!-- ============================================  -->
+    <!-- (DEFAULT) Target: main                        -->
+    <!-- ============================================  -->
+    <target name="main" description="Prepare, Build, Test, Package" depends="Clean, Test, Build, Package">
+    </target>
+</project>

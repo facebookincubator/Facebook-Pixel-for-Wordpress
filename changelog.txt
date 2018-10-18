@@ -1,0 +1,24 @@
+*** Facebook for WordPress Changelog ***
+
+2018-07-06 version 1.7.11
+* Add Easy-Digital-Download
+
+2018-07-06 version 1.7.10
+* Code Refactor
+
+2018-07-06 version 1.7.9
+* Added Lead event for Contact Form 7.
+
+2018-03-28 version 1.7.7
+* Removed unused code that was previously used by WooCommerce plugin.
+* Added DB cleanup on uninstall.
+* Added pot file for i18n.
+
+2018-01-03 version 1.7.6
+* WordPress only plugin notice on missing Pixel ID.
+* WordPress only plugin direct link to settings page from plugin page.
+
+2017-09-05 version 1.5.0
+* Added support for generic WordPress installations (without WooCommerce)
+* Added Search events
+* Setting page for Pixel ID and for enabling advanced measurement
