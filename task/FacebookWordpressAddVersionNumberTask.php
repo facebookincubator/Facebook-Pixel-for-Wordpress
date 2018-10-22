@@ -3,12 +3,11 @@
  * @package FacebookPixelPlugin
  */
 
-require_once "phing/Task.php";
-require_once \dirname(__FILE__)."/../tests/bootstrap.php";
+require_once \dirname(__FILE__) . "/BaseTask.php";
 
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 
-class FacebookWordpressAddVersionNumberTask extends Task {
+class FacebookWordpressAddVersionNumberTask extends BaseTask {
 
   /**
    * The path of file we want to add version number to
@@ -23,6 +22,7 @@ class FacebookWordpressAddVersionNumberTask extends Task {
   }
 
   public function main() {
+    $this->setABSPATH();
     $version = FacebookPluginConfig::PLUGIN_VERSION;
     echo "The current version is {$version} \n";
     $file_contents = file_get_contents($this->path);
