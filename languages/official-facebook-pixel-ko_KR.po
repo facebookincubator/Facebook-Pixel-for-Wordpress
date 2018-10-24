@@ -1,0 +1,84 @@
+# Copyright (C) 2018 Facebook Pixel
+# This file is distributed under the same license as the Facebook Pixel package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Facebook Pixel 1.7.12\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-"
+"pixel\n"
+"POT-Creation-Date: 2018-10-24 21:22:55+00:00\n"
+"PO-Revision-Date: 2018-10-24 14:25-0700\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ko_KR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.2\n"
+
+#: core/FacebookWordpressSettingsPage.php:35
+msgid "You do not have sufficient permissions to access this page"
+msgstr "이 페이지 액세스를 위한 권한이 충분하지 않습니다."
+
+#: core/FacebookWordpressSettingsPage.php:98
+msgid ""
+"Please note that we are now also supporting upper funnel pixel events for "
+"Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms"
+msgstr ""
+
+#: core/FacebookWordpressSettingsPage.php:102
+msgid "The unique identifier for your Facebook pixel."
+msgstr "회원님의 Facebook 픽셀에 대한 고유 식별자입니다."
+
+#: core/FacebookWordpressSettingsPage.php:123
+msgid ""
+"For businesses that operate in the European Union, you may need to take "
+"additional action. Read the <a href=\"%s\" target=\"_blank\">Cookie Consent "
+"Guide for Sites and Apps</a> for suggestions on complying with EU privacy "
+"requirements."
+msgstr ""
+"EU(유럽 연합)에서 운영되는 비즈니스의 경우 추가 조치가 필요할 수 있습니다. "
+"EU 개인정보처리방침 요구 사항 준수에 관한 제안 사항은 <a href=\"%s\" target="
+"\"_blank\">사이트 및 앱에 대한 쿠키 동의 가이드</a>에서 확인하세요."
+
+#: core/FacebookWordpressSettingsPage.php:148
+msgid "Enabling Advanced Matching improves audience building."
+msgstr "고급 매칭을 사용하면 타겟 구축을 개선할 수 있습니다."
+
+#: core/FacebookWordpressSettingsPage.php:178
+msgid ""
+"The Facebook Pixel plugin requires a Pixel ID. Click <a href=\"%s\">here</a> "
+"to configure the plugin."
+msgstr ""
+"Facebook 픽셀 플러그인에는 픽셀 ID가 필요합니다. 플러그인을 구성하려면 <a "
+"href=\"%s\">여기</a>를 클릭하세요."
+
+#: core/FacebookWordpressSettingsPage.php:197
+msgid "Dismiss this notice."
+msgstr "이 공지를 무시합니다."
+
+#. Plugin Name of the plugin/theme
+msgid "Facebook Pixel"
+msgstr "Facebook 픽셀"
+
+#. Plugin URI of the plugin/theme
+msgid "https://www.facebook.com/business/help/881403525362441"
+msgstr "https://www.facebook.com/business/help/881403525362441"
+
+#. Description of the plugin/theme
+msgid ""
+"The Facebook pixel is an analytics tool that helps you measure the "
+"effectiveness of your advertising. You can use the Facebook pixel to "
+"understand the actions people are taking on your website and reach audiences "
+"you care about."
+msgstr ""
+"Facebook 픽셀은 광고 효과를 측정하도록 도와주는 분석 도구입니다. Facebook 픽"
+"셀을 사용하여 웹사이트에서 사람들이 취하는 행동을 이해하고 중요한 타겟에 도달"
+"할 수 있습니다."
+
+#. Author of the plugin/theme
+msgid "Facebook"
+msgstr "Facebook"
+
+#. Author URI of the plugin/theme
+msgid "https://www.facebook.com/"
+msgstr "https://www.facebook.com/"

@@ -47,7 +47,6 @@
         <echo msg="Adding Version Number..." />
         <taskdef name="addversion" classname="FacebookWordpressAddVersionNumberTask" classpath="${taskdir}" />
         <addversion path="${facebookforwordpress}" />
-        <addversion path="${languagesfile}" />
         <echo msg="Adding version number complete" />
     </target>
 

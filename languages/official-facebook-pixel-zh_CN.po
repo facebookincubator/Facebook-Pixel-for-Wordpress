@@ -2,54 +2,64 @@
 # This file is distributed under the same license as the Facebook Pixel package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Facebook Pixel {*VERSION_NUMBER*}\n"
+"Project-Id-Version: Facebook Pixel 1.7.12\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-"
 "pixel\n"
-"POT-Creation-Date: 2018-10-24 02:35:54+00:00\n"
+"POT-Creation-Date: 2018-10-24 21:22:55+00:00\n"
+"PO-Revision-Date: 2018-10-24 14:27-0700\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2018-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"X-Generator: Poedit 2.2\n"
 
 #: core/FacebookWordpressSettingsPage.php:35
 msgid "You do not have sufficient permissions to access this page"
+msgstr "您的权限不足，无法访问此页面"
+
+#: core/FacebookWordpressSettingsPage.php:98
+msgid ""
+"Please note that we are now also supporting upper funnel pixel events for "
+"Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms"
 msgstr ""
 
-#: core/FacebookWordpressSettingsPage.php:100
+#: core/FacebookWordpressSettingsPage.php:102
 msgid "The unique identifier for your Facebook pixel."
-msgstr ""
+msgstr "您的 Facebook 像素的唯一标识符。"
 
-#: core/FacebookWordpressSettingsPage.php:121
+#: core/FacebookWordpressSettingsPage.php:123
 msgid ""
 "For businesses that operate in the European Union, you may need to take "
 "additional action. Read the <a href=\"%s\" target=\"_blank\">Cookie Consent "
 "Guide for Sites and Apps</a> for suggestions on complying with EU privacy "
 "requirements."
 msgstr ""
+"在欧盟地区开展业务的商家可能需要采取额外行动。请阅读<a href=\"%s\" target="
+"\"_blank\">网站和应用的 Cookie 同意指南</a>，了解关于遵守欧盟隐私规定的建议。"
 
-#: core/FacebookWordpressSettingsPage.php:146
+#: core/FacebookWordpressSettingsPage.php:148
 msgid "Enabling Advanced Matching improves audience building."
-msgstr ""
+msgstr "启用“高级匹配”功能可改善受众的创建。"
 
-#: core/FacebookWordpressSettingsPage.php:176
+#: core/FacebookWordpressSettingsPage.php:178
 msgid ""
 "The Facebook Pixel plugin requires a Pixel ID. Click <a href=\"%s\">here</a> "
 "to configure the plugin."
-msgstr ""
+msgstr "Facebook 像素插件需要像素编号。点击<a href=\"%s\">此处</a>配置插件。"
 
-#: core/FacebookWordpressSettingsPage.php:195
+#: core/FacebookWordpressSettingsPage.php:197
 msgid "Dismiss this notice."
-msgstr ""
+msgstr "关闭此通知。"
 
 #. Plugin Name of the plugin/theme
 msgid "Facebook Pixel"
-msgstr ""
+msgstr "Facebook 像素"
 
 #. Plugin URI of the plugin/theme
 msgid "https://www.facebook.com/business/help/881403525362441"
-msgstr ""
+msgstr "https://www.facebook.com/business/help/881403525362441"
 
 #. Description of the plugin/theme
 msgid ""
@@ -58,11 +68,13 @@ msgid ""
 "understand the actions people are taking on your website and reach audiences "
 "you care about."
 msgstr ""
+"Facebook 像素是一种分析工具，可帮助您衡量广告成效。您可以借助 Facebook 像素了"
+"解用户在您网站采取的操作，并向您关注的受众营销。"
 
 #. Author of the plugin/theme
 msgid "Facebook"
-msgstr ""
+msgstr "Facebook"
 
 #. Author URI of the plugin/theme
 msgid "https://www.facebook.com/"
-msgstr ""
+msgstr "https://www.facebook.com/"

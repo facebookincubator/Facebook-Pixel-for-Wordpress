@@ -1,0 +1,89 @@
+# Copyright (C) 2018 Facebook Pixel
+# This file is distributed under the same license as the Facebook Pixel package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Facebook Pixel 1.7.12\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-"
+"pixel\n"
+"POT-Creation-Date: 2018-10-24 21:22:55+00:00\n"
+"PO-Revision-Date: 2018-10-24 14:24-0700\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.2\n"
+
+#: core/FacebookWordpressSettingsPage.php:35
+msgid "You do not have sufficient permissions to access this page"
+msgstr ""
+"Du besitzt nicht die nötigen Berechtigungen, um auf diese Seite zuzugreifen"
+
+#: core/FacebookWordpressSettingsPage.php:98
+msgid ""
+"Please note that we are now also supporting upper funnel pixel events for "
+"Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms"
+msgstr ""
+
+#: core/FacebookWordpressSettingsPage.php:102
+msgid "The unique identifier for your Facebook pixel."
+msgstr "Die individuelle ID für dein Facebook-Pixel."
+
+#: core/FacebookWordpressSettingsPage.php:123
+msgid ""
+"For businesses that operate in the European Union, you may need to take "
+"additional action. Read the <a href=\"%s\" target=\"_blank\">Cookie Consent "
+"Guide for Sites and Apps</a> for suggestions on complying with EU privacy "
+"requirements."
+msgstr ""
+"Für Unternehmen in der Europäischen Union musst du möglicherweise weitere "
+"Maßnahmen ergreifen. Vorschläge zur Einhaltung der EU-"
+"Datenschutzbestimmungen findest du im <a href=\"%s\" target=\"_blank"
+"\">Leitfaden für die Cookie-Zustimmung für Webseiten und Apps</a>."
+
+#: core/FacebookWordpressSettingsPage.php:148
+msgid "Enabling Advanced Matching improves audience building."
+msgstr ""
+"Durch die Aktivierung des erweiterten Abgleichs kannst du den Aufbau deiner "
+"Zielgruppe optimieren."
+
+#: core/FacebookWordpressSettingsPage.php:178
+msgid ""
+"The Facebook Pixel plugin requires a Pixel ID. Click <a href=\"%s\">here</a> "
+"to configure the plugin."
+msgstr ""
+"Zur Nutzung des Facebook-Pixel-Plugins benötigst du eine Pixel-ID. Klicke <a "
+"href=\"%s\">hier</a>, um das Plugin zu konfigurieren."
+
+#: core/FacebookWordpressSettingsPage.php:197
+msgid "Dismiss this notice."
+msgstr "Diese Nachricht schließen."
+
+#. Plugin Name of the plugin/theme
+msgid "Facebook Pixel"
+msgstr "Facebook-Pixel"
+
+#. Plugin URI of the plugin/theme
+msgid "https://www.facebook.com/business/help/881403525362441"
+msgstr "https://www.facebook.com/business/help/881403525362441"
+
+#. Description of the plugin/theme
+msgid ""
+"The Facebook pixel is an analytics tool that helps you measure the "
+"effectiveness of your advertising. You can use the Facebook pixel to "
+"understand the actions people are taking on your website and reach audiences "
+"you care about."
+msgstr ""
+"Das Facebook-Pixel ist ein Analysetool, mit dem du die Effektivität deiner "
+"Werbemaßnahmen messen kannst. Verwende das Facebook-Pixel, um zu verstehen, "
+"wie Nutzer mit deiner Website interagieren, und um die Zielgruppen zu "
+"erreichen, die dir wichtig sind."
+
+#. Author of the plugin/theme
+msgid "Facebook"
+msgstr "Facebook"
+
+#. Author URI of the plugin/theme
+msgid "https://www.facebook.com/"
+msgstr "https://www.facebook.com/"
