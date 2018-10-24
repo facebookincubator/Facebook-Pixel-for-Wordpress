@@ -8,7 +8,6 @@ namespace FacebookPixelPlugin\Integration;
 defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
-use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 
 class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
@@ -48,7 +47,7 @@ jQuery(document).ready(function ($) {
   }
 
   public static function injectLeadEvent() {
-    if (is_admin()) {
+    if (is_admin() || !FacebookWordpressOptions::getUsePii()) {
       return;
     }
 

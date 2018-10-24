@@ -7,7 +7,6 @@ namespace FacebookPixelPlugin\Integration;
 
 defined('ABSPATH') or die('Direct access not allowed');
 
-use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 
 abstract class FacebookWordpressIntegrationBase {

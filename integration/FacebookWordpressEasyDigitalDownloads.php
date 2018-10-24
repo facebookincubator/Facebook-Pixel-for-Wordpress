@@ -8,8 +8,6 @@ namespace FacebookPixelPlugin\Integration;
 defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
-use FacebookPixelPlugin\Core\FacebookPluginConfig;
-use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 
 class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'easy-digital-downloads/easy-digital-downloads.php';

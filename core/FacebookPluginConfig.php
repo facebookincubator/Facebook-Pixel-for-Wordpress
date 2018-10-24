@@ -8,8 +8,7 @@ namespace FacebookPixelPlugin\Core;
 defined('ABSPATH') or die('Direct access not allowed');
 
 class FacebookPluginConfig {
-  // Change this at FacebookForWordpress.php and languages/plugin-slug.pot too
-  const PLUGIN_VERSION = '1.7.12';
+  const PLUGIN_VERSION = '1.7.13';
   const SOURCE = 'wordpress';
   const TEXT_DOMAIN = 'official-facebook-pixel';
 
@@ -35,6 +34,7 @@ class FacebookPluginConfig {
   const INTEGRATION_CONFIG = array(
     'CONTACT_FORM_7' => 'FacebookWordpressContactForm7',
     'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
+    'NINJA_FORMS' => 'FacebookWordpressNinjaForms',
     'WPFORMS' => 'FacebookWordpressWPForms',
   );
 }

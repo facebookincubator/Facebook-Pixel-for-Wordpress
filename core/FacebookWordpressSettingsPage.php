@@ -62,7 +62,7 @@ class FacebookWordpressSettingsPage {
     add_settings_section(
       FacebookPluginConfig::ADMIN_SECTION_ID,
       null,
-      null,
+      array($this, 'sectionSubTitle'),
       FacebookPluginConfig::ADMIN_MENU_SLUG);
     add_settings_field(
       FacebookPluginConfig::PIXEL_ID_KEY,
@@ -90,6 +90,10 @@ class FacebookWordpressSettingsPage {
           : ''
         : FacebookPixel::getPixelId();
     return $input;
+  }
+
+  public function sectionSubTitle() {
+    echo '<p>Please note that we are now also supporting upper funnel pixel events for Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms</p>';
   }
 
   public function pixelIdFormField() {
