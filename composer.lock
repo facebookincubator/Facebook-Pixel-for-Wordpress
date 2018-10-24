@@ -253,12 +253,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/phingofficial/phing.git",
-                "reference": "e582c0e0c1e973cbd67d12e14f0be570ca28d021"
+                "reference": "4c47f5a1da93b756e481e818912763cec02e0bfe"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phingofficial/phing/zipball/e582c0e0c1e973cbd67d12e14f0be570ca28d021",
-                "reference": "e582c0e0c1e973cbd67d12e14f0be570ca28d021",
+                "url": "https://api.github.com/repos/phingofficial/phing/zipball/4c47f5a1da93b756e481e818912763cec02e0bfe",
+                "reference": "4c47f5a1da93b756e481e818912763cec02e0bfe",
                 "shasum": ""
             },
             "require": {
@@ -282,8 +282,8 @@
                 "phpdocumentor/phpdocumentor": "2.x",
                 "phploc/phploc": "^4.0",
                 "phpmd/phpmd": "~2.2",
-                "phpunit/phpunit": "^6.5",
-                "sebastian/phpcpd": "^3.0",
+                "phpunit/phpunit": "^7.3",
+                "sebastian/phpcpd": "^4.1",
                 "siad007/versioncontrol_hg": "^1.0",
                 "squizlabs/php_codesniffer": "~2.2"
             },
@@ -343,7 +343,7 @@
                 "task",
                 "tool"
             ],
-            "time": "2018-09-22T20:14:52+00:00"
+            "time": "2018-10-22T15:10:19+00:00"
         },
         {
             "name": "phpdocumentor/reflection-common",
@@ -1513,16 +1513,16 @@
         },
         {
             "name": "symfony/console",
-            "version": "v4.1.4",
+            "version": "v4.1.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/console.git",
-                "reference": "ca80b8ced97cf07390078b29773dc384c39eee1f"
+                "reference": "dc7122fe5f6113cfaba3b3de575d31112c9aa60b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/console/zipball/ca80b8ced97cf07390078b29773dc384c39eee1f",
-                "reference": "ca80b8ced97cf07390078b29773dc384c39eee1f",
+                "url": "https://api.github.com/repos/symfony/console/zipball/dc7122fe5f6113cfaba3b3de575d31112c9aa60b",
+                "reference": "dc7122fe5f6113cfaba3b3de575d31112c9aa60b",
                 "shasum": ""
             },
             "require": {
@@ -1577,7 +1577,7 @@
             ],
             "description": "Symfony Console Component",
             "homepage": "https://symfony.com",
-            "time": "2018-07-26T11:24:31+00:00"
+            "time": "2018-10-03T08:15:46+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",
@@ -1698,16 +1698,16 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v4.1.4",
+            "version": "v4.1.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "b832cc289608b6d305f62149df91529a2ab3c314"
+                "reference": "367e689b2fdc19965be435337b50bc8adf2746c9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/b832cc289608b6d305f62149df91529a2ab3c314",
-                "reference": "b832cc289608b6d305f62149df91529a2ab3c314",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/367e689b2fdc19965be435337b50bc8adf2746c9",
+                "reference": "367e689b2fdc19965be435337b50bc8adf2746c9",
                 "shasum": ""
             },
             "require": {
@@ -1753,7 +1753,7 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2018-08-18T16:52:46+00:00"
+            "time": "2018-10-02T16:36:10+00:00"
         },
         {
             "name": "theseer/tokenizer",

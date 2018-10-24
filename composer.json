@@ -12,8 +12,8 @@
     "autoload": {
         "psr-4": {
             "FacebookPixelPlugin\\":"./",
-            "FacebookPixelPlugin\\Core\\":"src/",
-            "FacebookPixelPlugin\\integration\\":"integration/"
+            "FacebookPixelPlugin\\Core\\":"core/",
+            "FacebookPixelPlugin\\Integration\\":"integration/"
         }
     },
     "autoload-dev": {
