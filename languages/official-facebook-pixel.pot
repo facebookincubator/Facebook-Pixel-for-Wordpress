@@ -5,7 +5,7 @@ msgstr ""
 "Project-Id-Version: Facebook Pixel 1.7.14\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-"
 "pixel\n"
-"POT-Creation-Date: 2018-10-24 21:22:55+00:00\n"
+"POT-Creation-Date: 2018-10-26 03:38:26+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -17,17 +17,17 @@ msgstr ""
 msgid "You do not have sufficient permissions to access this page"
 msgstr ""
 
-#: core/FacebookWordpressSettingsPage.php:98
+#: core/FacebookWordpressSettingsPage.php:97
 msgid ""
-"Please note that we are now also supporting upper funnel pixel events for "
-"Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms"
+"<p>Please note that we are now also supporting lower funnel pixel events for "
+"Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms</p>"
 msgstr ""
 
-#: core/FacebookWordpressSettingsPage.php:102
+#: core/FacebookWordpressSettingsPage.php:103
 msgid "The unique identifier for your Facebook pixel."
 msgstr ""
 
-#: core/FacebookWordpressSettingsPage.php:123
+#: core/FacebookWordpressSettingsPage.php:124
 msgid ""
 "For businesses that operate in the European Union, you may need to take "
 "additional action. Read the <a href=\"%s\" target=\"_blank\">Cookie Consent "
@@ -35,17 +35,17 @@ msgid ""
 "requirements."
 msgstr ""
 
-#: core/FacebookWordpressSettingsPage.php:148
+#: core/FacebookWordpressSettingsPage.php:149
 msgid "Enabling Advanced Matching improves audience building."
 msgstr ""
 
-#: core/FacebookWordpressSettingsPage.php:178
+#: core/FacebookWordpressSettingsPage.php:179
 msgid ""
 "The Facebook Pixel plugin requires a Pixel ID. Click <a href=\"%s\">here</a> "
 "to configure the plugin."
 msgstr ""
 
-#: core/FacebookWordpressSettingsPage.php:197
+#: core/FacebookWordpressSettingsPage.php:198
 msgid "Dismiss this notice."
 msgstr ""
 

@@ -93,7 +93,10 @@ class FacebookWordpressSettingsPage {
   }
 
   public function sectionSubTitle() {
-    echo '<p>Please note that we are now also supporting upper funnel pixel events for Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms</p>';
+    printf(
+      esc_html__(
+        '<p>Please note that we are now also supporting lower funnel pixel events for Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms</p>',
+        FacebookPluginConfig::TEXT_DOMAIN));
   }
 
   public function pixelIdFormField() {
