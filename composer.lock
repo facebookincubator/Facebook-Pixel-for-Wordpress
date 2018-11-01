@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c0c541499d897f9344f1ec747c6db9f8",
+    "content-hash": "21060f74d8656f290b86dce17ccbd6bb",
     "packages": [],
     "packages-dev": [
         {
@@ -249,16 +249,16 @@
         },
         {
             "name": "phing/phing",
-            "version": "dev-master",
+            "version": "3.0.0-alpha1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phingofficial/phing.git",
-                "reference": "4c47f5a1da93b756e481e818912763cec02e0bfe"
+                "reference": "2419a2a73df176cd5120661a517041f4d5094df0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phingofficial/phing/zipball/4c47f5a1da93b756e481e818912763cec02e0bfe",
-                "reference": "4c47f5a1da93b756e481e818912763cec02e0bfe",
+                "url": "https://api.github.com/repos/phingofficial/phing/zipball/2419a2a73df176cd5120661a517041f4d5094df0",
+                "reference": "2419a2a73df176cd5120661a517041f4d5094df0",
                 "shasum": ""
             },
             "require": {
@@ -276,20 +276,19 @@
                 "pear/archive_tar": "1.4.x",
                 "pear/http_request2": "dev-trunk",
                 "pear/net_growl": "dev-trunk",
-                "pear/pear-core-minimal": "1.10.6",
+                "pear/pear-core-minimal": "1.10.3",
                 "pear/versioncontrol_git": "@dev",
                 "pear/versioncontrol_svn": "~0.5",
                 "phpdocumentor/phpdocumentor": "2.x",
                 "phploc/phploc": "^4.0",
                 "phpmd/phpmd": "~2.2",
-                "phpunit/phpunit": "^7.3",
-                "sebastian/phpcpd": "^4.1",
+                "phpunit/phpunit": "^6.5",
+                "sebastian/phpcpd": "^3.0",
                 "siad007/versioncontrol_hg": "^1.0",
                 "squizlabs/php_codesniffer": "~2.2"
             },
             "suggest": {
                 "aws/aws-sdk-php": "AWS SDK used by S3*Tasks",
-                "leafo/scssphp": "A compiler for SCSS written in PHP, used by SassTask",
                 "pdepend/pdepend": "PHP version of JDepend",
                 "pear/archive_tar": "Tar file management class",
                 "pear/versioncontrol_git": "A library that provides OO interface to handle Git repository",
@@ -343,7 +342,7 @@
                 "task",
                 "tool"
             ],
-            "time": "2018-10-22T15:10:19+00:00"
+            "time": "2018-03-23T09:07:02+00:00"
         },
         {
             "name": "phpdocumentor/reflection-common",
@@ -1581,7 +1580,7 @@
         },
         {
             "name": "symfony/polyfill-ctype",
-            "version": "v1.9.0",
+            "version": "v1.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-ctype.git",
@@ -1639,16 +1638,16 @@
         },
         {
             "name": "symfony/polyfill-mbstring",
-            "version": "v1.9.0",
+            "version": "v1.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
-                "reference": "d0cd638f4634c16d8df4508e847f14e9e43168b8"
+                "reference": "c79c051f5b3a46be09205c73b80b346e4153e494"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/d0cd638f4634c16d8df4508e847f14e9e43168b8",
-                "reference": "d0cd638f4634c16d8df4508e847f14e9e43168b8",
+                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/c79c051f5b3a46be09205c73b80b346e4153e494",
+                "reference": "c79c051f5b3a46be09205c73b80b346e4153e494",
                 "shasum": ""
             },
             "require": {
@@ -1694,7 +1693,7 @@
                 "portable",
                 "shim"
             ],
-            "time": "2018-08-06T14:22:27+00:00"
+            "time": "2018-09-21T13:07:52+00:00"
         },
         {
             "name": "symfony/yaml",
@@ -1849,7 +1848,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "phing/phing": 20
+        "phing/phing": 15
     },
     "prefer-stable": false,
     "prefer-lowest": false,
