@@ -11,6 +11,7 @@ use FacebookPixelPlugin\Core\FacebookPixel;
 
 class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'easy-digital-downloads/easy-digital-downloads.php';
+  const TRACKING_NAME = 'easy-digital-downloads';
 
   private static $downloadID;
   private static $paymentID;
@@ -40,6 +41,7 @@ jQuery(document).ready(function ($) {
       'content_ids': [download],
       'content_type': 'product',
       'currency': currency,
+      'fb_wp_tracking': '%s',
       'value': value
     };
     %s
@@ -88,6 +90,7 @@ jQuery(document).ready(function ($) {
     $pixel_code = FacebookPixel::getPixelAddToCartCode('param', false);
     $listener_code = sprintf(
       self::$addToCartJS,
+      self::TRACKING_NAME,
       $pixel_code);
 
     printf("
@@ -117,6 +120,7 @@ jQuery(document).ready(function ($) {
     $param = array_merge(
       array(
         'currency' => $currency,
+        'fb_wp_tracking' => self::TRACKING_NAME,
         'value' => $value,
       ),
       static::getUserEmailParam());
@@ -158,6 +162,7 @@ jQuery(document).ready(function ($) {
         'content_ids' => $content_ids,
         'content_type' => 'product',
         'currency' => $currency,
+        'fb_wp_tracking' => self::TRACKING_NAME,
         'value' => $value,
       ),
       static::getUserEmailParam());
@@ -195,15 +200,16 @@ jQuery(document).ready(function ($) {
     if (!$value) {
       $value = 0;
     }
-    $code = FacebookPixel::getPixelViewContentCode(
-      array_merge(
-        array(
-          'content_ids' => array(static::$downloadID),
-          'content_type' => 'product',
-          'currency' => $currency,
-          'value' => $value,
-        ),
-        static::getUserEmailParam()));
+    $param = array_merge(
+      array(
+        'content_ids' => array(static::$downloadID),
+        'content_type' => 'product',
+        'currency' => $currency,
+        'fb_wp_tracking' => self::TRACKING_NAME,
+        'value' => $value,
+      ),
+      static::getUserEmailParam());
+    $code = FacebookPixel::getPixelViewContentCode($param);
 
     printf("
 <!-- Facebook Pixel Event Code -->

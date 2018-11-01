@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the Facebook Pixel package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Facebook Pixel 1.7.14\n"
+"Project-Id-Version: Facebook Pixel 1.7.15\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-"
 "pixel\n"
 "POT-Creation-Date: 2018-10-26 03:38:26+00:00\n"
@@ -19,8 +19,8 @@ msgstr ""
 
 #: core/FacebookWordpressSettingsPage.php:97
 msgid ""
-"<p>Please note that we are now also supporting lower funnel pixel events for "
-"Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms</p>"
+"Please note that we are now also supporting lower funnel pixel events for "
+"Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms"
 msgstr ""
 
 #: core/FacebookWordpressSettingsPage.php:103

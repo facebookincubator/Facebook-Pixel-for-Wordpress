@@ -12,6 +12,7 @@ use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 
 class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'ninja-forms/ninja-forms.php';
+  const TRACKING_NAME = 'ninja-forms';
 
   private static $formID;
 
@@ -19,7 +20,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
 jQuery(document).ready(function($) {
   var facebookWordpressNinjaFormsController = Marionette.Object.extend({
     initialize: function() {
-      this.listenTo(Backbone.Radio.channel('form-' + %s), 'submit:response', this.actionSubmit);
+      this.listenTo(Backbone.Radio.channel('form-' + '%s'), 'submit:response', this.actionSubmit);
     },
     actionSubmit: function(response) {
       if (response.data && response.data.fields) {
@@ -34,7 +35,8 @@ jQuery(document).ready(function($) {
 
         if (email) {
           var param = {
-            'em': email
+            em: email,
+            fb_wp_tracking: '%s'
           };
           %s
         }
@@ -63,7 +65,7 @@ jQuery(document).ready(function($) {
   }
 
   public static function injectLeadEvent() {
-    if (is_admin() || !FacebookWordpressOptions::getUsePii()) {
+    if (is_admin()) {
       return;
     }
 
@@ -71,6 +73,7 @@ jQuery(document).ready(function($) {
     $listener_code = sprintf(
       self::$leadJS,
       static::$formID,
+      self::TRACKING_NAME,
       $pixel_code);
 
     printf("

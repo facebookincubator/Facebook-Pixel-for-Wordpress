@@ -12,6 +12,7 @@ use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 
 class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'wpforms-lite/wpforms.php';
+  const TRACKING_NAME = 'wpforms-lite';
 
   private static $leadJS = "
 jQuery(document).ready(function ($) {
@@ -24,7 +25,8 @@ jQuery(document).ready(function ($) {
       /^[a-z0-9.!#$%%&'*+\/=?^_`{|}~-]+@((?=[a-z0-9-]{1,63}\.)(xn--)?[a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,63}$/i.test(email)
     ) {
       var param = {
-        'em': email
+        em: email,
+        fb_wp_tracking: '%s'
       };
       %s
     }
@@ -47,13 +49,14 @@ jQuery(document).ready(function ($) {
   }
 
   public static function injectLeadEvent() {
-    if (is_admin() || !FacebookWordpressOptions::getUsePii()) {
+    if (is_admin()) {
       return;
     }
 
     $pixel_code = FacebookPixel::getPixelLeadCode('param', false);
     $listener_code = sprintf(
       self::$leadJS,
+      self::TRACKING_NAME,
       $pixel_code);
 
     printf("

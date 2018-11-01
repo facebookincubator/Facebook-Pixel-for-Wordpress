@@ -32,7 +32,6 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
     $this->assertTrue(\strpos($code, 'init') !== false);
     $this->assertTrue(\strpos($code, '{"key": "value"}') !== false);
     $this->assertTrue(\strpos($code, '"agent": "mockAgent"') !== false);
-
   }
 
   public function testCanGetPixelTrackCode() {

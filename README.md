@@ -33,10 +33,11 @@ https://www.facebook.com/business/help/881403525362441
 1. Add your integration class under `integration/` folder
 2. Extend the class from `FacebookWordpressIntegrationBase`
 3. Define class variable `PLUGIN_FILE` to be your plugin PHP file
-4. Define a public static function `injectPixelCode()` to inject pixel at your page
-5. Add your integration test class under `tests/` folder
-6. Extend the test class from `FacebookWordpressTestBase`
-7. After the classes development, run tests by `$ vendor/bin/phing`
+4. Define class variable `TRACKING_NAME` for tracking purpose, put this value under 'fb_wp_tracking' as a parameter in the pixel event
+5. Define a public static function `injectPixelCode()` to inject pixel at your page
+6. Add your unit test class under `tests/` folder
+7. Extend the test class from `FacebookWordpressTestBase`
+8. After the classes development, run tests by `$ vendor/bin/phing`
 
 You can reference to integration/FacebookWordpressContactForm7.php and tests/FacebookWordpressContactForm7Test.php as an example
 

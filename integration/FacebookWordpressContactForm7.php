@@ -12,6 +12,7 @@ use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 
 class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'contact-form-7/wp-contact-form-7.php';
+  const TRACKING_NAME = 'contact-form-7';
 
   public static function injectPixelCode() {
     add_action(
@@ -34,20 +35,25 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
 
     $param = array();
     if (FacebookWordpressOptions::getUsePii()) {
-      $param = '{ em: (function() {
-  if (!event || !event.detail || !event.detail.inputs) {
-    return "";
-  }
-
-  var inputs = event.detail.inputs;
-  for (var i = 0; i < inputs.length; i++) {
-    var element = inputs[i];
-    var name = element.name;
-    if (name.indexOf("email") >= 0) {
-      return element.value;
+      $param = sprintf(
+        '{
+  em: (function() {
+    if (!event || !event.detail || !event.detail.inputs) {
+      return "";
     }
-  }
- })() }';
+
+    var inputs = event.detail.inputs;
+    for (var i = 0; i < inputs.length; i++) {
+      var element = inputs[i];
+      var name = element.name;
+      if (name.indexOf("email") >= 0) {
+        return element.value;
+      }
+    }
+  })(),
+  fb_wp_tracking: \'%s\'
+}',
+      self::TRACKING_NAME);
     }
     $code = FacebookPixel::getPixelLeadCode($param, false);
     $listener = 'wpcf7submit';

@@ -1,4 +1,7 @@
 *** Facebook for WordPress Changelog ***
+2018-10-29 version 1.7.15
+* Add tracking
+
 2018-07-06 version 1.7.14
 * Add language files
 
