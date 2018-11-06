@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Facebook Pixel for WordPress
+ * Plugin Name: Official Facebook Pixel
  * Plugin URI: https://www.facebook.com/business/help/881403525362441
  * Description: The Facebook pixel is an analytics tool that helps you measure the effectiveness of your advertising. You can use the Facebook pixel to understand the actions people are taking on your website and reach audiences you care about.
  * Author: Facebook

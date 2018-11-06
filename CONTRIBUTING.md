@@ -15,7 +15,7 @@ We actively welcome your pull requests.
 
 Clone this repo with the following command:
 
-`$ git clone https://github.com/facebookincubator/wordpress-messenger-customer-chat-plugin.git`
+`$ git clone https://github.com/facebookincubator/facebook-pixel-for-wordpress.git`
 
 Initiate the development environment:
 

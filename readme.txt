@@ -1,4 +1,4 @@
-=== Facebook Pixel for WordPress ===
+=== Official Facebook Pixel ===
 Contributors: facebook
 Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, facebook retargeting, facebook standard events
 Requires at least: 4.4
@@ -8,15 +8,15 @@ Stable tag: 1.7.16
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Grow your business with Facebook Pixel for WordPress! 
+Grow your business with Official Facebook Pixel!
 
 == Description ==
-This plugin will install a Facebook Pixel for your page. There is also built in support for other WordPress plugins, such as Contact Form 7, Easy Digital Downloads, Ninja Forms, and WPForms. The Facebook Pixel for WordPress allows you to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase. Tracking lower funnel events can help you understand the actions people are taking on your website. You can then use this information to make adjustments accordingly in your advertising campaigns.
+This plugin will install a Facebook Pixel for your page. There is also built in support for other WordPress plugins, such as Contact Form 7, Easy Digital Downloads, Ninja Forms, and WPForms. The Official Facebook Pixel allows you to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase. Tracking lower funnel events can help you understand the actions people are taking on your website. You can then use this information to make adjustments accordingly in your advertising campaigns.
 
 == Installation ==
 __To install from your WordPress site__ <br />
 1. Log in to your WordPress dashboard, navigate to the Plugins menu and click Add New. <br />
-2. In the search field, type 'Facebook Pixel for WordPress' and click 'Search Plugins'. Select the plugin authored by 'Facebook'. You can install it by simply clicking 'Install Now'. <br />
+2. In the search field, type 'Official Facebook Pixel' and click 'Search Plugins'. Select the plugin authored by 'Facebook'. You can install it by simply clicking 'Install Now'. <br />
 
 __To download and install plugin from Facebook Events Manager__ <br />
 [Facebook Help Page](https://www.facebook.com/business/help/881403525362441) <br />
@@ -28,11 +28,11 @@ After plugin installed, go to settings page of the plugin, input your pixel ID i
 = Where can I find more information on Facebook Pixel? =
 You can find more information on the [Facebook Pixel](https://www.facebook.com/business/learn/facebook-ads-pixel).
 
-= Where can I find more information on Facebook Pixel for WordPress plugin? =
+= Where can I find more information on Official Facebook Pixel plugin? =
 You can refer to [this page](https://www.facebook.com/business/help/881403525362441?helpref=faq_content)
 
 = Where can I find support? =
-If you get stuck, or have any questions, you can ask for help in the [Facebook Pixel for WordPress plugin forum](https://wordpress.org/support/plugin/official-facebook-pixel). If you would like to file a bug, please use the Facebook Bug tool found [here](https://developers.facebook.com/support/bugs/).
+If you get stuck, or have any questions, you can ask for help in the [Official Facebook Pixel plugin forum](https://wordpress.org/support/plugin/official-facebook-pixel). If you would like to file a bug, please use the Facebook Bug tool found [here](https://developers.facebook.com/support/bugs/).
 
 = I am a developer. Can I help improve the plugin? =
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).

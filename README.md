@@ -1,10 +1,10 @@
-# Facebook Pixel for WordPress
+# Official Facebook Pixel
 
-Grow your business with Facebook for WordPress! This plugin will install a Facebook Pixel for your page. There is also built in support for other WordPress plugins, such as Contact Form 7, Easy Digital Downloads, Ninja Forms, and WPForms. The Facebook Pixel for WordPress allows you to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase. Tracking lower funnel events can help you understand the actions people are taking on your website. You can then use this information to make adjustments accordingly in your advertising campaigns.
+Grow your business with Facebook for WordPress! This plugin will install a Facebook Pixel for your page. There is also built in support for other WordPress plugins, such as Contact Form 7, Easy Digital Downloads, Ninja Forms, and WPForms. The Official Facebook Pixel allows you to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase. Tracking lower funnel events can help you understand the actions people are taking on your website. You can then use this information to make adjustments accordingly in your advertising campaigns.
 
 # Requirements
 
-Facebook Pixel for WordPress requires
+Official Facebook Pixel requires
 * WordPress 4.4+ or higher
 * PHP 5.6 or greater
 
@@ -12,7 +12,7 @@ Facebook Pixel for WordPress requires
 
 Clone this repo with the following command:
 
-`$ git clone https://github.com/facebookincubator/wordpress-messenger-customer-chat-plugin.git`
+`$ git clone https://github.com/facebookincubator/facebook-pixel-for-wordpress.git`
 
 Initiate the development environment:
 
@@ -47,4 +47,4 @@ See the CONTRIBUTING file for how to help out
 
 # License
 
-Facebook Pixel for WordPress is GPLv2-licensed
+Official Facebook Pixel is GPLv2-licensed
