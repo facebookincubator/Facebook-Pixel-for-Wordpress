@@ -117,13 +117,11 @@ jQuery(document).ready(function ($) {
 
     $currency = edd_get_currency();
     $value = EDD()->cart->get_total();
-    $param = array_merge(
-      array(
-        'currency' => $currency,
-        'fb_wp_tracking' => self::TRACKING_NAME,
-        'value' => $value,
-      ),
-      static::getUserEmailParam());
+    $param = array(
+      'currency' => $currency,
+      'fb_wp_tracking' => self::TRACKING_NAME,
+      'value' => $value,
+    );
     $code = FacebookPixel::getPixelInitiateCheckoutCode($param, true);
 
     printf("
@@ -157,15 +155,13 @@ jQuery(document).ready(function ($) {
       $value += $item['price'];
     }
     $currency = $payment_meta['currency'];
-    $param = array_merge(
-      array(
-        'content_ids' => $content_ids,
-        'content_type' => 'product',
-        'currency' => $currency,
-        'fb_wp_tracking' => self::TRACKING_NAME,
-        'value' => $value,
-      ),
-      static::getUserEmailParam());
+    $param = array(
+      'content_ids' => $content_ids,
+      'content_type' => 'product',
+      'currency' => $currency,
+      'fb_wp_tracking' => self::TRACKING_NAME,
+      'value' => $value,
+    );
     $code = FacebookPixel::getPixelPurchaseCode($param, true);
 
     printf("
@@ -200,15 +196,13 @@ jQuery(document).ready(function ($) {
     if (!$value) {
       $value = 0;
     }
-    $param = array_merge(
-      array(
-        'content_ids' => array(static::$downloadID),
-        'content_type' => 'product',
-        'currency' => $currency,
-        'fb_wp_tracking' => self::TRACKING_NAME,
-        'value' => $value,
-      ),
-      static::getUserEmailParam());
+    $param = array(
+      'content_ids' => array(static::$downloadID),
+      'content_type' => 'product',
+      'currency' => $currency,
+      'fb_wp_tracking' => self::TRACKING_NAME,
+      'value' => $value,
+    );
     $code = FacebookPixel::getPixelViewContentCode($param);
 
     printf("
