@@ -14,12 +14,13 @@ Grow your business with Facebook Pixel for WordPress!
 This plugin will install a Facebook Pixel for your page. There is also built in support for other WordPress plugins, such as Contact Form 7, Easy Digital Downloads, Ninja Forms, and WPForms. The Facebook Pixel for WordPress allows you to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase. Tracking lower funnel events can help you understand the actions people are taking on your website. You can then use this information to make adjustments accordingly in your advertising campaigns.
 
 == Installation ==
-= To install from your WordPress site: 
+
+= To install from your WordPress site = 
 1. Log in to your WordPress dashboard, navigate to the Plugins menu and click Add New. 
 2. In the search field, type \'Facebook Pixel for WordPress\' and click 
 \'Search Plugins\'. Select the plugin authored by \'Facebook\'. You can install it by simply clicking \'Install Now\'.
 
-= To download and install plugin from Facebook Events Manager: 
+= To download and install plugin from Facebook Events Manager =
 https://www.facebook.com/business/help/881403525362441
 
 = Configure plugin for first use =
