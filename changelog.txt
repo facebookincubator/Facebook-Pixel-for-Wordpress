@@ -1,4 +1,7 @@
 *** Facebook for WordPress Changelog ***
+2018-11-09 version 1.7.17
+* Fix Lead event
+
 2018-11-02 version 1.7.16
 * Fix advance matching
 

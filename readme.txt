@@ -4,7 +4,7 @@ Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events
 Requires at least: 4.4
 Tested up to: 4.9.8
 Requires PHP: 5.6
-Stable tag: 1.7.16
+Stable tag: 1.7.17
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,6 +38,9 @@ If you get stuck, or have any questions, you can ask for help in the [Official F
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2018-11-09 version 1.7.17 =
+* Fix Lead event
+
 = 2018-11-02 version 1.7.16 =
 * Fix advance matching
 

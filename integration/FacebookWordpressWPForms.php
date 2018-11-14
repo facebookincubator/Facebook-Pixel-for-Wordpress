@@ -31,17 +31,7 @@ jQuery(document).ready(function ($) {
   $('.wpforms-form').submit(function(e) {
     e.preventDefault();
 
-    var email = $('.wpforms-field input[type=email]').val();
-    if (
-      email &&
-      /^[a-z0-9.!#$%%&'*+\/=?^_`{|}~-]+@((?=[a-z0-9-]{1,63}\.)(xn--)?[a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,63}$/i.test(email)
-    ) {
-      var param = {
-        em: email,
-        fb_wp_tracking: '%s'
-      };
-      %s
-    }
+    %s
   });
 });
 ";
@@ -65,10 +55,10 @@ jQuery(document).ready(function ($) {
       return;
     }
 
-    $pixel_code = FacebookPixel::getPixelLeadCode('param', false);
+    $param = array();
+    $pixel_code = FacebookPixel::getPixelLeadCode($param, self::TRACKING_NAME, false);
     $listener_code = sprintf(
       self::$leadJS,
-      self::TRACKING_NAME,
       $pixel_code);
 
     printf("

@@ -53,7 +53,7 @@ jQuery(document).ready(function ($) {
       'content_ids': [download],
       'content_type': 'product',
       'currency': currency,
-      'fb_wp_tracking': '%s',
+      '%s': '%s',
       'value': value
     };
     %s
@@ -99,9 +99,10 @@ jQuery(document).ready(function ($) {
       return;
     }
 
-    $pixel_code = FacebookPixel::getPixelAddToCartCode('param', false);
+    $pixel_code = FacebookPixel::getPixelAddToCartCode('param', self::TRACKING_NAME, false);
     $listener_code = sprintf(
       self::$addToCartJS,
+      FacebookPixel::FB_INTEGRATION_TRACKING_KEY,
       self::TRACKING_NAME,
       $pixel_code);
 
@@ -131,10 +132,9 @@ jQuery(document).ready(function ($) {
     $value = EDD()->cart->get_total();
     $param = array(
       'currency' => $currency,
-      'fb_wp_tracking' => self::TRACKING_NAME,
       'value' => $value,
     );
-    $code = FacebookPixel::getPixelInitiateCheckoutCode($param, true);
+    $code = FacebookPixel::getPixelInitiateCheckoutCode($param, self::TRACKING_NAME, true);
 
     printf("
 <!-- Facebook Pixel Event Code -->
@@ -171,10 +171,9 @@ jQuery(document).ready(function ($) {
       'content_ids' => $content_ids,
       'content_type' => 'product',
       'currency' => $currency,
-      'fb_wp_tracking' => self::TRACKING_NAME,
       'value' => $value,
     );
-    $code = FacebookPixel::getPixelPurchaseCode($param, true);
+    $code = FacebookPixel::getPixelPurchaseCode($param, self::TRACKING_NAME, true);
 
     printf("
 <!-- Facebook Pixel Event Code -->
@@ -212,10 +211,9 @@ jQuery(document).ready(function ($) {
       'content_ids' => array(static::$downloadID),
       'content_type' => 'product',
       'currency' => $currency,
-      'fb_wp_tracking' => self::TRACKING_NAME,
       'value' => $value,
     );
-    $code = FacebookPixel::getPixelViewContentCode($param);
+    $code = FacebookPixel::getPixelViewContentCode($param, self::TRACKING_NAME);
 
     printf("
 <!-- Facebook Pixel Event Code -->

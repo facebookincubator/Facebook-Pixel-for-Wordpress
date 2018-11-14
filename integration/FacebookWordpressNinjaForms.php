@@ -36,22 +36,7 @@ jQuery(document).ready(function($) {
     },
     actionSubmit: function(response) {
       if (response.data && response.data.fields) {
-        var fields = response.data.fields;
-        var email;
-        for (var key in fields) {
-          if (fields[key].key === 'email') {
-            email = fields[key].value;
-            break;
-          }
-        }
-
-        if (email) {
-          var param = {
-            em: email,
-            fb_wp_tracking: '%s'
-          };
-          %s
-        }
+        %s
       }
     },
   });
@@ -81,11 +66,11 @@ jQuery(document).ready(function($) {
       return;
     }
 
-    $pixel_code = FacebookPixel::getPixelLeadCode('param', false);
+    $param = array();
+    $pixel_code = FacebookPixel::getPixelLeadCode($param, self::TRACKING_NAME, false);
     $listener_code = sprintf(
       self::$leadJS,
       static::$formID,
-      self::TRACKING_NAME,
       $pixel_code);
 
     printf("

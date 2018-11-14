@@ -46,28 +46,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
     }
 
     $param = array();
-    if (FacebookWordpressOptions::getUsePii()) {
-      $param = sprintf(
-        '{
-  em: (function() {
-    if (!event || !event.detail || !event.detail.inputs) {
-      return "";
-    }
-
-    var inputs = event.detail.inputs;
-    for (var i = 0; i < inputs.length; i++) {
-      var element = inputs[i];
-      var name = element.name;
-      if (name.indexOf("email") >= 0) {
-        return element.value;
-      }
-    }
-  })(),
-  fb_wp_tracking: \'%s\'
-}',
-      self::TRACKING_NAME);
-    }
-    $code = FacebookPixel::getPixelLeadCode($param, false);
+    $code = FacebookPixel::getPixelLeadCode($param, self::TRACKING_NAME, false);
     $listener = 'wpcf7submit';
 
     printf("
