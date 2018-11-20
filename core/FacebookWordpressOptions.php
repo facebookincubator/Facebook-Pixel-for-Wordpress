@@ -40,7 +40,7 @@ class FacebookWordpressOptions {
       array(
         FacebookPluginConfig::PIXEL_ID_KEY =>
           is_null(FacebookPluginConfig::DEFAULT_PIXEL_ID) ? '' : FacebookPluginConfig::DEFAULT_PIXEL_ID,
-        FacebookPluginConfig::USE_PII_KEY => '0',
+        FacebookPluginConfig::USE_PII_KEY => FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT,
       ));
     // we need esc_js because the id is set through the form
     self::$options[FacebookPluginConfig::PIXEL_ID_KEY] =

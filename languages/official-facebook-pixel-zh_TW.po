@@ -2,11 +2,11 @@
 # This file is distributed under the same license as the Facebook Pixel package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Facebook Pixel 1.7.17\n"
+"Project-Id-Version: Facebook Pixel 1.7.18\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-"
 "pixel\n"
-"POT-Creation-Date: 2018-10-24 21:22:55+00:00\n"
-"PO-Revision-Date: 2018-10-24 14:27-0700\n"
+"POT-Creation-Date: 2018-11-16 21:59:22+00:00\n"
+"PO-Revision-Date: 2018-11-16 22:00-0700\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: zh_TW\n"
@@ -15,21 +15,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.2\n"
 
-#: core/FacebookWordpressSettingsPage.php:35
+#: core/FacebookWordpressSettingsPage.php:47
 msgid "You do not have sufficient permissions to access this page"
 msgstr "您沒有足夠的權限存取此頁面"
 
-#: core/FacebookWordpressSettingsPage.php:98
+#: core/FacebookWordpressSettingsPage.php:109
 msgid ""
 "Please note that we are now also supporting upper funnel pixel events for "
 "Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms"
 msgstr ""
 
-#: core/FacebookWordpressSettingsPage.php:102
+#: core/FacebookWordpressSettingsPage.php:115
 msgid "The unique identifier for your Facebook pixel."
 msgstr "Facebook 像素的唯一識別碼。"
 
-#: core/FacebookWordpressSettingsPage.php:123
+#: core/FacebookWordpressSettingsPage.php:136
 msgid ""
 "For businesses that operate in the European Union, you may need to take "
 "additional action. Read the <a href=\"%s\" target=\"_blank\">Cookie Consent "
@@ -40,11 +40,11 @@ msgstr ""
 "target=\"_blank\">網站和應用程式：取得 Cookie 許可指南</a>，瞭解遵守歐盟隱私"
 "規定的相關建議。"
 
-#: core/FacebookWordpressSettingsPage.php:148
+#: core/FacebookWordpressSettingsPage.php:161
 msgid "Enabling Advanced Matching improves audience building."
 msgstr "啟用「進階配對」功能有助於建立理想的廣告受眾。"
 
-#: core/FacebookWordpressSettingsPage.php:178
+#: core/FacebookWordpressSettingsPage.php:191
 msgid ""
 "The Facebook Pixel plugin requires a Pixel ID. Click <a href=\"%s\">here</a> "
 "to configure the plugin."
@@ -52,7 +52,7 @@ msgstr ""
 "Facebook 像素外掛程式需要一組像素編號。請點擊<a href=\"%s\">這裡</a>設定外掛"
 "程式。"
 
-#: core/FacebookWordpressSettingsPage.php:197
+#: core/FacebookWordpressSettingsPage.php:210
 msgid "Dismiss this notice."
 msgstr "關閉這則通知。"
 

@@ -1,4 +1,7 @@
 *** Facebook for WordPress Changelog ***
+2018-11-16 version 1.7.18
+* Fix translation and set the advanced matching on by default
+
 2018-11-09 version 1.7.17
 * Fix Lead event
 

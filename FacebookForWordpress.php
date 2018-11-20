@@ -32,6 +32,7 @@ defined('ABSPATH') or die('Direct access not allowed');
 require_once plugin_dir_path(__FILE__).'vendor/autoload.php';
 
 use FacebookPixelPlugin\Core\FacebookPixel;
+use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
@@ -40,6 +41,9 @@ class FacebookForWordpress {
   public function __construct() {
     // initialize options
     FacebookWordpressOptions::initialize();
+
+    // load textdomain
+    load_plugin_textdomain(FacebookPluginConfig::TEXT_DOMAIN, false, dirname(plugin_basename(__FILE__)) . '/languages/');
 
     // initialize pixel
     $options = FacebookWordpressOptions::getOptions();

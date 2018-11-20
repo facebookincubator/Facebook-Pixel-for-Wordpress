@@ -2,10 +2,10 @@
 # This file is distributed under the same license as the Facebook Pixel package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Facebook Pixel 1.7.17\n"
+"Project-Id-Version: Facebook Pixel 1.7.18\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-pixel\n"
-"POT-Creation-Date: 2018-10-24 21:22:55+00:00\n"
-"PO-Revision-Date: 2018-10-24 14:27-0700\n"
+"POT-Creation-Date: 2018-11-16 21:59:22+00:00\n"
+"PO-Revision-Date: 2018-11-16 22:00-0700\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: th_TH\n"
@@ -14,21 +14,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.2\n"
 
-#: core/FacebookWordpressSettingsPage.php:35
+#: core/FacebookWordpressSettingsPage.php:47
 msgid "You do not have sufficient permissions to access this page"
 msgstr "คุณไม่มีสิทธิ์เข้าถึงเพียงพอสำหรับหน้านี้"
 
-#: core/FacebookWordpressSettingsPage.php:98
+#: core/FacebookWordpressSettingsPage.php:109
 msgid ""
 "Please note that we are now also supporting upper funnel pixel events for Contact Form 7, "
 "Easy Digital Downloads, Ninja Forms and WP Forms"
 msgstr ""
 
-#: core/FacebookWordpressSettingsPage.php:102
+#: core/FacebookWordpressSettingsPage.php:115
 msgid "The unique identifier for your Facebook pixel."
 msgstr "ตัวระบุที่ไม่ซ้ำกันสำหรับพิกเซลของ Facebook"
 
-#: core/FacebookWordpressSettingsPage.php:123
+#: core/FacebookWordpressSettingsPage.php:136
 msgid ""
 "For businesses that operate in the European Union, you may need to take additional action. "
 "Read the <a href=\"%s\" target=\"_blank\">Cookie Consent Guide for Sites and Apps</a> for "
@@ -38,17 +38,17 @@ msgstr ""
 "โปรดอ่านคำแนะนำในการปฏิบัติตามข้อกำหนดสำหรับความเป็นส่วนตัวของสหภาพยุโรปใน<a href=\"%s\" target=\"_blank"
 "\">คู่มือเกี่ยวกับความยินยอมให้ติดตั้งคุกกี้สำหรับเว็บไซต์และแอพ</a>"
 
-#: core/FacebookWordpressSettingsPage.php:148
+#: core/FacebookWordpressSettingsPage.php:161
 msgid "Enabling Advanced Matching improves audience building."
 msgstr "การเปิดใช้การจับคู่ขั้นสูงช่วยปรับปรุงการสร้างกลุ่มเป้าหมายได้"
 
-#: core/FacebookWordpressSettingsPage.php:178
+#: core/FacebookWordpressSettingsPage.php:191
 msgid ""
 "The Facebook Pixel plugin requires a Pixel ID. Click <a href=\"%s\">here</a> to configure the "
 "plugin."
 msgstr "ปลั๊กอินพิกเซลของ Facebook ต้องมี ID พิกเซล คลิก<a href=\"%s\">ที่นี่</a>เพื่อกำหนดค่าปลั๊กอิน"
 
-#: core/FacebookWordpressSettingsPage.php:197
+#: core/FacebookWordpressSettingsPage.php:210
 msgid "Dismiss this notice."
 msgstr "ข้ามประกาศนี้"
 

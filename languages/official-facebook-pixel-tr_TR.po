@@ -2,11 +2,11 @@
 # This file is distributed under the same license as the Facebook Pixel package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Facebook Pixel 1.7.17\n"
+"Project-Id-Version: Facebook Pixel 1.7.18\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-"
 "pixel\n"
-"POT-Creation-Date: 2018-10-24 21:22:55+00:00\n"
-"PO-Revision-Date: 2018-10-24 14:27-0700\n"
+"POT-Creation-Date: 2018-11-16 21:59:22+00:00\n"
+"PO-Revision-Date: 2018-11-16 22:00-0700\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: tr_TR\n"
@@ -15,21 +15,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.2\n"
 
-#: core/FacebookWordpressSettingsPage.php:35
+#: core/FacebookWordpressSettingsPage.php:47
 msgid "You do not have sufficient permissions to access this page"
 msgstr "Bu sayfaya erişmek için yeterli izniniz yok"
 
-#: core/FacebookWordpressSettingsPage.php:98
+#: core/FacebookWordpressSettingsPage.php:109
 msgid ""
 "Please note that we are now also supporting upper funnel pixel events for "
 "Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms"
 msgstr ""
 
-#: core/FacebookWordpressSettingsPage.php:102
+#: core/FacebookWordpressSettingsPage.php:115
 msgid "The unique identifier for your Facebook pixel."
 msgstr "Facebook pikseliniz için benzersiz tanımlayıcı."
 
-#: core/FacebookWordpressSettingsPage.php:123
+#: core/FacebookWordpressSettingsPage.php:136
 msgid ""
 "For businesses that operate in the European Union, you may need to take "
 "additional action. Read the <a href=\"%s\" target=\"_blank\">Cookie Consent "
@@ -41,13 +41,13 @@ msgstr ""
 "için <a href=\"%s\" target=\"_blank\">Siteler ve Uygulamalar İçin Çerez Onay "
 "Kılavuzu</a>'nu okuyun."
 
-#: core/FacebookWordpressSettingsPage.php:148
+#: core/FacebookWordpressSettingsPage.php:161
 msgid "Enabling Advanced Matching improves audience building."
 msgstr ""
 "Gelişmiş Eşleştirmeyi etkinleştirmek, hedef kitle oluşturma performansını "
 "iyileştirir."
 
-#: core/FacebookWordpressSettingsPage.php:178
+#: core/FacebookWordpressSettingsPage.php:191
 msgid ""
 "The Facebook Pixel plugin requires a Pixel ID. Click <a href=\"%s\">here</a> "
 "to configure the plugin."
@@ -55,7 +55,7 @@ msgstr ""
 "Facebook Pikseli eklentisi bir Piksel Kimliği gerektirir. Eklentiyi "
 "yapılandırmak için <a href=\"%s\">buraya</a> tıklayın."
 
-#: core/FacebookWordpressSettingsPage.php:197
+#: core/FacebookWordpressSettingsPage.php:210
 msgid "Dismiss this notice."
 msgstr "Bu uyarıyı yok sayın."
 

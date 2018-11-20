@@ -2,11 +2,11 @@
 # This file is distributed under the same license as the Facebook Pixel package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Facebook Pixel 1.7.17\n"
+"Project-Id-Version: Facebook Pixel 1.7.18\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-"
 "pixel\n"
-"POT-Creation-Date: 2018-10-24 21:22:55+00:00\n"
-"PO-Revision-Date: 2018-10-24 14:25-0700\n"
+"POT-Creation-Date: 2018-11-16 21:59:22+00:00\n"
+"PO-Revision-Date: 2018-11-16 22:00-0700\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ko_KR\n"
@@ -15,21 +15,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.2\n"
 
-#: core/FacebookWordpressSettingsPage.php:35
+#: core/FacebookWordpressSettingsPage.php:47
 msgid "You do not have sufficient permissions to access this page"
 msgstr "이 페이지 액세스를 위한 권한이 충분하지 않습니다."
 
-#: core/FacebookWordpressSettingsPage.php:98
+#: core/FacebookWordpressSettingsPage.php:109
 msgid ""
 "Please note that we are now also supporting upper funnel pixel events for "
 "Contact Form 7, Easy Digital Downloads, Ninja Forms and WP Forms"
 msgstr ""
 
-#: core/FacebookWordpressSettingsPage.php:102
+#: core/FacebookWordpressSettingsPage.php:115
 msgid "The unique identifier for your Facebook pixel."
 msgstr "회원님의 Facebook 픽셀에 대한 고유 식별자입니다."
 
-#: core/FacebookWordpressSettingsPage.php:123
+#: core/FacebookWordpressSettingsPage.php:136
 msgid ""
 "For businesses that operate in the European Union, you may need to take "
 "additional action. Read the <a href=\"%s\" target=\"_blank\">Cookie Consent "
@@ -40,11 +40,11 @@ msgstr ""
 "EU 개인정보처리방침 요구 사항 준수에 관한 제안 사항은 <a href=\"%s\" target="
 "\"_blank\">사이트 및 앱에 대한 쿠키 동의 가이드</a>에서 확인하세요."
 
-#: core/FacebookWordpressSettingsPage.php:148
+#: core/FacebookWordpressSettingsPage.php:161
 msgid "Enabling Advanced Matching improves audience building."
 msgstr "고급 매칭을 사용하면 타겟 구축을 개선할 수 있습니다."
 
-#: core/FacebookWordpressSettingsPage.php:178
+#: core/FacebookWordpressSettingsPage.php:191
 msgid ""
 "The Facebook Pixel plugin requires a Pixel ID. Click <a href=\"%s\">here</a> "
 "to configure the plugin."
@@ -52,7 +52,7 @@ msgstr ""
 "Facebook 픽셀 플러그인에는 픽셀 ID가 필요합니다. 플러그인을 구성하려면 <a "
 "href=\"%s\">여기</a>를 클릭하세요."
 
-#: core/FacebookWordpressSettingsPage.php:197
+#: core/FacebookWordpressSettingsPage.php:210
 msgid "Dismiss this notice."
 msgstr "이 공지를 무시합니다."
 
