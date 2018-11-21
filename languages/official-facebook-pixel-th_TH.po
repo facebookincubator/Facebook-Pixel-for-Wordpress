@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the Facebook Pixel package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Facebook Pixel 1.7.18\n"
+"Project-Id-Version: Facebook Pixel 1.7.19\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-pixel\n"
 "POT-Creation-Date: 2018-11-16 21:59:22+00:00\n"
 "PO-Revision-Date: 2018-11-16 22:00-0700\n"

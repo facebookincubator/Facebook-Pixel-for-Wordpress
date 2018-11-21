@@ -199,8 +199,9 @@ jQuery(document).ready(function ($) {
 
     $currency = edd_get_currency();
     if (get_post_meta(static::$downloadID, '_variable_pricing', true)) { // variable price
-      $values = get_post_meta(static::$downloadID, 'edd_variable_prices', true);
-      $value = array_shift($values)['amount'];
+      $prices = get_post_meta(static::$downloadID, 'edd_variable_prices', true);
+      $price = array_shift($prices);
+      $value = $price['amount'];
     } else {
       $value = get_post_meta(static::$downloadID, 'edd_price', true);
     }

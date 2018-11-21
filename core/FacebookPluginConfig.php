@@ -20,7 +20,7 @@ namespace FacebookPixelPlugin\Core;
 defined('ABSPATH') or die('Direct access not allowed');
 
 class FacebookPluginConfig {
-  const PLUGIN_VERSION = '1.7.18';
+  const PLUGIN_VERSION = '1.7.19';
   const SOURCE = 'wordpress';
   const TEXT_DOMAIN = 'official-facebook-pixel';
 
@@ -44,10 +44,12 @@ class FacebookPluginConfig {
   const IS_NOSCRIPT_RENDERED = 'is_noscript_rendered';
 
   // integration config: INTEGRATION_KEY => PLUGIN_CLASS
-  const INTEGRATION_CONFIG = array(
-    'CONTACT_FORM_7' => 'FacebookWordpressContactForm7',
-    'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
-    'NINJA_FORMS' => 'FacebookWordpressNinjaForms',
-    'WPFORMS' => 'FacebookWordpressWPForms',
-  );
+  public static function integrationConfig() {
+    return array(
+      'CONTACT_FORM_7' => 'FacebookWordpressContactForm7',
+      'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
+      'NINJA_FORMS' => 'FacebookWordpressNinjaForms',
+      'WPFORMS' => 'FacebookWordpressWPForms',
+    );
+  }
 }

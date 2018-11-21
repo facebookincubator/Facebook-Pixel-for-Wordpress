@@ -32,7 +32,7 @@ class FacebookWordpressPixelInjection {
         'wp_head',
         array($this, 'injectPixelNoscriptCode'));
 
-      foreach (FacebookPluginConfig::INTEGRATION_CONFIG as $key => $value) {
+      foreach (FacebookPluginConfig::integrationConfig() as $key => $value) {
         $class_name = 'FacebookPixelPlugin\\Integration\\'.$value;
         $class_name::injectPixelCode();
       }
@@ -40,10 +40,11 @@ class FacebookWordpressPixelInjection {
   }
 
   public function injectPixelCode() {
+    $pixel_id = FacebookPixel::getPixelId();
     if (
       (isset(self::$renderCache[FacebookPluginConfig::IS_PIXEL_RENDERED]) &&
       self::$renderCache[FacebookPluginConfig::IS_PIXEL_RENDERED] === true) ||
-      empty(FacebookPixel::getPixelId())
+      empty($pixel_id)
     ) {
       return;
     }
