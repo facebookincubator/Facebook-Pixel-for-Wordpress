@@ -71,8 +71,9 @@
     <!-- ============================================  -->
     <target name="Package" description="Create package" depends="Build">
         <echo msg="Running Package..." />
-            <!--TODO: add version-->
-            <zip destfile="${builddir}/${packagename}">
+            <taskdef name="versionnumbertask" classname="FacebookWordpressGetVersionNumberTask" classpath="${taskdir}" />
+            <versionnumbertask versionprop="version.number" />
+            <zip destfile="${builddir}/${packagebasename}-${version.number}.zip">
                 <fileset dir="${builddir}/" defaultexcludes="true">
                     <include name="**" />
                     <exclude name="./test" />

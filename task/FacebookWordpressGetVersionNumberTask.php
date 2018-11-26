@@ -11,14 +11,24 @@
 * GNU General Public License for more details.
 */
 
-require_once "phing/Task.php";
-require_once dirname(__FILE__).'/../vendor/autoload.php';
+use FacebookPixelPlugin\Core\FacebookPluginConfig;
 
-abstract class BaseTask extends Task {
+class FacebookWordpressGetVersionNumberTask extends BaseTask {
 
-    public function setABSPATH() {
-        if (!defined('ABSPATH')) {
-            define('ABSPATH', dirname(__FILE__) . '/../');
-        }
-    }
+  /**
+   * The version number property
+   */
+  private $versionprop;
+
+  /**
+   * The setter for the attribute "versionprop"
+   */
+  public function setVersionProp($versionprop) {
+    $this->versionprop = $versionprop;
+  }
+
+  public function main() {
+    $version = FacebookPluginConfig::PLUGIN_VERSION;
+    $this->project->setProperty($this->versionprop, $version);
+  }
 }
