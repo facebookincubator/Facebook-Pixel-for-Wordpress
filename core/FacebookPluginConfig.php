@@ -50,6 +50,7 @@ class FacebookPluginConfig {
       'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
       'NINJA_FORMS' => 'FacebookWordpressNinjaForms',
       'WPFORMS' => 'FacebookWordpressWPForms',
+      'MAILCHIMP_FOR_WP' => 'FacebookWordpressMailchimpForWp',
     );
   }
 }
