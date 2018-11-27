@@ -48,9 +48,10 @@ class FacebookPluginConfig {
     return array(
       'CONTACT_FORM_7' => 'FacebookWordpressContactForm7',
       'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
+      'MAILCHIMP_FOR_WP' => 'FacebookWordpressMailchimpForWp',
       'NINJA_FORMS' => 'FacebookWordpressNinjaForms',
       'WPFORMS' => 'FacebookWordpressWPForms',
-      'MAILCHIMP_FOR_WP' => 'FacebookWordpressMailchimpForWp',
+      'WP_E_COMMERCE' => 'FacebookWordpressWPECommerce',
     );
   }
 }
