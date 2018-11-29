@@ -11,7 +11,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Grow your business with Official Facebook Pixel!
 
 == Description ==
-***ATTENTION: Due to a known issue, upgrading this plugin from version older than 1.7.10 may result in plugin deactivation. Please go to your site's 'Plugins' tab, refresh the page, and activate the plugin to prevent losing your future pixel events!***
+***ATTENTION: Due to a known issue, upgrading this plugin may result in plugin deactivation (especially if you are upgrading from version 1.7.10 - 1.7.19). Please go to your site's 'Plugins' tab, refresh the page, and activate the plugin if it's deactivated to prevent losing your future pixel events!***
 
 This plugin will install a Facebook Pixel for your page. There is also built in support for other WordPress plugins. The Official Facebook Pixel allows you to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase. Tracking lower funnel events can help you understand the actions people are taking on your website. You can then use this information to make adjustments accordingly in your advertising campaigns.
 
