@@ -1,4 +1,7 @@
 *** Facebook for WordPress Changelog ***
+2018-11-28 version 1.7.20
+* Change plugin file name, Add Supports for MailChimp for WordPress and WP eCommerce
+
 2018-11-20 version 1.7.19
 * Support php 5.3 onwards
 

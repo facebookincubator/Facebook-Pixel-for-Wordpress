@@ -1,10 +1,11 @@
-# Copyright (C) 2018 Facebook Pixel
-# This file is distributed under the same license as the Facebook Pixel package.
+# Copyright (C) 2018 Official Facebook Pixel
+# This file is distributed under the same license as the Official Facebook Pixel package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Facebook Pixel {*VERSION_NUMBER*}\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-pixel\n"
-"POT-Creation-Date: 2018-11-16 21:59:22+00:00\n"
+"Project-Id-Version: Official Facebook Pixel 1.7.20\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-"
+"pixel\n"
+"POT-Creation-Date: 2018-11-29 01:26:28+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -49,7 +50,7 @@ msgid "Dismiss this notice."
 msgstr ""
 
 #. Plugin Name of the plugin/theme
-msgid "Facebook Pixel"
+msgid "Official Facebook Pixel"
 msgstr ""
 
 #. Plugin URI of the plugin/theme
@@ -58,10 +59,12 @@ msgstr ""
 
 #. Description of the plugin/theme
 msgid ""
-"The Facebook pixel is an analytics tool that helps you measure the "
-"effectiveness of your advertising. You can use the Facebook pixel to "
-"understand the actions people are taking on your website and reach audiences "
-"you care about."
+"<strong><em>***ATTENSION: After upgrade the plugin may be deactivated due to "
+"a known issue, to workaround please refresh this page and activate plugin."
+"***</em></strong> The Facebook pixel is an analytics tool that helps you "
+"measure the effectiveness of your advertising. You can use the Facebook "
+"pixel to understand the actions people are taking on your website and reach "
+"audiences you care about."
 msgstr ""
 
 #. Author of the plugin/theme
