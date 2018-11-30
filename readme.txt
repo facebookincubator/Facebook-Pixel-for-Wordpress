@@ -4,7 +4,7 @@ Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events
 Requires at least: 4.4
 Tested up to: 4.9.8
 Requires PHP: 5.3
-Stable tag: 1.7.19
+Stable tag: 1.7.20
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 

@@ -27,7 +27,7 @@ class FacebookPluginConfig {
   const ADMIN_CAPABILITY = 'manage_options';
   const ADMIN_DISMISS_PIXEL_ID_NOTICE = 'dismiss_pixel_id_notice';
   const ADMIN_IGNORE_PIXEL_ID_NOTICE = 'ignore_pixel_id_notice';
-  const ADMIN_MENU_SLUG = 'facebook_pixel_settings';
+  const ADMIN_MENU_SLUG = 'facebook_pixel_options';
   const ADMIN_MENU_TITLE = 'Facebook Pixel';
   const ADMIN_OPTION_GROUP = 'facebook_option_group';
   const ADMIN_PAGE_TITLE = 'Facebook Pixel Settings';

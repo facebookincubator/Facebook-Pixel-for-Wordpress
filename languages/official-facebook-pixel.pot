@@ -59,7 +59,7 @@ msgstr ""
 
 #. Description of the plugin/theme
 msgid ""
-"<strong><em>***ATTENSION: After upgrade the plugin may be deactivated due to "
+"<strong><em>***ATTENTION: After upgrade the plugin may be deactivated due to "
 "a known issue, to workaround please refresh this page and activate plugin."
 "***</em></strong> The Facebook pixel is an analytics tool that helps you "
 "measure the effectiveness of your advertising. You can use the Facebook "
