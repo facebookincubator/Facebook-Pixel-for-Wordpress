@@ -28,5 +28,6 @@ abstract class FacebookWordpressIntegrationBase {
   /**
    * inject the pixel code for the plugin
    */
-  abstract protected static function injectPixelCode();
+  public static function injectPixelCode() {
+  }
 }
