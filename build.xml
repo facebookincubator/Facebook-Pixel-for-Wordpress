@@ -56,13 +56,7 @@
     <!-- ============================================  -->
     <target name="Test" description="Run tests" depends="Clean">
         <echo msg="Running Test..." />
-        <phpunit bootstrap="${testdir}/bootstrap.php" haltonfailure="true" printsummary="true">
-            <batchtest>
-                <fileset dir="${testdir}">
-                    <include name="*Test.php" />
-                </fileset>
-            </batchtest>
-        </phpunit>
+        <exec command="./vendor/bin/phpunit --bootstrap ${testdir}/bootstrap.php --colors ${testdir}" dir="${basedir}" passthru="true" />
         <echo msg="Test complete" />
     </target>
 
