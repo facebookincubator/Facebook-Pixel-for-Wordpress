@@ -2,7 +2,7 @@
 Contributors: facebook
 Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, facebook retargeting, facebook standard events
 Requires at least: 4.4
-Tested up to: 4.9.8
+Tested up to: 5.0.1
 Requires PHP: 5.3
 Stable tag: 1.7.21
 License: GPLv2
