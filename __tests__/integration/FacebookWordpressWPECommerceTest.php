@@ -64,6 +64,17 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->assertRegexp('/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/', $code);
   }
 
+  public function testInjectAddToCartEventHookWithAdmin() {
+    self::mockIsAdmin(true);
+    $parameter = array('product_id' => 1, 'widget_output' => '');
+
+    $response = FacebookWordpressWPECommerce::injectAddToCartEventHook($parameter);
+
+    $this->assertArrayHasKey('widget_output', $response);
+    $code = $response['widget_output'];
+    $this->assertEquals("", $code);
+  }
+
   public function testInitiateCheckoutEventWithoutAdmin() {
     self::mockIsAdmin(false);
 
@@ -74,7 +85,6 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->expectOutputRegex('/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/');
   }
 
-  // TODO(T38225893): rewrite code in Administrator Mode.
   public function testInitiateCheckoutEventWithAdmin() {
     self::mockIsAdmin(true);
 
@@ -103,5 +113,20 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->expectOutputRegex('/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/');
   }
 
-  // TODO(T38225893): test code in Administrator Mode.
+  public function testInjectPurchaseEventHookWithAdmin() {
+    self::mockIsAdmin(true);
+
+    $mock_purchase_log_object = \Mockery::mock();
+    $purchase_log_object = $mock_purchase_log_object;
+    $session_id = null;
+    $display_to_screen = true;
+
+    $mock_purchase_log_object->shouldReceive('get_items')
+      ->andReturn(array(0 => (object) array('prodid' => "1")));
+    $mock_purchase_log_object->shouldReceive('get_total')
+      ->andReturn(999);
+
+    FacebookWordpressWPECommerce::injectPurchaseEventHook($purchase_log_object, $session_id, $display_to_screen);
+    $this->expectOutputString("");
+  }
 }

@@ -20,6 +20,7 @@ namespace FacebookPixelPlugin\Integration;
 defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
+use FacebookPixelPlugin\Core\FacebookPluginUtils;
 
 class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'mailchimp-for-wp/mailchimp-for-wp.php';
@@ -40,7 +41,7 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
   }
 
   public static function injectLeadEvent() {
-    if (is_admin()) {
+    if (FacebookPluginUtils::isAdmin()) {
       return;
     }
 

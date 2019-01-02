@@ -1,15 +1,15 @@
 <?php
 /*
-* Copyright (C) 2017-present, Facebook, Inc.
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; version 2 of the License.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*/
+ * Copyright (C) 2017-present, Facebook, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 /**
  * @package FacebookPixelPlugin
@@ -20,6 +20,7 @@ namespace FacebookPixelPlugin\Integration;
 defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
+use FacebookPixelPlugin\Core\FacebookPluginUtils;
 
 class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'easy-digital-downloads/easy-digital-downloads.php';
@@ -95,7 +96,7 @@ jQuery(document).ready(function ($) {
   }
 
   public static function injectAddToCartEvent() {
-    if (is_admin()) {
+    if (FacebookPluginUtils::isAdmin()) {
       return;
     }
 
@@ -124,7 +125,7 @@ jQuery(document).ready(function ($) {
   }
 
   public static function injectInitiateCheckoutEvent() {
-    if (is_admin() || !function_exists('EDD')) {
+    if (FacebookPluginUtils::isAdmin() || !function_exists('EDD')) {
       return;
     }
 
@@ -154,7 +155,7 @@ jQuery(document).ready(function ($) {
   }
 
   public static function injectPurchaseEvent() {
-    if (is_admin() || empty(static::$paymentID)) {
+    if (FacebookPluginUtils::isAdmin() || empty(static::$paymentID)) {
       return;
     }
 
@@ -193,7 +194,7 @@ jQuery(document).ready(function ($) {
   }
 
   public static function injectViewContentEvent() {
-    if (is_admin() || empty(static::$downloadID)) {
+    if (FacebookPluginUtils::isAdmin() || empty(static::$downloadID)) {
       return;
     }
 

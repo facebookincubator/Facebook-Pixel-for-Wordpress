@@ -17,6 +17,14 @@ use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ *
+ * All tests in this test class should be run in seperate PHP process to
+ * make sure tests are isolated.
+ * Stop preserving global state from the parent process.
+ */
 final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
   public function testCanInitialize() {
     self::mockGetOption('1234', '0');

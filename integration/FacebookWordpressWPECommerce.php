@@ -20,6 +20,7 @@ namespace FacebookPixelPlugin\Integration;
 defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
+use FacebookPixelPlugin\Core\FacebookPluginUtils;
 
 class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'wp-e-commerce/wp-e-commerce.php';
@@ -44,6 +45,9 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 
   // Event hook for AddToCart.
   public static function injectAddToCartEventHook($response) {
+    if (FacebookPluginUtils::isAdmin()) {
+      return $response;
+    }
     $product_id = $response['product_id'];
     $params = static::getParametersForCart($product_id);
     $code = FacebookPixel::getPixelAddToCartCode($params, self::TRACKING_NAME, true);
@@ -55,7 +59,6 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
          ",
       $code);
     $response['widget_output'] .= $code;
-
     return $response;
   }
 
@@ -68,7 +71,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
   }
 
   public static function injectInitiateCheckoutEvent() {
-    if (is_admin()) {
+    if (FacebookPluginUtils::isAdmin()) {
       return;
     }
 
@@ -84,7 +87,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
   }
 
   public static function injectPurchaseEventHook($purchase_log_object, $session_id, $display_to_screen) {
-    if (is_admin() || !$display_to_screen) {
+    if (FacebookPluginUtils::isAdmin() || !$display_to_screen) {
       return;
     }
 

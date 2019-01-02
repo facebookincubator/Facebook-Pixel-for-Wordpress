@@ -1,15 +1,15 @@
 <?php
 /*
-* Copyright (C) 2017-present, Facebook, Inc.
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; version 2 of the License.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*/
+ * Copyright (C) 2017-present, Facebook, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 /**
  * @package FacebookPixelPlugin
@@ -104,8 +104,8 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
     }
 
     $code = $with_script_tag
-      ? "<script type='text/javascript'>".self::$pixelFbqCodeWithoutScript."</script>"
-      : self::$pixelFbqCodeWithoutScript;
+    ? "<script type='text/javascript'>" . self::$pixelFbqCodeWithoutScript . "</script>"
+    : self::$pixelFbqCodeWithoutScript;
     $param_str = $param;
     if (is_array($param)) {
       $param_str = json_encode($param, JSON_PRETTY_PRINT);
@@ -115,8 +115,8 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
       $code,
       'init',
       self::$pixelId,
-      ', '.$param_str,
-      ', '.json_encode($agent_param, JSON_PRETTY_PRINT));
+      ', ' . $param_str,
+      ', ' . json_encode($agent_param, JSON_PRETTY_PRINT));
   }
 
   /**
@@ -132,8 +132,8 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
     }
 
     $code = $with_script_tag
-      ? "<script type='text/javascript'>".self::$pixelFbqCodeWithoutScript."</script>"
-      : self::$pixelFbqCodeWithoutScript;
+    ? "<script type='text/javascript'>" . self::$pixelFbqCodeWithoutScript . "</script>"
+    : self::$pixelFbqCodeWithoutScript;
     $param_str = $param;
     if (is_array($param)) {
       if (!empty($tracking_name)) {
@@ -146,7 +146,7 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
       $code,
       $class->getConstant(strtoupper($event)) !== false ? 'track' : 'trackCustom',
       $event,
-      ', '.$param_str,
+      ', ' . $param_str,
       '');
   }
 
@@ -160,10 +160,10 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
 
     $data = '';
     foreach ($cd as $k => $v) {
-      $data .= '&cd['.$k.']='.$v;
+      $data .= '&cd[' . $k . ']=' . $v;
     }
     if (!empty($tracking_name)) {
-      $data .= '&cd['.self::FB_INTEGRATION_TRACKING_KEY.']='.$tracking_name;
+      $data .= '&cd[' . self::FB_INTEGRATION_TRACKING_KEY . ']=' . $tracking_name;
     }
     return sprintf(
       self::$pixelNoscriptCode,
