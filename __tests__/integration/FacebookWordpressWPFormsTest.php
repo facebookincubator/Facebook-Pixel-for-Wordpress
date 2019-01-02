@@ -40,8 +40,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
       ->with(array(), FacebookWordpressWPForms::TRACKING_NAME, false)
       ->andReturn('wpforms-form');
     FacebookWordpressWPForms::injectLeadEvent();
-    $this->expectOutputRegex('/wpforms-form/');
-    $this->expectOutputRegex('/End Facebook Pixel Event Code/');
+    $this->expectOutputRegex('/wpforms-form[\s\S]+End Facebook Pixel Event Code/');
   }
 
   public function testInjectLeadEventWithAdmin() {

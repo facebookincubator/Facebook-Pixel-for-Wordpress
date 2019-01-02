@@ -94,8 +94,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
       ->andReturn('edd-add-to-cart');
 
     FacebookWordpressEasyDigitalDownloads::injectAddToCartEvent();
-    $this->expectOutputRegex('/edd-add-to-cart/');
-    $this->expectOutputRegex('/End Facebook Pixel Event Code/');
+    $this->expectOutputRegex('/edd-add-to-cart[\s\S]+End Facebook Pixel Event Code/');
   }
 
   public function testInjectAddToCartEventWithAdmin() {

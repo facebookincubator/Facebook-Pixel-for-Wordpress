@@ -40,8 +40,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
       ->with(array(), FacebookWordpressContactForm7::TRACKING_NAME, false)
       ->andReturn('contact-form-7');
     FacebookWordpressContactForm7::injectLeadEvent();
-    $this->expectOutputRegex('/contact-form-7/');
-    $this->expectOutputRegex('/wpcf7submit/');
+    $this->expectOutputRegex('/wpcf7submit[\s\S]+contact-form-7/');
   }
 
   public function testInjectLeadEventWithAdmin() {

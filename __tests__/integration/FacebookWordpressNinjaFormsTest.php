@@ -36,10 +36,9 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     parent::mockIsAdmin(false);
     $mocked_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
     $mocked_fbpixel->shouldReceive('getPixelLeadCode')
-      ->andReturn('/facebookWordpressNinjaFormsController/');
+      ->andReturn('facebookWordpressNinjaFormsController');
     FacebookWordpressNinjaForms::injectLeadEvent();
-    $this->expectOutputRegex('/facebookWordpressNinjaFormsController/');
-    $this->expectOutputRegex('/Facebook Pixel Event Code/');
+    $this->expectOutputRegex('/facebookWordpressNinjaFormsController[\s\S]+End Facebook Pixel Event Code/');
   }
 
   public function testInjectLeadEventWithAdmin() {

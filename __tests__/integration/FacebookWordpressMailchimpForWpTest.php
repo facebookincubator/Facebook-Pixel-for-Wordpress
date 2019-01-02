@@ -40,8 +40,7 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
       ->with(array(), FacebookWordpressMailchimpForWp::TRACKING_NAME, false)
       ->andReturn('mailchimp-for-wp');
     FacebookWordpressMailchimpForWp::injectLeadEvent();
-    $this->expectOutputRegex('/mailchimp-for-wp/');
-    $this->expectOutputRegex('/End Facebook Pixel Event Code/');
+    $this->expectOutputRegex('/mailchimp-for-wp[\s\S]+End Facebook Pixel Event Code/');
   }
 
   public function testInjectLeadEventWithAdmin() {
