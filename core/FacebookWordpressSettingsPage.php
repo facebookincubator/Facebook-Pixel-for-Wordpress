@@ -222,7 +222,7 @@ class FacebookWordpressSettingsPage {
   public function registerPluginStyles() {
     wp_register_style(
       FacebookPluginConfig::TEXT_DOMAIN,
-      plugins_url('css/admin.css', __FILE__));
+      plugins_url('../css/admin.css', __FILE__));
     wp_enqueue_style(FacebookPluginConfig::TEXT_DOMAIN);
   }
 
