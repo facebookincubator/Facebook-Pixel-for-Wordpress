@@ -28,4 +28,6 @@ abstract class FacebookWordpressIntegrationBase {
    */
   public static function injectPixelCode() {
   }
+
+  // TODO(T39224447): write helper function to add hook on wp_footer
 }
