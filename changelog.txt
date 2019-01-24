@@ -1,4 +1,7 @@
 *** Facebook for WordPress Changelog ***
+2019-01-20 version 1.7.22
+* fix css asset error
+
 2018-11-30 version 1.7.21
 * fix abstract static function
 
