@@ -25,9 +25,11 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
       11);
 
     // InitiateCheckout
-    \WP_Mock::expectActionAdded('edd_after_checkout_cart',
-      array(FacebookWordpressEasyDigitalDownloads::class, 'injectInitiateCheckoutEventHook'),
-      11);
+    $hook_name = 'hook';
+    $inject_function = 'inject_function';
+    $mocked_base = \Mockery::mock(FacebookWordpressTestBase::class);
+    $mocked_base->shouldReceive('addPixelFireForHook')
+      ->with($hook_name, $inject_function);
 
     // Purchase
     \WP_Mock::expectActionAdded('edd_payment_receipt_after',
@@ -50,16 +52,6 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
       11);
 
     FacebookWordpressEasyDigitalDownloads::injectAddToCartEventHook('1234');
-
-    $this->assertHooksAdded();
-  }
-
-  public function testInjectInitiateCheckoutEventHook() {
-    \WP_Mock::expectActionAdded('wp_footer',
-      array(FacebookWordpressEasyDigitalDownloads::class, 'injectInitiateCheckoutEvent'),
-      11);
-
-    FacebookWordpressEasyDigitalDownloads::injectInitiateCheckoutEventHook();
 
     $this->assertHooksAdded();
   }

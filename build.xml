@@ -14,7 +14,7 @@
         <exclude name="README.md" />
         <exclude name="vendor/**" />
         <exclude name="task/**" />
-        <exclude name="tests/**" />
+        <exclude name="__tests__/**" />
     </fileset>
 
     <!-- ============================================  -->

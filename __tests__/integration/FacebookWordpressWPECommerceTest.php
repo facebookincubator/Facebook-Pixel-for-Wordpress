@@ -20,30 +20,24 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
     // AddToCart
     \WP_Mock::expectActionAdded('wpsc_add_to_cart_json_response',
-      array(FacebookWordpressWPECommerce::class, 'injectAddToCartEventHook'), 11);
+      array(FacebookWordpressWPECommerce::class, 'injectAddToCartEvent'), 11);
 
     // InitiateCheckout
-    \WP_Mock::expectActionAdded('wpsc_before_shopping_cart_page',
-      array(FacebookWordpressWPECommerce::class, 'injectInitiateCheckoutEventHook'), 11);
-
+    $hook_name = 'hook';
+    $inject_function = 'inject_function';
+    $mocked_base = \Mockery::mock(FacebookWordpressTestBase::class);
+    $mocked_base->shouldReceive('addPixelFireForHook')
+      ->with($hook_name, $inject_function);
     // Purchase
     \WP_Mock::expectActionAdded('wpsc_transaction_results_shutdown',
-      array(FacebookWordpressWPECommerce::class, 'injectPurchaseEventHook'), 11, 3);
+      array(FacebookWordpressWPECommerce::class, 'injectPurchaseEvent'), 11, 3);
 
     FacebookWordpressWPECommerce::injectPixelCode();
 
     $this->assertHooksAdded();
   }
 
-  public function testInjectInitiateCheckoutEventHook() {
-    \WP_Mock::expectActionAdded('wp_footer',
-      array(FacebookWordpressWPECommerce::class, 'injectInitiateCheckoutEvent'), 11);
-
-    FacebookWordpressWPECommerce::injectInitiateCheckoutEventHook();
-    $this->assertHooksAdded();
-  }
-
-  public function testInjectAddToCartEventHookWithoutAdmin() {
+  public function testInjectAddToCartEventWithoutAdmin() {
     self::mockIsAdmin(false);
     $parameter = array('product_id' => 1, 'widget_output' => '');
 
@@ -57,18 +51,18 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
     $GLOBALS['wpsc_cart'] = $mock_cart;
 
-    $response = FacebookWordpressWPECommerce::injectAddToCartEventHook($parameter);
+    $response = FacebookWordpressWPECommerce::injectAddToCartEvent($parameter);
 
     $this->assertArrayHasKey('widget_output', $response);
     $code = $response['widget_output'];
     $this->assertRegexp('/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/', $code);
   }
 
-  public function testInjectAddToCartEventHookWithAdmin() {
+  public function testInjectAddToCartEventWithAdmin() {
     self::mockIsAdmin(true);
     $parameter = array('product_id' => 1, 'widget_output' => '');
 
-    $response = FacebookWordpressWPECommerce::injectAddToCartEventHook($parameter);
+    $response = FacebookWordpressWPECommerce::injectAddToCartEvent($parameter);
 
     $this->assertArrayHasKey('widget_output', $response);
     $code = $response['widget_output'];
@@ -92,7 +86,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->expectOutputString("");
   }
 
-  public function testInjectPurchaseEventHookWithoutAdmin() {
+  public function testInjectPurchaseEventWithoutAdmin() {
     self::mockIsAdmin(false);
 
     $mocked_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
@@ -109,11 +103,11 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $mock_purchase_log_object->shouldReceive('get_total')
       ->andReturn(999);
 
-    FacebookWordpressWPECommerce::injectPurchaseEventHook($purchase_log_object, $session_id, $display_to_screen);
+    FacebookWordpressWPECommerce::injectPurchaseEvent($purchase_log_object, $session_id, $display_to_screen);
     $this->expectOutputRegex('/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/');
   }
 
-  public function testInjectPurchaseEventHookWithAdmin() {
+  public function testInjectPurchaseEventWithAdmin() {
     self::mockIsAdmin(true);
 
     $mock_purchase_log_object = \Mockery::mock();
@@ -126,7 +120,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $mock_purchase_log_object->shouldReceive('get_total')
       ->andReturn(999);
 
-    FacebookWordpressWPECommerce::injectPurchaseEventHook($purchase_log_object, $session_id, $display_to_screen);
+    FacebookWordpressWPECommerce::injectPurchaseEvent($purchase_log_object, $session_id, $display_to_screen);
     $this->expectOutputString("");
   }
 }

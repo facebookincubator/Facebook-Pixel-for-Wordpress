@@ -18,18 +18,12 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
-    \WP_Mock::expectActionAdded('wpcf7_contact_form',
-      array(FacebookWordpressContactForm7::class, 'injectLeadEventHook'), 11);
+    $hook_name = 'hook';
+    $inject_function = 'inject_function';
+    $mocked_base = \Mockery::mock(FacebookWordpressTestBase::class);
+    $mocked_base->shouldReceive('addPixelFireForHook')
+      ->with($hook_name, $inject_function);
     FacebookWordpressContactForm7::injectPixelCode();
-    $this->assertHooksAdded();
-  }
-
-  public function testInjectLeadEventHook() {
-    \WP_Mock::expectActionAdded('wp_footer',
-      array(FacebookWordpressContactForm7::class, 'injectLeadEvent'),
-      11);
-    FacebookWordpressContactForm7::injectLeadEventHook();
-    $this->assertHooksAdded();
   }
 
   public function testInjectLeadEventWithoutAdmin() {

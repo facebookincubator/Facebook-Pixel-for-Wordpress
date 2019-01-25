@@ -18,18 +18,12 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
-    \WP_Mock::expectActionAdded('mc4wp_form_subscribed', array(FacebookWordpressMailchimpForWp::class, 'injectLeadEventHook'),
-      11);
+    $hook_name = 'hook';
+    $inject_function = 'inject_function';
+    $mocked_base = \Mockery::mock(FacebookWordpressTestBase::class);
+    $mocked_base->shouldReceive('addPixelFireForHook')
+      ->with($hook_name, $inject_function);
     FacebookWordpressMailchimpForWp::injectPixelCode();
-    $this->assertHooksAdded();
-  }
-
-  public function testInjectLeadEventHook() {
-    \WP_Mock::expectActionAdded('wp_footer',
-      array(FacebookWordpressMailchimpForWp::class, 'injectLeadEvent'),
-      11);
-    FacebookWordpressMailchimpForWp::injectLeadEventHook();
-    $this->assertHooksAdded();
   }
 
   public function testInjectLeadEventWithoutAdmin() {

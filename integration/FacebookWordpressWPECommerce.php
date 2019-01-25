@@ -29,22 +29,19 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
   public static function injectPixelCode() {
     // AddToCart
     add_action('wpsc_add_to_cart_json_response',
-      array(__CLASS__, 'injectAddToCartEventHook'), 11);
+      array(__CLASS__, 'injectAddToCartEvent'), 11);
 
     // InitiateCheckout
-    add_action(
-      'wpsc_before_shopping_cart_page',
-      array(__CLASS__, 'injectInitiateCheckoutEventHook'),
-      11);
+    self::addPixelFireForHook('wpsc_before_shopping_cart_page', 'injectInitiateCheckoutEvent');
 
     // Purchase
     add_action(
       'wpsc_transaction_results_shutdown',
-      array(__CLASS__, 'injectPurchaseEventHook'), 11, 3);
+      array(__CLASS__, 'injectPurchaseEvent'), 11, 3);
   }
 
   // Event hook for AddToCart.
-  public static function injectAddToCartEventHook($response) {
+  public static function injectAddToCartEvent($response) {
     if (FacebookPluginUtils::isAdmin()) {
       return $response;
     }
@@ -60,14 +57,6 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
       $code);
     $response['widget_output'] .= $code;
     return $response;
-  }
-
-  // Event hook for InitiateCheckout.
-  public static function injectInitiateCheckoutEventHook() {
-    add_action(
-      'wp_footer',
-      array(__CLASS__, 'injectInitiateCheckoutEvent'),
-      11);
   }
 
   public static function injectInitiateCheckoutEvent() {
@@ -86,7 +75,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
       $code);
   }
 
-  public static function injectPurchaseEventHook($purchase_log_object, $session_id, $display_to_screen) {
+  public static function injectPurchaseEvent($purchase_log_object, $session_id, $display_to_screen) {
     if (FacebookPluginUtils::isAdmin() || !$display_to_screen) {
       return;
     }

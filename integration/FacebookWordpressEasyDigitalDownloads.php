@@ -70,10 +70,7 @@ jQuery(document).ready(function ($) {
       11);
 
     // InitiateCheckout
-    add_action(
-      'edd_after_checkout_cart',
-      array(__CLASS__, 'injectInitiateCheckoutEventHook'),
-      11);
+    self::addPixelFireForHook('edd_after_checkout_cart', 'injectInitiateCheckoutEvent');
 
     // Purchase
     add_action(
@@ -115,13 +112,6 @@ jQuery(document).ready(function ($) {
 <!-- End Facebook Pixel Event Code -->
       ",
       $listener_code);
-  }
-
-  public static function injectInitiateCheckoutEventHook() {
-    add_action(
-      'wp_footer',
-      array(__CLASS__, 'injectInitiateCheckoutEvent'),
-      11);
   }
 
   public static function injectInitiateCheckoutEvent() {

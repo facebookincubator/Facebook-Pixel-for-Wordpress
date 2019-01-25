@@ -29,5 +29,14 @@ abstract class FacebookWordpressIntegrationBase {
   public static function injectPixelCode() {
   }
 
-  // TODO(T39224447): write helper function to add hook on wp_footer
+  // TODO(T39560845): Add unit test for addPixelFireForHook
+  public static function addPixelFireForHook($hook_name, $inject_function, $priority = 11) {
+    add_action(
+      $hook_name, function () use ($inject_function) {
+        add_action('wp_footer', array(
+          // get derived class in base class
+          static::class, $inject_function), 11);
+      },
+      $priority);
+  }
 }

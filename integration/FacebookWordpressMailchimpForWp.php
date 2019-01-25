@@ -27,17 +27,7 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
   const TRACKING_NAME = 'mailchimp-for-wp';
 
   public static function injectPixelCode() {
-    add_action(
-      'mc4wp_form_subscribed',
-      array(__CLASS__, 'injectLeadEventHook'),
-      11);
-  }
-
-  public static function injectLeadEventHook() {
-    add_action(
-      'wp_footer',
-      array(__CLASS__, 'injectLeadEvent'),
-      11);
+    self::addPixelFireForHook('mc4wp_form_subscribed', 'injectLeadEvent');
   }
 
   public static function injectLeadEvent() {
