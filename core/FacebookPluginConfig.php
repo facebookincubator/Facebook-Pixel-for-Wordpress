@@ -46,6 +46,7 @@ class FacebookPluginConfig {
   // integration config: INTEGRATION_KEY => PLUGIN_CLASS
   public static function integrationConfig() {
     return array(
+      'CALDERA_FORM' => 'FacebookWordpressCalderaForm',
       'CONTACT_FORM_7' => 'FacebookWordpressContactForm7',
       'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
       'FORMIDABLE_FORM' => 'FacebookWordpressFormidableForm',
