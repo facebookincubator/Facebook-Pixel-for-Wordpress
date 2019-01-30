@@ -4,7 +4,7 @@ Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events
 Requires at least: 4.4
 Tested up to: 5.0.1
 Requires PHP: 5.3
-Stable tag: 1.7.22
+Stable tag: 1.7.23
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,6 +48,11 @@ If you get stuck, or have any questions, you can ask for help in the [Official F
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2019-01-29 version 1.7.23 =
+* Add Gravity Forms
+* Add Caldera Form
+* Add Formidable Form
+
 = 2019-01-20 version 1.7.22 =
 * fix css asset error
 

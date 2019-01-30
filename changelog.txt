@@ -1,4 +1,9 @@
 *** Facebook for WordPress Changelog ***
+2019-01-29 version 1.7.23
+* Add Gravity Forms
+* Add Caldera Form
+* Add Formidable Form
+
 2019-01-20 version 1.7.22
 * fix css asset error
 
