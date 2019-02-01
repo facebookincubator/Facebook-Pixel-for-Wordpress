@@ -77,6 +77,21 @@
     </target>
 
     <!-- ============================================  -->
+    <!-- Target: Dockerize                               -->
+    <!-- ============================================  -->
+    <target name="Dockerize" description="Dockerize test website" depends="Build">
+        <echo msg="Composing Docker images for E2E tests..." />
+        <echo msg="Step1: Creating local docker image for E2E test site..." />
+        <exec command="docker build -t '${dockerimagename}' ." dir="${testdir}/e2e/site" passthru="true" />
+        <echo msg="Docker Image Creation complete" />
+        <echo msg="Step2: Starting up E2E test site... " />
+        <exec command="docker-compose down --volumes" dir="${testdir}/e2e/site" passthru="false" />
+        <exec command="docker-compose up -d" dir="${testdir}/e2e" passthru="true" />
+        <echo msg="Docker Image Creation complete" />
+        <echo msg="Dockerize complete" />
+    </target>
+
+    <!-- ============================================  -->
     <!-- Target: Help                                  -->
     <!-- ============================================  -->
     <target name="Help" description="Usage help">
@@ -85,6 +100,7 @@
         <echo msg="Build  : Build the project." />
         <echo msg="Test   : Run all tests." />
         <echo msg="Package: Create plugin package (zip)." />
+        <echo msg="Dockerize: Create docker images for E2E site and start the containers." />
         <echo msg="If you run phing without providing any target, following targets will run in order: Clean, Test, Build, Package." />
     </target>
 
