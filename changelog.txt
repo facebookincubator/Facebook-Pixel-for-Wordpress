@@ -1,4 +1,9 @@
 *** Facebook for WordPress Changelog ***
+2019-02-10 version 1.7.24 =
+* Fix for PHP 5.3
+* Fix the Util function
+* Fix Ninja Form
+
 2019-01-29 version 1.7.23
 * Add Gravity Forms
 * Add Caldera Form

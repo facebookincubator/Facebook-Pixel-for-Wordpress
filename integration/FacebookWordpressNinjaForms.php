@@ -55,10 +55,12 @@ jQuery(document).ready(function($) {
   public static function injectLeadEventHook($form_id) {
     static::$formID = $form_id;
 
+    // bug fixed for https://wordpress.org/support/topic/marionette-is-not-defined/
+    // using 90 here to make sure the Marionette is loaded
     add_action(
       'wp_footer',
       array(__CLASS__, 'injectLeadEvent'),
-      11);
+      90);
   }
 
   public static function injectLeadEvent() {

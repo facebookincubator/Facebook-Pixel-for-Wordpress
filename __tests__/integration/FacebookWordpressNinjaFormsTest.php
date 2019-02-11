@@ -27,7 +27,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
   public function testInjectLeadEventHook() {
     \WP_Mock::expectActionAdded('wp_footer',
       array(FacebookWordpressNinjaForms::class, 'injectLeadEvent'),
-      11);
+      90);
     FacebookWordpressNinjaForms::injectLeadEventHook('1234');
     $this->assertHooksAdded();
   }

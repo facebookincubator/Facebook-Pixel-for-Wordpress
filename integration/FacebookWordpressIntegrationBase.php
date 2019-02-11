@@ -35,7 +35,7 @@ abstract class FacebookWordpressIntegrationBase {
       $hook_name, function () use ($inject_function) {
         add_action('wp_footer', array(
           // get derived class in base class
-          static::class, $inject_function), 11);
+          get_called_class(), $inject_function), 11);
       },
       $priority);
   }

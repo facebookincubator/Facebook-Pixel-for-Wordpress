@@ -31,7 +31,7 @@ class FacebookPluginUtils {
    * @return bool
    */
   public static function isPositiveInteger($pixel_id) {
-    return isset($pixel_id) && is_numeric($pixel_id) && (int) $pixel_id > 0;
+    return isset($pixel_id) && ctype_digit($pixel_id) && $pixel_id !== '0';
   }
 
   /**
