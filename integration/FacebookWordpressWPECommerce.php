@@ -32,7 +32,10 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
       array(__CLASS__, 'injectAddToCartEvent'), 11);
 
     // InitiateCheckout
-    self::addPixelFireForHook('wpsc_before_shopping_cart_page', 'injectInitiateCheckoutEvent');
+    self::addPixelFireForHook(array(
+      'hook_name' => 'wpsc_before_shopping_cart_page',
+      'classname' => __CLASS__,
+      'inject_function' => 'injectInitiateCheckoutEvent'));
 
     // Purchase
     add_action(

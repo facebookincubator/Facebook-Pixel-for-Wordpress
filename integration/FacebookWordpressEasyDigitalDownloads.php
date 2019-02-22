@@ -70,7 +70,10 @@ jQuery(document).ready(function ($) {
       11);
 
     // InitiateCheckout
-    self::addPixelFireForHook('edd_after_checkout_cart', 'injectInitiateCheckoutEvent');
+    self::addPixelFireForHook(array(
+        'hook_name' => 'edd_after_checkout_cart',
+        'classname' => __CLASS__,
+        'inject_function' => 'injectInitiateCheckoutEvent'));
 
     // Purchase
     add_action(

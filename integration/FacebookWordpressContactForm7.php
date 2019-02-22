@@ -27,7 +27,10 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
   const TRACKING_NAME = 'contact-form-7';
 
   public static function injectPixelCode() {
-    self::addPixelFireForHook('wpcf7_contact_form', 'injectLeadEvent');
+    self::addPixelFireForHook(array(
+      'hook_name' => 'wpcf7_contact_form',
+      'classname' => __CLASS__,
+      'inject_function' => 'injectLeadEvent'));
   }
 
   public static function injectLeadEvent() {

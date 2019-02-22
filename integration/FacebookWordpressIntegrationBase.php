@@ -30,12 +30,18 @@ abstract class FacebookWordpressIntegrationBase {
   }
 
   // TODO(T39560845): Add unit test for addPixelFireForHook
-  public static function addPixelFireForHook($hook_name, $inject_function, $priority = 11) {
+  public static function addPixelFireForHook($pixel_fire_for_hook_params) {
+    $hook_name = $pixel_fire_for_hook_params['hook_name'];
+    $classname = $pixel_fire_for_hook_params['classname'];
+    $inject_function = $pixel_fire_for_hook_params['inject_function'];
+    $priority = isset($pixel_fire_for_hook_params['priority'])
+      ? $pixel_fire_for_hook_params['priority']
+      : 11;
     add_action(
-      $hook_name, function () use ($inject_function) {
+      $hook_name, function () use ($classname, $inject_function) {
         add_action('wp_footer', array(
           // get derived class in base class
-          get_called_class(), $inject_function), 11);
+          $classname, $inject_function), 11);
       },
       $priority);
   }
