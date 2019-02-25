@@ -16,6 +16,14 @@ namespace FacebookPixelPlugin\Tests\Integration;
 use FacebookPixelPlugin\Integration\FacebookWordpressWPECommerce;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ *
+ * All tests in this test class should be run in seperate PHP process to
+ * make sure tests are isolated.
+ * Stop preserving global state from the parent process.
+ */
 final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
     // AddToCart
@@ -23,11 +31,13 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
       array(FacebookWordpressWPECommerce::class, 'injectAddToCartEvent'), 11);
 
     // InitiateCheckout
-    $hook_name = 'hook';
-    $inject_function = 'inject_function';
-    $mocked_base = \Mockery::mock(FacebookWordpressTestBase::class);
+    $mocked_base = \Mockery::mock('alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
     $mocked_base->shouldReceive('addPixelFireForHook')
-      ->with($hook_name, $inject_function);
+      ->with(array(
+        'hook_name' => 'wpsc_before_shopping_cart_page',
+        'classname' => FacebookWordpressWPECommerce::class,
+        'inject_function' => 'injectInitiateCheckoutEvent'))
+      ->once();
     // Purchase
     \WP_Mock::expectActionAdded('wpsc_transaction_results_shutdown',
       array(FacebookWordpressWPECommerce::class, 'injectPurchaseEvent'), 11, 3);

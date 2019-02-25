@@ -16,13 +16,25 @@ namespace FacebookPixelPlugin\Tests\Integration;
 use FacebookPixelPlugin\Integration\FacebookWordpressContactForm7;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ *
+ * All tests in this test class should be run in seperate PHP process to
+ * make sure tests are isolated.
+ * Stop preserving global state from the parent process.
+ */
 final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
     $hook_name = 'hook';
     $inject_function = 'inject_function';
-    $mocked_base = \Mockery::mock(FacebookWordpressTestBase::class);
+    $mocked_base = \Mockery::mock('alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
     $mocked_base->shouldReceive('addPixelFireForHook')
-      ->with($hook_name, $inject_function);
+      ->with(array(
+        'hook_name' => 'wpcf7_contact_form',
+        'classname' => FacebookWordpressContactForm7::class,
+        'inject_function' => 'injectLeadEvent'))
+      ->once();
     FacebookWordpressContactForm7::injectPixelCode();
   }
 

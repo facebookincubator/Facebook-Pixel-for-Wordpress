@@ -27,17 +27,14 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
   const TRACKING_NAME = 'formidable-lite';
 
   public static function injectPixelCode() {
-    add_action(
-      'frm_after_create_entry',
-      array(__CLASS__, 'injectLeadEventHook'),
-      30, 2);
+    self::addPixelFireForHook(array(
+      'hook_name' => 'frm_after_create_entry',
+      'classname' => __CLASS__,
+      'inject_function' => 'injectLeadEvent',
+      'priority' => 30));
   }
 
-  public static function injectLeadEventHook($entry_id, $form_id) {
-    add_action('wp_footer', array(__CLASS__, 'injectLeadEvent'), 11);
-  }
-
-  public static function injectLeadEvent() {
+  public static function injectLeadEvent($entry_id, $form_id) {
     if (FacebookPluginUtils::isAdmin()) {
       return;
     }

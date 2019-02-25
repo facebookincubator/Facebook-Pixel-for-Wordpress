@@ -27,19 +27,14 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
   const TRACKING_NAME = 'gravity-forms';
 
   public static function injectPixelCode() {
-    add_action(
-      'gform_after_submission',
-      array(__CLASS__, 'injectLeadEventHook'),
-      10, 2);
+    self::addPixelFireForHook(array(
+      'hook_name' => 'gform_after_submission',
+      'classname' => __CLASS__,
+      'inject_function' => 'injectLeadEvent',
+      'priority' => 30));
   }
 
-  public static function injectLeadEventHook($entry, $form) {
-    add_action(
-      'wp_footer', array(__CLASS__, 'injectLeadEvent'),
-      11);
-  }
-
-  public static function injectLeadEvent() {
+  public static function injectLeadEvent($entry, $form) {
     if (FacebookPluginUtils::isAdmin()) {
       return;
     }

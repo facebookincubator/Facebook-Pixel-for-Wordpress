@@ -26,9 +26,6 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
   const PLUGIN_FILE = 'easy-digital-downloads/easy-digital-downloads.php';
   const TRACKING_NAME = 'easy-digital-downloads';
 
-  private static $downloadID;
-  private static $paymentID;
-
   private static $addToCartJS = "
 jQuery(document).ready(function ($) {
   $('.edd-add-to-cart').click(function (e) {
@@ -64,38 +61,31 @@ jQuery(document).ready(function ($) {
 
   public static function injectPixelCode() {
     // AddToCart
-    add_action(
-      'edd_after_download_content',
-      array(__CLASS__, 'injectAddToCartEventHook'),
-      11);
+    self::addPixelFireForHook(array(
+      'hook_name' => 'edd_after_download_content',
+      'classname' => __CLASS__,
+      'inject_function' => 'injectAddToCartEvent'));
 
     // InitiateCheckout
     self::addPixelFireForHook(array(
-        'hook_name' => 'edd_after_checkout_cart',
-        'classname' => __CLASS__,
-        'inject_function' => 'injectInitiateCheckoutEvent'));
+      'hook_name' => 'edd_after_checkout_cart',
+      'classname' => __CLASS__,
+      'inject_function' => 'injectInitiateCheckoutEvent'));
 
     // Purchase
-    add_action(
-      'edd_payment_receipt_after',
-      array(__CLASS__, 'injectPurchaseEventHook'),
-      11);
+    self::addPixelFireForHook(array(
+      'hook_name' => 'edd_payment_receipt_after',
+      'classname' => __CLASS__,
+      'inject_function' => 'injectPurchaseEvent'));
 
     // ViewContent
-    add_action(
-      'edd_after_download_content',
-      array(__CLASS__, 'injectViewContentEventHook'),
-      11);
+    self::addPixelFireForHook(array(
+      'hook_name' => 'edd_after_download_content',
+      'classname' => __CLASS__,
+      'inject_function' => 'injectViewContentEvent'));
   }
 
-  public static function injectAddToCartEventHook($download_id) {
-    add_action(
-      'wp_footer',
-      array(__CLASS__, 'injectAddToCartEvent'),
-      11);
-  }
-
-  public static function injectAddToCartEvent() {
+  public static function injectAddToCartEvent($download_id) {
     if (FacebookPluginUtils::isAdmin()) {
       return;
     }
@@ -138,21 +128,12 @@ jQuery(document).ready(function ($) {
       $code);
   }
 
-  public static function injectPurchaseEventHook($payment) {
-    static::$paymentID = $payment->ID;
-
-    add_action(
-      'wp_footer',
-      array(__CLASS__, 'injectPurchaseEvent'),
-      11);
-  }
-
-  public static function injectPurchaseEvent() {
-    if (FacebookPluginUtils::isAdmin() || empty(static::$paymentID)) {
+  public static function injectPurchaseEvent($payment) {
+    if (FacebookPluginUtils::isAdmin() || empty($payment->ID)) {
       return;
     }
 
-    $payment_meta = edd_get_payment_meta(static::$paymentID);
+    $payment_meta = edd_get_payment_meta($payment->ID);
 
     $content_ids = array();
     $value = 0;
@@ -177,33 +158,24 @@ jQuery(document).ready(function ($) {
       $code);
   }
 
-  public static function injectViewContentEventHook($download_id) {
-    static::$downloadID = $download_id;
-
-    add_action(
-      'wp_footer',
-      array(__CLASS__, 'injectViewContentEvent'),
-      11);
-  }
-
-  public static function injectViewContentEvent() {
-    if (FacebookPluginUtils::isAdmin() || empty(static::$downloadID)) {
+  public static function injectViewContentEvent($download_id) {
+    if (FacebookPluginUtils::isAdmin() || empty($download_id)) {
       return;
     }
 
     $currency = edd_get_currency();
-    if (get_post_meta(static::$downloadID, '_variable_pricing', true)) { // variable price
-      $prices = get_post_meta(static::$downloadID, 'edd_variable_prices', true);
+    if (get_post_meta($download_id, '_variable_pricing', true)) { // variable price
+      $prices = get_post_meta($download_id, 'edd_variable_prices', true);
       $price = array_shift($prices);
       $value = $price['amount'];
     } else {
-      $value = get_post_meta(static::$downloadID, 'edd_price', true);
+      $value = get_post_meta($download_id, 'edd_price', true);
     }
     if (!$value) {
       $value = 0;
     }
     $param = array(
-      'content_ids' => array(static::$downloadID),
+      'content_ids' => array($download_id),
       'content_type' => 'product',
       'currency' => $currency,
       'value' => $value,

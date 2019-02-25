@@ -16,20 +16,24 @@ namespace FacebookPixelPlugin\Tests\Integration;
 use FacebookPixelPlugin\Integration\FacebookWordpressWPForms;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ *
+ * All tests in this test class should be run in seperate PHP process to
+ * make sure tests are isolated.
+ * Stop preserving global state from the parent process.
+ */
 final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
-    \WP_Mock::expectActionAdded('wpforms_frontend_output',
-      array(FacebookWordpressWPForms::class, 'injectLeadEventHook'), 11);
-    FacebookWordpressWPForms::injectPixelCode();
-    $this->assertHooksAdded();
-  }
+    $mocked_base = \Mockery::mock('alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
+    $mocked_base->shouldReceive('addPixelFireForHook')
+      ->with(array(
+        'hook_name' => 'wpforms_frontend_output',
+        'classname' => FacebookWordpressWPForms::class,
+        'inject_function' => 'injectLeadEvent'));
 
-  public function testInjectLeadEventHook() {
-    \WP_Mock::expectActionAdded('wp_footer',
-      array(FacebookWordpressWPForms::class, 'injectLeadEvent'),
-      11);
-    FacebookWordpressWPForms::injectLeadEventHook('1234');
-    $this->assertHooksAdded();
+    FacebookWordpressWPForms::injectPixelCode();
   }
 
   public function testInjectLeadEventWithoutAdmin() {
@@ -39,14 +43,14 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     $mocked_fbpixel->shouldReceive('getPixelLeadCode')
       ->with(array(), FacebookWordpressWPForms::TRACKING_NAME, false)
       ->andReturn('wpforms-form');
-    FacebookWordpressWPForms::injectLeadEvent();
+    FacebookWordpressWPForms::injectLeadEvent('mock_form_data');
     $this->expectOutputRegex('/wpforms-form[\s\S]+End Facebook Pixel Event Code/');
   }
 
   public function testInjectLeadEventWithAdmin() {
     parent::mockIsAdmin(true);
 
-    FacebookWordpressWPForms::injectLeadEvent();
+    FacebookWordpressWPForms::injectLeadEvent('mock_form_data');
     $this->expectOutputString("");
   }
 }

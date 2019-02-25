@@ -37,20 +37,13 @@ jQuery(document).ready(function ($) {
 ";
 
   public static function injectPixelCode() {
-    add_action(
-      'wpforms_frontend_output',
-      array(__CLASS__, 'injectLeadEventHook'),
-      11);
+    self::addPixelFireForHook(array(
+      'hook_name' => 'wpforms_frontend_output',
+      'classname' => __CLASS__,
+      'inject_function' => 'injectLeadEvent'));
   }
 
-  public static function injectLeadEventHook($form_data) {
-    add_action(
-      'wp_footer',
-      array(__CLASS__, 'injectLeadEvent'),
-      11);
-  }
-
-  public static function injectLeadEvent() {
+  public static function injectLeadEvent($form_data) {
     if (FacebookPluginUtils::isAdmin()) {
       return;
     }

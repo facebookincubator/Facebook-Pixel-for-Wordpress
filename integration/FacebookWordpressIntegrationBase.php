@@ -19,6 +19,8 @@ namespace FacebookPixelPlugin\Integration;
 
 defined('ABSPATH') or die('Direct access not allowed');
 
+use ReflectionMethod;
+
 abstract class FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = '';
   const TRACKING_NAME = '';
@@ -35,14 +37,27 @@ abstract class FacebookWordpressIntegrationBase {
     $classname = $pixel_fire_for_hook_params['classname'];
     $inject_function = $pixel_fire_for_hook_params['inject_function'];
     $priority = isset($pixel_fire_for_hook_params['priority'])
-      ? $pixel_fire_for_hook_params['priority']
-      : 11;
-    add_action(
-      $hook_name, function () use ($classname, $inject_function) {
-        add_action('wp_footer', array(
-          // get derived class in base class
-          $classname, $inject_function), 11);
-      },
-      $priority);
+    ? $pixel_fire_for_hook_params['priority']
+    : 11;
+
+    $user_function = array(
+      // get derived class in base class
+      $classname,
+      $inject_function);
+    $reflection = new ReflectionMethod($classname, $inject_function);
+    $argc = $reflection->getNumberOfParameters();
+    $argv = $reflection->getParameters();
+
+    $callback = function () use ($user_function, $argv) {
+      $hook_wp_footer = function () use ($user_function, $argv) {
+        \call_user_func_array($user_function, $argv);
+      };
+      add_action(
+        'wp_footer',
+        $hook_wp_footer,
+        11);
+    };
+
+    add_action($hook_name, $callback, $priority, $argc);
   }
 }

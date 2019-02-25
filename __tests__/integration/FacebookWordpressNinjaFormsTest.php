@@ -16,6 +16,14 @@ namespace FacebookPixelPlugin\Tests\Integration;
 use FacebookPixelPlugin\Integration\FacebookWordpressNinjaForms;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ *
+ * All tests in this test class should be run in seperate PHP process to
+ * make sure tests are isolated.
+ * Stop preserving global state from the parent process.
+ */
 final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
     \WP_Mock::expectActionAdded('ninja_forms_submission_actions', array(FacebookWordpressNinjaForms::class, 'injectLeadEvent'),

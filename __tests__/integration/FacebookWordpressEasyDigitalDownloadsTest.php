@@ -16,83 +16,55 @@ namespace FacebookPixelPlugin\Tests\Integration;
 use FacebookPixelPlugin\Integration\FacebookWordpressEasyDigitalDownloads;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ *
+ * All tests in this test class should be run in seperate PHP process to
+ * make sure tests are isolated.
+ * Stop preserving global state from the parent process.
+ */
 final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressTestBase {
 
   public function testInjectPixelCode() {
-    // AddToCart
-    \WP_Mock::expectActionAdded('edd_after_download_content',
-      array(FacebookWordpressEasyDigitalDownloads::class, 'injectAddToCartEventHook'),
-      11);
+    $eventHookMap = array(
+      'injectAddToCartEvent' => 'edd_after_download_content',
+      'injectInitiateCheckoutEvent' => 'edd_after_checkout_cart',
+      'injectPurchaseEvent' => 'edd_payment_receipt_after',
+      'injectViewContentEvent' => 'edd_after_download_content',
+    );
 
-    // InitiateCheckout
-    $hook_name = 'hook';
-    $inject_function = 'inject_function';
-    $mocked_base = \Mockery::mock(FacebookWordpressTestBase::class);
-    $mocked_base->shouldReceive('addPixelFireForHook')
-      ->with($hook_name, $inject_function);
-
-    // Purchase
-    \WP_Mock::expectActionAdded('edd_payment_receipt_after',
-      array(FacebookWordpressEasyDigitalDownloads::class, 'injectPurchaseEventHook'),
-      11);
-
-    // ViewContent
-    \WP_Mock::expectActionAdded('edd_after_download_content',
-      array(FacebookWordpressEasyDigitalDownloads::class, 'injectViewContentEventHook'),
-      11);
+    $mocked_base = \Mockery::mock('alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
+    foreach ($eventHookMap as $event => $hook) {
+      $mocked_base->shouldReceive('addPixelFireForHook')
+        ->with(array(
+          'hook_name' => $hook,
+          'classname' => FacebookWordpressEasyDigitalDownloads::class,
+          'inject_function' => $event))
+        ->once();
+    }
 
     FacebookWordpressEasyDigitalDownloads::injectPixelCode();
-
-    $this->assertHooksAdded();
-  }
-
-  public function testiInjectAddToCartEventHook() {
-    \WP_Mock::expectActionAdded('wp_footer',
-      array(FacebookWordpressEasyDigitalDownloads::class, 'injectAddToCartEvent'),
-      11);
-
-    FacebookWordpressEasyDigitalDownloads::injectAddToCartEventHook('1234');
-
-    $this->assertHooksAdded();
-  }
-
-  public function testInjectPurchaseEventHook() {
-    \WP_Mock::expectActionAdded('wp_footer',
-      array(FacebookWordpressEasyDigitalDownloads::class, 'injectPurchaseEvent'),
-      11);
-
-    FacebookWordpressEasyDigitalDownloads::injectPurchaseEventHook(
-      (object) array('ID' => '1234'));
-
-    $this->assertHooksAdded();
-  }
-
-  public function testInjectViewContentEventHook() {
-    \WP_Mock::expectActionAdded('wp_footer',
-      array(FacebookWordpressEasyDigitalDownloads::class, 'injectViewContentEvent'),
-      11);
-
-    FacebookWordpressEasyDigitalDownloads::injectViewContentEventHook('1234');
-
-    $this->assertHooksAdded();
   }
 
   public function testInjectAddToCartEventWithoutAdmin() {
     self::mockIsAdmin(false);
 
+    $download_id = '1234';
     $mocked_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
     $mocked_fbpixel->shouldReceive('getPixelAddToCartCode')
       ->with('param', FacebookWordpressEasyDigitalDownloads::TRACKING_NAME, false)
       ->andReturn('edd-add-to-cart');
 
-    FacebookWordpressEasyDigitalDownloads::injectAddToCartEvent();
+    FacebookWordpressEasyDigitalDownloads::injectAddToCartEvent($download_id);
     $this->expectOutputRegex('/edd-add-to-cart[\s\S]+End Facebook Pixel Event Code/');
   }
 
   public function testInjectAddToCartEventWithAdmin() {
     self::mockIsAdmin(true);
 
-    FacebookWordpressEasyDigitalDownloads::injectAddToCartEvent();
+    $download_id = '1234';
+    FacebookWordpressEasyDigitalDownloads::injectAddToCartEvent($download_id);
     $this->expectOutputString("");
   }
 
@@ -105,15 +77,16 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 
   public function testInjectPurchaseEventWithAdmin() {
     self::mockIsAdmin(true);
-
-    FacebookWordpressEasyDigitalDownloads::injectPurchaseEvent();
+    $payment = array('ID' => '1234');
+    FacebookWordpressEasyDigitalDownloads::injectPurchaseEvent($payment);
     $this->expectOutputString("");
   }
 
   public function testInjectViewContentEventWithAdmin() {
     self::mockIsAdmin(true);
 
-    FacebookWordpressEasyDigitalDownloads::injectViewContentEvent();
+    $download_id = '1234';
+    FacebookWordpressEasyDigitalDownloads::injectViewContentEvent($download_id);
     $this->expectOutputString("");
   }
 }

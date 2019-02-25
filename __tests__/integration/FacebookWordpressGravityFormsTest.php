@@ -16,20 +16,26 @@ namespace FacebookPixelPlugin\Tests\Integration;
 use FacebookPixelPlugin\Integration\FacebookWordpressGravityForms;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ *
+ * All tests in this test class should be run in seperate PHP process to
+ * make sure tests are isolated.
+ * Stop preserving global state from the parent process.
+ */
 final class FacebookWordpressGravityFormsTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
-    \Wp_Mock::expectActionAdded('gform_after_submission',
-      array(FacebookWordpressGravityForms::class, 'injectLeadEventHook'), 10, 2);
+    $mocked_base = \Mockery::mock('alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
+    $mocked_base->shouldReceive('addPixelFireForHook')
+      ->with(array(
+        'hook_name' => 'gform_after_submission',
+        'classname' => FacebookWordpressGravityForms::class,
+        'inject_function' => 'injectLeadEvent',
+        'priority' => 30))
+      ->once();
 
     FacebookWordpressGravityForms::injectPixelCode();
-    $this->assertHooksAdded();
-  }
-
-  public function testInjectLeadEventHook() {
-    \WP_Mock::expectActionAdded('wp_footer',
-      array(FacebookWordpressGravityForms::class, 'injectLeadEvent'), 11);
-    FacebookWordpressGravityForms::injectLeadEventHook('mock_entry', 'mock_form');
-    $this->assertHooksAdded();
   }
 
   public function testInjectLeadEventWithoutAdmin() {
@@ -39,14 +45,14 @@ final class FacebookWordpressGravityFormsTest extends FacebookWordpressTestBase 
     $mock_fbpixel->shouldReceive('getPixelLeadCode')
       ->with(array(), FacebookWordpressGravityForms::TRACKING_NAME, false)
       ->andReturn('gravityforms');
-    FacebookWordpressGravityForms::injectLeadEvent();
+    FacebookWordpressGravityForms::injectLeadEvent('mock_entry', 'mock_form');
     $this->expectOutputRegex('/script[\s\S]+gravityforms/');
   }
 
   public function testInjectLeadEventWithAdmin() {
     self::mockIsAdmin(true);
 
-    FacebookWordpressGravityForms::injectLeadEvent();
+    FacebookWordpressGravityForms::injectLeadEvent('mock_entry', 'mock_form');
     $this->expectOutputString("");
   }
 }

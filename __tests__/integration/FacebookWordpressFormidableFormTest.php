@@ -16,20 +16,26 @@ namespace FacebookPixelPlugin\Tests\Integration;
 use FacebookPixelPlugin\Integration\FacebookWordpressFormidableForm;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ *
+ * All tests in this test class should be run in seperate PHP process to
+ * make sure tests are isolated.
+ * Stop preserving global state from the parent process.
+ */
 final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
-    \Wp_Mock::expectActionAdded('frm_after_create_entry',
-      array(FacebookWordpressFormidableForm::class, 'injectLeadEventHook'), 30, 2);
+    $mocked_base = \Mockery::mock('alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
+    $mocked_base->shouldReceive('addPixelFireForHook')
+      ->with(array(
+        'hook_name' => 'frm_after_create_entry',
+        'classname' => FacebookWordpressFormidableForm::class,
+        'inject_function' => 'injectLeadEvent',
+        'priority' => 30))
+      ->once();
 
     FacebookWordpressFormidableForm::injectPixelCode();
-    $this->assertHooksAdded();
-  }
-
-  public function testInjectLeadEventHook() {
-    \WP_Mock::expectActionAdded('wp_footer',
-      array(FacebookWordpressFormidableForm::class, 'injectLeadEvent'), 11);
-    FacebookWordpressFormidableForm::injectLeadEventHook('mock_entry_id', 'mock_form_id');
-    $this->assertHooksAdded();
   }
 
   public function testInjectLeadEventWithouAdmin() {
@@ -39,14 +45,14 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
     $mock_fbpixel->shouldReceive('getPixelLeadCode')
       ->with(array(), FacebookWordpressFormidableForm::TRACKING_NAME, false)
       ->andReturn('formidable-lite');
-    FacebookWordpressFormidableForm::injectLeadEvent();
+    FacebookWordpressFormidableForm::injectLeadEvent('mock_entry_id', 'mock_form_id');
     $this->expectOutputRegex('/script[\s\S]+formidable-lite/');
   }
 
   public function testInjectLeadEventWithAdmin() {
     self::mockIsAdmin(true);
 
-    FacebookWordpressFormidableForm::injectLeadEvent();
+    FacebookWordpressFormidableForm::injectLeadEvent('mock_entry_id', 'mock_form_id');
     $this->expectOutputString("");
   }
 }
