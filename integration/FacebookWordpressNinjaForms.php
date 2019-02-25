@@ -26,62 +26,45 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'ninja-forms/ninja-forms.php';
   const TRACKING_NAME = 'ninja-forms';
 
-  private static $formID;
-
-  private static $leadJS = "
-jQuery(document).ready(function($) {
-  var facebookWordpressNinjaFormsController = Marionette.Object.extend({
-    initialize: function() {
-      this.listenTo(Backbone.Radio.channel('form-' + '%s'), 'submit:response', this.actionSubmit);
-    },
-    actionSubmit: function(response) {
-      if (response.data && response.data.fields) {
-        %s
-      }
-    },
-  });
-
-  new facebookWordpressNinjaFormsController();
-});
-";
-
   public static function injectPixelCode() {
     add_action(
-      'ninja_forms_display_after_form',
-      array(__CLASS__, 'injectLeadEventHook'),
-      11);
-  }
-
-  public static function injectLeadEventHook($form_id) {
-    static::$formID = $form_id;
-
-    // bug fixed for https://wordpress.org/support/topic/marionette-is-not-defined/
-    // using 90 here to make sure the Marionette is loaded
-    add_action(
-      'wp_footer',
+      'ninja_forms_submission_actions',
       array(__CLASS__, 'injectLeadEvent'),
-      90);
+      10, 2);
   }
 
-  public static function injectLeadEvent() {
+  public static function injectLeadEvent($actions, $form_data) {
     if (FacebookPluginUtils::isAdmin()) {
-      return;
+      return $actions;
     }
 
     $param = array();
-    $pixel_code = FacebookPixel::getPixelLeadCode($param, self::TRACKING_NAME, false);
-    $listener_code = sprintf(
-      self::$leadJS,
-      static::$formID,
+    $pixel_code = FacebookPixel::getPixelLeadCode($param, self::TRACKING_NAME, true);
+
+    $code = sprintf("
+  <!-- Facebook Pixel Event Code -->
+  %s
+  <!-- End Facebook Pixel Event Code -->
+        ",
       $pixel_code);
 
-    printf("
-<!-- Facebook Pixel Event Code -->
-<script>
-%s
-</script>
-<!-- End Facebook Pixel Event Code -->
-      ",
-      $listener_code);
+    foreach ($actions as $key => $action) {
+      if (!isset($action['settings']) || !isset($action['settings']['type'])) {
+        continue;
+      }
+
+      $type = $action['settings']['type'];
+      if (!is_string($type)) {
+        continue;
+      }
+
+      // inject code when form is submitted successfully
+      if ($type == 'successmessage') {
+        $action['settings']['success_msg'] .= $code;
+        $actions[$key] = $action;
+      }
+    }
+
+    return $actions;
   }
 }
