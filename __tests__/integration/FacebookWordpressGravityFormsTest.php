@@ -26,33 +26,30 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class FacebookWordpressGravityFormsTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
-    $mocked_base = \Mockery::mock('alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
-    $mocked_base->shouldReceive('addPixelFireForHook')
-      ->with(array(
-        'hook_name' => 'gform_after_submission',
-        'classname' => FacebookWordpressGravityForms::class,
-        'inject_function' => 'injectLeadEvent',
-        'priority' => 30))
-      ->once();
-
+    \WP_Mock::expectActionAdded('gform_confirmation', array(FacebookWordpressGravityForms::class, 'injectLeadEvent'),
+      10, 4);
     FacebookWordpressGravityForms::injectPixelCode();
+    $this->assertHooksAdded();
   }
 
   public function testInjectLeadEventWithoutAdmin() {
     self::mockIsAdmin(false);
 
+    $mock_confirm = 'mock_msg';
     $mock_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
     $mock_fbpixel->shouldReceive('getPixelLeadCode')
       ->with(array(), FacebookWordpressGravityForms::TRACKING_NAME, false)
       ->andReturn('gravityforms');
-    FacebookWordpressGravityForms::injectLeadEvent('mock_entry', 'mock_form');
-    $this->expectOutputRegex('/script[\s\S]+gravityforms/');
+
+    $mock_confirm = FacebookWordpressGravityForms::injectLeadEvent($mock_confirm, 'mock_form', 'mock_entry', true);
+    $this->assertRegexp('/script[\s\S]+gravityforms/', $mock_confirm);
   }
 
   public function testInjectLeadEventWithAdmin() {
     self::mockIsAdmin(true);
 
-    FacebookWordpressGravityForms::injectLeadEvent('mock_entry', 'mock_form');
-    $this->expectOutputString("");
+    $mock_confirm = 'mock_msg';
+    $mock_confirm = FacebookWordpressGravityForms::injectLeadEvent($mock_confirm, 'mock_form', 'mock_entry', true);
+    $this->assertEquals('mock_msg', $mock_confirm);
   }
 }
