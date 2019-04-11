@@ -76,7 +76,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
   public function testCannotRegisterUserInfoWithoutUsePII() {
     self::mockWpGetCurrentUser('1234');
 
-    self::mockGetOption();
+    self::mockGetOption('1234', '0');
     self::mockEscJs();
     \WP_Mock::expectActionAdded('init', array('FacebookPixelPlugin\\Core\\FacebookWordpressOptions', 'registerUserInfo'), 0);
     FacebookWordpressOptions::initialize();
@@ -101,16 +101,29 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
       FacebookPluginConfig::SOURCE . '-1.1-' . FacebookPluginConfig::PLUGIN_VERSION);
   }
 
-  private function mockGetOption($mock_pixel_id = '1234', $mock_use_pii = '0') {
+  public function testDefaultValuesAreCorrect() {
+    self::mockEscJs('');
+    self::mockGetOption();
+    \WP_Mock::expectActionAdded('init', array('FacebookPixelPlugin\\Core\\FacebookWordpressOptions', 'registerUserInfo'), 0);
+    FacebookWordpressOptions::initialize();
+
+    $pixel_id = FacebookWordpressOptions::getPixelId();
+    $use_pii = FacebookWordpressOptions::getUsePii();
+    $version_info = FacebookWordpressOptions::getVersionInfo();
+
+    $this->assertEquals($pixel_id, '');
+    $this->assertEquals($use_pii, '0');
+  }
+
+  private function mockGetOption($mock_pixel_id=null, $mock_use_pii=null) {
     \WP_Mock::userFunction('get_option', array(
-      'args' => array(FacebookPluginConfig::SETTINGS_KEY,
+      'return' =>
         array(
           FacebookPluginConfig::PIXEL_ID_KEY =>
-          is_null(FacebookPluginConfig::DEFAULT_PIXEL_ID) ? '' : FacebookPluginConfig::DEFAULT_PIXEL_ID,
-          FacebookPluginConfig::USE_PII_KEY => FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT,
-        )),
-      'return' => array(FacebookPluginConfig::PIXEL_ID_KEY => $mock_pixel_id,
-        FacebookPluginConfig::USE_PII_KEY => $mock_use_pii),
+            is_null($mock_pixel_id) ? FacebookWordpressOptions::getDefaultPixelID() : $mock_pixel_id,
+          FacebookPluginConfig::USE_PII_KEY =>
+            is_null($mock_use_pii) ? FacebookWordpressOptions::getDefaultUsePIIKey() : $mock_use_pii,
+        ),
     ));
   }
 

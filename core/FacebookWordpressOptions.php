@@ -34,13 +34,22 @@ class FacebookWordpressOptions {
     return self::$options;
   }
 
+  public static function getDefaultPixelID() {
+    return is_null(FacebookPluginConfig::DEFAULT_PIXEL_ID)
+              ? '' : FacebookPluginConfig::DEFAULT_PIXEL_ID;
+  }
+
+  public static function getDefaultUsePIIKey() {
+    return (is_null(FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT)
+      || !FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT) ? '0' : '1';
+  }
+
   private static function setOptions() {
     self::$options = \get_option(
       FacebookPluginConfig::SETTINGS_KEY,
       array(
-        FacebookPluginConfig::PIXEL_ID_KEY =>
-          is_null(FacebookPluginConfig::DEFAULT_PIXEL_ID) ? '' : FacebookPluginConfig::DEFAULT_PIXEL_ID,
-        FacebookPluginConfig::USE_PII_KEY => FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT,
+        FacebookPluginConfig::PIXEL_ID_KEY => self::getDefaultPixelID(),
+        FacebookPluginConfig::USE_PII_KEY => self::getDefaultUsePIIKey(),
       ));
     // we need esc_js because the id is set through the form
     self::$options[FacebookPluginConfig::PIXEL_ID_KEY] =
