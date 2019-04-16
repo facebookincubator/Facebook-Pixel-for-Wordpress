@@ -112,7 +112,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
     $version_info = FacebookWordpressOptions::getVersionInfo();
 
     $this->assertEquals($pixel_id, '');
-    $this->assertEquals($use_pii, '0');
+    $this->assertEquals($use_pii, '1');
   }
 
   private function mockGetOption($mock_pixel_id=null, $mock_use_pii=null) {

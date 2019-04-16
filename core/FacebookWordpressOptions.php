@@ -39,9 +39,10 @@ class FacebookWordpressOptions {
               ? '' : FacebookPluginConfig::DEFAULT_PIXEL_ID;
   }
 
+  // Default is on for unset config
   public static function getDefaultUsePIIKey() {
-    return (is_null(FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT)
-      || !FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT) ? '0' : '1';
+    return (!is_null(FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT)
+      && !FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT) ? '0' : '1';
   }
 
   private static function setOptions() {
