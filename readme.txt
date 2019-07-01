@@ -16,12 +16,15 @@ Grow your business with Official Facebook Pixel!
 This plugin will install a Facebook Pixel for your page. There is also built in support for other WordPress plugins. The Official Facebook Pixel allows you to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase. Tracking lower funnel events can help you understand the actions people are taking on your website. You can then use this information to make adjustments accordingly in your advertising campaigns.
 
 Current plugins that we supports:
+* Caldera Forms
 * Contact Form 7
 * Easy Digital Downloads
-* Ninja Forms
-* WPForms
+* Formidable Forms
+* Gravity Forms
 * MailChimp for WordPress
+* Ninja Forms
 * WP eCommerce
+* WPForms
 
 == Installation ==
 __To install from your WordPress site__ <br />
@@ -42,7 +45,7 @@ You can find more information on the [Facebook Pixel](https://www.facebook.com/b
 You can refer to [this page](https://www.facebook.com/business/help/881403525362441?helpref=faq_content)
 
 = Where can I find support? =
-If you get stuck, or have any questions, you can ask for help in the [Official Facebook Pixel plugin forum](https://wordpress.org/support/plugin/official-facebook-pixel). If you would like to file a bug, please use the Facebook Bug tool found [here](https://developers.facebook.com/support/bugs/).
+If you get stuck, or have any questions, you can ask for help in the [Official Facebook Pixel plugin forum](https://wordpress.org/support/plugin/official-facebook-pixel).
 
 = I am a developer. Can I help improve the plugin? =
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
