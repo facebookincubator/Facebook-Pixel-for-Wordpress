@@ -30,12 +30,12 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
     add_action(
       'gform_confirmation',
       array(__CLASS__, 'injectLeadEvent'),
-      10, 4);
+      99, 4);
   }
 
-  public static function injectLeadEvent($confimation, $form, $entry, $ajax) {
+  public static function injectLeadEvent($confirmation, $form, $entry, $ajax) {
     if (FacebookPluginUtils::isAdmin()) {
-      return $confimation;
+      return $confirmation;
     }
 
     $pixel_code = FacebookPixel::getPixelLeadCode(array(), self::TRACKING_NAME, false);
@@ -47,7 +47,19 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
     <!-- End Facebook Pixel Event Code -->
     ", $pixel_code);
 
-    $confimation .= $code;
-    return $confimation;
+    if (is_string($confirmation)) {
+      $confirmation .= $code;
+    } elseif ( is_array($confirmation) && isset($confirmation['redirect'])) {
+      $redirect_code = sprintf("
+    <!-- Facebook Pixel Gravity Forms Redirect Code -->
+    <script>
+    document.location.href=%s
+    </script>
+    <!-- End Facebook Pixel Gravity Forms Redirect Code -->
+    ", json_encode($confirmation['redirect']));
+      $confirmation = $code . $redirect_code;
+    }
+
+    return $confirmation;
   }
 }
