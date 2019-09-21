@@ -48,16 +48,15 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
     ", $pixel_code);
 
     if (is_string($confirmation)) {
-      $confirmation .= $code;
+        $confirmation .= $code;
     } elseif ( is_array($confirmation) && isset($confirmation['redirect'])) {
-      $redirect_code = sprintf("
-    <!-- Facebook Pixel Gravity Forms Redirect Code -->
-    <script>
-    document.location.href=%s
-    </script>
-    <!-- End Facebook Pixel Gravity Forms Redirect Code -->
-    ", json_encode($confirmation['redirect']));
-      $confirmation = $code . $redirect_code;
+        $redirect_code = sprintf("
+            <!-- Facebook Pixel Gravity Forms Redirect Code -->
+            <script>%sdocument.location.href=%s;%s</script>
+            <!-- End Facebook Pixel Gravity Forms Redirect Code -->
+            ", apply_filters('gform_cdata_open', ''), defined('JSON_HEX_TAG') ? json_encode($confirmation['redirect'], JSON_HEX_TAG) : json_encode($confirmation['redirect']), apply_filters('gform_cdata_close', '')
+		);
+        $confirmation = $code . $redirect_code;
     }
 
     return $confirmation;
