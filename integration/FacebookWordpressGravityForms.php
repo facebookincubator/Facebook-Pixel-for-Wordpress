@@ -27,7 +27,7 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
   const TRACKING_NAME = 'gravity-forms';
 
   public static function injectPixelCode() {
-    add_action(
+    add_filter(
       'gform_confirmation',
       array(__CLASS__, 'injectLeadEvent'),
       99, 4);
