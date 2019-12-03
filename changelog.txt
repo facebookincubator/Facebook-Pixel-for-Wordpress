@@ -1,4 +1,8 @@
 *** Facebook for WordPress Changelog ***
+2019-12-02 version 1.8.0
+* Support for WordPress 5.3
+* Fix Gravity Forms confirmation redirect
+
 2019-02-18 version 1.7.25
 * remove get_called_class from the codebase
 

@@ -2,9 +2,9 @@
 Contributors: facebook
 Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, facebook retargeting, facebook standard events
 Requires at least: 4.4
-Tested up to: 5.0.1
+Tested up to: 5.3
 Requires PHP: 5.3
-Stable tag: 1.7.25
+Stable tag: 1.8.0
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,7 +15,7 @@ Grow your business with Official Facebook Pixel!
 
 This plugin will install a Facebook Pixel for your page. There is also built in support for other WordPress plugins. The Official Facebook Pixel allows you to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase. Tracking lower funnel events can help you understand the actions people are taking on your website. You can then use this information to make adjustments accordingly in your advertising campaigns.
 
-Current plugins that we supports:
+Current plugins that we support:
 * Caldera Forms
 * Contact Form 7
 * Easy Digital Downloads
@@ -51,7 +51,7 @@ If you get stuck, or have any questions, you can ask for help in the [Official F
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
-= 2019-02-18 version 1.7.25 =
+= 2019-02-18 version 1.8.0 =
 * remove get_called_class from the codebase
 
 = 2019-02-10 version 1.7.24 =
