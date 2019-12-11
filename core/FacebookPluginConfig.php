@@ -43,7 +43,7 @@ class FacebookPluginConfig {
   const USE_S2S_KEY = 'use_s2s';
   const DEFAULT_ACCESS_TOKEN = null;
   const ACCESS_TOKEN_KEY = 'access_token';
-  const USE_S2S_DEFAULT = false;
+  const USE_S2S_DEFAULT = null;
 
   const IS_PIXEL_RENDERED = 'is_pixel_rendered';
   const IS_NOSCRIPT_RENDERED = 'is_noscript_rendered';

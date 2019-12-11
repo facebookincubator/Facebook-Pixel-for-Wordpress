@@ -51,7 +51,8 @@ class FacebookWordpressOptions {
   }
 
   public static function getDefaultUseS2SKey() {
-    return !FacebookPluginConfig::USE_S2S_DEFAULT ? '0' : '1';
+    return (!is_null(FacebookPluginConfig::USE_S2S_DEFAULT)
+      && !FacebookPluginConfig::USE_S2S_DEFAULT) ? '0' : '1';
   }
 
   private static function setOptions() {
