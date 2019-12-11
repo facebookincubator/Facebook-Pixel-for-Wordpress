@@ -88,6 +88,18 @@ class FacebookWordpressSettingsPage {
       array($this, 'usePiiFormField'),
       FacebookPluginConfig::ADMIN_MENU_SLUG,
       FacebookPluginConfig::ADMIN_SECTION_ID);
+    add_settings_field(
+      FacebookPluginConfig::USE_S2S_KEY,
+      'Use Server-Side API?',
+      array($this, 'useS2SFormField'),
+      FacebookPluginConfig::ADMIN_MENU_SLUG,
+      FacebookPluginConfig::ADMIN_SECTION_ID);
+    add_settings_field(
+      FacebookPluginConfig::ACCESS_TOKEN_KEY,
+      'Access Token',
+      array($this, 'accessTokenFormField'),
+      FacebookPluginConfig::ADMIN_MENU_SLUG,
+      FacebookPluginConfig::ADMIN_SECTION_ID);
   }
 
   public function sanitizeInput($input) {
@@ -130,6 +142,28 @@ class FacebookWordpressSettingsPage {
       $description);
   }
 
+
+  public function accessTokenFormField() {
+    $description = esc_html__(
+      '',
+      FacebookPluginConfig::TEXT_DOMAIN);
+
+    $access_token = FacebookWordpressOptions::getAccessToken();
+    $existing_access_token_value = isset($access_token) ? esc_attr($access_token) : '';
+    $input_name = FacebookPluginConfig::SETTINGS_KEY .
+                  '[' . FacebookPluginConfig::ACCESS_TOKEN_KEY . ']';
+
+    printf(
+      '
+<textarea name="%s" id="%s" rows=4 cols=60 maxlength=250>%s</textarea>
+<p class="description">%s</p>
+      ',
+      $input_name,
+      FacebookPluginConfig::ACCESS_TOKEN_KEY,
+      $existing_access_token_value,
+      $description);
+  }
+
   public function usePiiFormField() {
     $link = sprintf(
       wp_kses(
@@ -163,6 +197,44 @@ class FacebookWordpressSettingsPage {
         FacebookPluginConfig::TEXT_DOMAIN),
       $link);
   }
+
+    // Allow to the Plugin to send S2S Events
+   public function useS2SFormField() {
+    $link = sprintf(
+      wp_kses(
+        __(
+          'An access token is required to use the server-side API.<br>
+          <a href="%s" target="_blank"> Generate Access Token</a>',
+          FacebookPluginConfig::TEXT_DOMAIN),
+        array('a' => array('href' => array(), 'target' => array()))),
+      esc_url(FacebookPluginConfig::ADMIN_S2S_URL));
+    printf(
+      '
+<label for="%s">
+  <input
+    type="checkbox"
+    name="%s"
+    id="%s"
+    value="1"
+      ',
+      FacebookPluginConfig::USE_S2S_KEY,
+      FacebookPluginConfig::SETTINGS_KEY . '[' . FacebookPluginConfig::USE_S2S_KEY . ']',
+      FacebookPluginConfig::USE_S2S_KEY);
+    checked(1, FacebookWordpressOptions::getUseS2S());
+    printf(
+      '
+  />
+  %s
+</label>
+<p class="description">%s</p>
+      ',
+      esc_html__(
+        'Also send events directly from your web server to Facebook through the
+        server-side API. This can help you capture more events.',
+        FacebookPluginConfig::TEXT_DOMAIN),
+      $link);
+  }
+
 
   public function registerNotices() {
     // Update class field

@@ -32,6 +32,7 @@ class FacebookPluginConfig {
   const ADMIN_OPTION_GROUP = 'facebook_option_group';
   const ADMIN_PAGE_TITLE = 'Facebook Pixel Settings';
   const ADMIN_PRIVACY_URL = 'https://developers.facebook.com/docs/privacy/';
+  const ADMIN_S2S_URL = 'https://developers.facebook.com/docs/marketing-api/facebook-pixel/server-side-api';
   const ADMIN_SECTION_ID = 'facebook_settings_section';
 
   const DEFAULT_PIXEL_ID = null;
@@ -39,6 +40,10 @@ class FacebookPluginConfig {
   const SETTINGS_KEY = 'facebook_config';
   const USE_PII_KEY = 'use_pii';
   const USE_ADVANCED_MATCHING_DEFAULT = null;
+  const USE_S2S_KEY = 'use_s2s';
+  const DEFAULT_ACCESS_TOKEN = null;
+  const ACCESS_TOKEN_KEY = 'access_token';
+  const USE_S2S_DEFAULT = false;
 
   const IS_PIXEL_RENDERED = 'is_pixel_rendered';
   const IS_NOSCRIPT_RENDERED = 'is_noscript_rendered';

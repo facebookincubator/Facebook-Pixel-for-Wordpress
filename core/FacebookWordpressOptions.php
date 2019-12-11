@@ -39,10 +39,19 @@ class FacebookWordpressOptions {
               ? '' : FacebookPluginConfig::DEFAULT_PIXEL_ID;
   }
 
+  public static function getDefaultAccessToken() {
+    return is_null(FacebookPluginConfig::DEFAULT_ACCESS_TOKEN)
+              ? '' : FacebookPluginConfig::DEFAULT_ACCESS_TOKEN;
+  }
+
   // Default is on for unset config
   public static function getDefaultUsePIIKey() {
     return (!is_null(FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT)
       && !FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT) ? '0' : '1';
+  }
+
+  public static function getDefaultUseS2SKey() {
+    return !FacebookPluginConfig::USE_S2S_DEFAULT ? '0' : '1';
   }
 
   private static function setOptions() {
@@ -51,18 +60,32 @@ class FacebookWordpressOptions {
       array(
         FacebookPluginConfig::PIXEL_ID_KEY => self::getDefaultPixelID(),
         FacebookPluginConfig::USE_PII_KEY => self::getDefaultUsePIIKey(),
+        FacebookPluginConfig::USE_S2S_KEY => self::getDefaultUseS2SKey(),
+        FacebookPluginConfig::ACCESS_TOKEN_KEY => self::getDefaultAccessToken(),
       ));
+
     // we need esc_js because the id is set through the form
     self::$options[FacebookPluginConfig::PIXEL_ID_KEY] =
       esc_js(self::$options[FacebookPluginConfig::PIXEL_ID_KEY]);
+
+    self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY] =
+      esc_js(self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY]);
   }
 
   public static function getPixelId() {
     return self::$options[FacebookPluginConfig::PIXEL_ID_KEY];
   }
 
+  public static function getAccessToken() {
+    return self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY];
+  }
+
   public static function getUsePii() {
     return self::$options[FacebookPluginConfig::USE_PII_KEY];
+  }
+
+  public static function getUseS2S() {
+    return self::$options[FacebookPluginConfig::USE_S2S_KEY];
   }
 
   public static function getUserInfo() {
