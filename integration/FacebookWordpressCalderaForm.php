@@ -21,6 +21,10 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\FacebookWordPressOptions;
+use FacebookAds\Object\ServerSide\Event;
+use FacebookAds\Object\ServerSide\UserData;
 
 class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'caldera-forms/caldera-core.php';
@@ -38,6 +42,11 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
       return $out;
     }
 
+    if (FacebookWordpressOptions::getUseS2S()) {
+      $server_event = self::createServerEvent($form);
+      FacebookServerSideEvent::send($server_event);
+    }
+
     $param = array();
     $code = FacebookPixel::getPixelLeadCode($param, self::TRACKING_NAME, true);
     $code = sprintf("
@@ -49,5 +58,43 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
 
     $out['html'] .= $code;
     return $out;
+  }
+
+  private static function createServerEvent($form) {
+    $email = self::getEmail($form);
+    $first_name = self::getFirstName($form);
+    $last_name = self::getLastName($form);
+
+    $user_data = (new UserData())
+                  ->setEmail($email)
+                  ->setFirstName($first_name)
+                  ->settLastName($last_name);
+
+    $event = (new Event())
+              ->setEventName('Lead')
+              ->setEventTime(time())
+              ->setUserData($user_data);
+
+    return $event;
+  }
+
+  private static function getEmail($form) {
+    return self::getFieldValue($form, 'type', 'email');
+  }
+
+  private static function getFirstName($form) {
+    return self::getFieldValue($form, 'slug', 'first_name');
+  }
+
+  private static function getLastName($form) {
+    return self::getFieldValue($form, 'slug', 'last_name');
+  }
+
+  private static function getFieldValue($form, $attr, $attr_value) {
+    foreach ($form['fields'] as $field) {
+      if ($field[$attr] == $attr_value) {
+        return $_POST[$field['ID']];
+      }
+    }
   }
 }

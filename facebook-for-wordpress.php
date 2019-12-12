@@ -48,7 +48,6 @@ class FacebookForWordpress {
     // initialize pixel
     $options = FacebookWordpressOptions::getOptions();
     FacebookPixel::initialize(FacebookWordpressOptions::getPixelId());
-
     // Register WordPress pixel injection controlling where to fire pixel
     add_action('init', array($this, 'registerPixelInjection'), 0);
 

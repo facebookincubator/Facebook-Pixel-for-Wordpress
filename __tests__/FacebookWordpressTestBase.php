@@ -39,4 +39,9 @@ abstract class FacebookWordpressTestBase extends TestCase {
     $this->mocked_fbpixel->shouldReceive('isAdmin')
       ->andReturn($is_admin);
   }
+
+  protected function mockUseS2S($use_s2s) {
+    $this->mocked_options = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookWordpressOptions');
+    $this->mocked_options->shouldReceive('getUseS2S')->andReturn($use_s2s);
+  }
 }

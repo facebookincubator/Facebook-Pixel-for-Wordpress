@@ -8,7 +8,9 @@
     "10up/wp_mock": "0.3.0"
   },
   "license": "GPL",
-  "require": {},
+  "require": {
+    "facebook/php-business-sdk": "5.0.2"
+  },
   "autoload": {
     "psr-4": {
       "FacebookPixelPlugin\\": "./",

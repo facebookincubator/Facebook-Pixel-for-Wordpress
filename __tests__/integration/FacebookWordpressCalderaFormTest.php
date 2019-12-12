@@ -28,6 +28,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithoutAdminAndSubmitted() {
     self::mockIsAdmin(false);
+    self::mockUseS2S(false);
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = array();
 
@@ -44,6 +45,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithoutAdminAndNotSubmitted() {
     self::mockIsAdmin(false);
+    self::mockUseS2S(false);
     $mock_out = array('status' => 'preprocess', 'html' => 'fail to submit form');
     $mock_form = array();
 
@@ -56,6 +58,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithAdmin() {
     self::mockIsAdmin(true);
+    self::mockUseS2S(false);
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = array();
 
