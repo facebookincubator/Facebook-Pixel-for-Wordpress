@@ -51,7 +51,11 @@ If you get stuck, or have any questions, you can ask for help in the [Official F
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
-= 2019-02-18 version 1.8.0 =
+2019-12-02 version 1.8.0
+* Support for WordPress 5.3
+* Fix Gravity Forms confirmation redirect
+
+2019-02-18 version 1.7.25
 * remove get_called_class from the codebase
 
 = 2019-02-10 version 1.7.24 =
