@@ -92,7 +92,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
 
   private static function getFieldValue($form, $attr, $attr_value) {
     foreach ($form['fields'] as $field) {
-      if ($field[$attr] == $attr_value) {
+      if (array_key_exists($attr, $field) && $field[$attr] == $attr_value) {
         return $_POST[$field['ID']];
       }
     }
