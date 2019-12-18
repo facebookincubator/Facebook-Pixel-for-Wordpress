@@ -23,6 +23,7 @@ use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
+use FacebookPixelPlugin\Core\ServerEventHelper;
 use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\UserData;
 
@@ -70,9 +71,8 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
                   ->setFirstName($first_name)
                   ->settLastName($last_name);
 
-    $event = (new Event())
+    $event = (ServerEventHelper::newEvent())
               ->setEventName('Lead')
-              ->setEventTime(time())
               ->setUserData($user_data);
 
     return $event;
