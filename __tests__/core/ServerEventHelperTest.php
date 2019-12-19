@@ -26,16 +26,49 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class ServerEventHelperTest extends FacebookWordpressTestBase {
   public function testNewEventHasEventId() {
-    $event = ServerEventHelper::newEvent();
+    $event = ServerEventHelper::newEvent('Lead');
 
     $this->assertNotNull($event->getEventId());
     $this->assertEquals(36, strlen($event->getEventId()));
   }
 
   public function testNewEventHasEventTime() {
-    $event = ServerEventHelper::newEvent();
+    $event = ServerEventHelper::newEvent('Lead');
 
     $this->assertNotNull($event->getEventTime());
     $this->assertLessThan(1, time() - $event->getEventTime());
+  }
+
+  public function testNewEventHasEventName() {
+    $event = ServerEventHelper::newEvent('Lead');
+
+    $this->assertEquals('Lead', $event->getEventName());
+  }
+
+  public function testNewEventTakesIpAddressFromHttpClientIP() {
+    $_SERVER['HTTP_CLIENT_IP'] = 'HTTP_CLIENT_IP_VALUE';
+    $_SERVER['HTTP_X_FORWARDED_FOR'] = 'HTTP_X_FORWARDED_FOR_VALUE';
+    $_SERVER['REMOTE_ADDR'] = 'REMOTE_ADDR';
+
+    $event = ServerEventHelper::newEvent('Lead');
+    $this->assertEquals('HTTP_CLIENT_IP_VALUE',
+      $event->getUserData()->getClientIpAddress());
+  }
+
+  public function testNewEventTakesIpAddressFromHttpXForwardedFor() {
+    $_SERVER['HTTP_X_FORWARDED_FOR'] = 'HTTP_X_FORWARDED_FOR_VALUE';
+    $_SERVER['REMOTE_ADDR'] = 'REMOTE_ADDR';
+
+    $event = ServerEventHelper::newEvent('Lead');
+    $this->assertEquals('HTTP_X_FORWARDED_FOR_VALUE',
+      $event->getUserData()->getClientIpAddress());
+  }
+
+  public function testNewEventTakesIpAddressFromRemoteAddr() {
+    $_SERVER['REMOTE_ADDR'] = 'REMOTE_ADDR_VALUE';
+
+    $event = ServerEventHelper::newEvent('Lead');
+    $this->assertEquals('REMOTE_ADDR_VALUE',
+      $event->getUserData()->getClientIpAddress());
   }
 }

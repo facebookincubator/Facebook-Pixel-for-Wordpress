@@ -66,14 +66,12 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
     $first_name = self::getFirstName($form);
     $last_name = self::getLastName($form);
 
-    $user_data = (new UserData())
-                  ->setEmail($email)
-                  ->setFirstName($first_name)
-                  ->settLastName($last_name);
+    $event = ServerEventHelper::newEvent('Lead');
+    $user_data = $event->getUserData();
 
-    $event = (ServerEventHelper::newEvent())
-              ->setEventName('Lead')
-              ->setUserData($user_data);
+    $user_data->setEmail($email)
+              ->setFirstName($first_name)
+              ->settLastName($last_name);
 
     return $event;
   }

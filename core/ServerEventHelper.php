@@ -18,15 +18,36 @@
 namespace FacebookPixelPlugin\Core;
 
 use FacebookAds\Object\ServerSide\Event;
+use FacebookAds\Object\ServerSide\UserData;
 use FacebookPixelPlugin\Core\EventIdGenerator;
 
 defined('ABSPATH') or die('Direct access not allowed');
 
 class ServerEventHelper {
-  public static function newEvent() {
+  public static function newEvent($event_name) {
+    $user_data = (new UserData())
+                  ->setClientIpAddress(self::getIpAddress());
+
     $event = (new Event())
+              ->setEventName($event_name)
               ->setEventTime(time())
-              ->setEventId(EventIdGenerator::guidv4());
+              ->setEventId(EventIdGenerator::guidv4())
+              ->setUserData($user_data);
+
     return $event;
+  }
+
+  private static function getIpAddress() {
+    $ip_address = null;
+
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+      $ip_address = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+      $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'];
+    } else if (!empty($_SERVER['REMOTE_ADDR'])) {
+      $ip_address = $_SERVER['REMOTE_ADDR'];
+    }
+
+    return $ip_address;
   }
 }
