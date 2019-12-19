@@ -71,4 +71,19 @@ final class ServerEventHelperTest extends FacebookWordpressTestBase {
     $this->assertEquals('REMOTE_ADDR_VALUE',
       $event->getUserData()->getClientIpAddress());
   }
+
+  public function testNewEventHasUserAgent() {
+    $_SERVER['HTTP_USER_AGENT'] = 'HTTP_USER_AGENT_VALUE';
+    $event = ServerEventHelper::newEvent('Lead');
+
+    $this->assertEquals('HTTP_USER_AGENT_VALUE',
+      $event->getUserData()->getClientUserAgent());
+  }
+
+  public function testNewEventHasEventSourceUrl() {
+    $_SERVER['REQUEST_URI'] = 'REQUEST_URI_VALUE';
+    $event = ServerEventHelper::newEvent('Lead');
+
+    $this->assertEquals('REQUEST_URI_VALUE', $event->getEventSourceUrl());
+  }
 }
