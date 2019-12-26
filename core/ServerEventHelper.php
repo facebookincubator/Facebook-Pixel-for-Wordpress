@@ -27,7 +27,9 @@ class ServerEventHelper {
   public static function newEvent($event_name) {
     $user_data = (new UserData())
                   ->setClientIpAddress(self::getIpAddress())
-                  ->setClientUserAgent(self::getHttpUserAgent());
+                  ->setClientUserAgent(self::getHttpUserAgent())
+                  ->setFbp(self::getFbp())
+                  ->setFbc(self::getFbc());
 
     $event = (new Event())
               ->setEventName($event_name)
@@ -71,5 +73,25 @@ class ServerEventHelper {
     }
 
     return $request_uri;
+  }
+
+  private static function getFbp() {
+    $fbp = null;
+
+    if (!empty($_COOKIE['_fbp'])) {
+      $fbp = $_COOKIE['_fbp'];
+    }
+
+    return $fbp;
+  }
+
+  private static function getFbc() {
+    $fbc = null;
+
+    if (!empty($_COOKIE['_fbc'])) {
+      $fbc = $_COOKIE['_fbc'];
+    }
+
+    return $fbc;
   }
 }

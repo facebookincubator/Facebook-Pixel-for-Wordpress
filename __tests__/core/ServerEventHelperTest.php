@@ -86,4 +86,18 @@ final class ServerEventHelperTest extends FacebookWordpressTestBase {
 
     $this->assertEquals('REQUEST_URI_VALUE', $event->getEventSourceUrl());
   }
+
+  public function testNewEventHasFbc() {
+    $_COOKIE['_fbc'] = '_fbc_value';
+    $event = ServerEventHelper::newEvent('Lead');
+
+    $this->assertEquals('_fbc_value', $event->getUserData()->getFbc());
+  }
+
+  public function testNewEventHasFbp() {
+    $_COOKIE['_fbp'] = '_fbp_value';
+    $event = ServerEventHelper::newEvent('Lead');
+
+    $this->assertEquals('_fbp_value', $event->getUserData()->getFbp());
+  }
 }
