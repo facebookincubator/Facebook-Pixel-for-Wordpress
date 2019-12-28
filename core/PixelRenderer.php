@@ -27,7 +27,7 @@ class PixelRenderer {
   const TRACK_CUSTOM = 'trackCustom';
   const SCRIPT_TAG = "<script type='text/javascript'>%s</script>";
   const FBQ_CODE = "
-  fbq('%s', '%s');
+  fbq('%s', '%s', %s);
 ";
 
   public static function render($event) {
@@ -36,10 +36,15 @@ class PixelRenderer {
 
   private static function getPixelTrackCode($event) {
     $class = new ReflectionClass('FacebookPixelPlugin\Core\FacebookPixel');
+
     return sprintf(
       self::FBQ_CODE,
       $class->getConstant(strtoupper($event->getEventName())) !== false
       ? self::TRACK : self::TRACK_CUSTOM,
-      $event->getEventName());
+      $event->getEventName(),
+      $event->getCustomData() !== null ?
+        json_encode($event->getCustomData()->normalize())
+        : "{}"
+    );
   }
 }
