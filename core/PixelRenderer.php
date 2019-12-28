@@ -18,6 +18,7 @@
 namespace FacebookPixelPlugin\Core;
 
 use ReflectionClass;
+use FacebookAds\Object\ServerSide\CustomData;
 
 defined('ABSPATH') or die('Direct access not allowed');
 
@@ -25,26 +26,36 @@ class PixelRenderer {
   const EVENT_ID = 'eventID';
   const TRACK = 'track';
   const TRACK_CUSTOM = 'trackCustom';
+  const FB_INTEGRATION_TRACKING = 'fb_integration_tracking';
   const SCRIPT_TAG = "<script type='text/javascript'>%s</script>";
   const FBQ_CODE = "
   fbq('%s', '%s', %s);
 ";
 
-  public static function render($event) {
-    return sprintf(self::SCRIPT_TAG, self::getPixelTrackCode($event));
+  public static function render($event, $fb_integration_tracking) {
+    return sprintf(self::SCRIPT_TAG,
+            self::getPixelTrackCode($event, $fb_integration_tracking));
   }
 
-  private static function getPixelTrackCode($event) {
+  private static function getPixelTrackCode($event, $fb_integration_tracking) {
     $class = new ReflectionClass('FacebookPixelPlugin\Core\FacebookPixel');
+
+    $custom_data = $event->getCustomData() !== null ?
+                    $event->getCustomData() :
+                    new CustomData();
+
+    $normalized_custom_data = $custom_data->normalize();
+    if (!is_null($fb_integration_tracking)) {
+      $normalized_custom_data[
+        self::FB_INTEGRATION_TRACKING] = $fb_integration_tracking;
+    }
 
     return sprintf(
       self::FBQ_CODE,
       $class->getConstant(strtoupper($event->getEventName())) !== false
       ? self::TRACK : self::TRACK_CUSTOM,
       $event->getEventName(),
-      $event->getCustomData() !== null ?
-        json_encode($event->getCustomData()->normalize())
-        : "{}"
+      json_encode($normalized_custom_data, JSON_PRETTY_PRINT)
     );
   }
 }
