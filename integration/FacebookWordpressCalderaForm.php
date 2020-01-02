@@ -19,11 +19,11 @@ namespace FacebookPixelPlugin\Integration;
 
 defined('ABSPATH') or die('Direct access not allowed');
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
 use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\UserData;
 
@@ -43,13 +43,12 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
       return $out;
     }
 
+    $server_event = self::createServerEvent($form);
     if (FacebookWordpressOptions::getUseS2S()) {
-      $server_event = self::createServerEvent($form);
       FacebookServerSideEvent::send($server_event);
     }
 
-    $param = array();
-    $code = FacebookPixel::getPixelLeadCode($param, self::TRACKING_NAME, true);
+    $code = PixelRenderer::render($server_event, self::TRACKING_NAME);
     $code = sprintf("
     <!-- Facebook Pixel Event Code -->
     %s
