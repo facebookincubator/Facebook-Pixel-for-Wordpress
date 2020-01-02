@@ -29,7 +29,7 @@ class PixelRenderer {
   const FB_INTEGRATION_TRACKING = 'fb_integration_tracking';
   const SCRIPT_TAG = "<script type='text/javascript'>%s</script>";
   const FBQ_CODE = "
-  fbq('%s', '%s', %s);
+  fbq('%s', '%s', %s, %s);
 ";
 
   public static function render($event, $fb_integration_tracking) {
@@ -38,7 +38,7 @@ class PixelRenderer {
   }
 
   private static function getPixelTrackCode($event, $fb_integration_tracking) {
-    $class = new ReflectionClass('FacebookPixelPlugin\Core\FacebookPixel');
+    $event_data[self::EVENT_ID] = $event->getEventId();
 
     $custom_data = $event->getCustomData() !== null ?
                     $event->getCustomData() :
@@ -50,12 +50,15 @@ class PixelRenderer {
         self::FB_INTEGRATION_TRACKING] = $fb_integration_tracking;
     }
 
+    $class = new ReflectionClass('FacebookPixelPlugin\Core\FacebookPixel');
+
     return sprintf(
       self::FBQ_CODE,
       $class->getConstant(strtoupper($event->getEventName())) !== false
       ? self::TRACK : self::TRACK_CUSTOM,
       $event->getEventName(),
-      json_encode($normalized_custom_data, JSON_PRETTY_PRINT)
+      json_encode($normalized_custom_data, JSON_PRETTY_PRINT),
+      json_encode($event_data, JSON_PRETTY_PRINT)
     );
   }
 }

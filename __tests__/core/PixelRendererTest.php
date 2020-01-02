@@ -30,12 +30,16 @@ use FacebookAds\Object\ServerSide\CustomData;
  */
 final class PixelRendererTest extends FacebookWordpressTestBase {
   public function testPixelRenderForStandardEvent() {
-    $event = (new Event())->setEventName('Lead');
+    $event = (new Event())
+              ->setEventName('Lead')
+              ->setEventId('TestEventId');
     $code = PixelRenderer::render($event, 'Test');
 
     $expected = "<script type='text/javascript'>
   fbq('track', 'Lead', {
     \"fb_integration_tracking\": \"Test\"
+}, {
+    \"eventID\": \"TestEventId\"
 });
 </script>";
 
@@ -43,12 +47,17 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
   }
 
   public function testPixelRenderForCustomEvent() {
-    $event = (new Event())->setEventName('Custom');
+    $event = (new Event())
+              ->setEventName('Custom')
+              ->setEventId('TestEventId');
+
     $code = PixelRenderer::render($event, 'Test');
 
     $expected = "<script type='text/javascript'>
   fbq('trackCustom', 'Custom', {
     \"fb_integration_tracking\": \"Test\"
+}, {
+    \"eventID\": \"TestEventId\"
 });
 </script>";
 
@@ -62,6 +71,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 
     $event = (new Event())
               ->setEventName('Purchase')
+              ->setEventId('TestEventId')
               ->setCustomData($custom_data);
 
     $code = PixelRenderer::render($event, 'Test');
@@ -71,6 +81,8 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
     \"value\": \"30.00\",
     \"currency\": \"USD\",
     \"fb_integration_tracking\": \"Test\"
+}, {
+    \"eventID\": \"TestEventId\"
 });
 </script>";
 
