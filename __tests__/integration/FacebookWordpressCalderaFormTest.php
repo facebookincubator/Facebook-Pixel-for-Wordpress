@@ -30,7 +30,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     FacebookWordpressCalderaForm::injectPixelCode();
     $this->assertHooksAdded();
 
-    $s2s_spy->shouldNotHaveReceived('send');
+    $s2s_spy->shouldNotHaveReceived('track');
   }
 
   public function testInjectLeadEventWithoutAdminAndSubmitted() {
@@ -49,7 +49,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $this->assertRegexp(
       '/caldera-forms[\s\S]+End Facebook Pixel Event Code/', $code);
 
-    $s2s_spy->shouldNotHaveReceived('send');
+    $s2s_spy->shouldNotHaveReceived('track');
   }
 
   public function testInjectLeadEventWithoutAdminAndNotSubmitted() {
@@ -69,7 +69,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $code = $out['html'];
     $this->assertEquals('fail to submit form', $code);
 
-    $s2s_spy->shouldNotHaveReceived('send');
+    $s2s_spy->shouldNotHaveReceived('track');
   }
 
   public function testInjectLeadEventWithAdmin() {
@@ -87,7 +87,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $code = $out['html'];
     $this->assertEquals('successful submitted', $code);
 
-    $s2s_spy->shouldNotHaveReceived('send');
+    $s2s_spy->shouldNotHaveReceived('track');
   }
 
   public function testSendLeadEventViaServerAPISuccessWithoutAdmin() {
@@ -106,7 +106,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $this->assertRegexp(
       '/caldera-forms[\s\S]+End Facebook Pixel Event Code/', $code);
 
-    $s2s_spy->shouldHaveReceived('send')->with(\Mockery::on(function ($event) {
+    $s2s_spy->shouldHaveReceived('track')->with(\Mockery::on(function ($event) {
       $user_data = $event->getUserData();
       if ($event->getEventName() == 'Lead'
           && !is_null($event->getEventTime())
@@ -137,7 +137,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $code = $out['html'];
     $this->assertEquals('fail to submit form', $code);
 
-    $s2s_spy->shouldNotHaveReceived('send');
+    $s2s_spy->shouldNotHaveReceived('track');
   }
 
   public function testSendLeadEventViaServerAPIFailureWithAdmin() {
@@ -155,7 +155,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $code = $out['html'];
     $this->assertEquals('successful submitted', $code);
 
-    $s2s_spy->shouldNotHaveReceived('send');
+    $s2s_spy->shouldNotHaveReceived('track');
   }
 
   private static function createMockForm() {

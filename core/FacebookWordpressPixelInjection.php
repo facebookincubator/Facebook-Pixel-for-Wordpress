@@ -31,6 +31,9 @@ class FacebookWordpressPixelInjection {
       add_action(
         'wp_head',
         array($this, 'injectPixelNoscriptCode'));
+      add_action(
+        'shutdown',
+        array($this, 'sendServerEvents'));
 
       foreach (FacebookPluginConfig::integrationConfig() as $key => $value) {
         $class_name = 'FacebookPixelPlugin\\Integration\\'.$value;
@@ -59,5 +62,9 @@ class FacebookWordpressPixelInjection {
 
   public function injectPixelNoscriptCode() {
     echo(FacebookPixel::getPixelNoscriptCode());
+  }
+
+  public function sendServerEvents() {
+    FacebookServerSideEvent::send();
   }
 }

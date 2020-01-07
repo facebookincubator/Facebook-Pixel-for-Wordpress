@@ -25,17 +25,25 @@ use FacebookAds\Object\ServerSide\UserData;
 defined('ABSPATH') or die('Direct access not allowed');
 
 class FacebookServerSideEvent {
-    public static function send($event) {
-      $pixel_id = FacebookWordpressOptions::getPixelId();
-      $access_token = FacebookWordpressOptions::getAccessToken();
+  private static $tracked_events = [];
 
-      $api = Api::init(null, null, $access_token);
+  public static function track($event) {
+    self::$tracked_events[] = $event;
+  }
 
-      $events = array();
-      array_push($events, $event);
-
-      $request = (new EventRequest($pixel_id))
-                   ->setEvents($events);
-      $response = $request->execute();
+  public static function send() {
+    if (empty(self::$tracked_events)) {
+      return;
     }
+
+    $pixel_id = FacebookWordpressOptions::getPixelId();
+    $access_token = FacebookWordpressOptions::getAccessToken();
+
+    $api = Api::init(null, null, $access_token);
+
+    $request = (new EventRequest($pixel_id))
+                   ->setEvents(self::$tracked_events);
+    $response = $request->execute();
+    self::$tracked_events = [];
+  }
 }
