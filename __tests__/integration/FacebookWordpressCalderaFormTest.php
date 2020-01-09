@@ -14,23 +14,30 @@
 namespace FacebookPixelPlugin\Tests\Integration;
 
 use FacebookPixelPlugin\Integration\FacebookWordpressCalderaForm;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\UserData;
 
+/**
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ *
+ * All tests in this test class should be run in separate PHP process to
+ * make sure tests are isolated.
+ * Stop preserving global state from the parent process.
+ */
 final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
     \WP_Mock::expectActionAdded('caldera_forms_ajax_return',
       array(FacebookWordpressCalderaForm::class, 'injectLeadEvent'),
       10, 2);
 
-    $s2s_spy = \Mockery::spy(
-      'alias:FacebookPixelPlugin\Core\FacebookServerSideEvent');
-
     FacebookWordpressCalderaForm::injectPixelCode();
     $this->assertHooksAdded();
 
-    $s2s_spy->shouldNotHaveReceived('track');
+    $this->assertCount(0,
+      FacebookServerSideEvent::getInstance()->getTrackedEvents());
   }
 
   public function testInjectLeadEventWithoutAdminAndSubmitted() {
@@ -39,9 +46,6 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = self::createMockForm();
 
-    $s2s_spy = \Mockery::spy(
-      'alias:FacebookPixelPlugin\Core\FacebookServerSideEvent');
-
     $out = FacebookWordpressCalderaForm::injectLeadEvent($mock_out, $mock_form);
 
     $this->assertArrayHasKey('html', $out);
@@ -49,7 +53,8 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $this->assertRegexp(
       '/caldera-forms[\s\S]+End Facebook Pixel Event Code/', $code);
 
-    $s2s_spy->shouldNotHaveReceived('track');
+    $this->assertCount(0,
+        FacebookServerSideEvent::getInstance()->getTrackedEvents());
   }
 
   public function testInjectLeadEventWithoutAdminAndNotSubmitted() {
@@ -60,16 +65,14 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
       'html' => 'fail to submit form');
     $mock_form = array();
 
-    $s2s_spy = \Mockery::spy(
-      'alias:FacebookPixelPlugin\Core\FacebookServerSideEvent');
-
     $out = FacebookWordpressCalderaForm::injectLeadEvent($mock_out, $mock_form);
 
     $this->assertArrayHasKey('html', $out);
     $code = $out['html'];
     $this->assertEquals('fail to submit form', $code);
 
-    $s2s_spy->shouldNotHaveReceived('track');
+    $this->assertCount(0,
+      FacebookServerSideEvent::getInstance()->getTrackedEvents());
   }
 
   public function testInjectLeadEventWithAdmin() {
@@ -78,16 +81,14 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = array();
 
-    $s2s_spy = \Mockery::spy(
-      'alias:FacebookPixelPlugin\Core\FacebookServerSideEvent');
-
     $out = FacebookWordpressCalderaForm::injectLeadEvent($mock_out, $mock_form);
 
     $this->assertArrayHasKey('html', $out);
     $code = $out['html'];
     $this->assertEquals('successful submitted', $code);
 
-    $s2s_spy->shouldNotHaveReceived('track');
+    $this->assertCount(0,
+      FacebookServerSideEvent::getInstance()->getTrackedEvents());
   }
 
   public function testSendLeadEventViaServerAPISuccessWithoutAdmin() {
@@ -96,9 +97,6 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = self::createMockForm();
 
-    $s2s_spy = \Mockery::spy(
-      'alias:FacebookPixelPlugin\Core\FacebookServerSideEvent');
-
     $out = FacebookWordpressCalderaForm::injectLeadEvent($mock_out, $mock_form);
 
     $this->assertArrayHasKey('html', $out);
@@ -106,18 +104,17 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $this->assertRegexp(
       '/caldera-forms[\s\S]+End Facebook Pixel Event Code/', $code);
 
-    $s2s_spy->shouldHaveReceived('track')->with(\Mockery::on(function ($event) {
-      $user_data = $event->getUserData();
-      if ($event->getEventName() == 'Lead'
-          && !is_null($event->getEventTime())
-          && $user_data->getEmail() == 'pika.chu@s2s.com'
-          && $user_data->getFirstName() == 'Pika'
-          && $user_data->getLastName() == 'Chu') {
-        return true;
-      }
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
 
-      return false;
-    }));
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Lead', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
   }
 
   public function testSendLeadEventViaServerAPIFailureWithoutAdmin() {
@@ -128,16 +125,14 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
       'html' => 'fail to submit form');
     $mock_form = array();
 
-    $s2s_spy = \Mockery::spy(
-      'alias:FacebookPixelPlugin\Core\FacebookServerSideEvent');
-
     $out = FacebookWordpressCalderaForm::injectLeadEvent($mock_out, $mock_form);
 
     $this->assertArrayHasKey('html', $out);
     $code = $out['html'];
     $this->assertEquals('fail to submit form', $code);
 
-    $s2s_spy->shouldNotHaveReceived('track');
+    $this->assertCount(0,
+      FacebookServerSideEvent::getInstance()->getTrackedEvents());
   }
 
   public function testSendLeadEventViaServerAPIFailureWithAdmin() {
@@ -146,8 +141,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = array();
 
-    $s2s_spy = \Mockery::spy(
-      'alias:FacebookPixelPlugin\Core\FacebookServerSideEvent');
+    $s2s_spy = \Mockery::spy(FacebookServerSideEvent::class);
 
     $out = FacebookWordpressCalderaForm::injectLeadEvent($mock_out, $mock_form);
 
@@ -155,7 +149,8 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $code = $out['html'];
     $this->assertEquals('successful submitted', $code);
 
-    $s2s_spy->shouldNotHaveReceived('track');
+    $this->assertCount(0,
+      FacebookServerSideEvent::getInstance()->getTrackedEvents());
   }
 
   private static function createMockForm() {

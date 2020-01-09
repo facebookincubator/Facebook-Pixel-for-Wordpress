@@ -65,6 +65,6 @@ class FacebookWordpressPixelInjection {
   }
 
   public function sendServerEvents() {
-    FacebookServerSideEvent::send();
+    FacebookServerSideEvent::getInstance()->send();
   }
 }

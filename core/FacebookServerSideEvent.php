@@ -25,14 +25,27 @@ use FacebookAds\Object\ServerSide\UserData;
 defined('ABSPATH') or die('Direct access not allowed');
 
 class FacebookServerSideEvent {
-  private static $tracked_events = [];
+  private static $instance = null;
+  private $tracked_events = [];
 
-  public static function track($event) {
-    self::$tracked_events[] = $event;
+  public static function getInstance() {
+    if (self::$instance == null) {
+      self::$instance = new FacebookServerSideEvent();
+    }
+
+    return self::$instance;
   }
 
-  public static function send() {
-    if (empty(self::$tracked_events)) {
+  public function track($event) {
+    $this->tracked_events[] = $event;
+  }
+
+  public function getTrackedEvents() {
+    return $this->tracked_events;
+  }
+
+  public function send() {
+    if (empty($this->tracked_events)) {
       return;
     }
 
@@ -42,8 +55,8 @@ class FacebookServerSideEvent {
     $api = Api::init(null, null, $access_token);
 
     $request = (new EventRequest($pixel_id))
-                   ->setEvents(self::$tracked_events);
+                   ->setEvents($this->tracked_events);
     $response = $request->execute();
-    self::$tracked_events = [];
+    $this->tracked_events = [];
   }
 }
