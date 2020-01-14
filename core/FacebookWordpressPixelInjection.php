@@ -23,6 +23,9 @@ class FacebookWordpressPixelInjection {
   public static $renderCache = array();
 
   public function __construct() {
+  }
+
+  public function inject() {
     $pixel_id = FacebookWordpressOptions::getPixelId();
     if (FacebookPluginUtils::isPositiveInteger($pixel_id)) {
       add_action(

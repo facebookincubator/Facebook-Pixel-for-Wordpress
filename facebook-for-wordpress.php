@@ -59,7 +59,8 @@ class FacebookForWordpress {
    * Helper function for registering pixel injection.
    */
   public function registerPixelInjection() {
-    return new FacebookWordpressPixelInjection();
+    $injectionObj = new FacebookWordpressPixelInjection();
+    $injectionObj->inject();
   }
 
   /**
