@@ -79,7 +79,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
     $expected = "<script type='text/javascript'>
   fbq('track', 'Purchase', {
     \"value\": \"30.00\",
-    \"currency\": \"USD\",
+    \"currency\": \"usd\",
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId\"

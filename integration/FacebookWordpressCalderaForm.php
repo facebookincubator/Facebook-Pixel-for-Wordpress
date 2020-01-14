@@ -70,7 +70,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
 
     $user_data->setEmail($email)
               ->setFirstName($first_name)
-              ->settLastName($last_name);
+              ->setLastName($last_name);
 
     return $event;
   }

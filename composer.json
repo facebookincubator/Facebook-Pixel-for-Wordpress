@@ -9,7 +9,7 @@
   },
   "license": "GPL",
   "require": {
-    "facebook/php-business-sdk": "5.0.2"
+    "facebook/php-business-sdk": "5.0.5"
   },
   "autoload": {
     "psr-4": {
