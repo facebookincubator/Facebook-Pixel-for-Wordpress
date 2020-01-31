@@ -20,39 +20,36 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  *
- * All tests in this test class should be run in seperate PHP process to
+ * All tests in this test class should be run in separate PHP process to
  * make sure tests are isolated.
  * Stop preserving global state from the parent process.
  */
-final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase {
-  public function testInjectPixelCode() {
-    $hook_name = 'hook';
-    $inject_function = 'inject_function';
-    $mocked_base = \Mockery::mock('alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
-    $mocked_base->shouldReceive('addPixelFireForHook')
-      ->with(array(
-        'hook_name' => 'wpcf7_contact_form',
-        'classname' => FacebookWordpressContactForm7::class,
-        'inject_function' => 'injectLeadEvent'))
-      ->once();
-    FacebookWordpressContactForm7::injectPixelCode();
-  }
-
+final class FacebookWordpressContactForm7Test
+  extends FacebookWordpressTestBase {
   public function testInjectLeadEventWithoutAdmin() {
     self::mockIsAdmin(false);
+    self::mockUseS2S(false);
 
-    $mocked_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
-    $mocked_fbpixel->shouldReceive('getPixelLeadCode')
-      ->with(array(), FacebookWordpressContactForm7::TRACKING_NAME, false)
-      ->andReturn('contact-form-7');
-    FacebookWordpressContactForm7::injectLeadEvent();
-    $this->expectOutputRegex('/wpcf7submit[\s\S]+contact-form-7/');
+    $mock_result = array(
+      'status' => 'mail_sent',
+      'message' => 'Thank you for your message');
+
+    $result =
+      FacebookWordpressContactForm7::injectLeadEvent(null, $mock_result);
+    $this->assertRegexp(
+      '/contact-form-7[\s\S]+End Facebook Pixel Event Code/',
+      $result['message']);
   }
 
   public function testInjectLeadEventWithAdmin() {
     self::mockIsAdmin(true);
 
-    FacebookWordpressContactForm7::injectLeadEvent();
-    $this->expectOutputString("");
+    $mock_result = array(
+      'status' => 'mail_sent',
+      'message' => 'Thank you for your message');
+
+    $result =
+      FacebookWordpressContactForm7::injectLeadEvent(null, $mock_result);
+    $this->assertEquals('Thank you for your message', $result['message']);
   }
 }

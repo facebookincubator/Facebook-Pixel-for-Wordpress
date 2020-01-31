@@ -19,41 +19,90 @@ namespace FacebookPixelPlugin\Integration;
 
 defined('ABSPATH') or die('Direct access not allowed');
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\FacebookWordPressOptions;
+use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\PixelRenderer;
+use FacebookAds\Object\ServerSide\Event;
+use FacebookAds\Object\ServerSide\UserData;
 
 class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'contact-form-7/wp-contact-form-7.php';
   const TRACKING_NAME = 'contact-form-7';
 
   public static function injectPixelCode() {
-    self::addPixelFireForHook(array(
-      'hook_name' => 'wpcf7_contact_form',
-      'classname' => __CLASS__,
-      'inject_function' => 'injectLeadEvent'));
+    add_action(
+      'wpcf7_submit',
+      array(__CLASS__, 'injectLeadEvent'),
+      10, 2);
   }
 
-  public static function injectLeadEvent() {
+  public static function injectLeadEvent($form, $result) {
     if (FacebookPluginUtils::isAdmin()) {
-      return;
+      return $result;
     }
 
-    $param = array();
-    $code = FacebookPixel::getPixelLeadCode($param, self::TRACKING_NAME, false);
-    $listener = 'wpcf7submit';
+    $server_event = self::createServerEvent($form);
+    if (FacebookWordpressOptions::getUseS2S()) {
+      FacebookServerSideEvent::getInstance()->track($server_event);
+    }
 
-    printf("
-<!-- Facebook Pixel Event Code -->
-<script>
-  document.addEventListener(
-    '%s',
-    function (event) {%s},
-    false
-  );
-</script>
-<!-- End Facebook Pixel Event Code -->
-      ",
-      $listener,
+    $code = PixelRenderer::render($server_event, self::TRACKING_NAME);
+    $code = sprintf("
+    <!-- Facebook Pixel Event Code -->
+    %s
+    <!-- End Facebook Pixel Event Code -->
+         ",
       $code);
+
+    $result['message'] .= $code ;
+    return $result;
+  }
+
+  private static function createServerEvent($form) {
+    $event = ServerEventHelper::newEvent('Lead');
+
+    if (!is_null($form)) {
+      $form_tags = $form->scan_form_tags();
+      $email = self::getEmail($form_tags);
+      $name = self::getName($form_tags);
+
+      $first_name = $name;
+      $last_name = null;
+      $index = strpos($name, ' ');
+      if ($index !== false) {
+        $first_name = substr($name, 0, $index);
+        $last_name = substr($name, $index + 1);
+      }
+
+      $user_data = $event->getUserData();
+      $user_data->setEmail($email)
+                ->setFirstName($first_name)
+                ->setLastName($last_name);
+    }
+
+    return $event;
+  }
+
+  private static function getEmail($form_tags) {
+    foreach ($form_tags as $tag) {
+      if ($tag->basetype == "email") {
+        return $_POST[$tag->name];
+      }
+    }
+
+    return null;
+  }
+
+  private static function getName($form_tags) {
+    foreach ($form_tags as $tag) {
+      if ($tag->basetype === "text"
+        && strpos(strtolower($tag->name), 'name') !== false) {
+        return $_POST[$tag->name];
+      }
+    }
+
+    return null;
   }
 }
