@@ -51,11 +51,14 @@ class FacebookServerSideEvent {
 
     $pixel_id = FacebookWordpressOptions::getPixelId();
     $access_token = FacebookWordpressOptions::getAccessToken();
+    $agent = FacebookWordpressOptions::getAgentString();
 
     $api = Api::init(null, null, $access_token);
 
     $request = (new EventRequest($pixel_id))
-                   ->setEvents($this->tracked_events);
+                   ->setEvents($this->tracked_events)
+                   ->setPartnerAgent($agent);
+
     $response = $request->execute();
     $this->tracked_events = [];
   }
