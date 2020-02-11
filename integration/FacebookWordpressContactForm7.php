@@ -44,9 +44,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
     }
 
     $server_event = self::createServerEvent($form);
-    if (FacebookWordpressOptions::getUseS2S()) {
-      FacebookServerSideEvent::getInstance()->track($server_event);
-    }
+    FacebookServerSideEvent::getInstance()->track($server_event);
 
     $code = PixelRenderer::render($server_event, self::TRACKING_NAME);
     $code = sprintf("

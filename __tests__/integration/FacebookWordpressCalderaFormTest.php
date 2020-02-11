@@ -52,9 +52,6 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $code = $out['html'];
     $this->assertRegexp(
       '/caldera-forms[\s\S]+End Facebook Pixel Event Code/', $code);
-
-    $this->assertCount(0,
-        FacebookServerSideEvent::getInstance()->getTrackedEvents());
   }
 
   public function testInjectLeadEventWithoutAdminAndNotSubmitted() {
