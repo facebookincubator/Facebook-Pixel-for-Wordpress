@@ -59,16 +59,22 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
   }
 
   private static function createServerEvent($form) {
-    $email = self::getEmail($form);
-    $first_name = self::getFirstName($form);
-    $last_name = self::getLastName($form);
-
     $event = ServerEventHelper::newEvent('Lead');
-    $user_data = $event->getUserData();
 
-    $user_data->setEmail($email)
-              ->setFirstName($first_name)
-              ->setLastName($last_name);
+    try {
+      if (!empty($form)) {
+        $email = self::getEmail($form);
+        $first_name = self::getFirstName($form);
+        $last_name = self::getLastName($form);
+
+        $user_data = $event->getUserData();
+        $user_data->setEmail($email)
+                  ->setFirstName($first_name)
+                  ->setLastName($last_name);
+      }
+    } catch (\Exception $e) {
+      // Need to log
+    }
 
     return $event;
   }
@@ -86,10 +92,16 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
   }
 
   private static function getFieldValue($form, $attr, $attr_value) {
+    if (empty($form['fields'])) {
+      return null;
+    }
+
     foreach ($form['fields'] as $field) {
       if (array_key_exists($attr, $field) && $field[$attr] == $attr_value) {
         return $_POST[$field['ID']];
       }
     }
+
+    return null;
   }
 }

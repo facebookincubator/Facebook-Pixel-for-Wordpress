@@ -44,9 +44,8 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     self::mockIsAdmin(false);
     self::mockUseS2S(false);
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
-    $mock_form = self::createMockForm();
 
-    $out = FacebookWordpressCalderaForm::injectLeadEvent($mock_out, $mock_form);
+    $out = FacebookWordpressCalderaForm::injectLeadEvent($mock_out, null);
 
     $this->assertArrayHasKey('html', $out);
     $code = $out['html'];

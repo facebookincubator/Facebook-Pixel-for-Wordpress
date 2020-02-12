@@ -61,29 +61,37 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
   private static function createServerEvent($form) {
     $event = ServerEventHelper::newEvent('Lead');
 
-    if (!is_null($form)) {
-      $form_tags = $form->scan_form_tags();
-      $email = self::getEmail($form_tags);
-      $name = self::getName($form_tags);
+    try {
+      if (!empty($form)) {
+        $form_tags = $form->scan_form_tags();
+        $email = self::getEmail($form_tags);
+        $name = self::getName($form_tags);
 
-      $first_name = $name;
-      $last_name = null;
-      $index = strpos($name, ' ');
-      if ($index !== false) {
-        $first_name = substr($name, 0, $index);
-        $last_name = substr($name, $index + 1);
+        $first_name = $name;
+        $last_name = null;
+        $index = strpos($name, ' ');
+        if ($index !== false) {
+          $first_name = substr($name, 0, $index);
+          $last_name = substr($name, $index + 1);
+        }
+
+        $user_data = $event->getUserData();
+        $user_data->setEmail($email)
+                  ->setFirstName($first_name)
+                  ->setLastName($last_name);
       }
-
-      $user_data = $event->getUserData();
-      $user_data->setEmail($email)
-                ->setFirstName($first_name)
-                ->setLastName($last_name);
+    } catch (\Exception $e) {
+      // Need to log
     }
 
     return $event;
   }
 
   private static function getEmail($form_tags) {
+    if (empty($form_tags)) {
+      return null;
+    }
+
     foreach ($form_tags as $tag) {
       if ($tag->basetype == "email") {
         return $_POST[$tag->name];
@@ -94,6 +102,10 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
   }
 
   private static function getName($form_tags) {
+    if (empty($form_tags)) {
+      return null;
+    }
+
     foreach ($form_tags as $tag) {
       if ($tag->basetype === "text"
         && strpos(strtolower($tag->name), 'name') !== false) {
