@@ -33,7 +33,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
     $event = (new Event())
               ->setEventName('Lead')
               ->setEventId('TestEventId');
-    $code = PixelRenderer::render($event, 'Test');
+    $code = PixelRenderer::render(array($event), 'Test');
 
     $expected = "<script type='text/javascript'>
   fbq('track', 'Lead', {
@@ -51,7 +51,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
               ->setEventName('Custom')
               ->setEventId('TestEventId');
 
-    $code = PixelRenderer::render($event, 'Test');
+    $code = PixelRenderer::render(array($event), 'Test');
 
     $expected = "<script type='text/javascript'>
   fbq('trackCustom', 'Custom', {
@@ -74,7 +74,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
               ->setEventId('TestEventId')
               ->setCustomData($custom_data);
 
-    $code = PixelRenderer::render($event, 'Test');
+    $code = PixelRenderer::render(array($event), 'Test');
 
     $expected = "<script type='text/javascript'>
   fbq('track', 'Purchase', {
@@ -83,6 +83,33 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId\"
+});
+</script>";
+
+    $this->assertEquals($expected, $code);
+  }
+
+  public function testPixelRenderForMultipleEvents() {
+    $event1 = (new Event())
+              ->setEventName('Lead')
+              ->setEventId('TestEventId1');
+    $event2 = (new Event())
+              ->setEventName('Lead')
+              ->setEventId('TestEventId2');
+
+    $code = PixelRenderer::render(array($event1, $event2), 'Test');
+
+    $expected = "<script type='text/javascript'>
+  fbq('track', 'Lead', {
+    \"fb_integration_tracking\": \"Test\"
+}, {
+    \"eventID\": \"TestEventId1\"
+});
+
+  fbq('track', 'Lead', {
+    \"fb_integration_tracking\": \"Test\"
+}, {
+    \"eventID\": \"TestEventId2\"
 });
 </script>";
 
