@@ -110,9 +110,13 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
     $pixel_id = FacebookWordpressOptions::getPixelId();
     $use_pii = FacebookWordpressOptions::getUsePii();
     $version_info = FacebookWordpressOptions::getVersionInfo();
+    $use_s2s = FacebookWordpressOptions::getUseS2S();
+    $access_token = FacebookWordpressOptions::getAccessToken();
 
     $this->assertEquals($pixel_id, '');
     $this->assertEquals($use_pii, '1');
+    $this->assertEquals($use_s2s, '0');
+    $this->assertEquals($access_token, '');
   }
 
   private function mockGetOption($mock_pixel_id=null, $mock_use_pii=null, $mock_use_s2s=null, $mock_access_token=null) {
@@ -124,9 +128,13 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
           FacebookPluginConfig::USE_PII_KEY =>
             is_null($mock_use_pii) ? FacebookWordpressOptions::getDefaultUsePIIKey() : $mock_use_pii,
           FacebookPluginConfig::USE_S2S_KEY =>
-            $mock_use_s2s ? FacebookWordpressOptions::getDefaultUseS2SKey() : $mock_use_s2s,
+            is_null($mock_use_s2s) ?
+            FacebookWordpressOptions::getDefaultUseS2SKey() :
+            $mock_use_s2s,
           FacebookPluginConfig::ACCESS_TOKEN_KEY =>
-            is_null($mock_access_token) ? FacebookWordpressOptions::getDefaultAccessToken() : $mock_access_token,
+            is_null($mock_access_token) ?
+            FacebookWordpressOptions::getDefaultAccessToken() :
+            $mock_access_token,
         ),
     ));
   }

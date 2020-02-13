@@ -50,9 +50,10 @@ class FacebookWordpressOptions {
       && !FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT) ? '0' : '1';
   }
 
+  // We default not to send events through S2S, if the config is unset.
   public static function getDefaultUseS2SKey() {
-    return (!is_null(FacebookPluginConfig::USE_S2S_DEFAULT)
-      && !FacebookPluginConfig::USE_S2S_DEFAULT) ? '0' : '1';
+    return (is_null(FacebookPluginConfig::USE_S2S_DEFAULT)
+      || !FacebookPluginConfig::USE_S2S_DEFAULT) ? '0' : '1';
   }
 
   private static function setOptions() {
