@@ -15,6 +15,9 @@ namespace FacebookPixelPlugin\Tests\Integration;
 
 use FacebookPixelPlugin\Integration\FacebookWordpressGravityForms;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
+use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Tests\Mocks\MockGravityFormField;
 
 /**
  * @runTestsInSeparateProcesses
@@ -42,15 +45,50 @@ final class FacebookWordpressGravityFormsTest
     self::mockIsAdmin(false);
 
     $mock_confirm = 'mock_msg';
-    $mock_fbpixel = \Mockery::mock(
-      'alias:FacebookPixelPlugin\Core\FacebookPixel');
-    $mock_fbpixel->shouldReceive('getPixelLeadCode')
-      ->with(array(), FacebookWordpressGravityForms::TRACKING_NAME, false)
-      ->andReturn('gravityforms');
+    $mock_form = $this->createMockForm();
+    $mock_entry = $this->createMockEntries();
 
     $mock_confirm = FacebookWordpressGravityForms::injectLeadEvent(
-      $mock_confirm, 'mock_form', 'mock_entry', true);
-    $this->assertRegexp('/script[\s\S]+gravityforms/', $mock_confirm);
+      $mock_confirm, $mock_form, $mock_entry, true);
+
+    $this->assertRegexp('/script[\s\S]+gravity-forms/', $mock_confirm);
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Lead', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+  }
+
+  public function testInjectLeadEventWithoutAdminErrorReadingForm() {
+    self::mockIsAdmin(false);
+
+    $mock_confirm = 'mock_msg';
+    $mock_form = $this->createMockForm();
+    $mock_entry = $this->createMockEntries();
+
+    $mock_confirm = FacebookWordpressGravityForms::injectLeadEvent(
+      $mock_confirm, $mock_form, $mock_entry, true);
+
+    $this->assertRegexp('/script[\s\S]+gravity-forms/', $mock_confirm);
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Lead', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
   }
 
   public function testInjectLeadEventWithAdmin() {
@@ -60,5 +98,24 @@ final class FacebookWordpressGravityFormsTest
     $mock_confirm = FacebookWordpressGravityForms::injectLeadEvent(
       $mock_confirm, 'mock_form', 'mock_entry', true);
     $this->assertEquals('mock_msg', $mock_confirm);
+  }
+
+  private function createMockForm() {
+    $email = new MockGravityFormField('email', '1');
+
+    $name = new MockGravityFormField('name', '2');
+    $name->addLabel('First', '2.1');
+    $name->addLabel('Last', '2.2');
+
+    $fields = array($email, $name);
+    return array('fields' => $fields);
+  }
+
+  private function createMockEntries() {
+    return array(
+      '1' => 'pika.chu@s2s.com',
+      '2.1' => 'Pika',
+      '2.2' => 'Chu'
+    );
   }
 }

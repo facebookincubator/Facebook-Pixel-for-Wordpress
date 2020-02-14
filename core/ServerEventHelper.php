@@ -94,4 +94,29 @@ class ServerEventHelper {
 
     return $fbc;
   }
+
+  public static function safeCreateEvent($event_name, $callback, $arguments) {
+    $event = self::newEvent($event_name);
+
+    try {
+      $data = call_user_func_array($callback, $arguments);
+      $user_data = $event->getUserData();
+
+      if (!empty($data['email'])) {
+        $user_data->setEmail($data['email']);
+      }
+
+      if (!empty($data['first_name'])) {
+        $user_data->setFirstName($data['first_name']);
+      }
+
+      if (!empty($data['last_name'])) {
+        $user_data->setLastName($data['last_name']);
+      }
+    } catch (\Exception $e) {
+      // Need to log
+    }
+
+    return $event;
+  }
 }

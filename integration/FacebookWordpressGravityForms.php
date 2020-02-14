@@ -21,6 +21,12 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\FacebookWordPressOptions;
+use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\PixelRenderer;
+use FacebookAds\Object\ServerSide\Event;
+use FacebookAds\Object\ServerSide\UserData;
 
 class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'gravityforms/gravityforms.php';
@@ -38,13 +44,17 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
       return $confirmation;
     }
 
-    $pixel_code = FacebookPixel::getPixelLeadCode(
-                    array(), self::TRACKING_NAME, false);
+    $event = ServerEventHelper::safeCreateEvent(
+      'Lead',
+      array(__CLASS__, 'readFormData'),
+      array($form, $entry)
+    );
+    FacebookServerSideEvent::getInstance()->track($event);
+
+    $pixel_code = PixelRenderer::render(array($event), self::TRACKING_NAME);
     $code = sprintf("
     <!-- Facebook Pixel Event Code -->
-    <script>
     %s
-    </script>
     <!-- End Facebook Pixel Event Code -->
     ", $pixel_code);
 
@@ -66,5 +76,60 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
     }
 
     return $confirmation;
+  }
+
+  public static function readFormData($form, $entry) {
+    if (empty($form) || empty($entry)) {
+      return array();
+    }
+
+    return array(
+      'email' => self::getEmail($form, $entry),
+      'first_name' => self::getFirstName($form, $entry),
+      'last_name' => self::getLastName($form, $entry)
+    );
+  }
+
+  private static function getEmail($form, $entry) {
+    if (empty($form['fields'])) {
+      return null;
+    }
+
+    foreach ($form['fields'] as $field) {
+      if ($field->type == 'email') {
+        return $entry[$field->id];
+      }
+    }
+
+    return null;
+  }
+
+  private static function getFirstName($form, $entry) {
+    return self::getName($form, $entry, 'name', 'First');
+  }
+
+  private static function getLastName($form, $entry) {
+    return self::getName($form, $entry, 'name', 'Last');
+  }
+
+  private static function getName($form, $entry, $type, $label) {
+    if (empty($form['fields'])) {
+      return null;
+    }
+
+    foreach ($form['fields'] as $field) {
+      if ($field->type == $type) {
+        $inputs = $field->inputs;
+        if (!empty($inputs)) {
+          foreach ($inputs as $input) {
+            if ($input['label'] == $label) {
+              return $entry[$input['id']];
+            }
+          }
+        }
+      }
+    }
+
+    return null;
   }
 }
