@@ -13,8 +13,13 @@
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
+use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Integration\FacebookWordpressFormidableForm;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
+use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormField;
+use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormFieldValue;
+use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormEntryValues;
 
 /**
  * @runTestsInSeparateProcesses
@@ -24,35 +29,128 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * make sure tests are isolated.
  * Stop preserving global state from the parent process.
  */
-final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBase {
+final class FacebookWordpressFormidableFormTest
+  extends FacebookWordpressTestBase {
+
   public function testInjectPixelCode() {
-    $mocked_base = \Mockery::mock('alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
-    $mocked_base->shouldReceive('addPixelFireForHook')
-      ->with(array(
-        'hook_name' => 'frm_after_create_entry',
-        'classname' => FacebookWordpressFormidableForm::class,
-        'inject_function' => 'injectLeadEvent',
-        'priority' => 30))
-      ->once();
+    self::mockIsAdmin(false);
+
+    \WP_Mock::expectActionAdded(
+      'frm_after_create_entry',
+      array(
+        'FacebookPixelPlugin\\Integration\\FacebookWordpressFormidableForm',
+        'trackServerEvent'
+      ),
+      20,
+      2);
 
     FacebookWordpressFormidableForm::injectPixelCode();
   }
 
-  public function testInjectLeadEventWithouAdmin() {
+  public function testInjectLeadEventWithoutAdmin() {
     self::mockIsAdmin(false);
 
-    $mock_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
-    $mock_fbpixel->shouldReceive('getPixelLeadCode')
-      ->with(array(), FacebookWordpressFormidableForm::TRACKING_NAME, false)
-      ->andReturn('formidable-lite');
-    FacebookWordpressFormidableForm::injectLeadEvent('mock_entry_id', 'mock_form_id');
+    $event = ServerEventHelper::newEvent('Lead');
+    FacebookServerSideEvent::getInstance()->track($event);
+
+    FacebookWordpressFormidableForm::injectLeadEvent();
+
     $this->expectOutputRegex('/script[\s\S]+formidable-lite/');
   }
 
   public function testInjectLeadEventWithAdmin() {
     self::mockIsAdmin(true);
 
-    FacebookWordpressFormidableForm::injectLeadEvent('mock_entry_id', 'mock_form_id');
+    FacebookWordpressFormidableForm::injectLeadEvent();
+
     $this->expectOutputString("");
+  }
+
+  public function testTrackEventWithoutAdmin() {
+    self::mockIsAdmin(false);
+
+    $mock_entry_id = 1;
+    $mock_form_id = 1;
+
+    self::setupMockFormidableForm($mock_entry_id);
+
+    \WP_Mock::expectActionAdded(
+      'wp_footer',
+      array(
+        'FacebookPixelPlugin\\Integration\\FacebookWordpressFormidableForm',
+        'injectLeadEvent'
+      ),
+      20
+    );
+
+    FacebookWordpressFormidableForm::trackServerEvent(
+      $mock_entry_id, $mock_form_id);
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Lead', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+  }
+
+  public function testTrackEventWithoutAdminErrorReadingForm() {
+    self::mockIsAdmin(false);
+
+    $mock_entry_id = 1;
+    $mock_form_id = 1;
+
+    self::setupErrorForm($mock_entry_id);
+
+    FacebookWordpressFormidableForm::trackServerEvent(
+      $mock_entry_id, $mock_form_id);
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Lead', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+  }
+
+  private static function setupErrorForm($entry_id) {
+    $entry_values = new MockFormidableFormEntryValues(array());
+    $entry_values->set_throw(true);
+
+    $mock_utils = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Integration\IntegrationUtils');
+    $mock_utils->shouldReceive('getFormidableFormsEntryValues')->with($entry_id)->andReturn($entry_values);
+  }
+
+  private static function setupMockFormidableForm($entry_id) {
+    $email = new MockFormidableFormFieldValue(
+      new MockFormidableFormField('email', null, null),
+      'pika.chu@s2s.com'
+    );
+
+    $first_name = new MockFormidableFormFieldValue(
+      new MockFormidableFormField('text', 'Name', 'First'),
+      'Pika'
+    );
+
+    $last_name = new MockFormidableFormFieldValue(
+      new MockFormidableFormField('text', 'Last', 'Last'),
+      'Chu'
+    );
+
+    $entry_values = new MockFormidableFormEntryValues(
+      array($email, $first_name, $last_name)
+    );
+
+    $mock_utils = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Integration\IntegrationUtils');
+    $mock_utils->shouldReceive('getFormidableFormsEntryValues')->with($entry_id)->andReturn($entry_values);
   }
 }

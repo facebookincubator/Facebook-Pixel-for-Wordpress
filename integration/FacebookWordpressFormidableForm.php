@@ -21,34 +21,117 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\FacebookWordPressOptions;
+use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\PixelRenderer;
+use FacebookAds\Object\ServerSide\Event;
+use FacebookAds\Object\ServerSide\UserData;
 
 class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'formidable/formidable.php';
   const TRACKING_NAME = 'formidable-lite';
 
   public static function injectPixelCode() {
-    self::addPixelFireForHook(array(
-      'hook_name' => 'frm_after_create_entry',
-      'classname' => __CLASS__,
-      'inject_function' => 'injectLeadEvent',
-      'priority' => 30));
+    add_action(
+      'frm_after_create_entry',
+      array(__CLASS__, 'trackServerEvent'),
+      20,
+      2
+    );
   }
 
-  public static function injectLeadEvent($entry_id, $form_id) {
+  public static function trackServerEvent($entry_id, $form_id) {
     if (FacebookPluginUtils::isAdmin()) {
       return;
     }
 
-    $param = array();
-    $code = FacebookPixel::getPixelLeadCode($param, self::TRACKING_NAME, false);
+    $server_event = self::createServerEvent($entry_id);
+    FacebookServerSideEvent::getInstance()->track($server_event);
+
+    add_action(
+      'wp_footer',
+       array(__CLASS__, 'injectLeadEvent'),
+       20
+    );
+  }
+
+  public static function injectLeadEvent() {
+    if (FacebookPluginUtils::isAdmin()) {
+      return;
+    }
+
+    $events = FacebookServerSideEvent::getInstance()->getTrackedEvents();
+    $code = PixelRenderer::render($events, self::TRACKING_NAME);
 
     printf("
 <!-- Facebook Pixel Event Code -->
-<script>
 %s
-</script>
 <!-- End Facebook Pixel Event Code -->
       ",
       $code);
+  }
+
+  private static function createServerEvent($entry_id) {
+    $event = ServerEventHelper::newEvent('Lead');
+
+    try {
+      $entry_values =
+        IntegrationUtils::getFormidableFormsEntryValues($entry_id);
+
+      $field_values = $entry_values->get_field_values();
+
+      if (!empty($field_values)) {
+        $email = self::getEmail($field_values);
+        $first_name = self::getFirstName($field_values);
+        $last_name = self::getLastName($field_values);
+
+        $user_data = $event->getUserData();
+        $user_data->setEmail($email)
+                  ->setFirstName($first_name)
+                  ->setLastName($last_name);
+      }
+    } catch (\Exception $e) {
+      // Need to log
+    }
+
+    return $event;
+  }
+
+  private static function getEmail($field_values) {
+    foreach ($field_values as $field_value) {
+      $field = $field_value->get_field();
+      if ($field->type == 'email') {
+        return $field_value->get_saved_value();
+      }
+    }
+
+    return null;
+  }
+
+  private static function getFirstName($field_values) {
+    return self::getFieldValue($field_values, 'text', 'Name', 'First');
+  }
+
+  private static function getLastName($field_values) {
+    return self::getFieldValue($field_values, 'text', 'Last', 'Last');
+  }
+
+  private static function getFieldValue(
+    $field_values,
+    $type,
+    $name,
+    $description)
+  {
+    foreach ($field_values as $field_value) {
+      $field = $field_value->get_field();
+      if ($field->type == $type &&
+          $field->name == $name &&
+          $field->description == $description) {
+        return $field_value->get_saved_value();
+      }
+    }
+
+    return null;
   }
 }
