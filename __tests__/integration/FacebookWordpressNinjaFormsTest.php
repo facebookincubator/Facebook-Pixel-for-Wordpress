@@ -15,6 +15,8 @@ namespace FacebookPixelPlugin\Tests\Integration;
 
 use FacebookPixelPlugin\Integration\FacebookWordpressNinjaForms;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
+use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
  * @runTestsInSeparateProcesses
@@ -26,17 +28,19 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
-    \WP_Mock::expectActionAdded('ninja_forms_submission_actions', array(FacebookWordpressNinjaForms::class, 'injectLeadEvent'),
-      10, 2);
+    \WP_Mock::expectActionAdded(
+      'ninja_forms_submission_actions',
+      array(FacebookWordpressNinjaForms::class, 'injectLeadEvent'),
+      10,
+      3
+    );
+
     FacebookWordpressNinjaForms::injectPixelCode();
     $this->assertHooksAdded();
   }
 
   public function testInjectLeadEventWithoutAdmin() {
     parent::mockIsAdmin(false);
-    $mocked_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
-    $mocked_fbpixel->shouldReceive('getPixelLeadCode')
-      ->andReturn('NinjaForms');
 
     $mock_actions = array(
       array(
@@ -47,18 +51,51 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
         ),
       ),
     );
-    $result = FacebookWordpressNinjaForms::injectLeadEvent($mock_actions, 'mock_form_data');
+
+    $mock_form_data = $this->getMockFormData();
+    $result = FacebookWordpressNinjaForms::injectLeadEvent(
+      $mock_actions,
+      null,
+      $mock_form_data,
+    );
+
     $this->assertNotEmpty($result);
     $this->assertArrayHasKey('settings', $result[0]);
     $this->assertArrayHasKey('success_msg', $result[0]['settings']);
     $msg = $result[0]['settings']['success_msg'];
-    $this->assertRegexp('/NinjaForms[\s\S]+End Facebook Pixel Event Code/', $msg);
+    $this->assertRegexp(
+      '/ninja-forms[\s\S]+End Facebook Pixel Event Code/', $msg);
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Lead', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
   }
 
   public function testInjectLeadEventWithAdmin() {
     parent::mockIsAdmin(true);
 
-    $result = FacebookWordpressNinjaForms::injectLeadEvent('mock_actions', 'mock_form_data');
+    $result = FacebookWordpressNinjaForms::injectLeadEvent(
+      'mock_actions',
+      'mock_form_cache',
+      'mock_form_data'
+    );
+
     $this->assertEquals('mock_actions', $result);
+  }
+
+  private function getMockFormData() {
+    $email = array('key' => 'email', 'value' => 'pika.chu@s2s.com');
+    $name = array('key' => 'name', 'value' => 'Pika Chu');
+    $fields = array($email, $name);
+
+    return array('fields' => $fields);
   }
 }

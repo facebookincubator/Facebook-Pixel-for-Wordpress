@@ -21,6 +21,12 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\FacebookWordPressOptions;
+use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\PixelRenderer;
+use FacebookAds\Object\ServerSide\Event;
+use FacebookAds\Object\ServerSide\UserData;
 
 class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'ninja-forms/ninja-forms.php';
@@ -30,23 +36,13 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
     add_action(
       'ninja_forms_submission_actions',
       array(__CLASS__, 'injectLeadEvent'),
-      10, 2);
+      10, 3);
   }
 
-  public static function injectLeadEvent($actions, $form_data) {
+  public static function injectLeadEvent($actions, $form_cache, $form_data) {
     if (FacebookPluginUtils::isAdmin()) {
       return $actions;
     }
-
-    $param = array();
-    $pixel_code = FacebookPixel::getPixelLeadCode($param, self::TRACKING_NAME, true);
-
-    $code = sprintf("
-  <!-- Facebook Pixel Event Code -->
-  %s
-  <!-- End Facebook Pixel Event Code -->
-        ",
-      $pixel_code);
 
     foreach ($actions as $key => $action) {
       if (!isset($action['settings']) || !isset($action['settings']['type'])) {
@@ -60,11 +56,60 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
 
       // inject code when form is submitted successfully
       if ($type == 'successmessage') {
+        $event = ServerEventHelper::safeCreateEvent(
+          'Lead',
+          array(__CLASS__, 'readFormData'),
+          array($form_data)
+        );
+        FacebookServerSideEvent::getInstance()->track($event);
+
+        $pixel_code = PixelRenderer::render(array($event), self::TRACKING_NAME);
+        $code = sprintf("
+<!-- Facebook Pixel Event Code -->
+%s
+<!-- End Facebook Pixel Event Code -->
+    ", $pixel_code);
+
         $action['settings']['success_msg'] .= $code;
         $actions[$key] = $action;
       }
     }
 
     return $actions;
+  }
+
+  public static function readFormData($form_data) {
+    if (empty($form_data)) {
+      return array();
+    }
+
+    $name = self::getName($form_data);
+    return array(
+      'email' => self::getEmail($form_data),
+      'first_name' => $name[0],
+      'last_name' => $name[1]
+    );
+  }
+
+  private static function getEmail($form_data) {
+    return self::getField($form_data, 'email');
+  }
+
+  private static function getName($form_data) {
+    return ServerEventHelper::splitName(self::getField($form_data, 'name'));
+  }
+
+  private static function getField($form_data, $key) {
+    if (empty($form_data['fields'])) {
+      return null;
+    }
+
+    foreach ($form_data['fields'] as $field) {
+      if ($field['key'] == $key) {
+        return $field['value'];
+      }
+    }
+
+    return null;
   }
 }
