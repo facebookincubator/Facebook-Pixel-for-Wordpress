@@ -46,7 +46,11 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
       return;
     }
 
-    $server_event = self::createServerEvent($entry_id);
+    $server_event = ServerEventHelper::safeCreateEvent(
+      'Lead',
+      array(__CLASS__, 'readFormData'),
+      array($entry_id)
+    );
     FacebookServerSideEvent::getInstance()->track($server_event);
 
     add_action(
@@ -72,30 +76,24 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
       $code);
   }
 
-  private static function createServerEvent($entry_id) {
-    $event = ServerEventHelper::newEvent('Lead');
-
-    try {
-      $entry_values =
-        IntegrationUtils::getFormidableFormsEntryValues($entry_id);
-
-      $field_values = $entry_values->get_field_values();
-
-      if (!empty($field_values)) {
-        $email = self::getEmail($field_values);
-        $first_name = self::getFirstName($field_values);
-        $last_name = self::getLastName($field_values);
-
-        $user_data = $event->getUserData();
-        $user_data->setEmail($email)
-                  ->setFirstName($first_name)
-                  ->setLastName($last_name);
-      }
-    } catch (\Exception $e) {
-      // Need to log
+  public static function readFormData($entry_id) {
+    if (empty($entry_id)) {
+      return array();
     }
 
-    return $event;
+    $entry_values =
+        IntegrationUtils::getFormidableFormsEntryValues($entry_id);
+
+    $field_values = $entry_values->get_field_values();
+    if (!empty($field_values)) {
+      return array(
+        'email' => self::getEmail($field_values),
+        'first_name' => self::getFirstName($field_values),
+        'last_name' => self::getLastName($field_values)
+      );
+    }
+
+    return array();
   }
 
   private static function getEmail($field_values) {

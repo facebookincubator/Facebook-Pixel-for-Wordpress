@@ -43,7 +43,11 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
       return $out;
     }
 
-    $server_event = self::createServerEvent($form);
+    $server_event = ServerEventHelper::safeCreateEvent(
+      'Lead',
+      array(__CLASS__, 'readFormData'),
+      array($form)
+    );
     FacebookServerSideEvent::getInstance()->track($server_event);
 
     $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
@@ -58,25 +62,16 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
     return $out;
   }
 
-  private static function createServerEvent($form) {
-    $event = ServerEventHelper::newEvent('Lead');
-
-    try {
-      if (!empty($form)) {
-        $email = self::getEmail($form);
-        $first_name = self::getFirstName($form);
-        $last_name = self::getLastName($form);
-
-        $user_data = $event->getUserData();
-        $user_data->setEmail($email)
-                  ->setFirstName($first_name)
-                  ->setLastName($last_name);
-      }
-    } catch (\Exception $e) {
-      // Need to log
+  public static function readFormData($form) {
+    if (empty($form)) {
+      return array();
     }
 
-    return $event;
+    return array(
+      'email' => self::getEmail($form),
+      'first_name' => self::getFirstName($form),
+      'last_name' => self::getLastName($form)
+    );
   }
 
   private static function getEmail($form) {

@@ -43,7 +43,11 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
       return $result;
     }
 
-    $server_event = self::createServerEvent($form);
+    $server_event = ServerEventHelper::safeCreateEvent(
+      'Lead',
+      array(__CLASS__, 'readFormData'),
+      array($form)
+    );
     FacebookServerSideEvent::getInstance()->track($server_event);
 
     $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
@@ -58,33 +62,19 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
     return $result;
   }
 
-  private static function createServerEvent($form) {
-    $event = ServerEventHelper::newEvent('Lead');
-
-    try {
-      if (!empty($form)) {
-        $form_tags = $form->scan_form_tags();
-        $email = self::getEmail($form_tags);
-        $name = self::getName($form_tags);
-
-        $first_name = $name;
-        $last_name = null;
-        $index = strpos($name, ' ');
-        if ($index !== false) {
-          $first_name = substr($name, 0, $index);
-          $last_name = substr($name, $index + 1);
-        }
-
-        $user_data = $event->getUserData();
-        $user_data->setEmail($email)
-                  ->setFirstName($first_name)
-                  ->setLastName($last_name);
-      }
-    } catch (\Exception $e) {
-      // Need to log
+  public static function readFormData($form) {
+    if (empty($form)) {
+      return array();
     }
 
-    return $event;
+    $form_tags = $form->scan_form_tags();
+    $name = self::getName($form_tags);
+
+    return array(
+      'email' => self::getEmail($form_tags),
+      'first_name' => $name[0],
+      'last_name' => $name[1]
+    );
   }
 
   private static function getEmail($form_tags) {
@@ -109,7 +99,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
     foreach ($form_tags as $tag) {
       if ($tag->basetype === "text"
         && strpos(strtolower($tag->name), 'name') !== false) {
-        return $_POST[$tag->name];
+        return ServerEventHelper::splitName($_POST[$tag->name]);
       }
     }
 

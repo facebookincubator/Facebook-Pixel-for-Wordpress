@@ -119,4 +119,16 @@ class ServerEventHelper {
 
     return $event;
   }
+
+  public static function splitName($name) {
+    $first_name = $name;
+    $last_name = null;
+    $index = strpos($name, ' ');
+    if ($index !== false) {
+      $first_name = substr($name, 0, $index);
+      $last_name = substr($name, $index + 1);
+    }
+
+    return array($first_name, $last_name);
+  }
 }
