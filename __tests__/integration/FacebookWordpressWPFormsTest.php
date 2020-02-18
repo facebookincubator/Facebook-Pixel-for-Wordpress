@@ -15,6 +15,8 @@ namespace FacebookPixelPlugin\Tests\Integration;
 
 use FacebookPixelPlugin\Integration\FacebookWordpressWPForms;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
+use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
  * @runTestsInSeparateProcesses
@@ -26,12 +28,15 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
-    $mocked_base = \Mockery::mock('alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
-    $mocked_base->shouldReceive('addPixelFireForHook')
-      ->with(array(
-        'hook_name' => 'wpforms_frontend_output',
-        'classname' => FacebookWordpressWPForms::class,
-        'inject_function' => 'injectLeadEvent'));
+    \WP_Mock::expectActionAdded(
+      'wpforms_process_before',
+      array(
+        'FacebookPixelPlugin\\Integration\\FacebookWordpressWPForms',
+        'trackEvent'
+      ),
+      20,
+      2
+    );
 
     FacebookWordpressWPForms::injectPixelCode();
   }
@@ -39,12 +44,12 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
   public function testInjectLeadEventWithoutAdmin() {
     parent::mockIsAdmin(false);
 
-    $mocked_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
-    $mocked_fbpixel->shouldReceive('getPixelLeadCode')
-      ->with(array(), FacebookWordpressWPForms::TRACKING_NAME, false)
-      ->andReturn('wpforms-form');
-    FacebookWordpressWPForms::injectLeadEvent('mock_form_data');
-    $this->expectOutputRegex('/wpforms-form[\s\S]+End Facebook Pixel Event Code/');
+    $event = ServerEventHelper::newEvent('Lead');
+    FacebookServerSideEvent::getInstance()->track($event);
+
+    FacebookWordpressWPForms::injectLeadEvent();
+    $this->expectOutputRegex(
+      '/wpforms-lite[\s\S]+End Facebook Pixel Event Code/');
   }
 
   public function testInjectLeadEventWithAdmin() {
@@ -52,5 +57,54 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
     FacebookWordpressWPForms::injectLeadEvent('mock_form_data');
     $this->expectOutputString("");
+  }
+
+  public function testTrackEventWithoutAdmin() {
+    self::mockIsAdmin(false);
+
+    $mock_entry = $this->createMockEntry();
+    $mock_form_data = $this->createMockFormData();
+
+    \WP_Mock::expectActionAdded(
+      'wp_footer',
+      array(
+        'FacebookPixelPlugin\\Integration\\FacebookWordpressWPForms',
+        'injectLeadEvent'
+      ),
+      20
+    );
+
+    FacebookWordpressWPForms::trackEvent(
+      $mock_entry, $mock_form_data);
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Lead', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+  }
+
+  private function createMockEntry() {
+    return array(
+      'fields' => array(
+        '0' => array('first' => 'Pika', 'last' => 'Chu'),
+        '1' => 'pika.chu@s2s.com'
+      )
+    );
+  }
+
+  private function createMockFormData() {
+    return array(
+      'fields' => array(
+        array('type' => 'name', 'id' => '0'),
+        array('type' => 'email', 'id' => '1')
+      )
+    );
   }
 }
