@@ -34,6 +34,7 @@ final class FacebookWordpressFormidableFormTest
 
   public function testInjectPixelCode() {
     self::mockIsAdmin(false);
+    self::mockUseS2S(false);
 
     \WP_Mock::expectActionAdded(
       'frm_after_create_entry',
@@ -49,6 +50,7 @@ final class FacebookWordpressFormidableFormTest
 
   public function testInjectLeadEventWithoutAdmin() {
     self::mockIsAdmin(false);
+    self::mockUseS2S(false);
 
     $event = ServerEventHelper::newEvent('Lead');
     FacebookServerSideEvent::getInstance()->track($event);
@@ -60,6 +62,7 @@ final class FacebookWordpressFormidableFormTest
 
   public function testInjectLeadEventWithAdmin() {
     self::mockIsAdmin(true);
+    self::mockUseS2S(false);
 
     FacebookWordpressFormidableForm::injectLeadEvent();
 
@@ -68,6 +71,7 @@ final class FacebookWordpressFormidableFormTest
 
   public function testTrackEventWithoutAdmin() {
     self::mockIsAdmin(false);
+    self::mockUseS2S(true);
 
     $mock_entry_id = 1;
     $mock_form_id = 1;
@@ -101,6 +105,7 @@ final class FacebookWordpressFormidableFormTest
 
   public function testTrackEventWithoutAdminErrorReadingForm() {
     self::mockIsAdmin(false);
+    self::mockUseS2S(true);
 
     $mock_entry_id = 1;
     $mock_form_id = 1;

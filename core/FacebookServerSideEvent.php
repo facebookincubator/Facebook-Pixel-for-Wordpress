@@ -38,14 +38,18 @@ class FacebookServerSideEvent {
 
   public function track($event) {
     $this->tracked_events[] = $event;
+
+    if (FacebookWordpressOptions::getUseS2S()) {
+      do_action('send_server_event', $event);
+    }
   }
 
   public function getTrackedEvents() {
     return $this->tracked_events;
   }
 
-  public function send() {
-    if (empty($this->tracked_events)) {
+  public static function send($events) {
+    if (empty($events)) {
       return;
     }
 
@@ -56,10 +60,9 @@ class FacebookServerSideEvent {
     $api = Api::init(null, null, $access_token);
 
     $request = (new EventRequest($pixel_id))
-                   ->setEvents($this->tracked_events)
+                   ->setEvents($events)
                    ->setPartnerAgent($agent);
 
     $response = $request->execute();
-    $this->tracked_events = [];
   }
 }

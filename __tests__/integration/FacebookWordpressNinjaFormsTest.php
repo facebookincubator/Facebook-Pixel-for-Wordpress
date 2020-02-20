@@ -41,6 +41,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithoutAdmin() {
     parent::mockIsAdmin(false);
+    self::mockUseS2S(true);
 
     $mock_actions = array(
       array(

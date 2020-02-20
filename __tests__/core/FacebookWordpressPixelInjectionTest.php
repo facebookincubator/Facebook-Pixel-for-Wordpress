@@ -41,7 +41,7 @@ final class FacebookWordpressPixelInjectionTest
     'FacebookWordpressWPECommerce',
   );
 
-  public function testPixelInjectionWithoutServerSideApi() {
+  public function testPixelInjection() {
     self::mockGetOption(1234);
     $injectionObj = new FacebookWordpressPixelInjection();
     \WP_Mock::expectActionAdded(
@@ -57,30 +57,6 @@ final class FacebookWordpressPixelInjectionTest
 
     \WP_Mock::expectActionNotAdded(
       'shutdown', array($injectionObj, 'sendServerEvents'));
-
-    FacebookWordpressOptions::initialize();
-    $injectionObj->inject();
-
-    foreach ($spies as $index => $spy) {
-      $spy->shouldHaveReceived('injectPixelCode');
-    }
-  }
-
-  public function testPixelInjectionWithServerSideApi() {
-    self::mockGetOption(1234, true);
-    $injectionObj = new FacebookWordpressPixelInjection();
-    \WP_Mock::expectActionAdded(
-      'wp_head', array($injectionObj, 'injectPixelCode'));
-    \WP_Mock::expectActionAdded(
-      'wp_head', array($injectionObj, 'injectPixelNoscriptCode'));
-    \WP_Mock::expectActionAdded(
-      'shutdown', array($injectionObj, 'sendServerEvents'));
-
-    $spies = array();
-    foreach (self::$integrations as $index => $integration) {
-      $spies[] = \Mockery::spy(
-        'alias:FacebookPixelPlugin\\Integration\\' . $integration);
-    }
 
     FacebookWordpressOptions::initialize();
     $injectionObj->inject();

@@ -36,6 +36,7 @@ use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
+use FacebookPixelPlugin\Core\ServerEventAsyncTask;
 
 class FacebookForWordpress {
   public function __construct() {
@@ -43,7 +44,10 @@ class FacebookForWordpress {
     FacebookWordpressOptions::initialize();
 
     // load textdomain
-    load_plugin_textdomain(FacebookPluginConfig::TEXT_DOMAIN, false, dirname(plugin_basename(__FILE__)) . '/languages/');
+    load_plugin_textdomain(
+      FacebookPluginConfig::TEXT_DOMAIN,
+      false,
+      dirname(plugin_basename(__FILE__)) . '/languages/');
 
     // initialize pixel
     $options = FacebookWordpressOptions::getOptions();
@@ -53,6 +57,9 @@ class FacebookForWordpress {
 
     // initialize admin page config
     $this->registerSettingsPage();
+
+    // initialize the s2s event async task
+    new ServerEventAsyncTask();
   }
 
   /**
