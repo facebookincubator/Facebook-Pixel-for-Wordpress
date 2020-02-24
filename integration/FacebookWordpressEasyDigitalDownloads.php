@@ -21,6 +21,9 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\PixelRenderer;
 
 class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'easy-digital-downloads/easy-digital-downloads.php';
@@ -112,14 +115,14 @@ jQuery(document).ready(function ($) {
       return;
     }
 
-    $currency = edd_get_currency();
-    $value = EDD()->cart->get_total();
-    $param = array(
-      'currency' => $currency,
-      'value' => $value,
+    $server_event = ServerEventHelper::safeCreateEvent(
+      'InitiateCheckout',
+      array(__CLASS__, 'createInitiateCheckoutEvent'),
+      array()
     );
-    $code = FacebookPixel::getPixelInitiateCheckoutCode($param, self::TRACKING_NAME, true);
+    FacebookServerSideEvent::getInstance()->track($server_event);
 
+    $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
     printf("
 <!-- Facebook Pixel Event Code -->
 %s
@@ -188,5 +191,13 @@ jQuery(document).ready(function ($) {
 <!-- End Facebook Pixel Event Code -->
       ",
       $code);
+  }
+
+  public static function createInitiateCheckoutEvent() {
+    $event_data = FacebookPluginUtils::getLoggedInUserInfo();
+    $event_data['currency'] = EDDUtils::getCurrency();
+    $event_data['value'] = EDDUtils::getCartTotal();
+
+    return $event_data;
   }
 }

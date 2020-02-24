@@ -19,6 +19,7 @@ namespace FacebookPixelPlugin\Core;
 
 use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\UserData;
+use FacebookAds\Object\ServerSide\CustomData;
 use FacebookPixelPlugin\Core\EventIdGenerator;
 
 defined('ABSPATH') or die('Direct access not allowed');
@@ -36,7 +37,8 @@ class ServerEventHelper {
               ->setEventTime(time())
               ->setEventId(EventIdGenerator::guidv4())
               ->setEventSourceUrl(self::getRequestUri())
-              ->setUserData($user_data);
+              ->setUserData($user_data)
+              ->setCustomData(new CustomData());
 
     return $event;
   }
@@ -46,7 +48,7 @@ class ServerEventHelper {
 
     if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
       $ip_address = $_SERVER['HTTP_CLIENT_IP'];
-    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+    } else if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
       $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'];
     } else if (!empty($_SERVER['REMOTE_ADDR'])) {
       $ip_address = $_SERVER['REMOTE_ADDR'];
@@ -101,6 +103,7 @@ class ServerEventHelper {
     try {
       $data = call_user_func_array($callback, $arguments);
       $user_data = $event->getUserData();
+      $custom_data = $event->getCustomData();
 
       if (!empty($data['email'])) {
         $user_data->setEmail($data['email']);
@@ -112,6 +115,14 @@ class ServerEventHelper {
 
       if (!empty($data['last_name'])) {
         $user_data->setLastName($data['last_name']);
+      }
+
+      if (!empty($data['currency'])) {
+        $custom_data->setCurrency($data['currency']);
+      }
+
+      if (!empty($data['value'])) {
+        $custom_data->setValue($data['value']);
       }
     } catch (\Exception $e) {
       // Need to log
