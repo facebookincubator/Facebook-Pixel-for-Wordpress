@@ -17,6 +17,8 @@
 
 namespace FacebookPixelPlugin\Integration;
 
+defined('ABSPATH') or die('Direct access not allowed');
+
 class EDDUtils {
   public static function getCurrency() {
     return edd_get_currency();

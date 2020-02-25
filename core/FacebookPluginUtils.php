@@ -43,6 +43,9 @@ class FacebookPluginUtils {
 
   public static function getLoggedInUserInfo() {
     $current_user = wp_get_current_user();
+    if (empty($current_user)) {
+      return array();
+    }
 
     return array(
       'email' => $current_user->user_email,

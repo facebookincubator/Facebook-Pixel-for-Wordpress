@@ -21,6 +21,9 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\PixelRenderer;
 
 class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'wp-e-commerce/wp-e-commerce.php';
@@ -48,10 +51,16 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
     if (FacebookPluginUtils::isAdmin()) {
       return $response;
     }
-    $product_id = $response['product_id'];
-    $params = static::getParametersForCart($product_id);
-    $code = FacebookPixel::getPixelAddToCartCode($params, self::TRACKING_NAME, true);
 
+    $product_id = $response['product_id'];
+    $server_event = ServerEventHelper::safeCreateEvent(
+      'AddToCart',
+      array(__CLASS__, 'createAddToCartEvent'),
+      array($product_id)
+    );
+    FacebookServerSideEvent::getInstance()->track($server_event);
+
+    $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
     $code = sprintf("
     <!-- Facebook Pixel Event Code -->
     %s
@@ -116,7 +125,9 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
     return $params;
   }
 
-  private static function getParametersForCart($product_id) {
+  public static function createAddToCartEvent($product_id) {
+    $event_data = FacebookPluginUtils::getLoggedInUserInfo();
+
     global $wpsc_cart;
     $cart_items = $wpsc_cart->get_items();
     foreach ($cart_items as $item) {
@@ -126,13 +137,13 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
       }
     }
 
-    $params = array(
-      'content_ids' => array($product_id),
-      'content_type' => 'product',
-      'currency' => function_exists('\wpsc_get_currency_code') ? \wpsc_get_currency_code() : 'Unknown',
-      'value' => $unit_price,
-    );
+    $event_data['content_ids'] = array($product_id);
+    $event_data['content_type'] = 'product';
+    $event_data['currency'] =
+      function_exists('\wpsc_get_currency_code')
+        ? \wpsc_get_currency_code() : '';
+    $event_data['value'] = $unit_price;
 
-    return $params;
+    return $event_data;
   }
 }

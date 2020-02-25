@@ -15,6 +15,7 @@ namespace FacebookPixelPlugin\Tests\Integration;
 
 use FacebookPixelPlugin\Integration\FacebookWordpressWPECommerce;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
  * @runTestsInSeparateProcesses
@@ -49,23 +50,34 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
   public function testInjectAddToCartEventWithoutAdmin() {
     self::mockIsAdmin(false);
+    self::mockUseS2S(true);
+
     $parameter = array('product_id' => 1, 'widget_output' => '');
 
-    $mocked_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
-    $mocked_fbpixel->shouldReceive('getPixelAddToCartCode')
-      ->andReturn('wp-e-commerce');
-
-    $mock_cart = \Mockery::mock();
-    $mock_cart->shouldReceive('get_items')
-      ->andReturn(array('1' => (object) array('product_id' => 1, 'unit_price' => 999)));
-
-    $GLOBALS['wpsc_cart'] = $mock_cart;
+    $this->setupMocks();
 
     $response = FacebookWordpressWPECommerce::injectAddToCartEvent($parameter);
 
     $this->assertArrayHasKey('widget_output', $response);
     $code = $response['widget_output'];
-    $this->assertRegexp('/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/', $code);
+    $this->assertRegexp(
+      '/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/', $code);
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('AddToCart', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('USD', $event->getCustomData()->getCurrency());
+    $this->assertEquals(999, $event->getCustomData()->getValue());
+    $this->assertEquals('product', $event->getCustomData()->getContentType());
+    $this->assertEquals([1], $event->getCustomData()->getContentIds());
   }
 
   public function testInjectAddToCartEventWithAdmin() {
@@ -82,11 +94,13 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
   public function testInitiateCheckoutEventWithoutAdmin() {
     self::mockIsAdmin(false);
 
-    $mocked_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
+    $mocked_fbpixel = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookPixel');
     $mocked_fbpixel->shouldReceive('getPixelInitiateCheckoutCode')
       ->andReturn('wp-e-commerce');
     FacebookWordpressWPECommerce::injectInitiateCheckoutEvent();
-    $this->expectOutputRegex('/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/');
+    $this->expectOutputRegex(
+      '/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/');
   }
 
   public function testInitiateCheckoutEventWithAdmin() {
@@ -99,7 +113,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
   public function testInjectPurchaseEventWithoutAdmin() {
     self::mockIsAdmin(false);
 
-    $mocked_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
+    $mocked_fbpixel = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookPixel');
     $mocked_fbpixel->shouldReceive('getPixelPurchaseCode')
       ->andReturn('wp-e-commerce');
 
@@ -113,8 +128,10 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $mock_purchase_log_object->shouldReceive('get_total')
       ->andReturn(999);
 
-    FacebookWordpressWPECommerce::injectPurchaseEvent($purchase_log_object, $session_id, $display_to_screen);
-    $this->expectOutputRegex('/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/');
+    FacebookWordpressWPECommerce::injectPurchaseEvent(
+      $purchase_log_object, $session_id, $display_to_screen);
+    $this->expectOutputRegex(
+      '/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/');
   }
 
   public function testInjectPurchaseEventWithAdmin() {
@@ -130,7 +147,29 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $mock_purchase_log_object->shouldReceive('get_total')
       ->andReturn(999);
 
-    FacebookWordpressWPECommerce::injectPurchaseEvent($purchase_log_object, $session_id, $display_to_screen);
+    FacebookWordpressWPECommerce::injectPurchaseEvent(
+      $purchase_log_object, $session_id, $display_to_screen);
     $this->expectOutputString("");
+  }
+
+  private function setupMocks() {
+    $mock_cart = \Mockery::mock();
+    $mock_cart->shouldReceive('get_items')
+      ->andReturn(
+        array('1' => (object) array('product_id' => 1, 'unit_price' => 999)));
+
+    $GLOBALS['wpsc_cart'] = $mock_cart;
+
+    $this->mocked_fbpixel->shouldReceive('getLoggedInUserInfo')
+      ->andReturn(array(
+        'email' => 'pika.chu@s2s.com',
+        'first_name' => 'Pika',
+        'last_name' => 'Chu'
+      )
+    );
+
+    \WP_Mock::userFunction('wpsc_get_currency_code', array(
+      'return' => 'USD')
+    );
   }
 }
