@@ -124,6 +124,14 @@ class ServerEventHelper {
       if (!empty($data['value'])) {
         $custom_data->setValue($data['value']);
       }
+
+      if (!empty($data['content_ids'])) {
+        $custom_data->setContentIds($data['content_ids']);
+      }
+
+      if (!empty($data['content_type'])) {
+        $custom_data->setContentType($data['content_type']);
+      }
     } catch (\Exception $e) {
       // Need to log
     }

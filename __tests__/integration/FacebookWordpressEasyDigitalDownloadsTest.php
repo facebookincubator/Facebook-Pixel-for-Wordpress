@@ -33,7 +33,6 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     $eventHookMap = array(
       'injectAddToCartEvent' => 'edd_after_download_content',
       'injectInitiateCheckoutEvent' => 'edd_after_checkout_cart',
-      'injectPurchaseEvent' => 'edd_payment_receipt_after',
       'injectViewContentEvent' => 'edd_after_download_content',
     );
 
@@ -85,6 +84,42 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     $this->assertEquals('300', $event->getCustomData()->getValue());
   }
 
+  public function testPurchaseEventWithoutAdmin() {
+    self::mockIsAdmin(false);
+    self::mockUseS2S(true);
+    $this->setupEDDMocks();
+
+    $payment = new class {
+      public $ID = 1;
+    };
+
+    \WP_Mock::expectActionAdded(
+      'wp_footer',
+      array(
+        'FacebookPixelPlugin\\Integration\\FacebookWordpressEasyDigitalDownloads',
+        'injectPurchaseEvent'
+      ),
+      20);
+
+    FacebookWordpressEasyDigitalDownloads::trackPurchaseEvent($payment, null);
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Purchase', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('USD', $event->getCustomData()->getCurrency());
+    $this->assertEquals(700, $event->getCustomData()->getValue());
+    $this->assertEquals('product', $event->getCustomData()->getContentType());
+    $this->assertEquals([99, 999], $event->getCustomData()->getContentIds());
+  }
+
   public function testInjectAddToCartEventWithAdmin() {
     self::mockIsAdmin(true);
 
@@ -103,7 +138,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
   public function testInjectPurchaseEventWithAdmin() {
     self::mockIsAdmin(true);
     $payment = array('ID' => '1234');
-    FacebookWordpressEasyDigitalDownloads::injectPurchaseEvent($payment);
+    FacebookWordpressEasyDigitalDownloads::trackPurchaseEvent($payment, null);
     $this->expectOutputString("");
   }
 
@@ -129,5 +164,27 @@ final class FacebookWordpressEasyDigitalDownloadsTest
         'last_name' => 'Chu'
       )
     );
+
+    \WP_Mock::userFunction('edd_get_payment_meta', array(
+      'args' => 1,
+      'return' => array(
+        'email' => 'pika.chu@s2s.com',
+        'user_info' => array(
+          'first_name' => 'Pika',
+          'last_name' => 'Chu'
+        ),
+        'cart_details' => array(
+          array(
+            'id' => 99,
+            'price' => 300
+          ),
+          array(
+            'id' => 999,
+            'price' => 400
+          )
+        ),
+        'currency' => 'USD'
+      )
+    ));
   }
 }
