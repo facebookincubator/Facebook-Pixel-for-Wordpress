@@ -93,14 +93,27 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
   public function testInitiateCheckoutEventWithoutAdmin() {
     self::mockIsAdmin(false);
+    self::mockUseS2S(true);
 
-    $mocked_fbpixel = \Mockery::mock(
-      'alias:FacebookPixelPlugin\Core\FacebookPixel');
-    $mocked_fbpixel->shouldReceive('getPixelInitiateCheckoutCode')
-      ->andReturn('wp-e-commerce');
+    $this->setupMocks();
+
     FacebookWordpressWPECommerce::injectInitiateCheckoutEvent();
     $this->expectOutputRegex(
       '/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/');
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('InitiateCheckout', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('USD', $event->getCustomData()->getCurrency());
+    $this->assertEquals(999, $event->getCustomData()->getValue());
   }
 
   public function testInitiateCheckoutEventWithAdmin() {

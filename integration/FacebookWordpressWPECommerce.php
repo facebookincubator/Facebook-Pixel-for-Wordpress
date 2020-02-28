@@ -76,24 +76,39 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
       return;
     }
 
-    $code = FacebookPixel::getPixelInitiateCheckoutCode(array(), self::TRACKING_NAME, false);
+    $server_event = ServerEventHelper::safeCreateEvent(
+      'InitiateCheckout',
+      array(__CLASS__, 'createInitiateCheckoutEvent'),
+      array()
+    );
+    FacebookServerSideEvent::getInstance()->track($server_event);
+
+    $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
     printf("
 <!-- Facebook Pixel Event Code -->
-<script>
 %s
-</script>
 <!-- End Facebook Pixel Event Code -->
       ",
       $code);
   }
 
-  public static function injectPurchaseEvent($purchase_log_object, $session_id, $display_to_screen) {
+  public static function injectPurchaseEvent(
+    $purchase_log_object,
+    $session_id,
+    $display_to_screen)
+  {
     if (FacebookPluginUtils::isAdmin() || !$display_to_screen) {
       return;
     }
 
-    $params = static::getParametersForPurchase($purchase_log_object);
-    $code = FacebookPixel::getPixelPurchaseCode($params, self::TRACKING_NAME, true);
+    $server_event = ServerEventHelper::safeCreateEvent(
+      'Purchase',
+      array(__CLASS__, 'createPurchaseEvent'),
+      array($purchase_log_object)
+    );
+    FacebookServerSideEvent::getInstance()->track($server_event);
+
+    $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
 
     printf("
 <!-- Facebook Pixel Event Code -->
@@ -103,26 +118,27 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
       $code);
   }
 
-  private static function getParametersForPurchase($purchase_log_object) {
+  public static function createPurchaseEvent($purchase_log_object) {
+    $event_data = FacebookPluginUtils::getLoggedInUserInfo();
+
     $cart_items = $purchase_log_object->get_items();
     $total_price = $purchase_log_object->get_total();
-    $currency = function_exists('\wpsc_get_currency_code') ? \wpsc_get_currency_code() : 'Unknown';
-    $item_ids = array();
+    $currency = function_exists('\wpsc_get_currency_code')
+                  ? \wpsc_get_currency_code() : '';
 
+    $item_ids = array();
     foreach ($cart_items as $item) {
       // This is for backwards compatibility
       $item_array = (array) $item;
       $item_ids[] = $item_array['prodid'];
     }
 
-    $params = array(
-      'content_ids' => $item_ids,
-      'content_type' => 'product',
-      'currency' => $currency,
-      'value' => $total_price,
-    );
+    $event_data['content_ids'] = $item_ids;
+    $event_data['content_type'] = 'product';
+    $event_data['currency'] = $currency;
+    $event_data['value'] = $total_price;
 
-    return $params;
+    return $event_data;
   }
 
   public static function createAddToCartEvent($product_id) {
@@ -143,6 +159,27 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
       function_exists('\wpsc_get_currency_code')
         ? \wpsc_get_currency_code() : '';
     $event_data['value'] = $unit_price;
+
+    return $event_data;
+  }
+
+  public static function createInitiateCheckoutEvent() {
+    $event_data = FacebookPluginUtils::getLoggedInUserInfo();
+    $content_ids = array();
+
+    $value = 0;
+    global $wpsc_cart;
+    $cart_items = $wpsc_cart->get_items();
+    foreach ($cart_items as $item) {
+      $content_ids[] = $item->product_id;
+      $value += $item->unit_price;
+    }
+
+    $event_data['currency'] =
+    function_exists('\wpsc_get_currency_code')
+      ? \wpsc_get_currency_code() : '';
+    $event_data['value'] = $value;
+    $event_data['content_ids'] = $content_ids;
 
     return $event_data;
   }
