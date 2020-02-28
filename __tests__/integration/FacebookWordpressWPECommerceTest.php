@@ -125,11 +125,9 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
   public function testInjectPurchaseEventWithoutAdmin() {
     self::mockIsAdmin(false);
+    self::mockUseS2S(true);
 
-    $mocked_fbpixel = \Mockery::mock(
-      'alias:FacebookPixelPlugin\Core\FacebookPixel');
-    $mocked_fbpixel->shouldReceive('getPixelPurchaseCode')
-      ->andReturn('wp-e-commerce');
+    $this->setupMocks();
 
     $mock_purchase_log_object = \Mockery::mock();
     $purchase_log_object = $mock_purchase_log_object;
@@ -142,9 +140,26 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
       ->andReturn(999);
 
     FacebookWordpressWPECommerce::injectPurchaseEvent(
-      $purchase_log_object, $session_id, $display_to_screen);
+      $purchase_log_object,
+      $session_id,
+      $display_to_screen);
+
     $this->expectOutputRegex(
       '/wp-e-commerce[\s\S]+End Facebook Pixel Event Code/');
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Purchase', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('USD', $event->getCustomData()->getCurrency());
+    $this->assertEquals(999, $event->getCustomData()->getValue());
   }
 
   public function testInjectPurchaseEventWithAdmin() {
