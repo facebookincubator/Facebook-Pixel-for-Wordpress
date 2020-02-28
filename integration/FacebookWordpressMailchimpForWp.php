@@ -21,6 +21,9 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\PixelRenderer;
 
 class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
   const PLUGIN_FILE = 'mailchimp-for-wp/mailchimp-for-wp.php';
@@ -38,14 +41,36 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
       return;
     }
 
-    $code = FacebookPixel::getPixelLeadCode(array(), self::TRACKING_NAME, false);
+    $server_event = ServerEventHelper::safeCreateEvent(
+      'Lead',
+      array(__CLASS__, 'readFormData'),
+      array()
+    );
+    FacebookServerSideEvent::getInstance()->track($server_event);
+
+    $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
     printf("
 <!-- Facebook Pixel Event Code -->
-<script>
   %s
-</script>
 <!-- End Facebook Pixel Event Code -->
     ",
       $code);
+  }
+
+  public static function readFormData() {
+    $event_data = array();
+    if (!empty($_POST['EMAIL'])) {
+      $event_data['email'] = $_POST['EMAIL'];
+    }
+
+    if (!empty($_POST['FNAME'])) {
+      $event_data['first_name'] = $_POST['FNAME'];
+    }
+
+    if (!empty($_POST['LNAME'])) {
+      $event_data['last_name'] = $_POST['LNAME'];
+    }
+
+    return $event_data;
   }
 }

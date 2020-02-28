@@ -15,6 +15,7 @@ namespace FacebookPixelPlugin\Tests\Integration;
 
 use FacebookPixelPlugin\Integration\FacebookWordpressMailchimpForWp;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
  * @runTestsInSeparateProcesses
@@ -26,7 +27,8 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
-    $mocked_base = \Mockery::mock('alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
+    $mocked_base = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase');
     $mocked_base->shouldReceive('addPixelFireForHook')
       ->with(array(
         'hook_name' => 'mc4wp_form_subscribed',
@@ -38,13 +40,27 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 
   public function testInjectLeadEventWithoutAdmin() {
     self::mockIsAdmin(false);
+    self::mockUseS2S(true);
 
-    $mocked_fbpixel = \Mockery::mock('alias:FacebookPixelPlugin\Core\FacebookPixel');
-    $mocked_fbpixel->shouldReceive('getPixelLeadCode')
-      ->with(array(), FacebookWordpressMailchimpForWp::TRACKING_NAME, false)
-      ->andReturn('mailchimp-for-wp');
+    $_POST['EMAIL'] = 'pika.chu@s2s.com';
+    $_POST['FNAME'] = 'Pika';
+    $_POST['LNAME'] = 'Chu';
+
     FacebookWordpressMailchimpForWp::injectLeadEvent();
-    $this->expectOutputRegex('/mailchimp-for-wp[\s\S]+End Facebook Pixel Event Code/');
+    $this->expectOutputRegex(
+      '/mailchimp-for-wp[\s\S]+End Facebook Pixel Event Code/');
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Lead', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
   }
 
   public function testInjectLeadEventWithAdmin() {
