@@ -11,9 +11,9 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Grow your business with Official Facebook Pixel!
 
 == Description ==
-This plugin will install a Facebook Pixel for your page. There is also built in support for other WordPress plugins. The Official Facebook Pixel allows you to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase. Tracking lower funnel events can help you understand the actions people are taking on your website. You can then use this information to make adjustments accordingly in your advertising campaigns.
+This plugin will install a Facebook Pixel for your page so you can capture the actions people take when they interact with your page, such as Lead, ViewContent, AddToCart, InitiateCheckout and Purchase events. Version 2.0.0 also includes support for the server-side API, which lets you send events directly from your page's server so you can capture a more of these events when they happen. This can help you better understand your customer's journey from the moment they show interest in your business to the moment they complete a conversion. You can use this information to create ad campaigns that are relevant to your audience. [Learn More](https://www.facebook.com/business/learn/facebook-ads-pixel)
 
-Current plugins that we support:
+This plugin also includes built-in support for these other WordPress plugins:
 * Caldera Forms
 * Contact Form 7
 * Easy Digital Downloads
