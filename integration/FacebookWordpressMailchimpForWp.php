@@ -21,7 +21,7 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\PixelRenderer;
 
@@ -41,7 +41,7 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
       return;
     }
 
-    $server_event = ServerEventHelper::safeCreateEvent(
+    $server_event = ServerEventFactory::safeCreateEvent(
       'Lead',
       array(__CLASS__, 'readFormData'),
       array()

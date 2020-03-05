@@ -23,7 +23,7 @@ use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
-use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\UserData;
@@ -56,7 +56,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
 
       // inject code when form is submitted successfully
       if ($type == 'successmessage') {
-        $event = ServerEventHelper::safeCreateEvent(
+        $event = ServerEventFactory::safeCreateEvent(
           'Lead',
           array(__CLASS__, 'readFormData'),
           array($form_data)
@@ -96,7 +96,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
   }
 
   private static function getName($form_data) {
-    return ServerEventHelper::splitName(self::getField($form_data, 'name'));
+    return ServerEventFactory::splitName(self::getField($form_data, 'name'));
   }
 
   private static function getField($form_data, $key) {

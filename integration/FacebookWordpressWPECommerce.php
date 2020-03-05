@@ -21,7 +21,7 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\PixelRenderer;
 
@@ -53,7 +53,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
     }
 
     $product_id = $response['product_id'];
-    $server_event = ServerEventHelper::safeCreateEvent(
+    $server_event = ServerEventFactory::safeCreateEvent(
       'AddToCart',
       array(__CLASS__, 'createAddToCartEvent'),
       array($product_id)
@@ -76,7 +76,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
       return;
     }
 
-    $server_event = ServerEventHelper::safeCreateEvent(
+    $server_event = ServerEventFactory::safeCreateEvent(
       'InitiateCheckout',
       array(__CLASS__, 'createInitiateCheckoutEvent'),
       array()
@@ -101,7 +101,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
       return;
     }
 
-    $server_event = ServerEventHelper::safeCreateEvent(
+    $server_event = ServerEventFactory::safeCreateEvent(
       'Purchase',
       array(__CLASS__, 'createPurchaseEvent'),
       array($purchase_log_object)

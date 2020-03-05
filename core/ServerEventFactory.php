@@ -21,10 +21,11 @@ use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\UserData;
 use FacebookAds\Object\ServerSide\CustomData;
 use FacebookPixelPlugin\Core\EventIdGenerator;
+use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 
 defined('ABSPATH') or die('Direct access not allowed');
 
-class ServerEventHelper {
+class ServerEventFactory {
   public static function newEvent($event_name) {
     $user_data = (new UserData())
                   ->setClientIpAddress(self::getIpAddress())
@@ -102,21 +103,23 @@ class ServerEventHelper {
 
     try {
       $data = call_user_func_array($callback, $arguments);
-      $user_data = $event->getUserData();
+
+      if (FacebookWordpressOptions::getUsePii()) {
+        $user_data = $event->getUserData();
+        if (!empty($data['email'])) {
+          $user_data->setEmail($data['email']);
+        }
+
+        if (!empty($data['first_name'])) {
+          $user_data->setFirstName($data['first_name']);
+        }
+
+        if (!empty($data['last_name'])) {
+          $user_data->setLastName($data['last_name']);
+        }
+      }
+
       $custom_data = $event->getCustomData();
-
-      if (!empty($data['email'])) {
-        $user_data->setEmail($data['email']);
-      }
-
-      if (!empty($data['first_name'])) {
-        $user_data->setFirstName($data['first_name']);
-      }
-
-      if (!empty($data['last_name'])) {
-        $user_data->setLastName($data['last_name']);
-      }
-
       if (!empty($data['currency'])) {
         $custom_data->setCurrency($data['currency']);
       }

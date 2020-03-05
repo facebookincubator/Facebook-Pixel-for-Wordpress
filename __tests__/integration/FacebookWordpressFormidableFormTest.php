@@ -13,7 +13,7 @@
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
-use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Integration\FacebookWordpressFormidableForm;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
@@ -52,7 +52,7 @@ final class FacebookWordpressFormidableFormTest
     self::mockIsAdmin(false);
     self::mockUseS2S(false);
 
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
     FacebookServerSideEvent::getInstance()->track($event);
 
     FacebookWordpressFormidableForm::injectLeadEvent();

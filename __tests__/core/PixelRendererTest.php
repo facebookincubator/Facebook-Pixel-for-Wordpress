@@ -15,7 +15,6 @@ namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\PixelRenderer;
-use FacebookPixelPlugin\Core\ServerEventHelper;
 use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\CustomData;
 

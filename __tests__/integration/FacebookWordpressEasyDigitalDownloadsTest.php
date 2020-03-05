@@ -15,7 +15,6 @@ namespace FacebookPixelPlugin\Tests\Integration;
 
 use FacebookPixelPlugin\Integration\FacebookWordpressEasyDigitalDownloads;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
-use FacebookPixelPlugin\Core\ServerEventHelper;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**

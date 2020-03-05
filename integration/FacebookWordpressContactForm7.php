@@ -22,7 +22,7 @@ defined('ABSPATH') or die('Direct access not allowed');
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
-use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\UserData;
@@ -43,7 +43,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
       return $result;
     }
 
-    $server_event = ServerEventHelper::safeCreateEvent(
+    $server_event = ServerEventFactory::safeCreateEvent(
       'Lead',
       array(__CLASS__, 'readFormData'),
       array($form)
@@ -99,7 +99,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
     foreach ($form_tags as $tag) {
       if ($tag->basetype === "text"
         && strpos(strtolower($tag->name), 'name') !== false) {
-        return ServerEventHelper::splitName($_POST[$tag->name]);
+        return ServerEventFactory::splitName($_POST[$tag->name]);
       }
     }
 

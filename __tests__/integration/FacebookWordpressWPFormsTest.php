@@ -15,7 +15,7 @@ namespace FacebookPixelPlugin\Tests\Integration;
 
 use FacebookPixelPlugin\Integration\FacebookWordpressWPForms;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
-use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
@@ -45,7 +45,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     parent::mockIsAdmin(false);
     self::mockUseS2S(false);
 
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
     FacebookServerSideEvent::getInstance()->track($event);
 
     FacebookWordpressWPForms::injectLeadEvent();

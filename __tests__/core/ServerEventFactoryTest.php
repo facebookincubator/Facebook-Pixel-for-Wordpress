@@ -13,7 +13,7 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
@@ -24,23 +24,23 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * make sure tests are isolated.
  * Stop preserving global state from the parent process.
  */
-final class ServerEventHelperTest extends FacebookWordpressTestBase {
+final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   public function testNewEventHasEventId() {
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
 
     $this->assertNotNull($event->getEventId());
     $this->assertEquals(36, strlen($event->getEventId()));
   }
 
   public function testNewEventHasEventTime() {
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
 
     $this->assertNotNull($event->getEventTime());
     $this->assertLessThan(1, time() - $event->getEventTime());
   }
 
   public function testNewEventHasEventName() {
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
 
     $this->assertEquals('Lead', $event->getEventName());
   }
@@ -50,7 +50,7 @@ final class ServerEventHelperTest extends FacebookWordpressTestBase {
     $_SERVER['HTTP_X_FORWARDED_FOR'] = 'HTTP_X_FORWARDED_FOR_VALUE';
     $_SERVER['REMOTE_ADDR'] = 'REMOTE_ADDR';
 
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
     $this->assertEquals('HTTP_CLIENT_IP_VALUE',
       $event->getUserData()->getClientIpAddress());
   }
@@ -59,7 +59,7 @@ final class ServerEventHelperTest extends FacebookWordpressTestBase {
     $_SERVER['HTTP_X_FORWARDED_FOR'] = 'HTTP_X_FORWARDED_FOR_VALUE';
     $_SERVER['REMOTE_ADDR'] = 'REMOTE_ADDR';
 
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
     $this->assertEquals('HTTP_X_FORWARDED_FOR_VALUE',
       $event->getUserData()->getClientIpAddress());
   }
@@ -67,37 +67,84 @@ final class ServerEventHelperTest extends FacebookWordpressTestBase {
   public function testNewEventTakesIpAddressFromRemoteAddr() {
     $_SERVER['REMOTE_ADDR'] = 'REMOTE_ADDR_VALUE';
 
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
     $this->assertEquals('REMOTE_ADDR_VALUE',
       $event->getUserData()->getClientIpAddress());
   }
 
   public function testNewEventHasUserAgent() {
+    $this->mockUsePII(true);
     $_SERVER['HTTP_USER_AGENT'] = 'HTTP_USER_AGENT_VALUE';
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
 
     $this->assertEquals('HTTP_USER_AGENT_VALUE',
       $event->getUserData()->getClientUserAgent());
   }
 
   public function testNewEventHasEventSourceUrl() {
+    $this->mockUsePII(true);
     $_SERVER['REQUEST_URI'] = 'REQUEST_URI_VALUE';
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
 
     $this->assertEquals('REQUEST_URI_VALUE', $event->getEventSourceUrl());
   }
 
   public function testNewEventHasFbc() {
+    $this->mockUsePII(true);
     $_COOKIE['_fbc'] = '_fbc_value';
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
 
     $this->assertEquals('_fbc_value', $event->getUserData()->getFbc());
   }
 
   public function testNewEventHasFbp() {
+    $this->mockUsePII(true);
     $_COOKIE['_fbp'] = '_fbp_value';
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
 
     $this->assertEquals('_fbp_value', $event->getUserData()->getFbp());
+  }
+
+  public function testSafeCreateEventWithPII() {
+    $this->mockUsePII(true);
+
+    $server_event = ServerEventFactory::safeCreateEvent(
+      'Lead',
+      array($this, 'getEventData'),
+      array()
+    );
+
+    $this->assertEquals('pika.chu@s2s.com',
+      $server_event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $server_event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $server_event->getUserData()->getLastName());
+  }
+
+  public function testSafeCreateEventWithPIIDisabled() {
+    $this->mockUsePII(false);
+
+    $server_event = ServerEventFactory::safeCreateEvent(
+      'Lead',
+      array($this, 'getEventData'),
+      array()
+    );
+
+    $this->assertNull($server_event->getUserData()->getEmail());
+    $this->assertNull($server_event->getUserData()->getFirstName());
+    $this->assertNull($server_event->getUserData()->getLastName());
+  }
+
+  public function getEventData() {
+    return array(
+      'email' => 'pika.chu@s2s.com',
+      'first_name' => 'Pika',
+      'last_name' => 'Chu'
+    );
+  }
+
+  private function mockUsePII($use_pii = true) {
+    $this->mocked_options = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions');
+    $this->mocked_options->shouldReceive('getUsePii')->andReturn($use_pii);
   }
 }

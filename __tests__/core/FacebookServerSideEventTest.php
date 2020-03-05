@@ -13,7 +13,7 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
@@ -28,7 +28,7 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
   public function testTrackEventFiresAction() {
     self::mockUseS2S(true);
-    $event = ServerEventHelper::newEvent('Lead');
+    $event = ServerEventFactory::newEvent('Lead');
     \WP_Mock::expectAction('send_server_event', $event);
 
     FacebookServerSideEvent::getInstance()->track($event);

@@ -21,7 +21,7 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\ServerEventHelper;
+use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\PixelRenderer;
 
@@ -115,7 +115,7 @@ jQuery(document).ready(function ($) {
       return;
     }
 
-    $server_event = ServerEventHelper::safeCreateEvent(
+    $server_event = ServerEventFactory::safeCreateEvent(
       'InitiateCheckout',
       array(__CLASS__, 'createInitiateCheckoutEvent'),
       array()
@@ -136,7 +136,7 @@ jQuery(document).ready(function ($) {
       return;
     }
 
-    $server_event = ServerEventHelper::safeCreateEvent(
+    $server_event = ServerEventFactory::safeCreateEvent(
       'Purchase',
       array(__CLASS__, 'createPurchaseEvent'),
       array($payment)
