@@ -18,6 +18,7 @@ use FacebookPixelPlugin\Integration\FacebookWordpressContactForm7;
 use FacebookPixelPlugin\Tests\Mocks\MockContactForm7;
 use FacebookPixelPlugin\Tests\Mocks\MockContactForm7Tag;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
+use FacebookPixelPlugin\Core\ServerEventFactory;
 
 /**
  * @runTestsInSeparateProcesses
@@ -34,18 +35,21 @@ final class FacebookWordpressContactForm7Test
     self::mockIsAdmin(false);
     self::mockUseS2S(false);
 
-    $mock_result = array(
+    $mock_response = array(
       'status' => 'mail_sent',
       'message' => 'Thank you for your message');
 
-    $result =
-      FacebookWordpressContactForm7::injectLeadEvent(null, $mock_result);
+    $event = ServerEventFactory::newEvent('Lead');
+    FacebookServerSideEvent::getInstance()->track($event);
+
+    $response =
+      FacebookWordpressContactForm7::injectLeadEvent($mock_response, null);
     $this->assertRegexp(
       '/contact-form-7[\s\S]+End Facebook Pixel Event Code/',
-      $result['message']);
+      $response['message']);
   }
 
-  public function testInjectLeadEventFiresS2SEventsWithoutAdmin() {
+  public function testTrackServerEventWithoutAdmin() {
     self::mockIsAdmin(false);
     self::mockUseS2S(true);
 
@@ -55,12 +59,17 @@ final class FacebookWordpressContactForm7Test
 
     $mock_form = $this->createMockForm();
 
-    $result =
-      FacebookWordpressContactForm7::injectLeadEvent($mock_form, $mock_result);
+    \WP_Mock::expectActionAdded(
+      'wpcf7_ajax_json_echo',
+      array(
+        'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
+        'injectLeadEvent'
+      ),
+      20, 2
+    );
 
-    $this->assertRegexp(
-      '/contact-form-7[\s\S]+End Facebook Pixel Event Code/',
-      $result['message']);
+    $result =
+      FacebookWordpressContactForm7::trackServerEvent($mock_form, $mock_result);
 
     $tracked_events =
       FacebookServerSideEvent::getInstance()->getTrackedEvents();
@@ -75,7 +84,7 @@ final class FacebookWordpressContactForm7Test
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
   }
 
-  public function testInjectLeadEventFiresS2SEventsWithoutFormData() {
+  public function testTrackServerEventWithoutFormData() {
     self::mockIsAdmin(false);
     self::mockUseS2S(true);
 
@@ -85,12 +94,17 @@ final class FacebookWordpressContactForm7Test
 
     $mock_form = new MockContactForm7();
 
-    $result =
-      FacebookWordpressContactForm7::injectLeadEvent($mock_form, $mock_result);
+    \WP_Mock::expectActionAdded(
+      'wpcf7_ajax_json_echo',
+      array(
+        'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
+        'injectLeadEvent'
+      ),
+      20, 2
+    );
 
-    $this->assertRegexp(
-      '/contact-form-7[\s\S]+End Facebook Pixel Event Code/',
-      $result['message']);
+    $result =
+      FacebookWordpressContactForm7::trackServerEvent($mock_form, $mock_result);
 
     $tracked_events =
       FacebookServerSideEvent::getInstance()->getTrackedEvents();
@@ -102,7 +116,7 @@ final class FacebookWordpressContactForm7Test
     $this->assertNotNull($event->getEventTime());
   }
 
-  public function testInjectLeadEventFiresS2SEventsEvenWithErrorReadingData() {
+  public function testTrackServerEventErrorReadingData() {
     self::mockIsAdmin(false);
     self::mockUseS2S(true);
 
@@ -113,12 +127,17 @@ final class FacebookWordpressContactForm7Test
     $mock_form = new MockContactForm7();
     $mock_form->set_throw(true);
 
-    $result =
-      FacebookWordpressContactForm7::injectLeadEvent($mock_form, $mock_result);
+    \WP_Mock::expectActionAdded(
+      'wpcf7_ajax_json_echo',
+      array(
+        'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
+        'injectLeadEvent'
+      ),
+      20, 2
+    );
 
-    $this->assertRegexp(
-      '/contact-form-7[\s\S]+End Facebook Pixel Event Code/',
-      $result['message']);
+    $result =
+      FacebookWordpressContactForm7::trackServerEvent($mock_form, $mock_result);
 
     $tracked_events =
       FacebookServerSideEvent::getInstance()->getTrackedEvents();
@@ -133,13 +152,13 @@ final class FacebookWordpressContactForm7Test
   public function testInjectLeadEventWithAdmin() {
     self::mockIsAdmin(true);
 
-    $mock_result = array(
+    $mock_response = array(
       'status' => 'mail_sent',
       'message' => 'Thank you for your message');
 
-    $result =
-      FacebookWordpressContactForm7::injectLeadEvent(null, $mock_result);
-    $this->assertEquals('Thank you for your message', $result['message']);
+    $response =
+      FacebookWordpressContactForm7::injectLeadEvent($mock_response, null);
+    $this->assertEquals('Thank you for your message', $response['message']);
   }
 
   private function createMockForm() {

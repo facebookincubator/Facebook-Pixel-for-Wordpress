@@ -34,11 +34,11 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
   public static function injectPixelCode() {
     add_action(
       'wpcf7_submit',
-      array(__CLASS__, 'injectLeadEvent'),
+      array(__CLASS__, 'trackServerEvent'),
       10, 2);
   }
 
-  public static function injectLeadEvent($form, $result) {
+  public static function trackServerEvent($form, $result) {
     if (FacebookPluginUtils::isAdmin()) {
       return $result;
     }
@@ -50,16 +50,30 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
     );
     FacebookServerSideEvent::getInstance()->track($server_event);
 
-    $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
+    add_action(
+      'wpcf7_ajax_json_echo',
+      array(__CLASS__, 'injectLeadEvent'),
+      20, 2);
+
+    return $result;
+  }
+
+  public static function injectLeadEvent($response, $result) {
+    if (FacebookPluginUtils::isAdmin()) {
+      return $response;
+    }
+
+    $events = FacebookServerSideEvent::getInstance()->getTrackedEvents();
+    $code = PixelRenderer::render($events, self::TRACKING_NAME);
     $code = sprintf("
-    <!-- Facebook Pixel Event Code -->
-    %s
-    <!-- End Facebook Pixel Event Code -->
-         ",
+<!-- Facebook Pixel Event Code -->
+%s
+<!-- End Facebook Pixel Event Code -->
+      ",
       $code);
 
-    $result['message'] .= $code ;
-    return $result;
+    $response['message'] .= $code;
+    return $response;
   }
 
   public static function readFormData($form) {
