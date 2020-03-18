@@ -24,6 +24,10 @@ abstract class FacebookWordpressTestBase extends TestCase {
         'FB_INTEGRATION_TRACKING_KEY' => 'fb_integration_tracking',
       ],
     ]);
+
+    $_SERVER['HTTPS'] = 'on';
+    $_SERVER['HTTP_HOST'] = 'www.pikachu.com';
+    $_SERVER['REQUEST_URI'] = '/index.php';
   }
 
   public function tearDown() {

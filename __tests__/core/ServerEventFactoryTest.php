@@ -81,12 +81,37 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
       $event->getUserData()->getClientUserAgent());
   }
 
-  public function testNewEventHasEventSourceUrl() {
+  public function testNewEventHasEventSourceUrlWithHttps() {
     $this->mockUsePII(true);
-    $_SERVER['REQUEST_URI'] = 'REQUEST_URI_VALUE';
+    $_SERVER['HTTPS'] = 'anyvalue';
+    $_SERVER['HTTP_HOST'] = 'www.pikachu.com';
+    $_SERVER['REQUEST_URI'] = '/index.php';
+
     $event = ServerEventFactory::newEvent('Lead');
 
-    $this->assertEquals('REQUEST_URI_VALUE', $event->getEventSourceUrl());
+    $this->assertEquals('https://www.pikachu.com/index.php', $event->getEventSourceUrl());
+  }
+
+  public function testNewEventHasEventSourceUrlWithHttp() {
+    $this->mockUsePII(true);
+    $_SERVER['HTTPS'] = '';
+    $_SERVER['HTTP_HOST'] = 'www.pikachu.com';
+    $_SERVER['REQUEST_URI'] = '/index.php';
+
+    $event = ServerEventFactory::newEvent('Lead');
+
+    $this->assertEquals('http://www.pikachu.com/index.php', $event->getEventSourceUrl());
+  }
+
+  public function testNewEventHasEventSourceUrlWithHttpsOff() {
+    $this->mockUsePII(true);
+    $_SERVER['HTTPS'] = 'off';
+    $_SERVER['HTTP_HOST'] = 'www.pikachu.com';
+    $_SERVER['REQUEST_URI'] = '/index.php';
+
+    $event = ServerEventFactory::newEvent('Lead');
+
+    $this->assertEquals('http://www.pikachu.com/index.php', $event->getEventSourceUrl());
   }
 
   public function testNewEventHasFbc() {

@@ -69,13 +69,20 @@ class ServerEventFactory {
   }
 
   private static function getRequestUri() {
-    $request_uri = null;
-
-    if (!empty($_SERVER['REQUEST_URI'])) {
-      $request_uri = $_SERVER['REQUEST_URI'];
+    $url = "http://";
+    if(!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+      $url = "https://";
     }
 
-    return $request_uri;
+    if (!empty($_SERVER['HTTP_HOST'])) {
+      $url .= $_SERVER['HTTP_HOST'];
+    }
+
+    if (!empty($_SERVER['REQUEST_URI'])) {
+      $url .= $_SERVER['REQUEST_URI'];
+    }
+
+    return $url;
   }
 
   private static function getFbp() {
