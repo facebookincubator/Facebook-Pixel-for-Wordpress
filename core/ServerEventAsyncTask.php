@@ -30,18 +30,23 @@ class ServerEventAsyncTask extends \WP_Async_Task {
         return array('data' => base64_encode(serialize($data)));
       }
     } catch (\Exception $ex) {
-      // Need to log
+      error_log($ex);
     }
 
     return array();
   }
 
   protected function run_action() {
-    $events = unserialize(base64_decode($_POST['data']));
-    if (empty($events)) {
-      return;
-    }
+    try {
+      $events = unserialize(base64_decode($_POST['data']));
+      if (empty($events)) {
+        return;
+      }
 
-    FacebookServerSideEvent::send($events);
+      FacebookServerSideEvent::send($events);
+    }
+    catch (\Exception $ex) {
+      error_log($ex);
+    }
   }
 }
