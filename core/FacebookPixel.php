@@ -108,7 +108,7 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
     : self::$pixelFbqCodeWithoutScript;
     $param_str = $param;
     if (is_array($param)) {
-      $param_str = json_encode($param, JSON_PRETTY_PRINT);
+      $param_str = json_encode($param, JSON_PRETTY_PRINT | JSON_FORCE_OBJECT);
     }
     $agent_param = array('agent' => $agent_string);
     return sprintf(
