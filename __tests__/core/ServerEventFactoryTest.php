@@ -150,7 +150,8 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $server_event = ServerEventFactory::safeCreateEvent(
       'Lead',
       array($this, 'getEventData'),
-      array()
+      array(),
+      'test_integration'
     );
 
     $this->assertEquals('pika.chu@s2s.com',
@@ -165,7 +166,8 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $server_event = ServerEventFactory::safeCreateEvent(
       'Lead',
       array($this, 'getEventData'),
-      array()
+      array(),
+      'test_integration'
     );
 
     $this->assertNull($server_event->getUserData()->getEmail());

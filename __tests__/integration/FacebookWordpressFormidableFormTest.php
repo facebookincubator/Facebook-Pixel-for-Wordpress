@@ -101,6 +101,8 @@ final class FacebookWordpressFormidableFormTest
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('formidable-lite',
+      $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
   public function testTrackEventWithoutAdminErrorReadingForm() {

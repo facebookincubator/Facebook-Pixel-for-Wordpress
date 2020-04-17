@@ -78,6 +78,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->assertEquals(999, $event->getCustomData()->getValue());
     $this->assertEquals('product', $event->getCustomData()->getContentType());
     $this->assertEquals([1], $event->getCustomData()->getContentIds());
+    $this->assertEquals('wp-e-commerce',
+      $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
   public function testInjectAddToCartEventWithAdmin() {
@@ -114,6 +116,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
     $this->assertEquals('USD', $event->getCustomData()->getCurrency());
     $this->assertEquals(999, $event->getCustomData()->getValue());
+    $this->assertEquals('wp-e-commerce',
+      $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
   public function testInitiateCheckoutEventWithAdmin() {
@@ -160,6 +164,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
     $this->assertEquals('USD', $event->getCustomData()->getCurrency());
     $this->assertEquals(999, $event->getCustomData()->getValue());
+    $this->assertEquals('wp-e-commerce',
+      $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
   public function testInjectPurchaseEventWithAdmin() {

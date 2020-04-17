@@ -56,7 +56,8 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
     $server_event = ServerEventFactory::safeCreateEvent(
       'AddToCart',
       array(__CLASS__, 'createAddToCartEvent'),
-      array($product_id)
+      array($product_id),
+      self::TRACKING_NAME
     );
     FacebookServerSideEvent::getInstance()->track($server_event);
 
@@ -79,7 +80,8 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
     $server_event = ServerEventFactory::safeCreateEvent(
       'InitiateCheckout',
       array(__CLASS__, 'createInitiateCheckoutEvent'),
-      array()
+      array(),
+      self::TRACKING_NAME
     );
     FacebookServerSideEvent::getInstance()->track($server_event);
 
@@ -104,7 +106,8 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
     $server_event = ServerEventFactory::safeCreateEvent(
       'Purchase',
       array(__CLASS__, 'createPurchaseEvent'),
-      array($purchase_log_object)
+      array($purchase_log_object),
+      self::TRACKING_NAME
     );
     FacebookServerSideEvent::getInstance()->track($server_event);
 

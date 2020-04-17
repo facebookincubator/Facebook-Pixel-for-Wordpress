@@ -81,6 +81,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
     $this->assertEquals('USD', $event->getCustomData()->getCurrency());
     $this->assertEquals('300', $event->getCustomData()->getValue());
+    $this->assertEquals('easy-digital-downloads',
+      $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
   public function testPurchaseEventWithoutAdmin() {
@@ -117,6 +119,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     $this->assertEquals(700, $event->getCustomData()->getValue());
     $this->assertEquals('product', $event->getCustomData()->getContentType());
     $this->assertEquals([99, 999], $event->getCustomData()->getContentIds());
+    $this->assertEquals('easy-digital-downloads',
+      $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
   public function testInjectAddToCartEventWithAdmin() {

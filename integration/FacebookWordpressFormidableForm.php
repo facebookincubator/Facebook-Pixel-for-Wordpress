@@ -49,7 +49,8 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
     $server_event = ServerEventFactory::safeCreateEvent(
       'Lead',
       array(__CLASS__, 'readFormData'),
-      array($entry_id)
+      array($entry_id),
+      self::TRACKING_NAME
     );
     FacebookServerSideEvent::getInstance()->track($server_event);
 

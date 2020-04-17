@@ -61,6 +61,8 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('mailchimp-for-wp',
+      $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
   public function testInjectLeadEventWithAdmin() {

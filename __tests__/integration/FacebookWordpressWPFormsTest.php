@@ -91,6 +91,8 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('wpforms-lite',
+      $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
   private function createMockEntry() {

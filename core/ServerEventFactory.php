@@ -126,7 +126,8 @@ class ServerEventFactory {
                       | FILTER_FLAG_NO_RES_RANGE);
   }
 
-  public static function safeCreateEvent($event_name, $callback, $arguments) {
+  public static function safeCreateEvent(
+    $event_name, $callback, $arguments, $integration) {
     $event = self::newEvent($event_name);
 
     try {
@@ -148,6 +149,8 @@ class ServerEventFactory {
       }
 
       $custom_data = $event->getCustomData();
+      $custom_data->addCustomProperty('fb_integration_tracking', $integration);
+
       if (!empty($data['currency'])) {
         $custom_data->setCurrency($data['currency']);
       }

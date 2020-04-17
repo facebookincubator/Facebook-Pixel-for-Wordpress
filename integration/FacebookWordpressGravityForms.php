@@ -47,7 +47,8 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
     $event = ServerEventFactory::safeCreateEvent(
       'Lead',
       array(__CLASS__, 'readFormData'),
-      array($form, $entry)
+      array($form, $entry),
+      self::TRACKING_NAME
     );
     FacebookServerSideEvent::getInstance()->track($event);
 

@@ -118,7 +118,8 @@ jQuery(document).ready(function ($) {
     $server_event = ServerEventFactory::safeCreateEvent(
       'InitiateCheckout',
       array(__CLASS__, 'createInitiateCheckoutEvent'),
-      array()
+      array(),
+      self::TRACKING_NAME
     );
     FacebookServerSideEvent::getInstance()->track($server_event);
 
@@ -139,7 +140,8 @@ jQuery(document).ready(function ($) {
     $server_event = ServerEventFactory::safeCreateEvent(
       'Purchase',
       array(__CLASS__, 'createPurchaseEvent'),
-      array($payment)
+      array($payment),
+      self::TRACKING_NAME
     );
     FacebookServerSideEvent::getInstance()->track($server_event);
 

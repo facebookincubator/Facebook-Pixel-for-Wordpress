@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8c78f3821e9ebc5ffc8c03dab0e2a8b3",
+    "content-hash": "7377f41bb6d7412df023388bf4be179f",
     "packages": [
         {
             "name": "facebook/php-business-sdk",
-            "version": "6.0.0",
+            "version": "6.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/facebook/facebook-php-business-sdk.git",
-                "reference": "32c8678d3c50e0570b68d7cbb23062c16a5faf15"
+                "reference": "c7bf72b1f5ca8f3fd6120544cb2541546204bf83"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/facebook/facebook-php-business-sdk/zipball/32c8678d3c50e0570b68d7cbb23062c16a5faf15",
-                "reference": "32c8678d3c50e0570b68d7cbb23062c16a5faf15",
+                "url": "https://api.github.com/repos/facebook/facebook-php-business-sdk/zipball/c7bf72b1f5ca8f3fd6120544cb2541546204bf83",
+                "reference": "c7bf72b1f5ca8f3fd6120544cb2541546204bf83",
                 "shasum": ""
             },
             "require-dev": {
@@ -41,7 +41,7 @@
                 "page",
                 "sdk"
             ],
-            "time": "2020-02-03T20:06:10+00:00"
+            "time": "2020-04-08T04:52:23+00:00"
         },
         {
             "name": "techcrunch/wp-async-task",
@@ -1980,20 +1980,6 @@
                 "polyfill",
                 "portable"
             ],
-            "funding": [
-                {
-                    "url": "https://symfony.com/sponsor",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://github.com/fabpot",
-                    "type": "github"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
-                    "type": "tidelift"
-                }
-            ],
             "time": "2020-02-27T09:26:54+00:00"
         },
         {
@@ -2053,20 +2039,6 @@
                 "portable",
                 "shim"
             ],
-            "funding": [
-                {
-                    "url": "https://symfony.com/sponsor",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://github.com/fabpot",
-                    "type": "github"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
-                    "type": "tidelift"
-                }
-            ],
             "time": "2020-03-09T19:04:49+00:00"
         },
         {
@@ -2124,20 +2096,6 @@
                 "polyfill",
                 "portable",
                 "shim"
-            ],
-            "funding": [
-                {
-                    "url": "https://symfony.com/sponsor",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://github.com/fabpot",
-                    "type": "github"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
-                    "type": "tidelift"
-                }
             ],
             "time": "2020-02-27T09:26:54+00:00"
         },
@@ -2356,6 +2314,5 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],
-    "platform-dev": [],
-    "plugin-api-version": "1.1.0"
+    "platform-dev": []
 }
