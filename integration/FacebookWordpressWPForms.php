@@ -82,10 +82,12 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
       return array();
     }
 
+    $name = self::getName($entry, $form_data);
+
     return array(
       'email' => self::getEmail($entry, $form_data),
-      'first_name' => self::getFirstName($entry, $form_data),
-      'last_name' => self::getLastName($entry, $form_data)
+      'first_name' => !empty($name) ? $name[0] : null,
+      'last_name' => !empty($name) ? $name[1] : null
     );
   }
 
@@ -93,28 +95,36 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
     return self::getField($entry, $form_data, 'email');
   }
 
-  private static function getFirstName($entry, $form_data) {
-    return self::getField($entry, $form_data, 'name', 'first');
+  private static function getName($entry, $form_data) {
+    if (empty($form_data['fields']) || empty($entry['fields'])) {
+      return null;
+    }
+
+    $entries = $entry['fields'];
+    foreach ($form_data['fields'] as $field) {
+      if ($field['type'] == 'name') {
+        if ($field['format'] == 'simple') {
+          return ServerEventFactory::splitName($entries[$field['id']]);
+        } else if ($field['format'] == 'first-last') {
+          return array(
+            $entries[$field['id']]['first'],
+            $entries[$field['id']]['last']
+          );
+        }
+      }
+    }
+
+    return null;
   }
 
-  private static function getLastName($entry, $form_data) {
-    return self::getField($entry, $form_data, 'name', 'last');
-  }
-
-  private static function getField($entry, $form_data, $type, $label = null) {
-    if (empty($form_data['fields'])) {
+  private static function getField($entry, $form_data, $type) {
+    if (empty($form_data['fields']) || empty($entry['fields'])) {
       return null;
     }
 
     foreach ($form_data['fields'] as $field) {
       if ($field['type'] == $type) {
-        if (!empty($entry['fields'])) {
-          if (!empty($label)) {
-            return $entry['fields'][$field['id']][$label];
-          } else {
-            return $entry['fields'][$field['id']];
-          }
-        }
+        return $entry['fields'][$field['id']];
       }
     }
 

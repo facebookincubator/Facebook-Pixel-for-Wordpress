@@ -95,19 +95,56 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
-  private function createMockEntry() {
+  public function testTrackEventWithoutAdminSimpleFormat() {
+    self::mockIsAdmin(false);
+    self::mockUseS2S(true);
+
+    $mock_entry = $this->createMockEntry(true);
+    $mock_form_data = $this->createMockFormData(true);
+
+    \WP_Mock::expectActionAdded(
+      'wp_footer',
+      array(
+        'FacebookPixelPlugin\\Integration\\FacebookWordpressWPForms',
+        'injectLeadEvent'
+      ),
+      20
+    );
+
+    FacebookWordpressWPForms::trackEvent(
+      $mock_entry, $mock_form_data);
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Lead', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+  }
+
+  private function createMockEntry($simple_format = false) {
     return array(
       'fields' => array(
-        '0' => array('first' => 'Pika', 'last' => 'Chu'),
+        '0' => $simple_format
+                ? 'Pika Chu'
+                : array('first' => 'Pika', 'last' => 'Chu'),
         '1' => 'pika.chu@s2s.com'
       )
     );
   }
 
-  private function createMockFormData() {
+  private function createMockFormData($simple_format = false) {
     return array(
       'fields' => array(
-        array('type' => 'name', 'id' => '0'),
+        array(
+          'type' => 'name',
+          'id' => '0',
+          'format' => $simple_format ? 'simple' : 'first-last'),
         array('type' => 'email', 'id' => '1')
       )
     );
