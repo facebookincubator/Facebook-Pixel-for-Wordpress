@@ -45,31 +45,45 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $this->assertEquals('Lead', $event->getEventName());
   }
 
-  public function testNewEventTakesIpAddressFromHttpClientIP() {
-    $_SERVER['HTTP_CLIENT_IP'] = 'HTTP_CLIENT_IP_VALUE';
-    $_SERVER['HTTP_X_FORWARDED_FOR'] = 'HTTP_X_FORWARDED_FOR_VALUE';
-    $_SERVER['REMOTE_ADDR'] = 'REMOTE_ADDR';
+  public function testNewEventWorksWithIpV4() {
+    $_SERVER['HTTP_X_FORWARDED_FOR'] = '24.17.77.101';
 
     $event = ServerEventFactory::newEvent('Lead');
-    $this->assertEquals('HTTP_CLIENT_IP_VALUE',
+    $this->assertEquals('24.17.77.101',
       $event->getUserData()->getClientIpAddress());
   }
 
-  public function testNewEventTakesIpAddressFromHttpXForwardedFor() {
-    $_SERVER['HTTP_X_FORWARDED_FOR'] = 'HTTP_X_FORWARDED_FOR_VALUE';
-    $_SERVER['REMOTE_ADDR'] = 'REMOTE_ADDR';
+  public function testNewEventWorksWithIpV6() {
+    $_SERVER['HTTP_X_FORWARDED_FOR'] = '2120:10a:c191:401::5:7170';
 
     $event = ServerEventFactory::newEvent('Lead');
-    $this->assertEquals('HTTP_X_FORWARDED_FOR_VALUE',
+    $this->assertEquals('2120:10a:c191:401::5:7170',
       $event->getUserData()->getClientIpAddress());
   }
 
-  public function testNewEventTakesIpAddressFromRemoteAddr() {
-    $_SERVER['REMOTE_ADDR'] = 'REMOTE_ADDR_VALUE';
+  public function testNewEventTakesFirstWithIpAddressList() {
+    $_SERVER['HTTP_X_FORWARDED_FOR']
+      = '2120:10a:c191:401::5:7170, 24.17.77.101';
 
     $event = ServerEventFactory::newEvent('Lead');
-    $this->assertEquals('REMOTE_ADDR_VALUE',
+    $this->assertEquals('2120:10a:c191:401::5:7170',
       $event->getUserData()->getClientIpAddress());
+  }
+
+  public function testNewEventHonorsPrecedenceForIpAddress() {
+    $_SERVER['HTTP_X_FORWARDED_FOR'] = '24.17.77.101';
+    $_SERVER['REMOTE_ADDR'] = '24.17.77.100';
+
+    $event = ServerEventFactory::newEvent('Lead');
+    $this->assertEquals('24.17.77.101',
+      $event->getUserData()->getClientIpAddress());
+  }
+
+  public function testNewEventWithInvalidIpAddress() {
+    $_SERVER['HTTP_X_FORWARDED_FOR'] = 'INVALID';
+
+    $event = ServerEventFactory::newEvent('Lead');
+    $this->assertNull($event->getUserData()->getClientIpAddress());
   }
 
   public function testNewEventHasUserAgent() {

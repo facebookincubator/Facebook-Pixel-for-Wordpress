@@ -45,17 +45,29 @@ class ServerEventFactory {
   }
 
   private static function getIpAddress() {
-    $ip_address = null;
+    $HEADERS_TO_SCAN = array(
+      'HTTP_CLIENT_IP',
+      'HTTP_X_FORWARDED_FOR',
+      'HTTP_X_FORWARDED',
+      'HTTP_X_CLUSTER_CLIENT_IP',
+      'HTTP_FORWARDED_FOR',
+      'HTTP_FORWARDED',
+      'REMOTE_ADDR'
+    );
 
-    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-      $ip_address = $_SERVER['HTTP_CLIENT_IP'];
-    } else if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-      $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'];
-    } else if (!empty($_SERVER['REMOTE_ADDR'])) {
-      $ip_address = $_SERVER['REMOTE_ADDR'];
+    foreach ($HEADERS_TO_SCAN as $header) {
+      if (array_key_exists($header, $_SERVER)) {
+        $ip_list = explode(',', $_SERVER[$header]);
+        foreach($ip_list as $ip) {
+          $trimmed_ip = trim($ip);
+          if (self::isValidIpAddress($trimmed_ip)) {
+            return $trimmed_ip;
+          }
+        }
+      }
     }
 
-    return $ip_address;
+    return null;
   }
 
   private static function getHttpUserAgent() {
@@ -103,6 +115,15 @@ class ServerEventFactory {
     }
 
     return $fbc;
+  }
+
+  private static function isValidIpAddress($ip_address) {
+    return filter_var($ip_address,
+                      FILTER_VALIDATE_IP,
+                      FILTER_FLAG_IPV4
+                      | FILTER_FLAG_IPV6
+                      | FILTER_FLAG_NO_PRIV_RANGE
+                      | FILTER_FLAG_NO_RES_RANGE);
   }
 
   public static function safeCreateEvent($event_name, $callback, $arguments) {
