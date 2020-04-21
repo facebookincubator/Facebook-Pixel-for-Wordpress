@@ -45,7 +45,8 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
       'Lead',
       array(__CLASS__, 'readFormData'),
       array(),
-      self::TRACKING_NAME
+      self::TRACKING_NAME,
+      true
     );
     FacebookServerSideEvent::getInstance()->track($server_event);
 

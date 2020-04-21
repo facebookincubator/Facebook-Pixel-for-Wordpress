@@ -47,6 +47,7 @@ final class FacebookWordpressGravityFormsTest
     $mock_confirm = 'mock_msg';
     $mock_form = $this->createMockForm();
     $mock_entry = $this->createMockEntries();
+    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
     $mock_confirm = FacebookWordpressGravityForms::injectLeadEvent(
       $mock_confirm, $mock_form, $mock_entry, true);
@@ -66,6 +67,7 @@ final class FacebookWordpressGravityFormsTest
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
     $this->assertEquals('gravity-forms',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
+    $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
   public function testInjectLeadEventWithoutAdminErrorReadingForm() {

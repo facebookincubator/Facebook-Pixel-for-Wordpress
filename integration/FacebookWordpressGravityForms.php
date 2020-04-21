@@ -48,7 +48,8 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
       'Lead',
       array(__CLASS__, 'readFormData'),
       array($form, $entry),
-      self::TRACKING_NAME
+      self::TRACKING_NAME,
+      true
     );
     FacebookServerSideEvent::getInstance()->track($event);
 

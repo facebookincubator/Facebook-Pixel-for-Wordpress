@@ -77,6 +77,7 @@ final class FacebookWordpressFormidableFormTest
     $mock_form_id = 1;
 
     self::setupMockFormidableForm($mock_entry_id);
+    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
     \WP_Mock::expectActionAdded(
       'wp_footer',
@@ -103,6 +104,7 @@ final class FacebookWordpressFormidableFormTest
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
     $this->assertEquals('formidable-lite',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
+    $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
   public function testTrackEventWithoutAdminErrorReadingForm() {

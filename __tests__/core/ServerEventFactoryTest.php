@@ -128,6 +128,29 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $this->assertEquals('http://www.pikachu.com/index.php', $event->getEventSourceUrl());
   }
 
+  public function testNewEventEventSourceUrlPreferReferer() {
+    $this->mockUsePII(true);
+    $_SERVER['HTTPS'] = 'off';
+    $_SERVER['HTTP_HOST'] = 'www.pikachu.com';
+    $_SERVER['REQUEST_URI'] = '/index.php';
+    $_SERVER['HTTP_REFERER'] = 'http://referrer/';
+
+    $event = ServerEventFactory::newEvent('Lead', true);
+
+    $this->assertEquals('http://referrer/', $event->getEventSourceUrl());
+  }
+
+  public function testNewEventEventSourceUrlWithoutReferer() {
+    $this->mockUsePII(true);
+    $_SERVER['HTTPS'] = 'off';
+    $_SERVER['HTTP_HOST'] = 'www.pikachu.com';
+    $_SERVER['REQUEST_URI'] = '/index.php';
+
+    $event = ServerEventFactory::newEvent('Lead', true);
+
+    $this->assertEquals('http://www.pikachu.com/index.php', $event->getEventSourceUrl());
+  }
+
   public function testNewEventHasFbc() {
     $this->mockUsePII(true);
     $_COOKIE['_fbc'] = '_fbc_value';

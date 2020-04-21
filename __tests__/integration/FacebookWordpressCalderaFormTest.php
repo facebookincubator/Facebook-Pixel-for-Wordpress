@@ -90,8 +90,10 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
   public function testSendLeadEventViaServerAPISuccessWithoutAdmin() {
     self::mockIsAdmin(false);
     self::mockUseS2S(true);
+
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = self::createMockForm();
+    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
     $out = FacebookWordpressCalderaForm::injectLeadEvent($mock_out, $mock_form);
 
@@ -113,6 +115,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
     $this->assertEquals('caldera-forms',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
+    $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
   public function testSendLeadEventViaServerAPIFailureWithoutAdmin() {

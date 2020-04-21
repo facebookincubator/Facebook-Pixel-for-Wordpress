@@ -58,6 +58,7 @@ final class FacebookWordpressContactForm7Test
       'message' => 'Thank you for your message');
 
     $mock_form = $this->createMockForm();
+    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
     \WP_Mock::expectActionAdded(
       'wpcf7_ajax_json_echo',
@@ -84,6 +85,7 @@ final class FacebookWordpressContactForm7Test
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
     $this->assertEquals('contact-form-7',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
+    $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
   public function testTrackServerEventWithoutFormData() {

@@ -26,7 +26,10 @@ use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 defined('ABSPATH') or die('Direct access not allowed');
 
 class ServerEventFactory {
-  public static function newEvent($event_name) {
+  public static function newEvent(
+    $event_name,
+    $prefer_referrer_for_event_src = false)
+  {
     $user_data = (new UserData())
                   ->setClientIpAddress(self::getIpAddress())
                   ->setClientUserAgent(self::getHttpUserAgent())
@@ -37,7 +40,8 @@ class ServerEventFactory {
               ->setEventName($event_name)
               ->setEventTime(time())
               ->setEventId(EventIdGenerator::guidv4())
-              ->setEventSourceUrl(self::getRequestUri())
+              ->setEventSourceUrl(
+                self::getRequestUri($prefer_referrer_for_event_src))
               ->setUserData($user_data)
               ->setCustomData(new CustomData());
 
@@ -80,7 +84,11 @@ class ServerEventFactory {
     return $user_agent;
   }
 
-  private static function getRequestUri() {
+  private static function getRequestUri($prefer_referrer_for_event_src) {
+    if ($prefer_referrer_for_event_src && !empty($_SERVER['HTTP_REFERER'])) {
+      return $_SERVER['HTTP_REFERER'];
+    }
+
     $url = "http://";
     if(!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
       $url = "https://";
@@ -127,8 +135,13 @@ class ServerEventFactory {
   }
 
   public static function safeCreateEvent(
-    $event_name, $callback, $arguments, $integration) {
-    $event = self::newEvent($event_name);
+    $event_name,
+    $callback,
+    $arguments,
+    $integration,
+    $prefer_referrer_for_event_src = false)
+  {
+    $event = self::newEvent($event_name, $prefer_referrer_for_event_src);
 
     try {
       $data = call_user_func_array($callback, $arguments);

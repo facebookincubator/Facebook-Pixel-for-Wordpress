@@ -53,6 +53,8 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     );
 
     $mock_form_data = $this->getMockFormData();
+    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
+
     $result = FacebookWordpressNinjaForms::injectLeadEvent(
       $mock_actions,
       null,
@@ -79,6 +81,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
     $this->assertEquals('ninja-forms',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
+    $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
   public function testInjectLeadEventWithAdmin() {

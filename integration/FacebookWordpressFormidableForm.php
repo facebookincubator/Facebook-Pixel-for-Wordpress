@@ -50,7 +50,8 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
       'Lead',
       array(__CLASS__, 'readFormData'),
       array($entry_id),
-      self::TRACKING_NAME
+      self::TRACKING_NAME,
+      true
     );
     FacebookServerSideEvent::getInstance()->track($server_event);
 

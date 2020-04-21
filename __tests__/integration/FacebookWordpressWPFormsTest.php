@@ -101,6 +101,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
     $mock_entry = $this->createMockEntry(true);
     $mock_form_data = $this->createMockFormData(true);
+    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
     \WP_Mock::expectActionAdded(
       'wp_footer',
@@ -125,6 +126,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
   private function createMockEntry($simple_format = false) {
