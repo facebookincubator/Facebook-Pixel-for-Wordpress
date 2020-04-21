@@ -1,4 +1,9 @@
 *** Facebook for WordPress Changelog ***
+2020-04-17 version 2.0.2
+* Support for WordPress 5.4
+* Fixing an Illegal string offset error with WP Forms
+* Fixing the event source url for Server-Side API events
+
 2020-03-23 version 2.0.1
 * Fixing an Undefined index error
 
