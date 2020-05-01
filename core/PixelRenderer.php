@@ -32,17 +32,16 @@ class PixelRenderer {
   fbq('%s', '%s', %s, %s);
 ";
 
-  public static function render($events, $fb_integration_tracking) {
+  public static function render($events, $fb_integration_tracking,
+    $script_tag = true) {
     if (empty($events)) {
       return "";
     }
-
     $code = "";
     foreach ($events as $event) {
       $code .= self::getPixelTrackCode($event, $fb_integration_tracking);
     }
-
-    return sprintf(self::SCRIPT_TAG, $code);
+    return $script_tag ? sprintf(self::SCRIPT_TAG, $code) : $code;
   }
 
   private static function getPixelTrackCode($event, $fb_integration_tracking) {
