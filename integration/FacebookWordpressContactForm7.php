@@ -101,7 +101,8 @@ if( typeof window.pixelLastGeneratedLeadEvent === 'undefined'
     return array(
       'email' => self::getEmail($form_tags),
       'first_name' => $name[0],
-      'last_name' => $name[1]
+      'last_name' => $name[1],
+      'phone' => self::getPhone($form_tags)
     );
   }
 
@@ -133,4 +134,19 @@ if( typeof window.pixelLastGeneratedLeadEvent === 'undefined'
 
     return null;
   }
+
+  private static function getPhone($form_tags) {
+    if (empty($form_tags)) {
+      return null;
+    }
+
+    foreach ($form_tags as $tag) {
+      if ($tag->basetype === "tel") {
+        return $_POST[$tag->name];
+      }
+    }
+
+    return null;
+  }
+
 }

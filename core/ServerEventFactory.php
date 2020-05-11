@@ -159,6 +159,10 @@ class ServerEventFactory {
         if (!empty($data['last_name'])) {
           $user_data->setLastName($data['last_name']);
         }
+
+        if (!empty($data['phone'])) {
+          $user_data->setPhone($data['phone']);
+        }
       }
 
       $custom_data = $event->getCustomData();
