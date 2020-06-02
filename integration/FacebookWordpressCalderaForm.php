@@ -72,7 +72,8 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
     return array(
       'email' => self::getEmail($form),
       'first_name' => self::getFirstName($form),
-      'last_name' => self::getLastName($form)
+      'last_name' => self::getLastName($form),
+      'phone' => self::getPhone($form)
     );
   }
 
@@ -86,6 +87,14 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
 
   private static function getLastName($form) {
     return self::getFieldValue($form, 'slug', 'last_name');
+  }
+
+  private static function getPhone($form) {
+    // Extract phone number from the better version first, fallback to the basic
+    // version if it's null
+    $phone = self::getFieldValue($form, 'type', 'phone_better');
+    return empty($phone) ? self::getFieldValue($form, 'type', 'phone')
+      : $phone;
   }
 
   private static function getFieldValue($form, $attr, $attr_value) {
