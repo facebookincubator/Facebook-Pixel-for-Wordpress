@@ -62,6 +62,7 @@ class FacebookPluginConfig {
       'NINJA_FORMS' => 'FacebookWordpressNinjaForms',
       'WPFORMS' => 'FacebookWordpressWPForms',
       'WP_E_COMMERCE' => 'FacebookWordpressWPECommerce',
+      'WOOCOMMERCE' => 'FacebookWordpressWooCommerce'
     );
   }
 }
