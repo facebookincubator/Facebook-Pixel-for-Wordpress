@@ -18,14 +18,15 @@ final class MockWCCart {
   private $cart = array();
   private $num_items = 0;
 
-  public function add_item($id, $quantity, $price) {
+  public function add_item($key, $id, $quantity, $price) {
     $item = array(
+      'key' => $key,
       'data' => new MockWCProduct($id),
       'quantity' => $quantity,
-      'line_total' => $quantity * $price
+      'line_total' => $quantity * $price,
     );
 
-    $this->cart[] = $item;
+    $this->cart[$key] = $item;
     $this->total += ($quantity * $price);
     $this->num_items += $quantity;
   }

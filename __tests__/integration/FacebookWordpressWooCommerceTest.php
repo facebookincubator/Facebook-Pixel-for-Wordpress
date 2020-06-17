@@ -85,6 +85,34 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
+  public function testAddToCartEventWithoutAdmin() {
+    self::mockIsAdmin(false);
+    self::mockUseS2S(true);
+
+    $this->setupMocks();
+
+    FacebookWordpressWooCommerce::trackAddToCartEvent(1, 1, 3, null);
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+
+    $this->assertEquals('AddToCart', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('USD', $event->getCustomData()->getCurrency());
+    $this->assertEquals(900, $event->getCustomData()->getValue());
+    $this->assertEquals('wc_post_id_1',
+      $event->getCustomData()->getContentIds()[0]);
+
+    $this->assertEquals('woocommerce',
+      $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
+  }
+
   private function mockFacebookForWooCommerce($active) {
     \WP_Mock::userFunction('get_option', array(
       'return' => $active ?
@@ -107,7 +135,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     );
 
     $cart = new MockWCCart();
-    $cart->add_item(1, 3, 300);
+    $cart->add_item(1, 1, 3, 300);
 
     \WP_Mock::userFunction('WC', array(
       'return' => new MockWC($cart))

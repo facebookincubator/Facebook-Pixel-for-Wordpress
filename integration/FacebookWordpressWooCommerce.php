@@ -39,7 +39,44 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
       add_action('woocommerce_after_checkout_form',
         array(__CLASS__, 'trackInitiateCheckout'),
         40);
+
+      add_action( 'woocommerce_add_to_cart',
+        array(__CLASS__, 'trackAddToCartEvent'),
+        40, 4 );
     }
+  }
+
+  public static function trackAddToCartEvent(
+    $cart_item_key, $product_id, $quantity, $variation_id) {
+    if (FacebookPluginUtils::isAdmin()) {
+      return;
+    }
+
+    $server_event = ServerEventFactory::safeCreateEvent(
+      'AddToCart',
+      array(__CLASS__, 'createAddToCartEvent'),
+      array($cart_item_key, $product_id, $quantity),
+      self::TRACKING_NAME
+    );
+
+    FacebookServerSideEvent::getInstance()->track($server_event);
+  }
+
+  public static function createAddToCartEvent(
+    $cart_item_key, $product_id, $quantity)
+  {
+    $event_data = FacebookPluginUtils::getLoggedInUserInfo();
+    $event_data['content_type'] = 'product';
+    $event_data['currency'] = \get_woocommerce_currency();
+
+    $cart_item = self::getCartItem($cart_item_key);
+    if (!empty($cart_item_key)) {
+      $event_data['content_ids'] =
+        array(self::getProductId($cart_item['data']));
+      $event_data['value'] = self::getAddToCartValue($cart_item, $quantity);
+    }
+
+    return $event_data;
   }
 
   public static function trackInitiateCheckout() {
