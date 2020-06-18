@@ -13,24 +13,26 @@
 
 namespace FacebookPixelPlugin\Tests\Mocks;
 
-final class MockWCProduct {
-  private $id = null;
-  private $type = null;
+final class MockWCOrderItem {
+  private $id;
+  private $quantity;
+  private $total;
 
-  public function __construct($id, $type = null) {
+  public function __construct($id, $quantity, $total) {
     $this->id = $id;
-    $this->type = $type;
+    $this->quantity = $quantity;
+    $this->total = $total;
   }
 
-  public function get_id() {
+  public function get_product_id() {
     return $this->id;
   }
 
-  public function get_sku() {
-    return '';
+  public function get_quantity() {
+    return $this->quantity;
   }
 
-  public function is_type($type) {
-    return $this->type === $type;
+  public function get_total() {
+    return $this->total;
   }
 }

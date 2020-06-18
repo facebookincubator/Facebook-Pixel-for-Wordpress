@@ -18,6 +18,8 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Tests\Mocks\MockWC;
 use FacebookPixelPlugin\Tests\Mocks\MockWCCart;
+use FacebookPixelPlugin\Tests\Mocks\MockWCOrder;
+use FacebookPixelPlugin\Tests\Mocks\MockWCProduct;
 
 /**
  * @runTestsInSeparateProcesses
@@ -48,6 +50,40 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         40);
 
     FacebookWordpressWooCommerce::injectPixelCode();
+  }
+
+  public function testPurchaseEventWithoutAdmin() {
+    self::mockIsAdmin(false);
+    self::mockUseS2S(true);
+
+    $this->setupMocks();
+
+    FacebookWordpressWooCommerce::trackPurchaseEvent(1);
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $this->assertEquals('Purchase', $event->getEventName());
+    $this->assertNotNull($event->getEventTime());
+    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
+    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('2062062006', $event->getUserData()->getPhone());
+    $this->assertEquals('USD', $event->getCustomData()->getCurrency());
+    $this->assertEquals(900, $event->getCustomData()->getValue());
+    $this->assertEquals('wc_post_id_1',
+      $event->getCustomData()->getContentIds()[0]);
+
+    $contents = $event->getCustomData()->getContents();
+    $this->assertCount(1, $contents);
+    $this->assertEquals('wc_post_id_1', $contents[0]->getProductId());
+    $this->assertEquals(3, $contents[0]->getQuantity());
+    $this->assertEquals(300, $contents[0]->getItemPrice());
+
+    $this->assertEquals('woocommerce',
+      $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
   public function testInitiateCheckoutEventWithoutAdmin() {
@@ -139,6 +175,18 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
     \WP_Mock::userFunction('WC', array(
       'return' => new MockWC($cart))
+    );
+
+    $order = new MockWCOrder(
+      'Pika', 'Chu', 'pika.chu@s2s.com', '2062062006');
+    $order->add_item(1, 3, 900);
+
+    \WP_Mock::userFunction('wc_get_order', array(
+      'return' => $order)
+    );
+
+    \WP_Mock::userFunction('wc_get_product', array(
+      'return' => new MockWCProduct(1))
     );
   }
 }

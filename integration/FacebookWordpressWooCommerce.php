@@ -42,8 +42,68 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 
       add_action( 'woocommerce_add_to_cart',
         array(__CLASS__, 'trackAddToCartEvent'),
-        40, 4 );
+        40, 4);
+
+      add_action( 'woocommerce_thankyou',
+        array(__CLASS__, 'trackPurchaseEvent'),
+        40);
+
+      add_action( 'woocommerce_payment_complete',
+        array(__CLASS__, 'trackPurchaseEvent'),
+        40);
     }
+  }
+
+  public static function trackPurchaseEvent($order_id) {
+    if (FacebookPluginUtils::isAdmin()) {
+      return;
+    }
+
+    $server_event = ServerEventFactory::safeCreateEvent(
+      'Purchase',
+      array(__CLASS__, 'createPurchaseEvent'),
+      array($order_id),
+      self::TRACKING_NAME
+    );
+
+    FacebookServerSideEvent::getInstance()->track($server_event);
+  }
+
+  public static function createPurchaseEvent($order_id) {
+    $order = wc_get_order($order_id);
+
+    $content_type = 'product';
+    $product_ids = array();
+    $contents = array();
+
+    foreach ($order->get_items() as $item) {
+      $product = wc_get_product($item->get_product_id());
+      if ('product_group' !== $content_type
+        && $product->is_type('variable'))
+      {
+        $content_type = 'product_group';
+      }
+
+      $quantity = $item->get_quantity();
+      $product_id = self::getProductId($product);
+
+      $content  = new Content();
+      $content->setProductId($product_id);
+      $content->setQuantity($quantity);
+      $content->setItemPrice($item->get_total() / $quantity);
+
+      $contents[] = $content;
+      $product_ids[] = $product_id;
+    }
+
+    $event_data = self::getPiiFromBillingInformation($order);
+    $event_data['content_type'] = $content_type;
+    $event_data['currency'] = \get_woocommerce_currency();
+    $event_data['value'] = $order->get_total();
+    $event_data['content_ids'] = $product_ids;
+    $event_data['contents'] = $contents;
+
+    return $event_data;
   }
 
   public static function trackAddToCartEvent(
@@ -107,6 +167,40 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     }
 
     return $event_data;
+  }
+
+  private static function getPiiFromBillingInformation($order) {
+    $pii = array();
+    $billingInfo = $order->data['billing'];
+
+    if (!empty($billingInfo)) {
+      $pii['first_name'] = $billingInfo['first_name'];
+      $pii['last_name'] = $billingInfo['last_name'];
+      $pii['email'] = $billingInfo['email'];
+      $pii['phone'] = $billingInfo['phone'];
+    }
+
+    return $pii;
+  }
+
+  private static function getAddToCartValue($cart_item, $quantity) {
+    if (!empty($cart_item)) {
+      $price = $cart_item['line_total'] / $cart_item['quantity'];
+      return $quantity * $price;
+    }
+
+    return null;
+  }
+
+  private static function getCartItem($cart_item_key) {
+    if (WC()->cart) {
+      $cart = WC()->cart->get_cart();
+      if (!empty($cart) && !empty($cart[$cart_item_key])) {
+        return $cart[$cart_item_key];
+      }
+    }
+
+    return null;
   }
 
   private static function getContentIds($cart) {
