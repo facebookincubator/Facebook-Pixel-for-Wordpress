@@ -90,7 +90,7 @@ class FacebookWordpressSettingsPage {
       FacebookPluginConfig::ADMIN_SECTION_ID);
     add_settings_field(
       FacebookPluginConfig::USE_S2S_KEY,
-      'Use Server-Side API?',
+      'Use Conversions API?',
       array($this, 'useS2SFormField'),
       FacebookPluginConfig::ADMIN_MENU_SLUG,
       FacebookPluginConfig::ADMIN_SECTION_ID);
@@ -210,7 +210,7 @@ class FacebookWordpressSettingsPage {
     $link = sprintf(
       wp_kses(
         __(
-          'An access token is required to use the server-side API.<br>
+          'An access token is required to use the Conversions API.<br>
           <a href="%s" target="_blank"> Generate Access Token</a>',
           FacebookPluginConfig::TEXT_DOMAIN),
         array('a' => array('href' => array(), 'target' => array()))),
@@ -238,7 +238,7 @@ class FacebookWordpressSettingsPage {
       ',
       esc_html__(
         'Also send events directly from your web server to Facebook through the
-        server-side API. This can help you capture more events.',
+        Conversions API. This can help you capture more events.',
         FacebookPluginConfig::TEXT_DOMAIN),
       $link);
   }
@@ -311,7 +311,7 @@ class FacebookWordpressSettingsPage {
 
   public function serverSideApiNotEnabledNotice() {
     $this->setNotice(
-      __('The Facebook Pixel plugin now includes support for the Server-Side
+      __('The Facebook Pixel plugin now includes support for the Conversions
           API, which lets you send events directly from your page\'s website.
           Click <a href="%s">here</a> to configure the plugin.',
         FacebookPluginConfig::TEXT_DOMAIN),

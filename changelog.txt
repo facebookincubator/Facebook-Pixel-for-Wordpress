@@ -1,17 +1,17 @@
 *** Facebook for WordPress Changelog ***
 2020-06-18 version 2.1.0
-* Support for WooCommerce through the Server-Side API
+* Support for WooCommerce through the Conversions API
 
 2020-04-23 version 2.0.2
 * Support for WordPress 5.4
 * Fixing an Illegal string offset error with WP Forms
-* Fixing the event source url for Server-Side API events
+* Fixing the event source url for Conversions API events
 
 2020-03-23 version 2.0.1
 * Fixing an Undefined index error
 
 2020-03-09 version 2.0.0
-* Added support for Server-Side API
+* Added support for Conversions API
 
 2019-12-02 version 1.8.0
 * Support for WordPress 5.3

@@ -34,7 +34,7 @@ class FacebookPluginConfig {
   const ADMIN_OPTION_GROUP = 'facebook_option_group';
   const ADMIN_PAGE_TITLE = 'Facebook Pixel Settings';
   const ADMIN_PRIVACY_URL = 'https://developers.facebook.com/docs/privacy/';
-  const ADMIN_S2S_URL = 'https://developers.facebook.com/docs/marketing-api/facebook-pixel/server-side-api';
+  const ADMIN_S2S_URL = 'https://developers.facebook.com/docs/marketing-api/conversions-api';
   const ADMIN_SECTION_ID = 'facebook_settings_section';
 
   const DEFAULT_PIXEL_ID = null;

@@ -11,7 +11,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Grow your business with Official Facebook Pixel!
 
 == Description ==
-This plugin will install a Facebook Pixel for your page so you can capture the actions people take when they interact with your page, such as Lead, ViewContent, AddToCart, InitiateCheckout and Purchase events. Version 2.0.0 also includes support for the server-side API, which lets you send events directly from your page's server so you can capture a more of these events when they happen. This can help you better understand your customer's journey from the moment they show interest in your business to the moment they complete a conversion. You can use this information to create ad campaigns that are relevant to your audience. [Learn More](https://www.facebook.com/business/learn/facebook-ads-pixel)
+This plugin will install a Facebook Pixel for your page so you can capture the actions people take when they interact with your page, such as Lead, ViewContent, AddToCart, InitiateCheckout and Purchase events. Version 2.0.0 also includes support for the Conversions API, which lets you send events directly from your page's server so you can capture a more of these events when they happen. This can help you better understand your customer's journey from the moment they show interest in your business to the moment they complete a conversion. You can use this information to create ad campaigns that are relevant to your audience. [Learn More](https://www.facebook.com/business/learn/facebook-ads-pixel)
 
 This plugin also includes built-in support for these other WordPress plugins:
 * Caldera Forms
@@ -23,7 +23,7 @@ This plugin also includes built-in support for these other WordPress plugins:
 * Ninja Forms
 * WP eCommerce
 * WPForms
-* WooCommerce (through the Server-Side API)
+* WooCommerce (through the Conversions API)
 
 == Installation ==
 __To install from your WordPress site__ <br />
@@ -51,18 +51,18 @@ Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can
 
 == Changelog ==
 = 2020-06-18 version 2.1.0 =
-* Support for WooCommerce through the Server-Side API
+* Support for WooCommerce through the Conversions API
 
 = 2020-04-23 version 2.0.2 =
 * Support for WordPress 5.4
 * Fixing an Illegal string offset error with WP Forms
-* Fixing the event source url for Server-Side API events
+* Fixing the event source url for Conversions API events
 
 = 2020-03-23 version 2.0.1 =
 * Fixing an Undefined index error
 
 = 2020-03-09 version 2.0.0 =
-* Added support for Server-Side API [Learn More](https://developers.facebook.com/docs/marketing-api/server-side-api)
+* Added support for Conversions API [Learn More](https://developers.facebook.com/docs/marketing-api/conversions-api)
 
 = 2019-12-02 version 1.8.0 =
 * Support for WordPress 5.3
