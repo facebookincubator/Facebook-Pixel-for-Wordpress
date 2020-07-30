@@ -167,6 +167,18 @@ class ServerEventFactory {
         if(!empty($data['state'])){
           $user_data->setState($data['state']);
         }
+
+        if(!empty($data['country'])){
+          $user_data->setCountryCode($data['country']);
+        }
+
+        if(!empty($data['city'])){
+          $user_data->setCity($data['city']);
+        }
+
+        if(!empty($data['zip'])){
+          $user_data->setZipCode($data['zip']);
+        }
       }
 
       $custom_data = $event->getCustomData();

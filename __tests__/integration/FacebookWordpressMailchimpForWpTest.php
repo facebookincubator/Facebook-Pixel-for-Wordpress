@@ -45,6 +45,13 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
     $_POST['EMAIL'] = 'pika.chu@s2s.com';
     $_POST['FNAME'] = 'Pika';
     $_POST['LNAME'] = 'Chu';
+    $_POST['PHONE'] = '123456';
+    $_POST['ADDRESS'] = array(
+      'city' => 'Springfield',
+      'state' => 'Ohio',
+      'zip' => '54321',
+      'country' => 'US'
+    );
     $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
     FacebookWordpressMailchimpForWp::injectLeadEvent();
@@ -62,6 +69,11 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('123456', $event->getUserData()->getPhone());
+    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('Ohio', $event->getUserData()->getState());
+    $this->assertEquals('54321', $event->getUserData()->getZipCode());
+    $this->assertEquals('US', $event->getUserData()->getCountryCode());
     $this->assertEquals('mailchimp-for-wp',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
