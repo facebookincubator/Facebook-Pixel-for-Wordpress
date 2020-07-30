@@ -114,6 +114,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
     $this->assertEquals('(206)123-4567', $event->getUserData()->getPhone());
+    $this->assertEquals('WA', $event->getUserData()->getState());
     $this->assertEquals('caldera-forms',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
@@ -176,13 +177,19 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
       'type' => 'phone'
     );
 
+    $state_field = array(
+      'ID' => 'fld_5',
+      'type' => 'states'
+    );
+
     $_POST['fld_1'] = 'pika.chu@s2s.com';
     $_POST['fld_2'] = 'Pika';
     $_POST['fld_3'] = 'Chu';
     $_POST['fld_4'] = '(206)123-4567';
+    $_POST['fld_5'] = 'WA';
 
     return array(
       'fields' => array($email_field, $first_name_field, $last_name_field,
-        $phone));
+        $phone, $state_field));
   }
 }

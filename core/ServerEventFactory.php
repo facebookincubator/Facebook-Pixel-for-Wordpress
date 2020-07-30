@@ -163,6 +163,10 @@ class ServerEventFactory {
         if (!empty($data['phone'])) {
           $user_data->setPhone($data['phone']);
         }
+
+        if(!empty($data['state'])){
+          $user_data->setState($data['state']);
+        }
       }
 
       $custom_data = $event->getCustomData();
