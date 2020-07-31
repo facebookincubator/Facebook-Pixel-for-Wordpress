@@ -82,10 +82,11 @@ jQuery(document).ready(function ($) {
       10, 2);
 
     // ViewContent
-    self::addPixelFireForHook(array(
-      'hook_name' => 'edd_after_download_content',
-      'classname' => __CLASS__,
-      'inject_function' => 'injectViewContentEvent'));
+    add_action(
+      'edd_after_download_content',
+      array(__CLASS__, 'injectViewContentEvent'),
+      40, 1
+    );
   }
 
   public static function injectAddToCartEvent($download_id) {
@@ -169,25 +170,16 @@ jQuery(document).ready(function ($) {
       return;
     }
 
-    $currency = edd_get_currency();
-    if (get_post_meta($download_id, '_variable_pricing', true)) { // variable price
-      $prices = get_post_meta($download_id, 'edd_variable_prices', true);
-      $price = array_shift($prices);
-      $value = $price['amount'];
-    } else {
-      $value = get_post_meta($download_id, 'edd_price', true);
-    }
-    if (!$value) {
-      $value = 0;
-    }
-    $param = array(
-      'content_ids' => array($download_id),
-      'content_type' => 'product',
-      'currency' => $currency,
-      'value' => $value,
+    $server_event = ServerEventFactory::safeCreateEvent(
+      'ViewContent',
+      array(__CLASS__, 'createViewContentEvent'),
+      array($download_id),
+      self::TRACKING_NAME
     );
-    $code = FacebookPixel::getPixelViewContentCode($param, self::TRACKING_NAME);
 
+    FacebookServerSideEvent::getInstance()->track($server_event);
+
+    $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
     printf("
 <!-- Facebook Pixel Event Code -->
 %s
@@ -228,6 +220,30 @@ jQuery(document).ready(function ($) {
     $event_data['content_ids'] = $content_ids;
     $event_data['content_type'] = 'product';
 
+    return $event_data;
+  }
+
+  public static function createViewContentEvent($download_id){
+    $event_data = FacebookPluginUtils::getLoggedInUserInfo();
+    $currency = EDDUtils::getCurrency();
+    $download = edd_get_download($download_id);
+    $title = $download ? $download->post_title : '';
+
+    if (get_post_meta($download_id, '_variable_pricing', true)) {
+      $prices = get_post_meta($download_id, 'edd_variable_prices', true);
+      $price = array_shift($prices);
+      $value = $price['amount'];
+    } else {
+      $value = get_post_meta($download_id, 'edd_price', true);
+    }
+    if (!$value) {
+      $value = 0;
+    }
+    $event_data['content_ids'] = [(string)$download_id];
+    $event_data['content_type'] = 'product';
+    $event_data['currency'] = $currency;
+    $event_data['value'] = floatval($value);
+    $event_data['content_name'] = $title;
     return $event_data;
   }
 }

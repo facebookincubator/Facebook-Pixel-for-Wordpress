@@ -31,8 +31,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
   public function testInjectPixelCode() {
     $eventHookMap = array(
       'injectAddToCartEvent' => 'edd_after_download_content',
-      'injectInitiateCheckoutEvent' => 'edd_after_checkout_cart',
-      'injectViewContentEvent' => 'edd_after_download_content',
+      'injectInitiateCheckoutEvent' => 'edd_after_checkout_cart'
     );
 
     $mocked_base = \Mockery::mock(
@@ -148,9 +147,39 @@ final class FacebookWordpressEasyDigitalDownloadsTest
   public function testInjectViewContentEventWithAdmin() {
     self::mockIsAdmin(true);
 
-    $download_id = '1234';
+    $download_id = 1234;
     FacebookWordpressEasyDigitalDownloads::injectViewContentEvent($download_id);
     $this->expectOutputString("");
+  }
+
+  public function testInjectViewContentEventWithoutAdmin() {
+    self::mockIsAdmin(false);
+    self::mockUseS2S(true);
+
+    $this->setupEDDMocks();
+
+    FacebookWordpressEasyDigitalDownloads::injectViewContentEvent(1234);
+    $this->expectOutputRegex(
+      '/easy-digital-downloads[\s\S]+End Facebook Pixel Event Code/');
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $custom_data = $event->getCustomData();
+    $user_data = $event->getUserData();
+
+    $this->assertEquals('pika.chu@s2s.com', $user_data->getEmail());
+    $this->assertEquals('Pika', $user_data->getFirstName());
+    $this->assertEquals('Chu', $user_data->getLastName());
+    $this->assertEquals('ViewContent', $event->getEventName());
+    $this->assertEquals(['1234'], $custom_data->getContentIds() );
+    $this->assertEquals('product', $custom_data->getContentType());
+    $this->assertEquals('USD', $custom_data->getCurrency());
+    $this->assertEquals('Encarta', $custom_data->getContentName());
+    $this->assertEquals( 50, $custom_data->getValue());
+    $this->assertNotNull($event->getEventTime());
   }
 
   private function setupEDDMocks() {
@@ -189,5 +218,26 @@ final class FacebookWordpressEasyDigitalDownloadsTest
         'currency' => 'USD'
       )
     ));
+
+    \WP_Mock::userFunction('get_post_meta', array(
+        'args' => array(
+          1234,
+          \WP_Mock\Functions::type( 'string' ),
+          true
+        ),
+        'return' => array(
+          array(
+            'amount' => 50
+          )
+        )
+      )
+    );
+    $download_object = new \stdClass;
+    $download_object->post_title = 'Encarta';
+    \WP_Mock::userFunction('edd_get_download', array(
+        'args' => array(\WP_Mock\Functions::type( 'int' )),
+        'return' => $download_object
+      )
+    );
   }
 }

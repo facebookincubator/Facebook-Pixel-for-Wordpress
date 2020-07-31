@@ -211,6 +211,10 @@ class ServerEventFactory {
       if (!empty($data['num_items'])) {
         $custom_data->setNumItems($data['num_items']);
       }
+
+      if (!empty($data['content_name'])) {
+        $custom_data->setContentName($data['content_name']);
+      }
     } catch (\Exception $e) {
       // Need to log
     }
