@@ -79,6 +79,12 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('12345', $event->getUserData()->getPhone());
+    $this->assertEquals('OH', $event->getUserData()->getState());
+    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('US', $event->getUserData()->getCountryCode());
+    $this->assertEquals('4321', $event->getUserData()->getZipCode());
+    $this->assertEquals('M', $event->getUserData()->getGender());
     $this->assertEquals('ninja-forms',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
@@ -99,8 +105,14 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
   private function getMockFormData() {
     $email = array('key' => 'email', 'value' => 'pika.chu@s2s.com');
     $name = array('key' => 'name', 'value' => 'Pika Chu');
-    $fields = array($email, $name);
-
+    $phone = array('key' => 'phone', 'value' => '12345');
+    $city = array('key' => 'city', 'value' => 'Springfield');
+    $state = array('key' => 'liststate', 'value' => 'OH');
+    $country = array('key' => 'listcountry', 'value' => 'US');
+    $zip = array('key' => 'zip', 'value' => '4321');
+    $gender = array('key' => 'gender', 'value' => 'M');
+    $fields = array($email, $name, $phone, $city,
+      $state, $country, $zip, $gender);
     return array('fields' => $fields);
   }
 }

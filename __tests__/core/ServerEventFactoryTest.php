@@ -181,6 +181,12 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
       $server_event->getUserData()->getEmail());
     $this->assertEquals('Pika', $server_event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $server_event->getUserData()->getLastName());
+    $this->assertEquals('12345', $server_event->getUserData()->getPhone());
+    $this->assertEquals('OH', $server_event->getUserData()->getState());
+    $this->assertEquals('Springfield', $server_event->getUserData()->getCity());
+    $this->assertEquals('US', $server_event->getUserData()->getCountryCode());
+    $this->assertEquals('4321', $server_event->getUserData()->getZipCode());
+    $this->assertEquals('M', $server_event->getUserData()->getGender());
   }
 
   public function testSafeCreateEventWithPIIDisabled() {
@@ -196,13 +202,25 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $this->assertNull($server_event->getUserData()->getEmail());
     $this->assertNull($server_event->getUserData()->getFirstName());
     $this->assertNull($server_event->getUserData()->getLastName());
+    $this->assertNull($server_event->getUserData()->getPhone());
+    $this->assertNull($server_event->getUserData()->getState());
+    $this->assertNull($server_event->getUserData()->getCity());
+    $this->assertNull($server_event->getUserData()->getCountryCode());
+    $this->assertNull($server_event->getUserData()->getZipCode());
+    $this->assertNull($server_event->getUserData()->getGender());
   }
 
   public function getEventData() {
     return array(
       'email' => 'pika.chu@s2s.com',
       'first_name' => 'Pika',
-      'last_name' => 'Chu'
+      'last_name' => 'Chu',
+      'phone' => '12345',
+      'state' => 'OH',
+      'city' => 'Springfield',
+      'country' => 'US',
+      'zip' => '4321',
+      'gender' => 'M'
     );
   }
 

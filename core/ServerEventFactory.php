@@ -179,6 +179,10 @@ class ServerEventFactory {
         if(!empty($data['zip'])){
           $user_data->setZipCode($data['zip']);
         }
+
+        if(!empty($data['gender'])){
+          $user_data->setGender($data['gender']);
+        }
       }
 
       $custom_data = $event->getCustomData();
