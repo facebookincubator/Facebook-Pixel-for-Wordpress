@@ -49,6 +49,7 @@ class FacebookServerSideEvent {
   }
 
   public static function send($events) {
+    $events = apply_filters('before_conversions_api_event_sent', $events);
     if (empty($events)) {
       return;
     }
@@ -60,8 +61,8 @@ class FacebookServerSideEvent {
     $api = Api::init(null, null, $access_token);
 
     $request = (new EventRequest($pixel_id))
-                   ->setEvents($events)
-                   ->setPartnerAgent($agent);
+                  ->setEvents($events)
+                  ->setPartnerAgent($agent);
 
     $response = $request->execute();
   }

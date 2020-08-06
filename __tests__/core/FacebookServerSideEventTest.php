@@ -33,4 +33,11 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
 
     FacebookServerSideEvent::getInstance()->track($event);
   }
+
+  public function testSendInvokesFilter() {
+    $events = array();
+    \WP_Mock::expectFilter('before_conversions_api_event_sent', $events);
+
+    $events = FacebookServerSideEvent::send($events);
+  }
  }
