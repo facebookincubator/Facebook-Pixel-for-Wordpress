@@ -71,6 +71,10 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
     $this->assertEquals('2062062006', $event->getUserData()->getPhone());
+    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('Ohio', $event->getUserData()->getState());
+    $this->assertEquals('US', $event->getUserData()->getCountryCode());
+    $this->assertEquals('12345', $event->getUserData()->getZipCode());
     $this->assertEquals('USD', $event->getCustomData()->getCurrency());
     $this->assertEquals(900, $event->getCustomData()->getValue());
     $this->assertEquals('wc_post_id_1',
@@ -91,6 +95,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     self::mockUseS2S(true);
 
     $this->setupMocks();
+    $this->setupCustomerBillingAddress();
 
     FacebookWordpressWooCommerce::trackInitiateCheckout();
     $tracked_events =
@@ -105,6 +110,11 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('2062062006', $event->getUserData()->getPhone());
+    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('Ohio', $event->getUserData()->getState());
+    $this->assertEquals('US', $event->getUserData()->getCountryCode());
+    $this->assertEquals('12345', $event->getUserData()->getZipCode());
     $this->assertEquals('USD', $event->getCustomData()->getCurrency());
     $this->assertEquals(900, $event->getCustomData()->getValue());
     $this->assertEquals(3, $event->getCustomData()->getNumItems());
@@ -126,6 +136,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     self::mockUseS2S(true);
 
     $this->setupMocks();
+    $this->setupCustomerBillingAddress();
 
     FacebookWordpressWooCommerce::trackAddToCartEvent(1, 1, 3, null);
     $tracked_events =
@@ -140,6 +151,11 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('2062062006', $event->getUserData()->getPhone());
+    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('Ohio', $event->getUserData()->getState());
+    $this->assertEquals('US', $event->getUserData()->getCountryCode());
+    $this->assertEquals('12345', $event->getUserData()->getZipCode());
     $this->assertEquals('USD', $event->getCustomData()->getCurrency());
     $this->assertEquals(900, $event->getCustomData()->getValue());
     $this->assertEquals('wc_post_id_1',
@@ -155,6 +171,41 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
           array('facebook-for-woocommerce/facebook-for-woocommerce.php')
           : array()
     ));
+  }
+
+  private function setupCustomerBillingAddress(){
+    \WP_Mock::userFunction( 'get_user_meta', array(
+      'times' => 1,
+      'args' => array( \WP_Mock\Functions::type('int'), 'billing_city', true ),
+      'return' => 'Springfield'
+      )
+    );
+    \WP_Mock::userFunction( 'get_user_meta', array(
+      'times' => 1,
+      'args' => array(\WP_Mock\Functions::type('int'), 'billing_state', true),
+      'return' => 'Ohio'
+      )
+    );
+    \WP_Mock::userFunction( 'get_user_meta', array(
+      'times' => 1,
+      'args' => array(\WP_Mock\Functions::type('int'), 'billing_postcode',
+        true
+      ),
+      'return' => '12345'
+      )
+    );
+    \WP_Mock::userFunction( 'get_user_meta', array(
+      'times' => 1,
+      'args' => array(\WP_Mock\Functions::type('int'), 'billing_country', true),
+      'return' => 'US'
+      )
+    );
+    \WP_Mock::userFunction( 'get_user_meta', array(
+      'times' => 1,
+      'args' => array(\WP_Mock\Functions::type('int'), 'billing_phone', true),
+      'return' => '2062062006'
+      )
+    );
   }
 
   private function setupMocks() {
@@ -178,7 +229,9 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     );
 
     $order = new MockWCOrder(
-      'Pika', 'Chu', 'pika.chu@s2s.com', '2062062006');
+      'Pika', 'Chu', 'pika.chu@s2s.com', '2062062006',
+      'Springfield', '12345', 'Ohio', 'US'
+    );
     $order->add_item(1, 3, 900);
 
     \WP_Mock::userFunction('wc_get_order', array(
@@ -187,6 +240,11 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
     \WP_Mock::userFunction('wc_get_product', array(
       'return' => new MockWCProduct(1))
+    );
+
+    \WP_Mock::userFunction('get_current_user_id', array(
+        'return' => 1
+      )
     );
   }
 }

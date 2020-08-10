@@ -125,7 +125,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
   public static function createAddToCartEvent(
     $cart_item_key, $product_id, $quantity)
   {
-    $event_data = FacebookPluginUtils::getLoggedInUserInfo();
+    $event_data = self::getPIIFromSession();
     $event_data['content_type'] = 'product';
     $event_data['currency'] = \get_woocommerce_currency();
 
@@ -155,7 +155,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
   }
 
   public static function createInitiateCheckoutEvent() {
-    $event_data = FacebookPluginUtils::getLoggedInUserInfo();
+    $event_data = self::getPIIFromSession();
     $event_data['content_type'] = 'product';
     $event_data['currency'] = \get_woocommerce_currency();
 
@@ -171,14 +171,15 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 
   private static function getPiiFromBillingInformation($order) {
     $pii = array();
-    $billingInfo = $order->data['billing'];
 
-    if (!empty($billingInfo)) {
-      $pii['first_name'] = $billingInfo['first_name'];
-      $pii['last_name'] = $billingInfo['last_name'];
-      $pii['email'] = $billingInfo['email'];
-      $pii['phone'] = $billingInfo['phone'];
-    }
+    $pii['first_name'] = $order->get_billing_first_name();
+    $pii['last_name'] = $order->get_billing_last_name();
+    $pii['email'] = $order->get_billing_email();
+    $pii['zip'] = $order->get_billing_postcode();
+    $pii['state'] = $order->get_billing_state();
+    $pii['country'] = $order->get_billing_country();
+    $pii['city'] = $order->get_billing_city();
+    $pii['phone'] = $order->get_billing_phone();
 
     return $pii;
   }
@@ -236,6 +237,19 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     return $product->get_sku() ?
       $product->get_sku() . '_' . $woo_id
       : self::FB_ID_PREFIX . $woo_id;
+  }
+
+  private static function getPIIFromSession(){
+    $event_data = FacebookPluginUtils::getLoggedInUserInfo();
+    $user_id = get_current_user_id();
+    if($user_id != 0){
+      $event_data['city'] = get_user_meta($user_id, 'billing_city', true);
+      $event_data['zip'] = get_user_meta($user_id, 'billing_postcode', true);
+      $event_data['country'] = get_user_meta($user_id, 'billing_country', true);
+      $event_data['state'] = get_user_meta($user_id, 'billing_state', true);
+      $event_data['phone'] = get_user_meta($user_id, 'billing_phone', true);
+    }
+    return array_filter($event_data);
   }
 
   private static function isFacebookForWooCommerceActive() {
