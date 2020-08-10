@@ -85,15 +85,57 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 
     $name = self::getName($entry, $form_data);
 
-    return array(
+    $event_data = array(
       'email' => self::getEmail($entry, $form_data),
       'first_name' => !empty($name) ? $name[0] : null,
-      'last_name' => !empty($name) ? $name[1] : null
+      'last_name' => !empty($name) ? $name[1] : null,
+      'phone' => self::getPhone($entry, $form_data)
     );
+
+    $event_data = array_merge(
+      $event_data,
+      self::getAddress($entry, $form_data)
+    );
+
+    return $event_data;
+  }
+
+  private static function getPhone($entry, $form_data) {
+    return self::getField($entry, $form_data, 'phone');
   }
 
   private static function getEmail($entry, $form_data) {
     return self::getField($entry, $form_data, 'email');
+  }
+
+  private static function getAddress($entry, $form_data){
+    $address_field_data = self::getField($entry, $form_data, 'address');
+    if($address_field_data == null){
+      return array();
+    }
+    $address_data = array();
+    if(array_key_exists('city', $address_field_data)){
+      $address_data['city'] = $address_field_data['city'];
+    }
+    if(array_key_exists('state', $address_field_data)){
+      $address_data['state'] = $address_field_data['state'];
+    }
+    //Country values are sent in ISO format
+    if(array_key_exists('country', $address_field_data)){
+      $address_data['country'] = $address_field_data['country'];
+    }
+    else{
+      // When country is not present, it could be that address scheme is us
+      // so country will be US
+      $address_scheme = self::getAddressScheme($form_data);
+      if( $address_scheme == 'us'){
+        $address_data['country'] = 'US';
+      }
+    }
+    if(array_key_exists('postal', $address_field_data)){
+      $address_data['zip'] = $address_field_data['postal'];
+    }
+    return $address_data;
   }
 
   private static function getName($entry, $form_data) {
@@ -129,6 +171,17 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
       }
     }
 
+    return null;
+  }
+
+  private static function getAddressScheme($form_data){
+    foreach ($form_data['fields'] as $field) {
+      if ($field['type'] == 'address') {
+        if(array_key_exists('scheme', $field)){
+          return $field['scheme'];
+        }
+      }
+    }
     return null;
   }
 }

@@ -91,6 +91,11 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('1234567', $event->getUserData()->getPhone());
+    $this->assertEquals('US', $event->getUserData()->getCountryCode());
+    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('Ohio', $event->getUserData()->getState());
+    $this->assertEquals('45401', $event->getUserData()->getZipCode());
     $this->assertEquals('wpforms-lite',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
@@ -126,6 +131,11 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('1234567', $event->getUserData()->getPhone());
+    $this->assertEquals('US', $event->getUserData()->getCountryCode());
+    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('Ohio', $event->getUserData()->getState());
+    $this->assertEquals('45401', $event->getUserData()->getZipCode());
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
@@ -135,7 +145,14 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
         '0' => $simple_format
                 ? 'Pika Chu'
                 : array('first' => 'Pika', 'last' => 'Chu'),
-        '1' => 'pika.chu@s2s.com'
+        '1' => 'pika.chu@s2s.com',
+        '2' => '1234567',
+        '3' => array(
+          'country' => 'US',
+          'postal' => '45401',
+          'state' => 'Ohio',
+          'city' => 'Springfield'
+        )
       )
     );
   }
@@ -147,7 +164,9 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
           'type' => 'name',
           'id' => '0',
           'format' => $simple_format ? 'simple' : 'first-last'),
-        array('type' => 'email', 'id' => '1')
+        array('type' => 'email', 'id' => '1'),
+        array('type' => 'phone', 'id' => '2'),
+        array('type' => 'address', 'id' => '3')
       )
     );
   }
