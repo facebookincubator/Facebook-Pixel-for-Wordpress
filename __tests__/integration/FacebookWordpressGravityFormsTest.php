@@ -65,6 +65,11 @@ final class FacebookWordpressGravityFormsTest
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('1234567', $event->getUserData()->getPhone());
+    $this->assertEquals('Ohio', $event->getUserData()->getState());
+    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('45401', $event->getUserData()->getZipCode());
+    $this->assertNull($event->getUserData()->getCountryCode());
     $this->assertEquals('gravity-forms',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
@@ -94,6 +99,11 @@ final class FacebookWordpressGravityFormsTest
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('1234567', $event->getUserData()->getPhone());
+    $this->assertEquals('Ohio', $event->getUserData()->getState());
+    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('45401', $event->getUserData()->getZipCode());
+    $this->assertNull($event->getUserData()->getCountryCode());
   }
 
   public function testInjectLeadEventWithAdmin() {
@@ -113,7 +123,15 @@ final class FacebookWordpressGravityFormsTest
     $name->addLabel('First', '2.1');
     $name->addLabel('Last', '2.2');
 
-    $fields = array($email, $name);
+    $phone = new MockGravityFormField('phone', '3');
+
+    $address = new MockGravityFormField('address', '4');
+    $address->addLabel('City', '4.1');
+    $address->addLabel('State / Province', '4.2');
+    $address->addLabel('ZIP / Postal Code', '4.3');
+    $address->addLabel('Country', '4.4');
+
+    $fields = array($email, $name, $phone, $address);
     return array('fields' => $fields);
   }
 
@@ -121,7 +139,12 @@ final class FacebookWordpressGravityFormsTest
     return array(
       '1' => 'pika.chu@s2s.com',
       '2.1' => 'Pika',
-      '2.2' => 'Chu'
+      '2.2' => 'Chu',
+      '3' => '1234567',
+      '4.1' => 'Springfield',
+      '4.2' => 'Ohio',
+      '4.3' => '45401',
+      '4.4' => 'United States'
     );
   }
 }

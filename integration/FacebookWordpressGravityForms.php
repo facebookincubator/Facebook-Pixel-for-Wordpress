@@ -84,21 +84,70 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
     if (empty($form) || empty($entry)) {
       return array();
     }
-
-    return array(
+    $user_data = array(
       'email' => self::getEmail($form, $entry),
       'first_name' => self::getFirstName($form, $entry),
-      'last_name' => self::getLastName($form, $entry)
+      'last_name' => self::getLastName($form, $entry),
+      'phone' => self::getPhone($form, $entry)
     );
+    $address_data = self::getAddressData($form, $entry);
+    return array_merge($user_data, $address_data);
+  }
+
+  private static function getAddressData($form, $entry){
+    if (empty($form['fields'])) {
+      return array();
+    }
+
+    $address_data = array();
+
+    foreach ($form['fields'] as $field) {
+      if ($field->type == 'address') {
+        if($field->inputs){
+          foreach($field->inputs as $input){
+            if(
+              array_key_exists('label', $input)
+              && $input['label'] != null
+            ){
+              if($input['label'] == 'City'){
+                $address_data['city'] = $entry[$input['id']];
+              }
+              else if($input['label'] == 'State / Province'){
+                $address_data['state'] = $entry[$input['id']];
+              }
+              else if($input['label'] == 'ZIP / Postal Code'){
+                $address_data['zip'] = $entry[$input['id']];
+              }
+              else if($input['label'] == 'Country'){
+                if(strlen($entry[$input['id']]) == 2){
+                  $address_data['country'] = $entry[$input['id']];
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
+    }
+
+    return $address_data;
+  }
+
+  private static function getPhone($form, $entry) {
+    return self::getFieldByType($form, $entry, 'phone');
   }
 
   private static function getEmail($form, $entry) {
+    return self::getFieldByType($form, $entry, 'email');
+  }
+
+  private static function getFieldByType($form, $entry, $type){
     if (empty($form['fields'])) {
       return null;
     }
 
     foreach ($form['fields'] as $field) {
-      if ($field->type == 'email') {
+      if ($field->type == $type) {
         return $entry[$field->id];
       }
     }
