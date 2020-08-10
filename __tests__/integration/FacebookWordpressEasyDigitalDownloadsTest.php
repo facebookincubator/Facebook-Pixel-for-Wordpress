@@ -30,7 +30,6 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testInjectPixelCode() {
     $eventHookMap = array(
-      'injectAddToCartEvent' => 'edd_after_download_content',
       'injectInitiateCheckoutEvent' => 'edd_after_checkout_cart'
     );
 
@@ -48,13 +47,24 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     FacebookWordpressEasyDigitalDownloads::injectPixelCode();
   }
 
-  public function testInjectAddToCartEventWithoutAdmin() {
+  public function testInjectAddToCartEventListenerWithoutAdmin() {
     self::mockIsAdmin(false);
 
     $download_id = '1234';
-    FacebookWordpressEasyDigitalDownloads::injectAddToCartEvent($download_id);
+    FacebookWordpressEasyDigitalDownloads::injectAddToCartListener(
+      $download_id
+    );
     $this->expectOutputRegex(
       '/edd-add-to-cart[\s\S]+End Facebook Pixel Event Code/');
+  }
+
+  public function testInjectAddToCartEventIdWithoutAdmin() {
+    self::mockIsAdmin(false);
+    self::mockUseS2S(true);
+
+    FacebookWordpressEasyDigitalDownloads::injectAddToCartEventId();
+    $this->expectOutputRegex(
+      '/input type="hidden" name="facebook_event_id"/');
   }
 
   public function testInitiateCheckoutEventWithoutAdmin() {
@@ -122,11 +132,20 @@ final class FacebookWordpressEasyDigitalDownloadsTest
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
-  public function testInjectAddToCartEventWithAdmin() {
+  public function testInjectAddToCartEventListenerWithAdmin() {
     self::mockIsAdmin(true);
 
     $download_id = '1234';
-    FacebookWordpressEasyDigitalDownloads::injectAddToCartEvent($download_id);
+    FacebookWordpressEasyDigitalDownloads::injectAddToCartListener(
+      $download_id
+    );
+    $this->expectOutputString("");
+  }
+
+  public function testInjectAddToCartEventIdWithAdmin() {
+    self::mockIsAdmin(true);
+
+    FacebookWordpressEasyDigitalDownloads::injectAddToCartEventId();
     $this->expectOutputString("");
   }
 
@@ -174,6 +193,35 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     $this->assertEquals('Pika', $user_data->getFirstName());
     $this->assertEquals('Chu', $user_data->getLastName());
     $this->assertEquals('ViewContent', $event->getEventName());
+    $this->assertEquals(['1234'], $custom_data->getContentIds() );
+    $this->assertEquals('product', $custom_data->getContentType());
+    $this->assertEquals('USD', $custom_data->getCurrency());
+    $this->assertEquals('Encarta', $custom_data->getContentName());
+    $this->assertEquals( 50, $custom_data->getValue());
+    $this->assertNotNull($event->getEventTime());
+  }
+
+  public function testInjectAddToCartEventAjax() {
+    self::mockIsAdmin(false);
+    self::mockUseS2S(true);
+    $this->setupEDDMocks();
+
+    FacebookWordpressEasyDigitalDownloads::injectAddToCartEventAjax();
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(1, $tracked_events);
+
+    $event = $tracked_events[0];
+    $custom_data = $event->getCustomData();
+    $user_data = $event->getUserData();
+
+    $this->assertEquals('abc-123', $event->getEventId());
+    $this->assertEquals('pika.chu@s2s.com', $user_data->getEmail());
+    $this->assertEquals('Pika', $user_data->getFirstName());
+    $this->assertEquals('Chu', $user_data->getLastName());
+    $this->assertEquals('AddToCart', $event->getEventName());
     $this->assertEquals(['1234'], $custom_data->getContentIds() );
     $this->assertEquals('product', $custom_data->getContentType());
     $this->assertEquals('USD', $custom_data->getCurrency());
@@ -239,5 +287,29 @@ final class FacebookWordpressEasyDigitalDownloadsTest
         'return' => $download_object
       )
     );
+
+    $_POST['nonce'] = '54321';
+    $_POST['download_id'] = '1234';
+    $_POST['post_data'] = 'facebook_event_id=abc-123';
+
+    \WP_Mock::userFunction('absint', array(
+        'args' => array(\WP_Mock\Functions::type( 'string' )),
+        'return' => 1234
+      )
+    );
+
+    \WP_Mock::userFunction('sanitize_text_field', array(
+        'args' => array(\WP_Mock\Functions::type( 'string' )),
+        'return' => '54321'
+      )
+    );
+
+    \WP_Mock::userFunction('wp_verify_nonce', array(
+        'args' => array(\WP_Mock\Functions::type( 'string' ),
+          \WP_Mock\Functions::type( 'string' )),
+        'return' => true
+      )
+    );
+
   }
 }
