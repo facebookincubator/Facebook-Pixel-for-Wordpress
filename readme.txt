@@ -50,6 +50,12 @@ If you get stuck, or have any questions, you can ask for help in the [Official F
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2020-08-14 version 2.2.0 =
+* Support for WordPress 5.5
+* Improved Conversions API event quality
+* Sending AddToCart and ViewContent events from Easy Digitial Downloads
+* New filter added before the Conversions API event is sent
+
 = 2020-06-18 version 2.1.0 =
 * Support for WooCommerce through the Conversions API
 
