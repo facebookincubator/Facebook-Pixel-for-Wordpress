@@ -92,7 +92,13 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
         $event_data['zip'] = $address_data['zip'];
       }
 
-      if(!empty($address_data['country'])){
+      // You can edit the country field in the plugin editor
+      // and do not use ISO code
+      // Validating this case
+      if(
+        !empty($address_data['country'])
+        && strlen($address_data['country'])==2
+      ){
         $event_data['country'] = $address_data['country'];
       }
     }
