@@ -103,6 +103,10 @@ final class FacebookWordpressFormidableFormTest
     $this->assertEquals('Pika', $event->getUserData()->getFirstName());
     $this->assertEquals('Chu', $event->getUserData()->getLastName());
     $this->assertEquals('123456', $event->getUserData()->getPhone());
+    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('Ohio', $event->getUserData()->getState());
+    $this->assertEquals('45501', $event->getUserData()->getZipCode());
+    $this->assertNull($event->getUserData()->getCountryCode());
     $this->assertEquals('formidable-lite',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
@@ -160,8 +164,18 @@ final class FacebookWordpressFormidableFormTest
       '123456'
     );
 
+    $address = new MockFormidableFormFieldValue(
+      new MockFormidableFormField('address', null, null),
+      array(
+        'city' => 'Springfield',
+        'state' => 'Ohio',
+        'zip' => '45501',
+        'country' => 'United States'
+      )
+    );
+
     $entry_values = new MockFormidableFormEntryValues(
-      array($email, $first_name, $last_name, $phone)
+      array($email, $first_name, $last_name, $phone, $address)
     );
 
     $mock_utils = \Mockery::mock(
