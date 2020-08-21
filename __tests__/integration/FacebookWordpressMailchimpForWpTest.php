@@ -40,7 +40,11 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 
   public function testInjectLeadEventWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $_POST['EMAIL'] = 'pika.chu@s2s.com';
     $_POST['FNAME'] = 'Pika';

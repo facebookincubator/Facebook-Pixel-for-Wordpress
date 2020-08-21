@@ -60,7 +60,7 @@ jQuery(document).ready(function ($) {
       '%s': '%s',
       'value': value
     };
-
+    fbq('set', 'agent', '%s', '%s');
     if(event_id){
       fbq('track', 'AddToCart', param, {'eventID': event_id});
     }
@@ -165,7 +165,9 @@ jQuery(document).ready(function ($) {
     $listener_code = sprintf(
       self::$addToCartJS,
       FacebookPixel::FB_INTEGRATION_TRACKING_KEY,
-      self::TRACKING_NAME
+      self::TRACKING_NAME,
+      FacebookWordpressOptions::getAgentString(),
+      FacebookWordpressOptions::getPixelId()
     );
 
     printf("

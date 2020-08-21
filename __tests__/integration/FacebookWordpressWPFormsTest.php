@@ -43,7 +43,11 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithoutAdmin() {
     parent::mockIsAdmin(false);
-    self::mockUseS2S(false);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => false
+      )
+    );
 
     $event = ServerEventFactory::newEvent('Lead');
     FacebookServerSideEvent::getInstance()->track($event);
@@ -55,7 +59,11 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithAdmin() {
     parent::mockIsAdmin(true);
-    self::mockUseS2S(false);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => false
+      )
+    );
 
     FacebookWordpressWPForms::injectLeadEvent('mock_form_data');
     $this->expectOutputString("");
@@ -63,7 +71,11 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
   public function testTrackEventWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $mock_entry = $this->createMockEntry();
     $mock_form_data = $this->createMockFormData();
@@ -102,7 +114,11 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
   public function testTrackEventWithoutAdminSimpleFormat() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $mock_entry = $this->createMockEntry(true);
     $mock_form_data = $this->createMockFormData(true);

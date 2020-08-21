@@ -33,7 +33,11 @@ final class FacebookWordpressContactForm7Test
   extends FacebookWordpressTestBase {
   public function testInjectLeadEventWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(false);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => false
+      )
+    );
 
     $mock_response = array(
       'status' => 'mail_sent',
@@ -51,7 +55,11 @@ final class FacebookWordpressContactForm7Test
 
   public function testTrackServerEventWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $mock_result = array(
       'status' => 'mail_sent',
@@ -91,7 +99,11 @@ final class FacebookWordpressContactForm7Test
 
   public function testTrackServerEventWithoutFormData() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $mock_result = array(
       'status' => 'mail_sent',
@@ -123,7 +135,11 @@ final class FacebookWordpressContactForm7Test
 
   public function testTrackServerEventErrorReadingData() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $mock_result = array(
       'status' => 'mail_sent',

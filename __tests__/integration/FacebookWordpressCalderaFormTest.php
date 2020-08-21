@@ -42,7 +42,11 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithoutAdminAndSubmitted() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(false);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => false
+      )
+    );
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
 
     $out = FacebookWordpressCalderaForm::injectLeadEvent($mock_out, null);
@@ -55,7 +59,11 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithoutAdminAndNotSubmitted() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(false);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => false
+      )
+    );
     $mock_out = array(
       'status' => 'preprocess',
       'html' => 'fail to submit form');
@@ -73,7 +81,11 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithAdmin() {
     self::mockIsAdmin(true);
-    self::mockUseS2S(false);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => false
+      )
+    );
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = array();
 
@@ -89,7 +101,11 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testSendLeadEventViaServerAPISuccessWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = self::createMockForm();
@@ -122,7 +138,11 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testSendLeadEventViaServerAPIFailureWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
     $mock_out = array(
       'status' => 'preprocess',
       'html' => 'fail to submit form');
@@ -140,7 +160,11 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testSendLeadEventViaServerAPIFailureWithAdmin() {
     self::mockIsAdmin(true);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = array();
 

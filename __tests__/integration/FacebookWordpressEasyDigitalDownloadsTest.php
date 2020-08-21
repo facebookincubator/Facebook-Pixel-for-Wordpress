@@ -49,6 +49,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testInjectAddToCartEventListenerWithoutAdmin() {
     self::mockIsAdmin(false);
+    self::mockFacebookWordpressOptions();
 
     $download_id = '1234';
     FacebookWordpressEasyDigitalDownloads::injectAddToCartListener(
@@ -60,7 +61,11 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testInjectAddToCartEventIdWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     FacebookWordpressEasyDigitalDownloads::injectAddToCartEventId();
     $this->expectOutputRegex(
@@ -69,7 +74,12 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testInitiateCheckoutEventWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
+
     $this->setupEDDMocks();
 
     FacebookWordpressEasyDigitalDownloads::injectInitiateCheckoutEvent();
@@ -96,7 +106,12 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testPurchaseEventWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
+
     $this->setupEDDMocks();
 
     $payment = new class {
@@ -173,7 +188,11 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testInjectViewContentEventWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $this->setupEDDMocks();
 
@@ -203,7 +222,12 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testInjectAddToCartEventAjax() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
+
     $this->setupEDDMocks();
 
     FacebookWordpressEasyDigitalDownloads::injectAddToCartEventAjax();

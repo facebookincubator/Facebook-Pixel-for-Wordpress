@@ -42,7 +42,11 @@ final class FacebookWordpressGravityFormsTest
 
   public function testInjectLeadEventWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $mock_confirm = 'mock_msg';
     $mock_form = $this->createMockForm();
@@ -77,7 +81,11 @@ final class FacebookWordpressGravityFormsTest
 
   public function testInjectLeadEventWithoutAdminErrorReadingForm() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $mock_confirm = 'mock_msg';
     $mock_form = $this->createMockForm();
@@ -108,7 +116,11 @@ final class FacebookWordpressGravityFormsTest
 
   public function testInjectLeadEventWithAdmin() {
     self::mockIsAdmin(true);
-    self::mockUseS2S(false);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => false
+      )
+    );
 
     $mock_confirm = 'mock_msg';
     $mock_confirm = FacebookWordpressGravityForms::injectLeadEvent(

@@ -27,7 +27,11 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
   public function testTrackEventFiresAction() {
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
     $event = ServerEventFactory::newEvent('Lead');
     \WP_Mock::expectAction('send_server_event', $event);
 

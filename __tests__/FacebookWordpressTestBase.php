@@ -45,10 +45,33 @@ abstract class FacebookWordpressTestBase extends TestCase {
       ->andReturn($is_admin);
   }
 
-  protected function mockUseS2S($use_s2s, $use_pii = true) {
+  protected function mockFacebookWordpressOptions($options = array()){
     $this->mocked_options = \Mockery::mock(
       'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions');
-    $this->mocked_options->shouldReceive('getUseS2S')->andReturn($use_s2s);
-    $this->mocked_options->shouldReceive('getUsePii')->andReturn($use_pii);
+    if(array_key_exists('use_s2s', $options)){
+      $this->mocked_options->shouldReceive('getUseS2S')->andReturn($options['use_s2s']);
+    }
+    else{
+      $this->mocked_options->shouldReceive('getUseS2S')->andReturn(false);
+    }
+    if(array_key_exists('use_pii', $options)){
+      $this->mocked_options->shouldReceive('getUsePii')->andReturn($options['use_pii']);
+    }
+    else{
+      $this->mocked_options->shouldReceive('getUsePii')->andReturn(true);
+    }
+    if(array_key_exists('agent_string', $options)){
+      $this->mocked_options->shouldReceive('getAgentString')->andReturn($options['agent_string']);
+    }
+    else{
+      $this->mocked_options ->shouldReceive('getAgentString')
+                            ->andReturn('wordpress');
+    }
+    if(array_key_exists('pixel_id', $options)){
+      $this->mocked_options->shouldReceive('getPixelId')->andReturn($options['pixel_id']);
+    }
+    else{
+      $this->mocked_options->shouldReceive('getPixelId')->andReturn('1234');
+    }
   }
 }

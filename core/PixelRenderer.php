@@ -28,16 +28,24 @@ class PixelRenderer {
   const TRACK_CUSTOM = 'trackCustom';
   const FB_INTEGRATION_TRACKING = 'fb_integration_tracking';
   const SCRIPT_TAG = "<script type='text/javascript'>%s</script>";
-  const FBQ_CODE = "
+  const FBQ_EVENT_CODE = "
   fbq('%s', '%s', %s, %s);
 ";
+  const FBQ_AGENT_CODE = "
+  fbq('set', 'agent', '%s', '%s');";
 
   public static function render($events, $fb_integration_tracking,
     $script_tag = true) {
     if (empty($events)) {
       return "";
     }
-    $code = "";
+    // The first line of the injected script will set the agent
+    // for all the events passed in $events
+    $code = sprintf(
+      self::FBQ_AGENT_CODE,
+      FacebookWordpressOptions::getAgentString(),
+      FacebookWordpressOptions::getPixelId()
+    );
     foreach ($events as $event) {
       $code .= self::getPixelTrackCode($event, $fb_integration_tracking);
     }
@@ -58,9 +66,8 @@ class PixelRenderer {
     }
 
     $class = new ReflectionClass('FacebookPixelPlugin\Core\FacebookPixel');
-
     return sprintf(
-      self::FBQ_CODE,
+      self::FBQ_EVENT_CODE,
       $class->getConstant(strtoupper($event->getEventName())) !== false
       ? self::TRACK : self::TRACK_CUSTOM,
       $event->getEventName(),

@@ -15,6 +15,7 @@ namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\PixelRenderer;
+use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\CustomData;
 
@@ -29,41 +30,52 @@ use FacebookAds\Object\ServerSide\CustomData;
  */
 final class PixelRendererTest extends FacebookWordpressTestBase {
   public function testPixelRenderForStandardEvent() {
+    FacebookWordpressOptions::setVersionInfo();
+    $agent_string = FacebookWordpressOptions::getAgentString();
+
     $event = (new Event())
               ->setEventName('Lead')
               ->setEventId('TestEventId');
     $code = PixelRenderer::render(array($event), 'Test');
 
-    $expected = "<script type='text/javascript'>
+    $expected = sprintf("<script type='text/javascript'>
+  fbq('set', 'agent', '%s', '');
   fbq('track', 'Lead', {
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId\"
 });
-</script>";
+</script>", $agent_string);
 
     $this->assertEquals($expected, $code);
   }
 
   public function testPixelRenderForCustomEvent() {
+    FacebookWordpressOptions::setVersionInfo();
+    $agent_string = FacebookWordpressOptions::getAgentString();
+
     $event = (new Event())
               ->setEventName('Custom')
               ->setEventId('TestEventId');
 
     $code = PixelRenderer::render(array($event), 'Test');
 
-    $expected = "<script type='text/javascript'>
+    $expected = sprintf("<script type='text/javascript'>
+  fbq('set', 'agent', '%s', '');
   fbq('trackCustom', 'Custom', {
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId\"
 });
-</script>";
+</script>", $agent_string);
 
     $this->assertEquals($expected, $code);
   }
 
   public function testPixelRenderForCustomData() {
+    FacebookWordpressOptions::setVersionInfo();
+    $agent_string = FacebookWordpressOptions::getAgentString();
+
     $custom_data = (new CustomData())
                     ->setCurrency('USD')
                     ->setValue('30.00');
@@ -75,7 +87,8 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 
     $code = PixelRenderer::render(array($event), 'Test');
 
-    $expected = "<script type='text/javascript'>
+    $expected = sprintf("<script type='text/javascript'>
+  fbq('set', 'agent', '%s', '');
   fbq('track', 'Purchase', {
     \"value\": \"30.00\",
     \"currency\": \"usd\",
@@ -83,12 +96,15 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 }, {
     \"eventID\": \"TestEventId\"
 });
-</script>";
+</script>", $agent_string);
 
     $this->assertEquals($expected, $code);
   }
 
   public function testPixelRenderForMultipleEvents() {
+    FacebookWordpressOptions::setVersionInfo();
+    $agent_string = FacebookWordpressOptions::getAgentString();
+
     $event1 = (new Event())
               ->setEventName('Lead')
               ->setEventId('TestEventId1');
@@ -98,7 +114,8 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 
     $code = PixelRenderer::render(array($event1, $event2), 'Test');
 
-    $expected = "<script type='text/javascript'>
+    $expected = sprintf("<script type='text/javascript'>
+  fbq('set', 'agent', '%s', '');
   fbq('track', 'Lead', {
     \"fb_integration_tracking\": \"Test\"
 }, {
@@ -110,7 +127,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 }, {
     \"eventID\": \"TestEventId2\"
 });
-</script>";
+</script>", $agent_string);
 
     $this->assertEquals($expected, $code);
   }

@@ -50,7 +50,11 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
   public function testInjectAddToCartEventWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $parameter = array('product_id' => 1, 'widget_output' => '');
 
@@ -95,7 +99,11 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
   public function testInitiateCheckoutEventWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $this->setupMocks();
 
@@ -129,7 +137,11 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
   public function testInjectPurchaseEventWithoutAdmin() {
     self::mockIsAdmin(false);
-    self::mockUseS2S(true);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
 
     $this->setupMocks();
 
