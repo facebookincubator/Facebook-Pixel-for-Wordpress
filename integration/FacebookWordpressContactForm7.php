@@ -39,7 +39,9 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
   }
 
   public static function trackServerEvent($form, $result) {
-    if (FacebookPluginUtils::isAdmin()) {
+    $isAdmin = FacebookPluginUtils::isAdmin();
+    $submitFailed = $result['status'] !== 'mail_sent';
+    if ($isAdmin || $submitFailed) {
       return $result;
     }
 

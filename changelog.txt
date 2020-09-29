@@ -1,5 +1,6 @@
 *** Facebook for WordPress Changelog ***
 2020-09-28 version 2.2.1
+* Fix Contact Form 7 integration bug, send events only on form submit success
 * Update Facebook Business SDK to v8.0.2
 * Requires PHP 5.6 or greater
 

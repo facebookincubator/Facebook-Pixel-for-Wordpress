@@ -182,6 +182,39 @@ final class FacebookWordpressContactForm7Test
     $this->assertEquals('Thank you for your message', $response['message']);
   }
 
+  public function testInjectLeadEventWhenMailFails() {
+    self::mockIsAdmin(false);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
+
+    $bad_statuses = [
+      'validation_failed',
+      'acceptance_missing',
+      'spam',
+      'aborted',
+      'mail_failed',
+    ];
+
+    $mock_form = new MockContactForm7();
+    $mock_form->set_throw(true);
+
+    foreach ($bad_statuses as $status) {
+      $mock_result = array(
+        'status' => $status,
+        'message' => 'Error bad status'
+      );
+      FacebookWordpressContactForm7::trackServerEvent($mock_form, $mock_result);
+    }
+
+    $tracked_events =
+      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+
+    $this->assertCount(0, $tracked_events);
+  }
+
   private function createMockForm() {
     $mock_form = new MockContactForm7();
 
