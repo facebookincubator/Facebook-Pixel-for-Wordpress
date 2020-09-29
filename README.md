@@ -6,7 +6,7 @@ Grow your business with Facebook for WordPress! This plugin will install a Faceb
 
 Official Facebook Pixel requires
 * WordPress 4.4+ or higher
-* PHP 5.3 or greater
+* PHP 5.6 or greater
 
 # Get started
 
