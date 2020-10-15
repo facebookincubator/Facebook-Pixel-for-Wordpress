@@ -40,8 +40,8 @@ final class FacebookWordpressGravityFormsTest
     $this->assertHooksAdded();
   }
 
-  public function testInjectLeadEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInjectLeadEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -79,8 +79,8 @@ final class FacebookWordpressGravityFormsTest
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
-  public function testInjectLeadEventWithoutAdminErrorReadingForm() {
-    self::mockIsAdmin(false);
+  public function testInjectLeadEventWithoutInternalUserErrorReadingForm() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -114,8 +114,8 @@ final class FacebookWordpressGravityFormsTest
     $this->assertNull($event->getUserData()->getCountryCode());
   }
 
-  public function testInjectLeadEventWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectLeadEventWithInternalUser() {
+    self::mockIsInternalUser(true);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => false

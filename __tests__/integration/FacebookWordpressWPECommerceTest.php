@@ -48,8 +48,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->assertHooksAdded();
   }
 
-  public function testInjectAddToCartEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInjectAddToCartEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -86,8 +86,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
-  public function testInjectAddToCartEventWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectAddToCartEventWithInternalUser() {
+    self::mockIsInternalUser(true);
     $parameter = array('product_id' => 1, 'widget_output' => '');
 
     $response = FacebookWordpressWPECommerce::injectAddToCartEvent($parameter);
@@ -97,8 +97,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->assertEquals("", $code);
   }
 
-  public function testInitiateCheckoutEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInitiateCheckoutEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -128,15 +128,15 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
-  public function testInitiateCheckoutEventWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInitiateCheckoutEventWithInternalUser() {
+    self::mockIsInternalUser(true);
 
     FacebookWordpressWPECommerce::injectInitiateCheckoutEvent();
     $this->expectOutputString("");
   }
 
-  public function testInjectPurchaseEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInjectPurchaseEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -180,8 +180,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
-  public function testInjectPurchaseEventWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectPurchaseEventWithInternalUser() {
+    self::mockIsInternalUser(true);
 
     $mock_purchase_log_object = \Mockery::mock();
     $purchase_log_object = $mock_purchase_log_object;

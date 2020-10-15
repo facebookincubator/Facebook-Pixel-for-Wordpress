@@ -41,8 +41,8 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     FacebookWordpressWPForms::injectPixelCode();
   }
 
-  public function testInjectLeadEventWithoutAdmin() {
-    parent::mockIsAdmin(false);
+  public function testInjectLeadEventWithoutInternalUser() {
+    parent::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => false
@@ -57,8 +57,8 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
       '/wpforms-lite[\s\S]+End Facebook Pixel Event Code/');
   }
 
-  public function testInjectLeadEventWithAdmin() {
-    parent::mockIsAdmin(true);
+  public function testInjectLeadEventWithInternalUser() {
+    parent::mockIsInternalUser(true);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => false
@@ -69,8 +69,8 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     $this->expectOutputString("");
   }
 
-  public function testTrackEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testTrackEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -112,8 +112,8 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
-  public function testTrackEventWithoutAdminSimpleFormat() {
-    self::mockIsAdmin(false);
+  public function testTrackEventWithoutInternalUserSimpleFormat() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true

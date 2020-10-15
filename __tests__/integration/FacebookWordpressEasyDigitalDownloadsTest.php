@@ -47,8 +47,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     FacebookWordpressEasyDigitalDownloads::injectPixelCode();
   }
 
-  public function testInjectAddToCartEventListenerWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInjectAddToCartEventListenerWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions();
 
     $download_id = '1234';
@@ -59,8 +59,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest
       '/edd-add-to-cart[\s\S]+End Facebook Pixel Event Code/');
   }
 
-  public function testInjectAddToCartEventIdWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInjectAddToCartEventIdWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -72,8 +72,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest
       '/input type="hidden" name="facebook_event_id"/');
   }
 
-  public function testInitiateCheckoutEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInitiateCheckoutEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -104,8 +104,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
-  public function testPurchaseEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testPurchaseEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -147,8 +147,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
-  public function testInjectAddToCartEventListenerWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectAddToCartEventListenerWithInternalUser() {
+    self::mockIsInternalUser(true);
 
     $download_id = '1234';
     FacebookWordpressEasyDigitalDownloads::injectAddToCartListener(
@@ -157,37 +157,37 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     $this->expectOutputString("");
   }
 
-  public function testInjectAddToCartEventIdWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectAddToCartEventIdWithInternalUser() {
+    self::mockIsInternalUser(true);
 
     FacebookWordpressEasyDigitalDownloads::injectAddToCartEventId();
     $this->expectOutputString("");
   }
 
-  public function testInjectInitiateCheckoutEventWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectInitiateCheckoutEventWithInternalUser() {
+    self::mockIsInternalUser(true);
 
     FacebookWordpressEasyDigitalDownloads::injectInitiateCheckoutEvent();
     $this->expectOutputString("");
   }
 
-  public function testInjectPurchaseEventWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectPurchaseEventWithInternalUser() {
+    self::mockIsInternalUser(true);
     $payment = array('ID' => '1234');
     FacebookWordpressEasyDigitalDownloads::trackPurchaseEvent($payment, null);
     $this->expectOutputString("");
   }
 
-  public function testInjectViewContentEventWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectViewContentEventWithInternalUser() {
+    self::mockIsInternalUser(true);
 
     $download_id = 1234;
     FacebookWordpressEasyDigitalDownloads::injectViewContentEvent($download_id);
     $this->expectOutputString("");
   }
 
-  public function testInjectViewContentEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInjectViewContentEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -221,7 +221,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
   }
 
   public function testInjectAddToCartEventAjax() {
-    self::mockIsAdmin(false);
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true

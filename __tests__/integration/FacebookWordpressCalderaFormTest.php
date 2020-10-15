@@ -40,8 +40,8 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
       FacebookServerSideEvent::getInstance()->getTrackedEvents());
   }
 
-  public function testInjectLeadEventWithoutAdminAndSubmitted() {
-    self::mockIsAdmin(false);
+  public function testInjectLeadEventWithoutInternalUserAndSubmitted() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => false
@@ -57,8 +57,8 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
       '/caldera-forms[\s\S]+End Facebook Pixel Event Code/', $code);
   }
 
-  public function testInjectLeadEventWithoutAdminAndNotSubmitted() {
-    self::mockIsAdmin(false);
+  public function testInjectLeadEventWithoutInternalUserAndNotSubmitted() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => false
@@ -79,8 +79,8 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
       FacebookServerSideEvent::getInstance()->getTrackedEvents());
   }
 
-  public function testInjectLeadEventWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectLeadEventWithInternalUser() {
+    self::mockIsInternalUser(true);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => false
@@ -99,8 +99,8 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
       FacebookServerSideEvent::getInstance()->getTrackedEvents());
   }
 
-  public function testSendLeadEventViaServerAPISuccessWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testSendLeadEventViaServerAPISuccessWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -136,8 +136,8 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
-  public function testSendLeadEventViaServerAPIFailureWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testSendLeadEventViaServerAPIFailureWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -158,8 +158,8 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
       FacebookServerSideEvent::getInstance()->getTrackedEvents());
   }
 
-  public function testSendLeadEventViaServerAPIFailureWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testSendLeadEventViaServerAPIFailureWithInternalUser() {
+    self::mockIsInternalUser(true);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true

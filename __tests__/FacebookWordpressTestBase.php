@@ -37,12 +37,11 @@ abstract class FacebookWordpressTestBase extends TestCase {
     \WP_Mock::tearDown();
   }
 
-  // mock Wordpress Core Function
-  protected function mockIsAdmin($is_admin) {
+  protected function mockIsInternalUser($is_internal_user) {
     $this->mocked_fbpixel = \Mockery::mock
       ('alias:FacebookPixelPlugin\Core\FacebookPluginUtils');
-    $this->mocked_fbpixel->shouldReceive('isAdmin')
-      ->andReturn($is_admin);
+    $this->mocked_fbpixel->shouldReceive('isInternalUser')
+      ->andReturn($is_internal_user);
   }
 
   protected function mockFacebookWordpressOptions($options = array()){

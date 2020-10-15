@@ -37,7 +37,7 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
   }
 
   public static function injectLeadEvent() {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return;
     }
 

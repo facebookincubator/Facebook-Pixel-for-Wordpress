@@ -34,13 +34,6 @@ class FacebookPluginUtils {
     return isset($pixel_id) && ctype_digit($pixel_id) && $pixel_id !== '0';
   }
 
-  /**
-   * Whether current user is Administrator.
-   */
-  public static function isAdmin() {
-    return current_user_can('install_plugins');
-  }
-
   public static function getLoggedInUserInfo() {
     $current_user = wp_get_current_user();
     if (empty($current_user)) {
@@ -52,5 +45,15 @@ class FacebookPluginUtils {
       'first_name' => $current_user->user_firstname,
       'last_name' => $current_user->user_lastname,
     );
+  }
+
+  // All standard WordPress user roles are considered internal unless they have
+  // the Subscriber role.
+  // WooCommerce uses the 'read' capability for its customer role.
+  // Also check for the 'upload_files' capability to account for the shop_worker
+  // and shop_vendor roles in Easy Digital Downloads.
+  // https://wordpress.org/support/article/roles-and-capabilities
+  public static function isInternalUser() {
+    return current_user_can('edit_posts') || current_user_can('upload_files');
   }
 }

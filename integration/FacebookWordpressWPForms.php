@@ -42,7 +42,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
   }
 
   public static function trackEvent($entry, $form_data) {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return;
     }
 
@@ -63,7 +63,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
   }
 
   public static function injectLeadEvent() {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return;
     }
 

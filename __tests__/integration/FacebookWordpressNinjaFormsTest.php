@@ -38,8 +38,8 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     $this->assertHooksAdded();
   }
 
-  public function testInjectLeadEventWithoutAdmin() {
-    parent::mockIsAdmin(false);
+  public function testInjectLeadEventWithoutInternalUser() {
+    parent::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -94,8 +94,8 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
-  public function testInjectLeadEventWithAdmin() {
-    parent::mockIsAdmin(true);
+  public function testInjectLeadEventWithInternalUser() {
+    parent::mockIsInternalUser(true);
 
     $result = FacebookWordpressNinjaForms::injectLeadEvent(
       'mock_actions',

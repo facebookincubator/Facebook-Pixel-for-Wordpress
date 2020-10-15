@@ -31,23 +31,46 @@ final class FacebookPluginUtilsTest extends FacebookWordpressTestBase {
     $this->assertFalse(FacebookPluginUtils::isPositiveInteger('-1'));
   }
 
-  public function testIsAdmin() {
+  public function testIsInternalUser_WhenUserIsExternal() {
     \WP_Mock::userFunction('current_user_can', array(
-      'args' => 'install_plugins',
-      'return' => true,
-    ));
-
-    $isAdmin = FacebookPluginUtils::isAdmin();
-    $this->assertTrue($isAdmin);
-  }
-
-  public function testIsNotAdmin() {
-    \WP_Mock::userFunction('current_user_can', array(
-      'args' => 'install_plugins',
+      'times' => 1,
+      'args' => 'edit_posts',
       'return' => false,
     ));
+    \WP_Mock::userFunction('current_user_can', array(
+      'times' => 1,
+      'args' => 'upload_files',
+      'return' => false,
+    ));
+    $isInternalUser = FacebookPluginUtils::isInternalUser();
 
-    $isAdmin = FacebookPluginUtils::isAdmin();
-    $this->assertFalse($isAdmin);
+    $this->assertFalse($isInternalUser);
+  }
+
+  public function testIsInternalUser_WhenUserCanEditPosts() {
+    \WP_Mock::userFunction('current_user_can', array(
+      'times' => 1,
+      'args' => 'edit_posts',
+      'return' => true,
+    ));
+    $isInternalUser = FacebookPluginUtils::isInternalUser();
+
+    $this->assertTrue($isInternalUser);
+  }
+
+  public function testIsInternalUser_WhenUserCanUploadFiles() {
+    \WP_Mock::userFunction('current_user_can', array(
+      'times' => 1,
+      'args' => 'edit_posts',
+      'return' => false,
+    ));
+    \WP_Mock::userFunction('current_user_can', array(
+      'times' => 1,
+      'args' => 'upload_files',
+      'return' => true,
+    ));
+    $isInternalUser = FacebookPluginUtils::isInternalUser();
+
+    $this->assertTrue($isInternalUser);
   }
 }

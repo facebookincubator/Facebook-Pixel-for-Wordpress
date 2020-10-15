@@ -55,7 +55,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
   }
 
   public static function trackPurchaseEvent($order_id) {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return;
     }
 
@@ -108,7 +108,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 
   public static function trackAddToCartEvent(
     $cart_item_key, $product_id, $quantity, $variation_id) {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return;
     }
 
@@ -140,7 +140,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
   }
 
   public static function trackInitiateCheckout() {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return;
     }
 

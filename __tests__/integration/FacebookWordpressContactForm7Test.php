@@ -31,8 +31,8 @@ use FacebookPixelPlugin\Core\ServerEventFactory;
 
 final class FacebookWordpressContactForm7Test
   extends FacebookWordpressTestBase {
-  public function testInjectLeadEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInjectLeadEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => false
@@ -53,8 +53,8 @@ final class FacebookWordpressContactForm7Test
       $response['message']);
   }
 
-  public function testTrackServerEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testTrackServerEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -98,7 +98,7 @@ final class FacebookWordpressContactForm7Test
   }
 
   public function testTrackServerEventWithoutFormData() {
-    self::mockIsAdmin(false);
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -134,7 +134,7 @@ final class FacebookWordpressContactForm7Test
   }
 
   public function testTrackServerEventErrorReadingData() {
-    self::mockIsAdmin(false);
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -170,8 +170,8 @@ final class FacebookWordpressContactForm7Test
     $this->assertNotNull($event->getEventTime());
   }
 
-  public function testInjectLeadEventWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectLeadEventWithInternalUser() {
+    self::mockIsInternalUser(true);
 
     $mock_response = array(
       'status' => 'mail_sent',
@@ -183,7 +183,7 @@ final class FacebookWordpressContactForm7Test
   }
 
   public function testInjectLeadEventWhenMailFails() {
-    self::mockIsAdmin(false);
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true

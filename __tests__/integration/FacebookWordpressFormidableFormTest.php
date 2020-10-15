@@ -33,7 +33,7 @@ final class FacebookWordpressFormidableFormTest
   extends FacebookWordpressTestBase {
 
   public function testInjectPixelCode() {
-    self::mockIsAdmin(false);
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => false
@@ -52,8 +52,8 @@ final class FacebookWordpressFormidableFormTest
     FacebookWordpressFormidableForm::injectPixelCode();
   }
 
-  public function testInjectLeadEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInjectLeadEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => false
@@ -68,8 +68,8 @@ final class FacebookWordpressFormidableFormTest
     $this->expectOutputRegex('/script[\s\S]+formidable-lite/');
   }
 
-  public function testInjectLeadEventWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectLeadEventWithInternalUser() {
+    self::mockIsInternalUser(true);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => false
@@ -81,8 +81,8 @@ final class FacebookWordpressFormidableFormTest
     $this->expectOutputString("");
   }
 
-  public function testTrackEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testTrackEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -128,8 +128,8 @@ final class FacebookWordpressFormidableFormTest
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
-  public function testTrackEventWithoutAdminErrorReadingForm() {
-    self::mockIsAdmin(false);
+  public function testTrackEventWithoutInternalUserErrorReadingForm() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true

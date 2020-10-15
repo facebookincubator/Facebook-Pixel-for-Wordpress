@@ -39,9 +39,9 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
   }
 
   public static function trackServerEvent($form, $result) {
-    $isAdmin = FacebookPluginUtils::isAdmin();
+    $isInternalUser = FacebookPluginUtils::isInternalUser();
     $submitFailed = $result['status'] !== 'mail_sent';
-    if ($isAdmin || $submitFailed) {
+    if ($isInternalUser || $submitFailed) {
       return $result;
     }
 
@@ -63,7 +63,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
   }
 
   public static function injectLeadEvent($response, $result) {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return $response;
     }
 

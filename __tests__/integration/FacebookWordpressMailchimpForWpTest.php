@@ -38,8 +38,8 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
     FacebookWordpressMailchimpForWp::injectPixelCode();
   }
 
-  public function testInjectLeadEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInjectLeadEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -83,8 +83,8 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
-  public function testInjectLeadEventWithAdmin() {
-    self::mockIsAdmin(true);
+  public function testInjectLeadEventWithInternalUser() {
+    self::mockIsInternalUser(true);
     FacebookWordpressMailchimpForWp::injectLeadEvent();
     $this->expectOutputString("");
   }

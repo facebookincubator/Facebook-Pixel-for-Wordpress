@@ -48,7 +48,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 
   // Event hook for AddToCart.
   public static function injectAddToCartEvent($response) {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return $response;
     }
 
@@ -73,7 +73,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
   }
 
   public static function injectInitiateCheckoutEvent() {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return;
     }
 
@@ -99,7 +99,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
     $session_id,
     $display_to_screen)
   {
-    if (FacebookPluginUtils::isAdmin() || !$display_to_screen) {
+    if (FacebookPluginUtils::isInternalUser() || !$display_to_screen) {
       return;
     }
 

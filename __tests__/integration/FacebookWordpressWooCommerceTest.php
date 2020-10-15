@@ -52,8 +52,8 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     FacebookWordpressWooCommerce::injectPixelCode();
   }
 
-  public function testPurchaseEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testPurchaseEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -94,8 +94,8 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
-  public function testInitiateCheckoutEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testInitiateCheckoutEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true
@@ -139,8 +139,8 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
-  public function testAddToCartEventWithoutAdmin() {
-    self::mockIsAdmin(false);
+  public function testAddToCartEventWithoutInternalUser() {
+    self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions(
       array(
         'use_s2s' => true

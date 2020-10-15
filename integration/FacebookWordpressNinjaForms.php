@@ -40,7 +40,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
   }
 
   public static function injectLeadEvent($actions, $form_cache, $form_data) {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return $actions;
     }
 

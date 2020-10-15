@@ -122,7 +122,7 @@ jQuery(document).ready(function ($) {
   }
 
   public static function injectAddToCartEventId(){
-    if(FacebookPluginUtils::isAdmin()
+    if(FacebookPluginUtils::isInternalUser()
       || !FacebookWordpressOptions::getUseS2S()){
       return;
     }
@@ -158,7 +158,7 @@ jQuery(document).ready(function ($) {
   }
 
   public static function injectAddToCartListener($download_id) {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return;
     }
 
@@ -181,7 +181,7 @@ jQuery(document).ready(function ($) {
   }
 
   public static function injectInitiateCheckoutEvent() {
-    if (FacebookPluginUtils::isAdmin() || !function_exists('EDD')) {
+    if (FacebookPluginUtils::isInternalUser() || !function_exists('EDD')) {
       return;
     }
 
@@ -203,7 +203,7 @@ jQuery(document).ready(function ($) {
   }
 
   public static function trackPurchaseEvent($payment, $edd_receipt_args) {
-    if (FacebookPluginUtils::isAdmin() || empty($payment->ID)) {
+    if (FacebookPluginUtils::isInternalUser() || empty($payment->ID)) {
       return;
     }
 
@@ -235,7 +235,7 @@ jQuery(document).ready(function ($) {
   }
 
   public static function injectViewContentEvent($download_id) {
-    if (FacebookPluginUtils::isAdmin() || empty($download_id)) {
+    if (FacebookPluginUtils::isInternalUser() || empty($download_id)) {
       return;
     }
 

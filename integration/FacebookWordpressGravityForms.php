@@ -40,7 +40,7 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
   }
 
   public static function injectLeadEvent($confirmation, $form, $entry, $ajax) {
-    if (FacebookPluginUtils::isAdmin()) {
+    if (FacebookPluginUtils::isInternalUser()) {
       return $confirmation;
     }
 
