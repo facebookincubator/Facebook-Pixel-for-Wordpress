@@ -215,6 +215,10 @@ class ServerEventFactory {
       if (!empty($data['content_name'])) {
         $custom_data->setContentName($data['content_name']);
       }
+
+      if (!empty($data['content_category'])){
+        $custom_data->setContentCategory($data['content_category']);
+      }
     } catch (\Exception $e) {
       // Need to log
     }

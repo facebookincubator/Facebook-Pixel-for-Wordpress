@@ -4,6 +4,7 @@
 * Fix Contact Form 7 integration bug, send events only on form submit success
 * Update Facebook Business SDK to v8.0.2
 * Requires PHP 5.6 or greater
+* Sending ViewContent event from WooCommerce
 
 2020-08-14 version 2.2.0
 * Support for WordPress 5.5

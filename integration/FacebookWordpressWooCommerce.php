@@ -51,7 +51,61 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
       add_action( 'woocommerce_payment_complete',
         array(__CLASS__, 'trackPurchaseEvent'),
         40);
+
+      add_action( 'woocommerce_after_single_product',
+        array(__CLASS__, 'trackViewContentEvent'),
+        40);
     }
+  }
+
+  public static function trackViewContentEvent(){
+    if(FacebookPluginUtils::isInternalUser()){
+      return;
+    }
+
+    global $post;
+    if (!isset($post->ID)){
+      return;
+    }
+
+    $product = wc_get_product($post->ID);
+    if(!$product){
+      return;
+    }
+
+    $server_event = ServerEventFactory::safeCreateEvent(
+      'ViewContent',
+      array(__CLASS__, 'createViewContentEvent'),
+      array($product),
+      self::TRACKING_NAME
+    );
+
+    FacebookServerSideEvent::getInstance()->track($server_event);
+  }
+
+  public static function createViewContentEvent($product){
+    $event_data = self::getPIIFromSession();
+
+    $product_id = self::getProductId($product);
+    $content_type = $product->is_type('variable') ? 'product_group' : 'product';
+
+    $event_data['content_type'] = $content_type;
+    $event_data['currency'] = \get_woocommerce_currency();
+    $event_data['value'] = $product->get_price();
+    $event_data['content_ids'] = array($product_id);
+    $event_data['content_name'] = $product->get_title();
+    $event_data['content_category'] =
+      self::getProductCategory($product->get_id());
+
+    return array_filter($event_data);
+  }
+
+  private static function getProductCategory($product_id){
+    $categories = get_the_terms(
+        $product_id,
+        'product_cat'
+      );
+    return count($categories) > 0 ? $categories[0]->name : null;
   }
 
   public static function trackPurchaseEvent($order_id) {
