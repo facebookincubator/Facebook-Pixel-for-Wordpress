@@ -81,6 +81,8 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     );
 
     FacebookServerSideEvent::getInstance()->track($server_event, false);
+
+    self::enqueuePixelCode($server_event);
   }
 
   public static function createViewContentEvent($product){
@@ -174,6 +176,8 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     );
 
     FacebookServerSideEvent::getInstance()->track($server_event, false);
+
+    self::enqueuePixelCode($server_event);
   }
 
   public static function createAddToCartEvent(
@@ -310,5 +314,18 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     return in_array(
       'facebook-for-woocommerce/facebook-for-woocommerce.php',
       get_option('active_plugins'));
+  }
+
+  public static function enqueuePixelCode($server_event){
+    $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME,
+      false);
+    $code = sprintf("
+<!-- Facebook Pixel Event Code -->
+%s
+<!-- End Facebook Pixel Event Code -->
+      ",
+    $code);
+    wc_enqueue_js( $code );
+    return $code;
   }
 }

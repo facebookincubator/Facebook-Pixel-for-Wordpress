@@ -20,6 +20,7 @@ use FacebookPixelPlugin\Tests\Mocks\MockWC;
 use FacebookPixelPlugin\Tests\Mocks\MockWCCart;
 use FacebookPixelPlugin\Tests\Mocks\MockWCOrder;
 use FacebookPixelPlugin\Tests\Mocks\MockWCProduct;
+use FacebookAds\Object\ServerSide\Event;
 
 /**
  * @runTestsInSeparateProcesses
@@ -231,6 +232,21 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
   }
 
+  public function testEnqueuePixelEvent(){
+    self::mockIsInternalUser(false);
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
+
+    $this->setupMocks();
+    $server_event = new Event();
+    $pixel_code = FacebookWordpressWooCommerce::enqueuePixelCode($server_event);
+    $this->assertRegExp(
+      '/woocommerce[\s\S]+End Facebook Pixel Event Code/', $pixel_code);
+  }
+
   private function mockFacebookForWooCommerce($active) {
     \WP_Mock::userFunction('get_option', array(
       'return' => $active ?
@@ -318,5 +334,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         'return' => array($term)
       )
     );
+
+    \WP_Mock::userFunction('wc_enqueue_js', array());
   }
 }
