@@ -210,6 +210,8 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     );
 
     FacebookServerSideEvent::getInstance()->track($server_event);
+
+    self::enqueuePixelCode($server_event);
   }
 
   public static function createInitiateCheckoutEvent() {
