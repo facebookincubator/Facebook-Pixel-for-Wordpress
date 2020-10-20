@@ -26,26 +26,41 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 class FacebookServerSideEvent {
   private static $instance = null;
-  private $tracked_events = [];
+  private $trackedEvents = [];
+  private $pendingEvents = [];
 
   public static function getInstance() {
     if (self::$instance == null) {
       self::$instance = new FacebookServerSideEvent();
     }
-
     return self::$instance;
   }
 
-  public function track($event) {
-    $this->tracked_events[] = $event;
-
-    if (FacebookWordpressOptions::getUseS2S()) {
-      do_action('send_server_event', $event);
+  public function track($event, $sendNow = true) {
+    $this->trackedEvents[] = $event;
+    if( FacebookWordpressOptions::getUseS2S() ){
+      if( $sendNow ){
+        do_action( 'send_server_events',
+          array($event),
+          1
+        );
+      }
+      else{
+        $this->pendingEvents[] = $event;
+      }
     }
   }
 
   public function getTrackedEvents() {
-    return $this->tracked_events;
+    return $this->trackedEvents;
+  }
+
+  public function getNumTrackedEvents(){
+    return count( $this->trackedEvents );
+  }
+
+  public function getPendingEvents(){
+    return $this->pendingEvents;
   }
 
   public static function send($events) {

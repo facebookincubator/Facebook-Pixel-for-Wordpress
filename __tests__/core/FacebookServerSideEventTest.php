@@ -33,9 +33,11 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
       )
     );
     $event = ServerEventFactory::newEvent('Lead');
-    \WP_Mock::expectAction('send_server_event', $event);
 
     FacebookServerSideEvent::getInstance()->track($event);
+
+    $this->assertEquals(1,
+      FacebookServerSideEvent::getInstance()->getNumTrackedEvents());
   }
 
   public function testSendInvokesFilter() {
@@ -43,5 +45,29 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     \WP_Mock::expectFilter('before_conversions_api_event_sent', $events);
 
     $events = FacebookServerSideEvent::send($events);
+  }
+
+  public function testStoresPendingEvents(){
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
+
+    $event1 = ServerEventFactory::newEvent('Lead');
+    $event2 = ServerEventFactory::newEvent('AddToCart');
+
+    FacebookServerSideEvent::getInstance()->track($event1, false);
+    FacebookServerSideEvent::getInstance()->track($event2);
+
+    $pending_events =
+      FacebookServerSideEvent::getInstance()->getPendingEvents();
+
+    $this->assertEquals(2,
+      FacebookServerSideEvent::getInstance()->getNumTrackedEvents());
+    $this->assertEquals(1,
+      count($pending_events));
+    $this->assertEquals('Lead',
+      $pending_events[0]->getEventName());
   }
  }

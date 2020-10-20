@@ -22,12 +22,15 @@ use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 defined('ABSPATH') or die('Direct access not allowed');
 
 class ServerEventAsyncTask extends \WP_Async_Task {
-  protected $action = 'send_server_event';
+  protected $action = 'send_server_events';
 
   protected function prepare_data($data) {
     try {
       if (!empty($data)) {
-        return array('data' => base64_encode(serialize($data)));
+        return array(
+          'event_data' => base64_encode(serialize($data[0])),
+          'num_events'=>$data[1]
+        );
       }
     } catch (\Exception $ex) {
       error_log($ex);
@@ -38,9 +41,16 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 
   protected function run_action() {
     try {
-      $events = unserialize(base64_decode($_POST['data']));
-      if (empty($events)) {
+      $num_events = $_POST['num_events'];
+      if( $num_events == 0 ){
         return;
+      }
+      $events = unserialize(base64_decode($_POST['event_data']));
+      // When an array has just one object, the deserialization process
+      // returns just the object
+      // and we want an array
+      if( $num_events == 1 ){
+        $events = array( $events );
       }
 
       FacebookServerSideEvent::send($events);

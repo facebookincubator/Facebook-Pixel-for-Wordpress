@@ -39,6 +39,23 @@ class FacebookWordpressPixelInjection {
         $class_name = 'FacebookPixelPlugin\\Integration\\'.$value;
         $class_name::injectPixelCode();
       }
+      add_action(
+        'wp_footer',
+        array($this, 'sendPendingEvents'));
+    }
+  }
+
+  public function sendPendingEvents(){
+    if(FacebookWordpressOptions::getUseS2S()){
+      $pending_events =
+        FacebookServerSideEvent::getInstance()->getPendingEvents();
+      if(count($pending_events) > 0){
+        do_action(
+          'send_server_events',
+          $pending_events,
+          count($pending_events)
+        );
+      }
     }
   }
 

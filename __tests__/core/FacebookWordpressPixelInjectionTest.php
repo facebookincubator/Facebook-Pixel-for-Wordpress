@@ -66,6 +66,15 @@ final class FacebookWordpressPixelInjectionTest
     }
   }
 
+  public function testServerEventSendingInjection(){
+    self::mockGetOption(1234, true, 'abc');
+    $injectionObj = new FacebookWordpressPixelInjection();
+    \WP_Mock::expectActionAdded(
+      'wp_footer', array($injectionObj, 'sendPendingEvents'));
+    FacebookWordpressOptions::initialize();
+    $injectionObj->inject();
+  }
+
   private function mockGetOption(
     $mock_pixel_id = '',
     $mock_use_s2s = false,

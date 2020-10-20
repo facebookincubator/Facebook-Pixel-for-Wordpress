@@ -80,7 +80,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
       self::TRACKING_NAME
     );
 
-    FacebookServerSideEvent::getInstance()->track($server_event);
+    FacebookServerSideEvent::getInstance()->track($server_event, false);
   }
 
   public static function createViewContentEvent($product){
@@ -173,7 +173,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
       self::TRACKING_NAME
     );
 
-    FacebookServerSideEvent::getInstance()->track($server_event);
+    FacebookServerSideEvent::getInstance()->track($server_event, false);
   }
 
   public static function createAddToCartEvent(
