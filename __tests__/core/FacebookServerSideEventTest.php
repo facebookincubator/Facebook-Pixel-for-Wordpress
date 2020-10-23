@@ -70,4 +70,24 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $this->assertEquals('Lead',
       $pending_events[0]->getEventName());
   }
+
+  public function testStoresPendingPixelEvents(){
+    self::mockFacebookWordpressOptions(
+      array(
+        'use_s2s' => true
+      )
+    );
+
+    $event = ServerEventFactory::newEvent('Lead');
+
+    FacebookServerSideEvent::getInstance()
+      ->setPendingPixelEvent('test_callback', $event);
+
+    $pending_pixel_event =
+      FacebookServerSideEvent::getInstance()
+        ->getPendingPixelEvent('test_callback');
+
+    $this->assertEquals('Lead',
+      $pending_pixel_event->getEventName());
+  }
  }

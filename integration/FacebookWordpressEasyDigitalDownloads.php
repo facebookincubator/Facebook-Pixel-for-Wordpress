@@ -143,7 +143,7 @@ jQuery(document).ready(function ($) {
       //Getting form data
       parse_str( $_POST['post_data'], $post_data );
       if(isset($post_data['facebook_event_id'])){
-        //Starting CAPI event creation
+        //Starting Conversions API event creation
         $event_id = $post_data['facebook_event_id'];
         $server_event = ServerEventFactory::safeCreateEvent(
           'AddToCart',

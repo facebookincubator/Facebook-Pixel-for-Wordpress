@@ -26,8 +26,13 @@ defined('ABSPATH') or die('Direct access not allowed');
 
 class FacebookServerSideEvent {
   private static $instance = null;
+  // Contains all the events triggered during the request
   private $trackedEvents = [];
+  // Contains all Conversions API events that have not been sent
   private $pendingEvents = [];
+  // Maps a callback name with a Conversions API event
+  // that hasn't been rendered as pixel event
+  private $pendingPixelEvents = [];
 
   public static function getInstance() {
     if (self::$instance == null) {
@@ -61,6 +66,17 @@ class FacebookServerSideEvent {
 
   public function getPendingEvents(){
     return $this->pendingEvents;
+  }
+
+  public function setPendingPixelEvent($callback_name, $event){
+    $this->pendingPixelEvents[$callback_name] = $event;
+  }
+
+  public function getPendingPixelEvent($callback_name){
+    if(array_key_exists($callback_name, $this->pendingPixelEvents)){
+      return $this->pendingPixelEvents[$callback_name];
+    }
+    return null;
   }
 
   public static function send($events) {
