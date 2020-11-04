@@ -23,7 +23,7 @@ This plugin also includes built-in support for these other WordPress plugins:
 * Ninja Forms
 * WP eCommerce
 * WPForms
-* WooCommerce (through the Conversions API)
+* WooCommerce
 
 == Installation ==
 __To install from your WordPress site__ <br />
@@ -50,6 +50,14 @@ If you get stuck, or have any questions, you can ask for help in the [Official F
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2020-11-04 version 2.2.1 =
+* Stop sending events for internal users
+* Fix Contact Form 7 integration bug, send events only on form submit success
+* Update Facebook Business SDK to v8.0.2
+* Requires PHP 5.6 or greater
+* Sending ViewContent Conversions API event from WooCommerce
+* Support for WooCommerce through Pixel and Conversions API
+
 = 2020-08-14 version 2.2.0 =
 * Support for WordPress 5.5
 * Improved Conversions API event quality
