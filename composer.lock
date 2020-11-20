@@ -4,24 +4,24 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a0aad8d1bffd3ae28611c14df87c968a",
+    "content-hash": "f3617bd0b592188283a11223e67f9e0a",
     "packages": [
         {
             "name": "facebook/php-business-sdk",
-            "version": "8.0.2",
+            "version": "9.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/facebook/facebook-php-business-sdk.git",
-                "reference": "637fce87380d4a65f6d4c24cc79664fa28c3428d"
+                "reference": "7edcdcfcd551196c90246875f875dbb48d35cd98"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/facebook/facebook-php-business-sdk/zipball/637fce87380d4a65f6d4c24cc79664fa28c3428d",
-                "reference": "637fce87380d4a65f6d4c24cc79664fa28c3428d",
+                "url": "https://api.github.com/repos/facebook/facebook-php-business-sdk/zipball/7edcdcfcd551196c90246875f875dbb48d35cd98",
+                "reference": "7edcdcfcd551196c90246875f875dbb48d35cd98",
                 "shasum": ""
             },
             "require": {
-                "guzzlehttp/guzzle": "^6.5"
+                "guzzlehttp/guzzle": "^6.5 || ^7.0"
             },
             "require-dev": {
                 "mockery/mockery": "1.3.3",
@@ -45,7 +45,10 @@
                 "page",
                 "sdk"
             ],
-            "time": "2020-09-18T00:34:44+00:00"
+            "support": {
+                "source": "https://github.com/facebook/facebook-php-business-sdk/tree/9.0.1"
+            },
+            "time": "2020-11-17T23:35:14+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -3136,5 +3139,5 @@
     "prefer-lowest": false,
     "platform": [],
     "platform-dev": [],
-    "plugin-api-version": "1.1.0"
+    "plugin-api-version": "2.0.0"
 }
