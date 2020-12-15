@@ -12,19 +12,20 @@ class FacebookWordpressSettingsRecorder {
 
     private function handleSuccessRequest($body){
         $res = array(
-            'type' => 'success',
+            'success' => true,
             'msg' => $body,
         );
-        echo json_encode($res);
+        wp_send_json($res);
+        return $res;
     }
 
     private function handleUnauthorizedRequest(){
         $res = array(
-            'type' => 'error',
+            'success' => false,
             'msg' => 'Unauthorized user',
         );
-        status_header(401);
-        echo json_encode($res);
+        wp_send_json($res);
+        return $res;
     }
 
     public function saveFbeSettings(){
@@ -47,7 +48,7 @@ class FacebookWordpressSettingsRecorder {
             FacebookPluginConfig::SETTINGS_KEY,
             $settings
         );
-        $this->handleSuccessRequest($settings);
+        return $this->handleSuccessRequest($settings);
     }
 
     public function deleteFbeSettings(){
@@ -55,6 +56,6 @@ class FacebookWordpressSettingsRecorder {
             $this->handleUnauthorizedRequest();
         }
         \delete_option( FacebookPluginConfig::SETTINGS_KEY );
-        $this->handleSuccessRequest('Done');
+        return $this->handleSuccessRequest('Done');
     }
 }

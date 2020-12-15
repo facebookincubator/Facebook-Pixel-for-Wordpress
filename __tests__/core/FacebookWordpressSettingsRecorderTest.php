@@ -40,20 +40,23 @@ final class FacebookWordpressSettingsRecorderTest
         $settingsRecorder->init();
     }
 
-    public function testEndo(){
+    public function testSaveSettingsWithAdmin(){
         $settingsRecorder = new FacebookWordpressSettingsRecorder();
         \WP_Mock::userFunction('is_admin', array(
             'return' => true,
           ));
           \WP_Mock::userFunction('update_option', array(
-            'return' => 'endo',
+            'return' => true,
+          ));
+          \WP_Mock::userFunction('wp_send_json', array(
+            'return' => true,
           ));
         global $_POST;
         $_POST['pixelId'] = '123';
         $_POST['accessToken'] = 'abc';
         $_POST['externalBusinessId'] = 'fbe_wordpress_1';
         $expectedJson = array(
-            'type' => 'success',
+            'success' => true,
             'msg' => array(
                 FacebookPluginConfig::PIXEL_ID_KEY => '123',
                 FacebookPluginConfig::ACCESS_TOKEN_KEY => 'abc',
@@ -64,8 +67,7 @@ final class FacebookWordpressSettingsRecorderTest
                 FacebookPluginConfig::IS_FBE_INSTALLED_KEY => '1'
             )
         );
-        $this->expectOutputString(json_encode($expectedJson));
-        $settingsRecorder->saveFbeSettings();
-
+        $result = $settingsRecorder->saveFbeSettings();
+        $this->assertEquals($expectedJson, $result);
     }
 }

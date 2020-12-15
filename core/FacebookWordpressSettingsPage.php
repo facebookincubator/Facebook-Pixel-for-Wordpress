@@ -17,6 +17,8 @@
 
 namespace FacebookPixelPlugin\Core;
 
+use FacebookAds\ApiConfig;
+
 defined('ABSPATH') or die('Direct access not allowed');
 
 class FacebookWordpressSettingsPage {
@@ -71,7 +73,7 @@ class FacebookWordpressSettingsPage {
       ,externalBusinessId: '<?php echo FacebookWordpressOptions::getExternalBusinessId() ?>'
       ,fbeLoginUrl: "https://business.facebook.com/fbe-iframe-get-started/?"
       ,deleteConfigKeys: '<?php echo $this->getDeleteFbeSettingsAjaxRoute() ?>'
-      ,appId: '195311308289826'
+      ,appId: '221646389321681'
       ,timeZone: 'America/Los_Angeles'
       ,installed: '<?php echo FacebookWordpressOptions::getIsFbeInstalled() ?>'
       ,systemUserName: '<?php echo FacebookWordpressOptions::getExternalBusinessId()  ?>' + '_system_user'
@@ -80,6 +82,7 @@ class FacebookWordpressSettingsPage {
       ,currency: 'USD'
       ,businessName: 'Solutions Engineering Team'
       ,debug: true
+      ,channel: 'CONVERSIONS_API'
     };
     console.log(JSON.stringify(window.facebookBusinessExtensionConfig));
 </script>

@@ -205,7 +205,7 @@ var FBEFlowContainer = React.createClass({
     var _this = this;
     if (data) {
       var responseObj = JSON.parse(data);
-      _this.consoleLog("Response from fb login -- " + responseObj);
+      _this.consoleLog("Response from fb login -- " + data);
       var accessToken = responseObj.access_token;
       var success = responseObj.success;
       var pixelId = responseObj.pixel_id;
@@ -252,8 +252,8 @@ var FBEFlowContainer = React.createClass({
         var response = data;
         let msg = '';
         if (response.success) {
-          _this.setState({pixelId: response.pixelId});
-          msg = "The Facebook Pixel with ID: " + response.pixelId + " is now installed on your website.";
+          _this.setState({pixelId: pixelId});
+          msg = "The Facebook Pixel with ID: " + pixelId + " is now installed on your website.";
         } else {
           msg = "There was a problem saving the pixel. Please try again";
         }
@@ -301,7 +301,8 @@ var FBEFlowContainer = React.createClass({
             '&business_vertical='+window.facebookBusinessExtensionConfig.businessVertical+
             '&version='+window.facebookBusinessExtensionConfig.version+
             '&currency='+ window.facebookBusinessExtensionConfig.currency +
-            '&business_name='+ window.facebookBusinessExtensionConfig.businessName;
+            '&business_name='+ window.facebookBusinessExtensionConfig.businessName +
+            '&channel=' + window.facebookBusinessExtensionConfig.channel;
   },
   render: function render() {
     var _this = this;
