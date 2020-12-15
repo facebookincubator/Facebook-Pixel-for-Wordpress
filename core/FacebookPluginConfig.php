@@ -44,6 +44,7 @@ class FacebookPluginConfig {
   const IS_FBE_INSTALLED_KEY = 'facebook_is_fbe_installed';
   const USE_S2S_KEY = 'use_s2s';
   const USE_PII_KEY = 'use_pii';
+  const AAM_SETTINGS_KEY = 'facebook_pixel_aam_settings';
 
   const DEFAULT_PIXEL_ID = null;
   const DEFAULT_ACCESS_TOKEN = null;

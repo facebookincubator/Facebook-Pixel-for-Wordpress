@@ -20,6 +20,10 @@ namespace FacebookPixelPlugin\Core;
 use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\UserData;
 use FacebookAds\Object\ServerSide\CustomData;
+use FacebookAds\Object\ServerSide\Normalizer;
+
+use FacebookPixelPlugin\Core\AAMFieldsExtractor;
+use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\EventIdGenerator;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 
@@ -134,6 +138,41 @@ class ServerEventFactory {
                       | FILTER_FLAG_NO_RES_RANGE);
   }
 
+  /*
+    Given that the data extracted by the integration classes is a mix of
+    user data and custom data,
+    this function splits these fields in two arrays
+    and user data is formatted with the AAM field setting
+   */
+  private static function splitUserDataAndCustomData($data){
+    $user_data = array();
+    $custom_data = array();
+    $key_to_aam_field = array(
+      'email' => AAMSettingsFields::EMAIL,
+      'first_name' => AAMSettingsFields::FIRST_NAME,
+      'last_name' => AAMSettingsFields::LAST_NAME,
+      'phone' => AAMSettingsFields::PHONE,
+      'state' => AAMSettingsFields::STATE,
+      'country' => AAMSettingsFields::COUNTRY,
+      'city' => AAMSettingsFields::CITY,
+      'zip' => AAMSettingsFields::ZIP_CODE,
+      'gender' => AAMSettingsFields::GENDER,
+      'date_of_birth' => AAMSettingsFields::DATE_OF_BIRTH,
+    );
+    foreach( $data as $key => $value ){
+      if( array_key_exists( $key, $key_to_aam_field ) ){
+        $user_data[$key_to_aam_field[$key]] = $value;
+      }
+      else{
+        $custom_data[$key] = $value;
+      }
+    }
+    return array(
+      'user_data' => $user_data,
+      'custom_data' => $custom_data
+    );
+  }
+
   public static function safeCreateEvent(
     $event_name,
     $callback,
@@ -145,79 +184,124 @@ class ServerEventFactory {
 
     try {
       $data = call_user_func_array($callback, $arguments);
+      $data_split = self::splitUserDataAndCustomData($data);
+      $user_data_array = $data_split['user_data'];
+      $custom_data_array = $data_split['custom_data'];
+      $user_data_array =
+        AAMFieldsExtractor::getNormalizedUserData($user_data_array);
 
-      if (FacebookWordpressOptions::getUsePii()) {
-        $user_data = $event->getUserData();
-        if (!empty($data['email'])) {
-          $user_data->setEmail($data['email']);
-        }
+      $user_data = $event->getUserData();
 
-        if (!empty($data['first_name'])) {
-          $user_data->setFirstName($data['first_name']);
-        }
-
-        if (!empty($data['last_name'])) {
-          $user_data->setLastName($data['last_name']);
-        }
-
-        if (!empty($data['phone'])) {
-          $user_data->setPhone($data['phone']);
-        }
-
-        if(!empty($data['state'])){
-          $user_data->setState($data['state']);
-        }
-
-        if(!empty($data['country'])){
-          $user_data->setCountryCode($data['country']);
-        }
-
-        if(!empty($data['city'])){
-          $user_data->setCity($data['city']);
-        }
-
-        if(!empty($data['zip'])){
-          $user_data->setZipCode($data['zip']);
-        }
-
-        if(!empty($data['gender'])){
-          $user_data->setGender($data['gender']);
-        }
+      if(
+        array_key_exists(AAMSettingsFields::EMAIL, $user_data_array)
+      ){
+        $user_data->setEmail(
+          $user_data_array[AAMSettingsFields::EMAIL]
+        );
+      }
+      if(
+        array_key_exists(AAMSettingsFields::FIRST_NAME, $user_data_array)
+      ){
+        $user_data->setFirstName(
+          $user_data_array[AAMSettingsFields::FIRST_NAME]
+        );
+      }
+      if(
+        array_key_exists(AAMSettingsFields::LAST_NAME, $user_data_array)
+      ){
+        $user_data->setLastName(
+          $user_data_array[AAMSettingsFields::LAST_NAME]
+        );
+      }
+      if(
+        array_key_exists(AAMSettingsFields::GENDER, $user_data_array)
+      ){
+        $user_data->setGender(
+          $user_data_array[AAMSettingsFields::GENDER]
+        );
+      }
+      if(
+        array_key_exists(AAMSettingsFields::DATE_OF_BIRTH, $user_data_array)
+      ){
+        $user_data->setDateOfBirth(
+          $user_data_array[AAMSettingsFields::DATE_OF_BIRTH]);
+      }
+      if(
+        array_key_exists(AAMSettingsFields::EXTERNAL_ID, $user_data_array)
+      ){
+        $user_data->setExternalId(
+          Util::hash($user_data_array[AAMSettingsFields::EXTERNAL_ID])
+        );
+      }
+      if(
+        array_key_exists(AAMSettingsFields::PHONE, $user_data_array)
+      ){
+        $user_data->setPhone(
+          $user_data_array[AAMSettingsFields::PHONE]
+        );
+      }
+      if(
+        array_key_exists(AAMSettingsFields::CITY, $user_data_array)
+      ){
+        $user_data->setCity(
+          $user_data_array[AAMSettingsFields::CITY]
+        );
+      }
+      if(
+        array_key_exists(AAMSettingsFields::STATE, $user_data_array)
+      ){
+        $user_data->setState(
+          $user_data_array[AAMSettingsFields::STATE]
+        );
+      }
+      if(
+        array_key_exists(AAMSettingsFields::ZIP_CODE, $user_data_array)
+      ){
+        $user_data->setZipCode(
+          $user_data_array[AAMSettingsFields::ZIP_CODE]
+        );
+      }
+      if(
+        array_key_exists(AAMSettingsFields::COUNTRY, $user_data_array)
+      ){
+        $user_data->setCountryCode(
+          $user_data_array[AAMSettingsFields::COUNTRY]
+        );
       }
 
       $custom_data = $event->getCustomData();
       $custom_data->addCustomProperty('fb_integration_tracking', $integration);
 
       if (!empty($data['currency'])) {
-        $custom_data->setCurrency($data['currency']);
+        $custom_data->setCurrency($custom_data_array['currency']);
       }
 
       if (!empty($data['value'])) {
-        $custom_data->setValue($data['value']);
+        $custom_data->setValue($custom_data_array['value']);
       }
 
       if (!empty($data['contents'])) {
-        $custom_data->setContents($data['contents']);
+        $custom_data->setContents($custom_data_array['contents']);
       }
 
       if (!empty($data['content_ids'])) {
-        $custom_data->setContentIds($data['content_ids']);
+        $custom_data->setContentIds($custom_data_array['content_ids']);
       }
 
       if (!empty($data['content_type'])) {
-        $custom_data->setContentType($data['content_type']);
+        $custom_data->setContentType($custom_data_array['content_type']);
       }
 
       if (!empty($data['num_items'])) {
-        $custom_data->setNumItems($data['num_items']);
+        $custom_data->setNumItems($custom_data_array['num_items']);
       }
 
       if (!empty($data['content_name'])) {
-        $custom_data->setContentName($data['content_name']);
+        $custom_data->setContentName($custom_data_array['content_name']);
       }
 
       if (!empty($data['content_category'])){
-        $custom_data->setContentCategory($data['content_category']);
+        $custom_data->setContentCategory($custom_data_array['content_category']);
       }
     } catch (\Exception $e) {
       // Need to log

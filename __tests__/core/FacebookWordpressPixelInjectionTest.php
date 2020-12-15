@@ -13,6 +13,7 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
+use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
@@ -58,6 +59,9 @@ final class FacebookWordpressPixelInjectionTest
     \WP_Mock::expectActionNotAdded(
       'shutdown', array($injectionObj, 'sendServerEvents'));
 
+    self::mockGetTransientAAMSettings(1234, false,
+      AAMSettingsFields::getAllFields());
+
     FacebookWordpressOptions::initialize();
     $injectionObj->inject();
 
@@ -68,6 +72,8 @@ final class FacebookWordpressPixelInjectionTest
 
   public function testServerEventSendingInjection(){
     self::mockGetOption(1234, true, 'abc');
+    self::mockGetTransientAAMSettings('1234', false,
+      AAMSettingsFields::getAllFields());
     $injectionObj = new FacebookWordpressPixelInjection();
     \WP_Mock::expectActionAdded(
       'wp_footer', array($injectionObj, 'sendPendingEvents'));
@@ -88,5 +94,20 @@ final class FacebookWordpressPixelInjectionTest
           FacebookPluginConfig::USE_S2S_KEY => $mock_use_s2s,
         ),
     ));
+  }
+
+  private function mockGetTransientAAMSettings(
+    $pixel_id = null,
+    $enable_aam = false,
+    $aam_fields = []
+  ){
+    define( 'MINUTE_IN_SECONDS', 60 );
+    \WP_Mock::userFunction('get_transient', array(
+      'return' => [
+          "pixelId" => $pixel_id,
+          "enableAutomaticMatching" => $enable_aam,
+          "enabledAutomaticMatchingFields" => $aam_fields,
+        ]
+      ));
   }
 }

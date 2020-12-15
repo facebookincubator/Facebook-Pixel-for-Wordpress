@@ -101,12 +101,12 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     $this->assertEquals('Lead', $event->getEventName());
     $this->assertNotNull($event->getEventTime());
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('1234567', $event->getUserData()->getPhone());
-    $this->assertEquals('US', $event->getUserData()->getCountryCode());
-    $this->assertEquals('Springfield', $event->getUserData()->getCity());
-    $this->assertEquals('Ohio', $event->getUserData()->getState());
+    $this->assertEquals('us', $event->getUserData()->getCountryCode());
+    $this->assertEquals('springfield', $event->getUserData()->getCity());
+    $this->assertEquals('ohio', $event->getUserData()->getState());
     $this->assertEquals('45401', $event->getUserData()->getZipCode());
     $this->assertEquals('wpforms-lite',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
@@ -145,12 +145,12 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     $this->assertEquals('Lead', $event->getEventName());
     $this->assertNotNull($event->getEventTime());
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('1234567', $event->getUserData()->getPhone());
-    $this->assertEquals('US', $event->getUserData()->getCountryCode());
-    $this->assertEquals('Springfield', $event->getUserData()->getCity());
-    $this->assertEquals('Ohio', $event->getUserData()->getState());
+    $this->assertEquals('us', $event->getUserData()->getCountryCode());
+    $this->assertEquals('springfield', $event->getUserData()->getCity());
+    $this->assertEquals('ohio', $event->getUserData()->getState());
     $this->assertEquals('45401', $event->getUserData()->getZipCode());
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }

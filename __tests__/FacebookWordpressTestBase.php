@@ -14,6 +14,8 @@
 namespace FacebookPixelPlugin\Tests;
 
 use \WP_Mock\Tools\TestCase;
+use FacebookPixelPlugin\Core\AAMSettingsFields;
+use FacebookAds\Object\ServerSide\AdsPixelSettings;
 
 abstract class FacebookWordpressTestBase extends TestCase {
   public function setUp() {
@@ -44,7 +46,8 @@ abstract class FacebookWordpressTestBase extends TestCase {
       ->andReturn($is_internal_user);
   }
 
-  protected function mockFacebookWordpressOptions($options = array()){
+  protected function mockFacebookWordpressOptions($options = array(),
+    $aam_settings = null){
     $this->mocked_options = \Mockery::mock(
       'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions');
     if(array_key_exists('use_s2s', $options)){
@@ -72,5 +75,19 @@ abstract class FacebookWordpressTestBase extends TestCase {
     else{
       $this->mocked_options->shouldReceive('getPixelId')->andReturn('1234');
     }
+    if($aam_settings == null){
+      $this->mocked_options->shouldReceive('getAAMSettings')->andReturn($this->getDefaultAAMSettings());
+    }
+    else{
+      $this->mocked_options->shouldReceive('getAAMSettings')->andReturn($aam_settings);
+    }
+  }
+
+  protected function getDefaultAAMSettings(){
+    $aam_settings = new AdsPixelSettings();
+    $aam_settings->setPixelId('123');
+    $aam_settings->setEnableAutomaticMatching(true);
+    $aam_settings->setEnabledAutomaticMatchingFields(AAMSettingsFields::getAllFields());
+    return $aam_settings;
   }
 }

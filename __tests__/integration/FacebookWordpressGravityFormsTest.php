@@ -67,11 +67,11 @@ final class FacebookWordpressGravityFormsTest
     $this->assertEquals('Lead', $event->getEventName());
     $this->assertNotNull($event->getEventTime());
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('1234567', $event->getUserData()->getPhone());
-    $this->assertEquals('Ohio', $event->getUserData()->getState());
-    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('ohio', $event->getUserData()->getState());
+    $this->assertEquals('springfield', $event->getUserData()->getCity());
     $this->assertEquals('45401', $event->getUserData()->getZipCode());
     $this->assertNull($event->getUserData()->getCountryCode());
     $this->assertEquals('gravity-forms',
@@ -105,11 +105,11 @@ final class FacebookWordpressGravityFormsTest
     $this->assertEquals('Lead', $event->getEventName());
     $this->assertNotNull($event->getEventTime());
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('1234567', $event->getUserData()->getPhone());
-    $this->assertEquals('Ohio', $event->getUserData()->getState());
-    $this->assertEquals('Springfield', $event->getUserData()->getCity());
+    $this->assertEquals('ohio', $event->getUserData()->getState());
+    $this->assertEquals('springfield', $event->getUserData()->getCity());
     $this->assertEquals('45401', $event->getUserData()->getZipCode());
     $this->assertNull($event->getUserData()->getCountryCode());
   }

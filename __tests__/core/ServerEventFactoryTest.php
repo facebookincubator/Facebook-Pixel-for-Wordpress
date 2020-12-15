@@ -13,8 +13,11 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
+use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
+
+use FacebookAds\Object\ServerSide\AdsPixelSettings;
 
 /**
  * @runTestsInSeparateProcesses
@@ -87,7 +90,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   public function testNewEventHasUserAgent() {
-    $this->mockUsePII(true);
     $_SERVER['HTTP_USER_AGENT'] = 'HTTP_USER_AGENT_VALUE';
     $event = ServerEventFactory::newEvent('Lead');
 
@@ -96,7 +98,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   public function testNewEventHasEventSourceUrlWithHttps() {
-    $this->mockUsePII(true);
     $_SERVER['HTTPS'] = 'anyvalue';
     $_SERVER['HTTP_HOST'] = 'www.pikachu.com';
     $_SERVER['REQUEST_URI'] = '/index.php';
@@ -107,7 +108,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   public function testNewEventHasEventSourceUrlWithHttp() {
-    $this->mockUsePII(true);
     $_SERVER['HTTPS'] = '';
     $_SERVER['HTTP_HOST'] = 'www.pikachu.com';
     $_SERVER['REQUEST_URI'] = '/index.php';
@@ -118,7 +118,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   public function testNewEventHasEventSourceUrlWithHttpsOff() {
-    $this->mockUsePII(true);
     $_SERVER['HTTPS'] = 'off';
     $_SERVER['HTTP_HOST'] = 'www.pikachu.com';
     $_SERVER['REQUEST_URI'] = '/index.php';
@@ -129,7 +128,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   public function testNewEventEventSourceUrlPreferReferer() {
-    $this->mockUsePII(true);
     $_SERVER['HTTPS'] = 'off';
     $_SERVER['HTTP_HOST'] = 'www.pikachu.com';
     $_SERVER['REQUEST_URI'] = '/index.php';
@@ -141,7 +139,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   public function testNewEventEventSourceUrlWithoutReferer() {
-    $this->mockUsePII(true);
     $_SERVER['HTTPS'] = 'off';
     $_SERVER['HTTP_HOST'] = 'www.pikachu.com';
     $_SERVER['REQUEST_URI'] = '/index.php';
@@ -152,7 +149,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   public function testNewEventHasFbc() {
-    $this->mockUsePII(true);
     $_COOKIE['_fbc'] = '_fbc_value';
     $event = ServerEventFactory::newEvent('Lead');
 
@@ -160,7 +156,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   public function testNewEventHasFbp() {
-    $this->mockUsePII(true);
     $_COOKIE['_fbp'] = '_fbp_value';
     $event = ServerEventFactory::newEvent('Lead');
 
@@ -168,7 +163,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   public function testSafeCreateEventWithPII() {
-    $this->mockUsePII(true);
+    $this->mockUseAAM('1234', true, AAMSettingsFields::getAllFields());
 
     $server_event = ServerEventFactory::safeCreateEvent(
       'Lead',
@@ -176,21 +171,19 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
       array(),
       'test_integration'
     );
-
-    $this->assertEquals('pika.chu@s2s.com',
+    $this->assertEquals( 'pika.chu@s2s.com',
       $server_event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $server_event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $server_event->getUserData()->getLastName());
     $this->assertEquals('12345', $server_event->getUserData()->getPhone());
-    $this->assertEquals('OH', $server_event->getUserData()->getState());
-    $this->assertEquals('Springfield', $server_event->getUserData()->getCity());
-    $this->assertEquals('US', $server_event->getUserData()->getCountryCode());
+    $this->assertEquals('pika', $server_event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $server_event->getUserData()->getLastName());
+    $this->assertEquals('oh', $server_event->getUserData()->getState());
+    $this->assertEquals('springfield', $server_event->getUserData()->getCity());
+    $this->assertEquals('us', $server_event->getUserData()->getCountryCode());
     $this->assertEquals('4321', $server_event->getUserData()->getZipCode());
-    $this->assertEquals('M', $server_event->getUserData()->getGender());
+    $this->assertEquals('m', $server_event->getUserData()->getGender());
   }
 
   public function testSafeCreateEventWithPIIDisabled() {
-    $this->mockUsePII(false);
 
     $server_event = ServerEventFactory::safeCreateEvent(
       'Lead',
@@ -224,9 +217,15 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     );
   }
 
-  private function mockUsePII($use_pii = true) {
+  private function mockUseAAM($pixel_id = '1234', $enable_aam = false,
+    $enable_aam_fields = []){
+    $aam_settings = new AdsPixelSettings();
+    $aam_settings->setPixelId($pixel_id);
+    $aam_settings->setEnableAutomaticMatching($enable_aam);
+    $aam_settings->setEnabledAutomaticMatchingFields($enable_aam_fields);
     $this->mocked_options = \Mockery::mock(
       'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions');
-    $this->mocked_options->shouldReceive('getUsePii')->andReturn($use_pii);
+    $this->mocked_options->shouldReceive('getAAMSettings')->andReturn($aam_settings);
   }
+
 }

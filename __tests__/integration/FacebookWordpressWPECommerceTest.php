@@ -76,8 +76,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->assertEquals('AddToCart', $event->getEventName());
     $this->assertNotNull($event->getEventTime());
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('USD', $event->getCustomData()->getCurrency());
     $this->assertEquals(999, $event->getCustomData()->getValue());
     $this->assertEquals('product', $event->getCustomData()->getContentType());
@@ -120,8 +120,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->assertEquals('InitiateCheckout', $event->getEventName());
     $this->assertNotNull($event->getEventTime());
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('USD', $event->getCustomData()->getCurrency());
     $this->assertEquals(999, $event->getCustomData()->getValue());
     $this->assertEquals('wp-e-commerce',
@@ -172,8 +172,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
     $this->assertEquals('Purchase', $event->getEventName());
     $this->assertNotNull($event->getEventTime());
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('USD', $event->getCustomData()->getCurrency());
     $this->assertEquals(999, $event->getCustomData()->getValue());
     $this->assertEquals('wp-e-commerce',

@@ -56,6 +56,7 @@ class FacebookWordpressSettingsRecorder {
             $this->handleUnauthorizedRequest();
         }
         \delete_option( FacebookPluginConfig::SETTINGS_KEY );
+        \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
         return $this->handleSuccessRequest('Done');
     }
 }

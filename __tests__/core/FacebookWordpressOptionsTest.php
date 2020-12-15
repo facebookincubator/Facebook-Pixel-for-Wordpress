@@ -13,6 +13,7 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
+use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
@@ -29,6 +30,8 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
   public function testCanInitialize() {
     self::mockGetOption('1234', '0', false, '1234');
     self::mockEscJs('1234');
+    self::mockGetTransientAAMSettings('1234', true,
+      AAMSettingsFields::getAllFields());
     \WP_Mock::expectActionAdded('init', array('FacebookPixelPlugin\\Core\\FacebookWordpressOptions', 'registerUserInfo'), 0);
     FacebookWordpressOptions::initialize();
 
@@ -50,14 +53,16 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 
     self::mockGetOption('1234', '1', false, '1234');
     self::mockEscJs('1234');
+    self::mockGetTransientAAMSettings('1234', true,
+      AAMSettingsFields::getAllFields());
     \WP_Mock::expectActionAdded('init', array('FacebookPixelPlugin\\Core\\FacebookWordpressOptions', 'registerUserInfo'), 0);
     FacebookWordpressOptions::initialize();
 
     FacebookWordpressOptions::registerUserInfo();
     $user_info = FacebookWordpressOptions::getUserInfo();
     $this->assertEquals($user_info['em'], 'foo@foo.com');
-    $this->assertEquals($user_info['fn'], 'John');
-    $this->assertEquals($user_info['ln'], 'Doe');
+    $this->assertEquals($user_info['fn'], 'john');
+    $this->assertEquals($user_info['ln'], 'doe');
   }
 
   public function testCannotRegisterUserInfoWithoutUserId() {
@@ -65,6 +70,8 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 
     self::mockGetOption('1234', '1', false, '1234');
     self::mockEscJs('1234');
+    self::mockGetTransientAAMSettings('1234', true,
+      AAMSettingsFields::getAllFields());
     \WP_Mock::expectActionAdded('init', array('FacebookPixelPlugin\\Core\\FacebookWordpressOptions', 'registerUserInfo'), 0);
     FacebookWordpressOptions::initialize();
 
@@ -78,6 +85,8 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 
     self::mockGetOption('1234', '0', false, '1234');
     self::mockEscJs();
+    self::mockGetTransientAAMSettings('1234', false,
+      AAMSettingsFields::getAllFields());
     \WP_Mock::expectActionAdded('init', array('FacebookPixelPlugin\\Core\\FacebookWordpressOptions', 'registerUserInfo'), 0);
     FacebookWordpressOptions::initialize();
 
@@ -141,6 +150,21 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
             $mock_access_token,
         ),
     ));
+  }
+
+  private function mockGetTransientAAMSettings(
+    $pixel_id = null,
+    $enable_aam = false,
+    $aam_fields = []
+  ){
+    define( 'MINUTE_IN_SECONDS', 60 );
+    \WP_Mock::userFunction('get_transient', array(
+      'return' => [
+          "pixelId" => $pixel_id,
+          "enableAutomaticMatching" => $enable_aam,
+          "enabledAutomaticMatchingFields" => $aam_fields,
+        ]
+      ));
   }
 
   private function mockEscJs($string = '1234') {

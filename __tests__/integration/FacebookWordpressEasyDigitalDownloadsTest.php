@@ -96,8 +96,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     $this->assertEquals('InitiateCheckout', $event->getEventName());
     $this->assertNotNull($event->getEventTime());
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('USD', $event->getCustomData()->getCurrency());
     $this->assertEquals('300', $event->getCustomData()->getValue());
     $this->assertEquals('easy-digital-downloads',
@@ -137,8 +137,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     $this->assertEquals('Purchase', $event->getEventName());
     $this->assertNotNull($event->getEventTime());
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('USD', $event->getCustomData()->getCurrency());
     $this->assertEquals(700, $event->getCustomData()->getValue());
     $this->assertEquals('product', $event->getCustomData()->getContentType());
@@ -209,8 +209,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     $user_data = $event->getUserData();
 
     $this->assertEquals('pika.chu@s2s.com', $user_data->getEmail());
-    $this->assertEquals('Pika', $user_data->getFirstName());
-    $this->assertEquals('Chu', $user_data->getLastName());
+    $this->assertEquals('pika', $user_data->getFirstName());
+    $this->assertEquals('chu', $user_data->getLastName());
     $this->assertEquals('ViewContent', $event->getEventName());
     $this->assertEquals(['1234'], $custom_data->getContentIds() );
     $this->assertEquals('product', $custom_data->getContentType());
@@ -243,8 +243,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
     $this->assertEquals('abc-123', $event->getEventId());
     $this->assertEquals('pika.chu@s2s.com', $user_data->getEmail());
-    $this->assertEquals('Pika', $user_data->getFirstName());
-    $this->assertEquals('Chu', $user_data->getLastName());
+    $this->assertEquals('pika', $user_data->getFirstName());
+    $this->assertEquals('chu', $user_data->getLastName());
     $this->assertEquals('AddToCart', $event->getEventName());
     $this->assertEquals(['1234'], $custom_data->getContentIds() );
     $this->assertEquals('product', $custom_data->getContentType());

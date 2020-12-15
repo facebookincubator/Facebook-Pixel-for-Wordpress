@@ -17,17 +17,22 @@
 
 namespace FacebookPixelPlugin\Core;
 
+use FacebookAds\Object\ServerSide\AdsPixelSettings;
+
 defined('ABSPATH') or die('Direct access not allowed');
 
 class FacebookWordpressOptions {
   private static $options = array();
   private static $userInfo = array();
   private static $versionInfo = array();
+  private static $aamSettings = null;
+  const AAM_SETTINGS_REFRESH_IN_MINUTES = 20;
 
   public static function initialize() {
     self::initOptions();
-    self::setUserInfo();
     self::setVersionInfo();
+    self::setAAMSettings();
+    self::setUserInfo();
   }
 
   public static function getOptions() {
@@ -151,20 +156,20 @@ class FacebookWordpressOptions {
 
   public static function registerUserInfo() {
     $current_user = wp_get_current_user();
-    $use_pii = self::getUsePii();
-    if (0 === $current_user->ID || $use_pii !== '1') {
-      // User not logged in or admin chose not to send PII.
+    if (0 === $current_user->ID ) {
+      // User not logged in
       self::$userInfo = array();
     } else {
-      self::$userInfo = array_filter(
+      $user_info = array_filter(
         array(
           // Keys documented in
           // https://developers.facebook.com/docs/facebook-pixel/pixel-with-ads/conversion-tracking#advanced_match
-          'em' => $current_user->user_email,
-          'fn' => $current_user->user_firstname,
-          'ln' => $current_user->user_lastname
+          AAMSettingsFields::EMAIL => $current_user->user_email,
+          AAMSettingsFields::FIRST_NAME => $current_user->user_firstname,
+          AAMSettingsFields::LAST_NAME => $current_user->user_lastname
         ),
         function ($value) { return $value !== null && $value !== ''; });
+      self::$userInfo = AAMFieldsExtractor::getNormalizedUserData($user_info);
     }
   }
 
@@ -188,5 +193,49 @@ class FacebookWordpressOptions {
       self::$versionInfo['source'],
       self::$versionInfo['version'],
       self::$versionInfo['pluginVersion']);
+  }
+
+  public static function getAAMSettings(){
+    return self::$aamSettings;
+  }
+
+  private static function setAAMSettings(){
+    $installed_pixel = self::getPixelId();
+    self::$aamSettings = null;
+    if(!$installed_pixel){
+      return;
+    }
+    $settings_as_array = get_transient(FacebookPluginConfig::AAM_SETTINGS_KEY);
+    // If AAM_SETTINGS_KEY is present in the DB and corresponds to the installed
+    // pixel, it is converted into an AdsPixelSettings object
+    if( $settings_as_array !== false ){
+      $aam_settings = new AdsPixelSettings();
+      $aam_settings->setPixelId($settings_as_array['pixelId']);
+      $aam_settings->setEnableAutomaticMatching($settings_as_array['enableAutomaticMatching']);
+      $aam_settings->setEnabledAutomaticMatchingFields($settings_as_array['enabledAutomaticMatchingFields']);
+      if($installed_pixel == $aam_settings->getPixelId()){
+        self::$aamSettings = $aam_settings;
+      }
+    }
+    // If the settings are not present
+    // they are fetched from Facebook domain
+    // and cached in WP database if they are not null
+    if(!self::$aamSettings){
+      $refresh_interval =
+        self::AAM_SETTINGS_REFRESH_IN_MINUTES*MINUTE_IN_SECONDS;
+      $aam_settings = AdsPixelSettings::buildFromPixelId( $installed_pixel );
+      if($aam_settings){
+        $settings_as_array = array(
+          'pixelId' => $aam_settings->getPixelId(),
+          'enableAutomaticMatching' =>
+            $aam_settings->getEnableAutomaticMatching(),
+          'enabledAutomaticMatchingFields' =>
+            $aam_settings->getEnabledAutomaticMatchingFields(),
+        );
+        set_transient(FacebookPluginConfig::AAM_SETTINGS_KEY,
+        $settings_as_array, $refresh_interval);
+        self::$aamSettings = $aam_settings;
+      }
+    }
   }
 }

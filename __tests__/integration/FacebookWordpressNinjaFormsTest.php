@@ -81,14 +81,14 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     $this->assertEquals('Lead', $event->getEventName());
     $this->assertNotNull($event->getEventTime());
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('12345', $event->getUserData()->getPhone());
-    $this->assertEquals('OH', $event->getUserData()->getState());
-    $this->assertEquals('Springfield', $event->getUserData()->getCity());
-    $this->assertEquals('US', $event->getUserData()->getCountryCode());
+    $this->assertEquals('oh', $event->getUserData()->getState());
+    $this->assertEquals('springfield', $event->getUserData()->getCity());
+    $this->assertEquals('us', $event->getUserData()->getCountryCode());
     $this->assertEquals('4321', $event->getUserData()->getZipCode());
-    $this->assertEquals('M', $event->getUserData()->getGender());
+    $this->assertEquals('m', $event->getUserData()->getGender());
     $this->assertEquals('ninja-forms',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());

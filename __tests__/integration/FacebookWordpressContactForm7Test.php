@@ -89,8 +89,8 @@ final class FacebookWordpressContactForm7Test
     $this->assertEquals('Lead', $event->getEventName());
     $this->assertNotNull($event->getEventTime());
     $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('Pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('Chu', $event->getUserData()->getLastName());
+    $this->assertEquals('pika', $event->getUserData()->getFirstName());
+    $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('12223334444', $event->getUserData()->getPhone());
     $this->assertEquals('contact-form-7',
       $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
