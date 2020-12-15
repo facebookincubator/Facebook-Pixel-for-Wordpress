@@ -36,6 +36,7 @@ use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
+use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
 use FacebookPixelPlugin\Core\ServerEventAsyncTask;
 
 class FacebookForWordpress {
@@ -77,6 +78,7 @@ class FacebookForWordpress {
     if (is_admin()) {
       $plugin_name = plugin_basename(__FILE__);
       new FacebookWordpressSettingsPage($plugin_name);
+      (new FacebookWordpressSettingsRecorder())->init();
     }
   }
 }

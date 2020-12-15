@@ -25,7 +25,7 @@ class FacebookWordpressOptions {
   private static $versionInfo = array();
 
   public static function initialize() {
-    self::setOptions();
+    self::initOptions();
     self::setUserInfo();
     self::setVersionInfo();
   }
@@ -46,17 +46,25 @@ class FacebookWordpressOptions {
 
   // Default is on for unset config
   public static function getDefaultUsePIIKey() {
-    return (!is_null(FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT)
-      && !FacebookPluginConfig::USE_ADVANCED_MATCHING_DEFAULT) ? '0' : '1';
+    return '1';
   }
 
-  // We default not to send events through S2S, if the config is unset.
+  public static function getDefaultExternalBusinessId(){
+    return uniqid(
+      FacebookPluginConfig::DEFAULT_EXTERNAL_BUSINESS_ID_PREFIX.time().'_'
+    );
+  }
+
+  public static function getDefaultIsFbeInstalled(){
+    return FacebookPluginConfig::DEFAULT_IS_FBE_INSTALLED;
+  }
+
+  // We default to not send events through S2S, if the config is unset.
   public static function getDefaultUseS2SKey() {
-    return (is_null(FacebookPluginConfig::USE_S2S_DEFAULT)
-      || !FacebookPluginConfig::USE_S2S_DEFAULT) ? '0' : '1';
+    return '0';
   }
 
-  private static function setOptions() {
+  private static function initOptions() {
     self::$options = \get_option(
       FacebookPluginConfig::SETTINGS_KEY,
       array(
@@ -64,19 +72,11 @@ class FacebookWordpressOptions {
         FacebookPluginConfig::USE_PII_KEY => self::getDefaultUsePIIKey(),
         FacebookPluginConfig::USE_S2S_KEY => self::getDefaultUseS2SKey(),
         FacebookPluginConfig::ACCESS_TOKEN_KEY => self::getDefaultAccessToken(),
+        FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
+          self::getDefaultExternalBusinessId(),
+        FacebookPluginConfig::IS_FBE_INSTALLED_KEY =>
+          self::getDefaultIsFbeInstalled()
       ));
-
-    // we need esc_js because the id is set through the form
-    if (array_key_exists(FacebookPluginConfig::PIXEL_ID_KEY, self::$options)) {
-      self::$options[FacebookPluginConfig::PIXEL_ID_KEY] =
-        esc_js(self::$options[FacebookPluginConfig::PIXEL_ID_KEY]);
-    }
-
-    if (array_key_exists(
-      FacebookPluginConfig::ACCESS_TOKEN_KEY, self::$options)) {
-      self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY] =
-        esc_js(self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY]);
-    }
   }
 
   public static function getPixelId() {
@@ -85,6 +85,28 @@ class FacebookWordpressOptions {
     }
 
     return self::getDefaultPixelID();
+  }
+
+  public static function getExternalBusinessId() {
+    if(
+      array_key_exists(FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY,
+        self::$options)
+    ){
+      return self::$options[FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY];
+    }
+
+    return self::getDefaultExternalBusinessId();
+  }
+
+  public static function getIsFbeInstalled(){
+    if(
+      array_key_exists(FacebookPluginConfig::IS_FBE_INSTALLED_KEY,
+        self::$options)
+    ){
+      return self::$options[FacebookPluginConfig::IS_FBE_INSTALLED_KEY];
+    }
+
+    return self::getDefaultIsFbeInstalled();
   }
 
   public static function getAccessToken() {

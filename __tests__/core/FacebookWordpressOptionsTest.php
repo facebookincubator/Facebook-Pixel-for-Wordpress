@@ -112,11 +112,15 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
     $version_info = FacebookWordpressOptions::getVersionInfo();
     $use_s2s = FacebookWordpressOptions::getUseS2S();
     $access_token = FacebookWordpressOptions::getAccessToken();
+    $is_fbe_installed = FacebookWordpressOptions::getIsFbeInstalled();
+    $external_business_id = FacebookWordpressOptions::getExternalBusinessId();
 
     $this->assertEquals($pixel_id, '');
     $this->assertEquals($use_pii, '1');
     $this->assertEquals($use_s2s, '0');
     $this->assertEquals($access_token, '');
+    $this->assertEquals($is_fbe_installed, '0');
+    $this->assertContains('fbe_wordpress_', $external_business_id);
   }
 
   private function mockGetOption($mock_pixel_id=null, $mock_use_pii=null, $mock_use_s2s=null, $mock_access_token=null) {

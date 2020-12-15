@@ -15,6 +15,12 @@
         <exclude name="vendor/**" />
         <exclude name="task/**" />
         <exclude name="__tests__/**" />
+        <exclude name="js/**" />
+    </fileset>
+
+    <!-- Fileset for all built JS files -->
+    <fileset dir="${basedir}" id="all-fbe-js">
+        <include name="js/fbe_allinone.js" />
     </fileset>
 
     <!-- ============================================  -->
@@ -36,6 +42,9 @@
         <echo msg="Copy files into build folder..." />
         <copy todir="${buildsourcedir}">
             <fileset refid="sourcedir" />
+        </copy>
+        <copy todir="${buildsourcedir}">
+            <fileset refid="all-fbe-js" />
         </copy>
         <echo msg="Copy complete" />
         <echo msg="Run compose install..." />

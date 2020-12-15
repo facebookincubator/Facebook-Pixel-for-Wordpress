@@ -1,0 +1,15 @@
+{
+  "name": "facebook-pixel-wordpress-js-lib",
+  "version": "1.0.0",
+  "description": "Displays the Get started iframe and returns the settings to WordPress site",
+  "main": "fbe.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "buildjs": "browserify fbe.js > ../fbe_allinone.js"
+  },
+  "dependencies": {
+    "browserify": "^17.0.0",
+    "react": "^15.5.0",
+    "react-dom": "^15.5.0"
+  }
+}
