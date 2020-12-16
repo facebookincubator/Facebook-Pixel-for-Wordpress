@@ -50,12 +50,6 @@ abstract class FacebookWordpressTestBase extends TestCase {
     $aam_settings = null){
     $this->mocked_options = \Mockery::mock(
       'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions');
-    if(array_key_exists('use_pii', $options)){
-      $this->mocked_options->shouldReceive('getUsePii')->andReturn($options['use_pii']);
-    }
-    else{
-      $this->mocked_options->shouldReceive('getUsePii')->andReturn(true);
-    }
     if(array_key_exists('agent_string', $options)){
       $this->mocked_options->shouldReceive('getAgentString')->andReturn($options['agent_string']);
     }

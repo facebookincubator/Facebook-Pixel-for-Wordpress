@@ -40,7 +40,6 @@ class FacebookWordpressSettingsRecorder {
             FacebookPluginConfig::ACCESS_TOKEN_KEY => $access_token,
             FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
                 $external_business_id,
-            FacebookPluginConfig::USE_PII_KEY => '1',
             FacebookPluginConfig::IS_FBE_INSTALLED_KEY => '1'
         );
         \update_option(

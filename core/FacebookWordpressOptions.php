@@ -49,11 +49,6 @@ class FacebookWordpressOptions {
               ? '' : FacebookPluginConfig::DEFAULT_ACCESS_TOKEN;
   }
 
-  // Default is on for unset config
-  public static function getDefaultUsePIIKey() {
-    return '1';
-  }
-
   public static function getDefaultExternalBusinessId(){
     return uniqid(
       FacebookPluginConfig::DEFAULT_EXTERNAL_BUSINESS_ID_PREFIX.time().'_'
@@ -74,7 +69,6 @@ class FacebookWordpressOptions {
       FacebookPluginConfig::SETTINGS_KEY,
       array(
         FacebookPluginConfig::PIXEL_ID_KEY => self::getDefaultPixelID(),
-        FacebookPluginConfig::USE_PII_KEY => self::getDefaultUsePIIKey(),
         FacebookPluginConfig::ACCESS_TOKEN_KEY => self::getDefaultAccessToken(),
         FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
           self::getDefaultExternalBusinessId(),
@@ -120,15 +114,6 @@ class FacebookWordpressOptions {
     }
 
     return self::getDefaultAccessToken();
-  }
-
-  public static function getUsePii() {
-    if (array_key_exists(
-      FacebookPluginConfig::USE_PII_KEY, self::$options)) {
-      return self::$options[FacebookPluginConfig::USE_PII_KEY];
-    }
-
-    return self::getDefaultUsePIIKey();
   }
 
   public static function getUserInfo() {

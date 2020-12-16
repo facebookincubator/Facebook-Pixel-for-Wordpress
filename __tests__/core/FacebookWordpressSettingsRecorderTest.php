@@ -62,7 +62,6 @@ final class FacebookWordpressSettingsRecorderTest
                 FacebookPluginConfig::ACCESS_TOKEN_KEY => 'abc',
                 FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
                     'fbe_wordpress_1',
-                FacebookPluginConfig::USE_PII_KEY => '1',
                 FacebookPluginConfig::IS_FBE_INSTALLED_KEY => '1'
             )
         );
