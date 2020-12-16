@@ -71,7 +71,7 @@ final class FacebookWordpressPixelInjectionTest
   }
 
   public function testServerEventSendingInjection(){
-    self::mockGetOption(1234, true, 'abc');
+    self::mockGetOption(1234, 'abc');
     self::mockGetTransientAAMSettings('1234', false,
       AAMSettingsFields::getAllFields());
     $injectionObj = new FacebookWordpressPixelInjection();
@@ -83,7 +83,6 @@ final class FacebookWordpressPixelInjectionTest
 
   private function mockGetOption(
     $mock_pixel_id = '',
-    $mock_use_s2s = false,
     $mock_access_token = ''
    ) {
     \WP_Mock::userFunction('get_option', array(
@@ -91,7 +90,6 @@ final class FacebookWordpressPixelInjectionTest
         array(
           FacebookPluginConfig::PIXEL_ID_KEY => $mock_pixel_id,
           FacebookPluginConfig::ACCESS_TOKEN_KEY => $mock_access_token,
-          FacebookPluginConfig::USE_S2S_KEY => $mock_use_s2s,
         ),
     ));
   }

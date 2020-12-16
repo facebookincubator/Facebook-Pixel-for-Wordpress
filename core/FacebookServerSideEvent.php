@@ -43,16 +43,14 @@ class FacebookServerSideEvent {
 
   public function track($event, $sendNow = true) {
     $this->trackedEvents[] = $event;
-    if( FacebookWordpressOptions::getUseS2S() ){
-      if( $sendNow ){
-        do_action( 'send_server_events',
-          array($event),
-          1
-        );
-      }
-      else{
-        $this->pendingEvents[] = $event;
-      }
+    if( $sendNow ){
+      do_action( 'send_server_events',
+        array($event),
+        1
+      );
+    }
+    else{
+      $this->pendingEvents[] = $event;
     }
   }
 

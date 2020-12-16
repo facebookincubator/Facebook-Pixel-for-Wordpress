@@ -42,11 +42,7 @@ final class FacebookWordpressGravityFormsTest
 
   public function testInjectLeadEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $mock_confirm = 'mock_msg';
     $mock_form = $this->createMockForm();
@@ -81,11 +77,7 @@ final class FacebookWordpressGravityFormsTest
 
   public function testInjectLeadEventWithoutInternalUserErrorReadingForm() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $mock_confirm = 'mock_msg';
     $mock_form = $this->createMockForm();
@@ -116,11 +108,7 @@ final class FacebookWordpressGravityFormsTest
 
   public function testInjectLeadEventWithInternalUser() {
     self::mockIsInternalUser(true);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => false
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $mock_confirm = 'mock_msg';
     $mock_confirm = FacebookWordpressGravityForms::injectLeadEvent(

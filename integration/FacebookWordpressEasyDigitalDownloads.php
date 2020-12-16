@@ -122,8 +122,7 @@ jQuery(document).ready(function ($) {
   }
 
   public static function injectAddToCartEventId(){
-    if(FacebookPluginUtils::isInternalUser()
-      || !FacebookWordpressOptions::getUseS2S()){
+    if(FacebookPluginUtils::isInternalUser()){
       return;
     }
     $eventId = EventIdGenerator::guidv4();

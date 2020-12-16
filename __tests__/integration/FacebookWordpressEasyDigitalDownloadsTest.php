@@ -61,11 +61,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testInjectAddToCartEventIdWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     FacebookWordpressEasyDigitalDownloads::injectAddToCartEventId();
     $this->expectOutputRegex(
@@ -74,11 +70,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testInitiateCheckoutEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupEDDMocks();
 
@@ -106,11 +98,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testPurchaseEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupEDDMocks();
 
@@ -188,11 +176,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testInjectViewContentEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupEDDMocks();
 
@@ -222,11 +206,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
   public function testInjectAddToCartEventAjax() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupEDDMocks();
 

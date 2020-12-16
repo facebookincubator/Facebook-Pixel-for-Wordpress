@@ -55,11 +55,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
   public function testPurchaseEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupMocks();
 
@@ -97,11 +93,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
   public function testInitiateCheckoutEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupMocks();
     $this->setupCustomerBillingAddress();
@@ -146,11 +138,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
       array('return' => false)
     );
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupMocks();
     $this->setupCustomerBillingAddress();
@@ -188,11 +176,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
       array('return' => true)
     );
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupMocks();
     $this->setupCustomerBillingAddress();
@@ -235,11 +219,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
   public function testViewContentWithoutAdmin(){
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupMocks();
     $this->setupCustomerBillingAddress();
@@ -289,11 +269,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
   public function testEnqueuePixelEvent(){
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupMocks();
     $server_event = new Event();
@@ -303,11 +279,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
   }
 
   public function testAddPixelCodeToAddToCartFragment(){
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $server_event = new Event();
     FacebookServerSideEvent::getInstance()->setPendingPixelEvent(

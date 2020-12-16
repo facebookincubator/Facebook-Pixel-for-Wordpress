@@ -33,11 +33,7 @@ final class FacebookWordpressContactForm7Test
   extends FacebookWordpressTestBase {
   public function testInjectLeadEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => false
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $mock_response = array(
       'status' => 'mail_sent',
@@ -55,11 +51,7 @@ final class FacebookWordpressContactForm7Test
 
   public function testTrackServerEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $mock_result = array(
       'status' => 'mail_sent',
@@ -99,11 +91,7 @@ final class FacebookWordpressContactForm7Test
 
   public function testTrackServerEventWithoutFormData() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $mock_result = array(
       'status' => 'mail_sent',
@@ -135,11 +123,7 @@ final class FacebookWordpressContactForm7Test
 
   public function testTrackServerEventErrorReadingData() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $mock_result = array(
       'status' => 'mail_sent',
@@ -184,11 +168,7 @@ final class FacebookWordpressContactForm7Test
 
   public function testInjectLeadEventWhenMailFails() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $bad_statuses = [
       'validation_failed',

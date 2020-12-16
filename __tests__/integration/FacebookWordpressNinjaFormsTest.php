@@ -40,11 +40,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithoutInternalUser() {
     parent::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $mock_actions = array(
       array(

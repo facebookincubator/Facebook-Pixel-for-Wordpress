@@ -50,11 +50,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
   public function testInjectAddToCartEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $parameter = array('product_id' => 1, 'widget_output' => '');
 
@@ -99,11 +95,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
   public function testInitiateCheckoutEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupMocks();
 
@@ -137,11 +129,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
   public function testInjectPurchaseEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $this->setupMocks();
 

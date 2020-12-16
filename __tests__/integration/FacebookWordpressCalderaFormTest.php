@@ -42,11 +42,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithoutInternalUserAndSubmitted() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => false
-      )
-    );
+    self::mockFacebookWordpressOptions();
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
 
     $out = FacebookWordpressCalderaForm::injectLeadEvent($mock_out, null);
@@ -59,11 +55,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithoutInternalUserAndNotSubmitted() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => false
-      )
-    );
+    self::mockFacebookWordpressOptions();
     $mock_out = array(
       'status' => 'preprocess',
       'html' => 'fail to submit form');
@@ -81,11 +73,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithInternalUser() {
     self::mockIsInternalUser(true);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => false
-      )
-    );
+    self::mockFacebookWordpressOptions();
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = array();
 
@@ -101,11 +89,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testSendLeadEventViaServerAPISuccessWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      ),
-    );
+    self::mockFacebookWordpressOptions();
 
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = self::createMockForm();
@@ -138,11 +122,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testSendLeadEventViaServerAPIFailureWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
     $mock_out = array(
       'status' => 'preprocess',
       'html' => 'fail to submit form');
@@ -160,11 +140,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
   public function testSendLeadEventViaServerAPIFailureWithInternalUser() {
     self::mockIsInternalUser(true);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
     $mock_out = array('status' => 'complete', 'html' => 'successful submitted');
     $mock_form = array();
 

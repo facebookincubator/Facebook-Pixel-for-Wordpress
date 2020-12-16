@@ -27,11 +27,7 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
   public function testTrackEventFiresAction() {
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
     $event = ServerEventFactory::newEvent('Lead');
 
     FacebookServerSideEvent::getInstance()->track($event);
@@ -48,11 +44,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
   }
 
   public function testStoresPendingEvents(){
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $event1 = ServerEventFactory::newEvent('Lead');
     $event2 = ServerEventFactory::newEvent('AddToCart');
@@ -72,11 +64,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
   }
 
   public function testStoresPendingPixelEvents(){
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $event = ServerEventFactory::newEvent('Lead');
 

@@ -43,11 +43,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithoutInternalUser() {
     parent::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => false
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $event = ServerEventFactory::newEvent('Lead');
     FacebookServerSideEvent::getInstance()->track($event);
@@ -59,11 +55,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
   public function testInjectLeadEventWithInternalUser() {
     parent::mockIsInternalUser(true);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => false
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     FacebookWordpressWPForms::injectLeadEvent('mock_form_data');
     $this->expectOutputString("");
@@ -71,11 +63,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
   public function testTrackEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $mock_entry = $this->createMockEntry();
     $mock_form_data = $this->createMockFormData();
@@ -114,11 +102,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
   public function testTrackEventWithoutInternalUserSimpleFormat() {
     self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions(
-      array(
-        'use_s2s' => true
-      )
-    );
+    self::mockFacebookWordpressOptions();
 
     $mock_entry = $this->createMockEntry(true);
     $mock_form_data = $this->createMockFormData(true);

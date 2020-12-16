@@ -75,7 +75,6 @@ class FacebookWordpressOptions {
       array(
         FacebookPluginConfig::PIXEL_ID_KEY => self::getDefaultPixelID(),
         FacebookPluginConfig::USE_PII_KEY => self::getDefaultUsePIIKey(),
-        FacebookPluginConfig::USE_S2S_KEY => self::getDefaultUseS2SKey(),
         FacebookPluginConfig::ACCESS_TOKEN_KEY => self::getDefaultAccessToken(),
         FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
           self::getDefaultExternalBusinessId(),
@@ -130,14 +129,6 @@ class FacebookWordpressOptions {
     }
 
     return self::getDefaultUsePIIKey();
-  }
-
-  public static function getUseS2S() {
-    if (array_key_exists(FacebookPluginConfig::USE_S2S_KEY, self::$options)) {
-      return self::$options[FacebookPluginConfig::USE_S2S_KEY];
-    }
-
-    return self::getDefaultUseS2SKey();
   }
 
   public static function getUserInfo() {

@@ -28,7 +28,7 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
   public function testCanInitialize() {
-    self::mockGetOption('1234', '0', false, '1234');
+    self::mockGetOption('1234', '0', '1234');
     self::mockEscJs('1234');
     self::mockGetTransientAAMSettings('1234', true,
       AAMSettingsFields::getAllFields());
@@ -51,7 +51,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
   public function testCanRegisterUserInfo() {
     self::mockWpGetCurrentUser('1234');
 
-    self::mockGetOption('1234', '1', false, '1234');
+    self::mockGetOption('1234', '1', '1234');
     self::mockEscJs('1234');
     self::mockGetTransientAAMSettings('1234', true,
       AAMSettingsFields::getAllFields());
@@ -68,7 +68,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
   public function testCannotRegisterUserInfoWithoutUserId() {
     self::mockWpGetCurrentUser();
 
-    self::mockGetOption('1234', '1', false, '1234');
+    self::mockGetOption('1234', '1', '1234');
     self::mockEscJs('1234');
     self::mockGetTransientAAMSettings('1234', true,
       AAMSettingsFields::getAllFields());
@@ -83,7 +83,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
   public function testCannotRegisterUserInfoWithoutUsePII() {
     self::mockWpGetCurrentUser('1234');
 
-    self::mockGetOption('1234', '0', false, '1234');
+    self::mockGetOption('1234', '0', '1234');
     self::mockEscJs();
     self::mockGetTransientAAMSettings('1234', false,
       AAMSettingsFields::getAllFields());
@@ -119,20 +119,18 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
     $pixel_id = FacebookWordpressOptions::getPixelId();
     $use_pii = FacebookWordpressOptions::getUsePii();
     $version_info = FacebookWordpressOptions::getVersionInfo();
-    $use_s2s = FacebookWordpressOptions::getUseS2S();
     $access_token = FacebookWordpressOptions::getAccessToken();
     $is_fbe_installed = FacebookWordpressOptions::getIsFbeInstalled();
     $external_business_id = FacebookWordpressOptions::getExternalBusinessId();
 
     $this->assertEquals($pixel_id, '');
     $this->assertEquals($use_pii, '1');
-    $this->assertEquals($use_s2s, '0');
     $this->assertEquals($access_token, '');
     $this->assertEquals($is_fbe_installed, '0');
     $this->assertContains('fbe_wordpress_', $external_business_id);
   }
 
-  private function mockGetOption($mock_pixel_id=null, $mock_use_pii=null, $mock_use_s2s=null, $mock_access_token=null) {
+  private function mockGetOption($mock_pixel_id=null, $mock_use_pii=null, $mock_access_token=null) {
     \WP_Mock::userFunction('get_option', array(
       'return' =>
         array(
@@ -140,10 +138,6 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
             is_null($mock_pixel_id) ? FacebookWordpressOptions::getDefaultPixelID() : $mock_pixel_id,
           FacebookPluginConfig::USE_PII_KEY =>
             is_null($mock_use_pii) ? FacebookWordpressOptions::getDefaultUsePIIKey() : $mock_use_pii,
-          FacebookPluginConfig::USE_S2S_KEY =>
-            is_null($mock_use_s2s) ?
-            FacebookWordpressOptions::getDefaultUseS2SKey() :
-            $mock_use_s2s,
           FacebookPluginConfig::ACCESS_TOKEN_KEY =>
             is_null($mock_access_token) ?
             FacebookWordpressOptions::getDefaultAccessToken() :
