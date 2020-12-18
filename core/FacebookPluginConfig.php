@@ -47,9 +47,12 @@ class FacebookPluginConfig {
   const ACCESS_TOKEN_KEY = 'facebook_access_token';
   const EXTERNAL_BUSINESS_ID_KEY = 'facebook_external_business_id';
   const IS_FBE_INSTALLED_KEY = 'facebook_is_fbe_installed';
-  const USE_S2S_KEY = 'use_s2s';
-  const USE_PII_KEY = 'use_pii';
   const AAM_SETTINGS_KEY = 'facebook_pixel_aam_settings';
+
+  // Keys used in the old settings
+  const OLD_SETTINGS_KEY = 'facebook_config';
+  const OLD_PIXEL_ID_KEY = 'pixel_id';
+  const OLD_ACCESS_TOKEN_KEY = 'access_token';
 
   const DEFAULT_PIXEL_ID = null;
   const DEFAULT_ACCESS_TOKEN = null;

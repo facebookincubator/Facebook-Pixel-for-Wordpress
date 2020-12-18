@@ -63,6 +63,18 @@ abstract class FacebookWordpressTestBase extends TestCase {
     else{
       $this->mocked_options->shouldReceive('getPixelId')->andReturn('1234');
     }
+    if(array_key_exists('access_token', $options)){
+      $this->mocked_options->shouldReceive('getAccessToken')->andReturn($options['access_token']);
+    }
+    else{
+      $this->mocked_options->shouldReceive('getAccessToken')->andReturn('abcd');
+    }
+    if(array_key_exists('is_fbe_installed', $options)){
+      $this->mocked_options->shouldReceive('getIsFbeInstalled')->andReturn($options['is_fbe_installed']);
+    }
+    else{
+      $this->mocked_options->shouldReceive('getIsFbeInstalled')->andReturn('0');
+    }
     if($aam_settings == null){
       $this->mocked_options->shouldReceive('getAAMSettings')->andReturn($this->getDefaultAAMSettings());
     }

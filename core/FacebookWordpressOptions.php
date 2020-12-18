@@ -59,22 +59,63 @@ class FacebookWordpressOptions {
     return FacebookPluginConfig::DEFAULT_IS_FBE_INSTALLED;
   }
 
-  // We default to not send events through S2S, if the config is unset.
-  public static function getDefaultUseS2SKey() {
-    return '0';
-  }
-
   private static function initOptions() {
-    self::$options = \get_option(
-      FacebookPluginConfig::SETTINGS_KEY,
-      array(
-        FacebookPluginConfig::PIXEL_ID_KEY => self::getDefaultPixelID(),
-        FacebookPluginConfig::ACCESS_TOKEN_KEY => self::getDefaultAccessToken(),
-        FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
-          self::getDefaultExternalBusinessId(),
-        FacebookPluginConfig::IS_FBE_INSTALLED_KEY =>
-          self::getDefaultIsFbeInstalled()
-      ));
+    $old_options = \get_option(FacebookPluginConfig::OLD_SETTINGS_KEY);
+    $new_options = \get_option(FacebookPluginConfig::SETTINGS_KEY);
+    // If the new options are saved in WP database, they are used
+    if($new_options){
+      self::$options = $new_options;
+    }
+    // Otherwise, the old options can be used
+    else{
+      // The pixel id and access token will be exported
+      if($old_options){
+        self::$options = array(
+          FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
+            self::getDefaultExternalBusinessId(),
+          FacebookPluginConfig::IS_FBE_INSTALLED_KEY =>
+            self::getDefaultIsFbeInstalled(),
+        );
+        if(
+          array_key_exists(FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY,$old_options)
+          && !empty($old_options[FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY])
+        ){
+          self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY] =
+            $old_options[FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY];
+        }
+        else{
+          self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY] =
+            self::getDefaultAccessToken();
+        }
+        if(
+          array_key_exists(FacebookPluginConfig::OLD_PIXEL_ID_KEY,$old_options)
+          && !empty($old_options[FacebookPluginConfig::OLD_PIXEL_ID_KEY])
+          && is_numeric($old_options[FacebookPluginConfig::OLD_PIXEL_ID_KEY])
+        ){
+          self::$options[FacebookPluginConfig::PIXEL_ID_KEY] =
+            $old_options[FacebookPluginConfig::OLD_PIXEL_ID_KEY];
+        }
+        else{
+          self::$options[FacebookPluginConfig::PIXEL_ID_KEY] =
+            self::getDefaultPixelID();
+        }
+      }
+      // If no options are present, the default values are used
+      else{
+        self::$options = \get_option(
+          FacebookPluginConfig::SETTINGS_KEY,
+          array(
+            FacebookPluginConfig::PIXEL_ID_KEY => self::getDefaultPixelID(),
+            FacebookPluginConfig::ACCESS_TOKEN_KEY =>
+              self::getDefaultAccessToken(),
+            FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
+              self::getDefaultExternalBusinessId(),
+            FacebookPluginConfig::IS_FBE_INSTALLED_KEY =>
+              self::getDefaultIsFbeInstalled()
+          )
+        );
+      }
+    }
   }
 
   public static function getPixelId() {

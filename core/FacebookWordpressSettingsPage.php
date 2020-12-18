@@ -58,9 +58,28 @@ class FacebookWordpressSettingsPage {
         'You do not have sufficient permissions to access this page',
         FacebookPluginConfig::TEXT_DOMAIN));
     }
-
+    $pixel_id_message = $this->getPreviousPixelIdMessage();
+    if($pixel_id_message){
+      echo $pixel_id_message;
+    }
     echo $this->getFbeBrowserSettings();
     wp_enqueue_script('fbe_allinone_script');
+  }
+
+  private function getPreviousPixelIdMessage(){
+    if(FacebookWordpressOptions::getIsFbeInstalled()){
+      return null;
+    }
+    $pixel_id = FacebookWordPressOptions::getPixelId();
+    if(empty($pixel_id)){
+      return null;
+    }
+    $message =
+      sprintf('<p>Reuse the pixel id from your previous setup: '.
+        '<strong>%s</strong></p>',
+        $pixel_id
+    );
+    return $message;
   }
 
   private function getFbeBrowserSettings(){
@@ -131,6 +150,29 @@ class FacebookWordpressSettingsPage {
     }
   }
 
+  public function getCustomizedFbeNotInstalledNotice(){
+    $valid_pixel_id = !empty(FacebookWordPressOptions:: getPixelId());
+    $valid_access_token = !empty(FacebookWordPressOptions::getAccessToken());
+    $message = '';
+    $plugin_name_tag = sprintf('<strong>%s</strong>',
+      FacebookPluginConfig::PLUGIN_NAME);
+    if($valid_pixel_id){
+      if($valid_access_token){
+        $message = sprintf('Easily manage your connection to Facebook with %s.',
+          $plugin_name_tag);
+      }
+      else{
+        $message = sprintf('%s gives you access to the Conversions API.',
+          $plugin_name_tag);
+      }
+    }
+    else{
+      $message = sprintf('%s is almost ready.', $plugin_name_tag);
+    }
+    return $message.' To complete your configuration, '.
+      '<a href="%s">follow the setup steps.</a>';
+  }
+
   public function setNotice($notice, $dismiss_config) {
     $url = admin_url('options-general.php?page=' .
         FacebookPluginConfig::ADMIN_MENU_SLUG);
@@ -158,10 +200,7 @@ class FacebookWordpressSettingsPage {
   }
 
   public function fbeNotInstalledNotice() {
-    $message = sprintf(
-      '<strong>%s</strong> is almost ready. To complete your'.
-      ' configuration', FacebookPluginConfig::PLUGIN_NAME).
-      ' <a href="%s">complete the setup steps.</a>';
+    $message = $this->getCustomizedFbeNotInstalledNotice();
     $this->setNotice(
       __(
         $message,
