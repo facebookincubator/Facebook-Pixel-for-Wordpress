@@ -49,7 +49,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
   public function testCanRegisterUserInfo() {
     self::mockWpGetCurrentUser('1234');
 
-    self::mockGetOption('1234', '1234');
+    self::mockGetOption('1234', '1234', '1');
     self::mockEscJs('1234');
     self::mockGetTransientAAMSettings('1234', true,
       AAMSettingsFields::getAllFields());
@@ -126,7 +126,8 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
     $this->assertContains('fbe_wordpress_', $external_business_id);
   }
 
-  private function mockGetOption($mock_pixel_id=null, $mock_access_token=null) {
+  private function mockGetOption($mock_pixel_id=null, $mock_access_token=null,
+    $mock_fbe_installed = '0') {
     \WP_Mock::userFunction('get_option', array(
       'return' =>
         array(
@@ -136,6 +137,8 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
             is_null($mock_access_token) ?
             FacebookWordpressOptions::getDefaultAccessToken() :
             $mock_access_token,
+          FacebookPluginConfig::IS_FBE_INSTALLED_KEY =>
+            $mock_fbe_installed
         ),
     ));
   }

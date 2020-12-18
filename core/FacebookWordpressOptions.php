@@ -216,12 +216,8 @@ class FacebookWordpressOptions {
     return self::$aamSettings;
   }
 
-  private static function setAAMSettings(){
+  private static function setFbeBasedAAMSettings(){
     $installed_pixel = self::getPixelId();
-    self::$aamSettings = null;
-    if(!$installed_pixel){
-      return;
-    }
     $settings_as_array = get_transient(FacebookPluginConfig::AAM_SETTINGS_KEY);
     // If AAM_SETTINGS_KEY is present in the DB and corresponds to the installed
     // pixel, it is converted into an AdsPixelSettings object
@@ -253,6 +249,40 @@ class FacebookWordpressOptions {
         $settings_as_array, $refresh_interval);
         self::$aamSettings = $aam_settings;
       }
+    }
+  }
+
+  private static function setOldAAMSettings(){
+    $old_options = \get_option(FacebookPluginConfig::OLD_SETTINGS_KEY);
+    if($old_options
+      && array_key_exists(FacebookPluginConfig::OLD_USE_PII, $old_options)
+      && $old_options[FacebookPluginConfig::OLD_USE_PII]){
+        self::$aamSettings = new AdsPixelSettings(
+          array(
+            'enableAutomaticMatching' => true,
+            'enabledAutomaticMatchingFields' =>
+              AAMSettingsFields::getAllFields(),
+          )
+        );
+    } else {
+      self::$aamSettings = new AdsPixelSettings(
+        array(
+          'enableAutomaticMatching' => false,
+          'enabledAutomaticMatchingFields' => array(),
+        )
+      );
+    }
+  }
+
+  private static function setAAMSettings(){
+    self::$aamSettings = null;
+    if( empty(self::getPixelId()) ){
+      return;
+    }
+    if(self::getIsFbeInstalled()){
+      self::setFbeBasedAAMSettings();
+    } else {
+      self::setOldAAMSettings();
     }
   }
 }
