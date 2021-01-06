@@ -34,7 +34,11 @@ __To download and install plugin from Facebook Events Manager__ <br />
 [Facebook Help Page](https://www.facebook.com/business/help/881403525362441) <br />
 
 __Configure plugin for first use__ <br />
-After plugin installed, go to settings page of the plugin, input your pixel ID in the text box, check 'Enabling Advanced Matching improves audience building' if you want to enable Advanced Matching. <br />
+After plugin installed: <br />
+1. Go to settings page of the plugin. <br />
+2. Click Get Started. <br />
+3. Complete the Facebook Business Extension flow. <br />
+4. Agree to share your access token with your site. <br />
 
 == Frequently Asked Questions ==
 = Where can I find more information on Facebook Pixel? =
