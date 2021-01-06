@@ -1,8 +1,8 @@
-# Copyright (C) 2018 Official Facebook Pixel
-# This file is distributed under the same license as the Official Facebook Pixel package.
+# Copyright (C) 2018 Facebook for WordPress
+# This file is distributed under the same license as the Facebook for WordPress package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Official Facebook Pixel 2.0.0\n"
+"Project-Id-Version: Facebook for WordPress 2.0.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/official-facebook-"
 "pixel\n"
 "POT-Creation-Date: 2018-11-29 01:26:28+00:00\n"
@@ -50,7 +50,7 @@ msgid "Dismiss this notice."
 msgstr ""
 
 #. Plugin Name of the plugin/theme
-msgid "Official Facebook Pixel"
+msgid "Facebook for WordPress"
 msgstr ""
 
 #. Plugin URI of the plugin/theme
