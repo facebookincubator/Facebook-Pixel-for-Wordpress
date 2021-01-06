@@ -21,6 +21,7 @@ use FacebookAds\Api;
 use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\EventRequest;
 use FacebookAds\Object\ServerSide\UserData;
+use FacebookAds\Exception\Exception;
 
 defined('ABSPATH') or die('Direct access not allowed');
 
@@ -87,12 +88,19 @@ class FacebookServerSideEvent {
     $access_token = FacebookWordpressOptions::getAccessToken();
     $agent = FacebookWordpressOptions::getAgentString();
 
-    $api = Api::init(null, null, $access_token);
+    if(empty($pixel_id) || empty($access_token)){
+      return;
+    }
+    try{
+      $api = Api::init(null, null, $access_token);
 
-    $request = (new EventRequest($pixel_id))
+      $request = (new EventRequest($pixel_id))
                   ->setEvents($events)
                   ->setPartnerAgent($agent);
 
-    $response = $request->execute();
+      $response = $request->execute();
+    } catch (Exception $e) {
+      error_log(json_encode($e));
+    }
   }
 }
