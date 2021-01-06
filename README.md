@@ -1,10 +1,10 @@
-# Official Facebook Pixel
+# Facebook for WordPress
 
 Grow your business with Facebook for WordPress! This plugin will install a Facebook Pixel for your page so you can capture the actions people take when they interact with your page, such as Lead, ViewContent, AddToCart, InitiateCheckout and Purchase events. Version 2.0.0 also includes support for the Conversions API, which lets you send events directly from your page’s server so you can capture a more of these events when they happen. This can help you better understand your customer’s journey from the moment they show interest in your business to the moment they complete a conversion. You can use this information to create ad campaigns that are relevant to your audience. [Learn More](https://www.facebook.com/business/learn/facebook-ads-pixel)
 
 # Requirements
 
-Official Facebook Pixel requires
+Facebook for WordPress requires
 * WordPress 4.4+ or higher
 * PHP 5.6 or greater
 
@@ -47,4 +47,4 @@ See the CONTRIBUTING file for how to help out
 
 # License
 
-Official Facebook Pixel is GPLv2-licensed
+Facebook for WordPress is GPLv2-licensed

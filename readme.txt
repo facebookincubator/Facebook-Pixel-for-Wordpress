@@ -1,4 +1,4 @@
-=== Official Facebook Pixel ===
+=== Facebook for WordPress ===
 Contributors: facebook
 Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, facebook retargeting, facebook standard events
 Requires at least: 4.4
@@ -8,7 +8,7 @@ Stable tag: 2.2.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Grow your business with Official Facebook Pixel!
+Grow your business with Facebook for WordPress!
 
 == Description ==
 This plugin will install a Facebook Pixel for your page so you can capture the actions people take when they interact with your page, such as Lead, ViewContent, AddToCart, InitiateCheckout and Purchase events. Version 2.0.0 also includes support for the Conversions API, which lets you send events directly from your page's server so you can capture a more of these events when they happen. This can help you better understand your customer's journey from the moment they show interest in your business to the moment they complete a conversion. You can use this information to create ad campaigns that are relevant to your audience. [Learn More](https://www.facebook.com/business/learn/facebook-ads-pixel)
@@ -28,7 +28,7 @@ This plugin also includes built-in support for these other WordPress plugins:
 == Installation ==
 __To install from your WordPress site__ <br />
 1. Log in to your WordPress dashboard, navigate to the Plugins menu and click Add New. <br />
-2. In the search field, type 'Official Facebook Pixel' and click 'Search Plugins'. Select the plugin authored by 'Facebook'. You can install it by simply clicking 'Install Now'. <br />
+2. In the search field, type 'Facebook for WordPress' and click 'Search Plugins'. Select the plugin authored by 'Facebook'. You can install it by simply clicking 'Install Now'. <br />
 
 __To download and install plugin from Facebook Events Manager__ <br />
 [Facebook Help Page](https://www.facebook.com/business/help/881403525362441) <br />
@@ -40,11 +40,11 @@ After plugin installed, go to settings page of the plugin, input your pixel ID i
 = Where can I find more information on Facebook Pixel? =
 You can find more information on the [Facebook Pixel](https://www.facebook.com/business/learn/facebook-ads-pixel).
 
-= Where can I find more information on Official Facebook Pixel plugin? =
+= Where can I find more information on Facebook for WordPress plugin? =
 You can refer to [this page](https://www.facebook.com/business/help/881403525362441?helpref=faq_content)
 
 = Where can I find support? =
-If you get stuck, or have any questions, you can ask for help in the [Official Facebook Pixel plugin forum](https://wordpress.org/support/plugin/official-facebook-pixel).
+If you get stuck, or have any questions, you can ask for help in the [Facebook for WordPress plugin forum](https://wordpress.org/support/plugin/official-facebook-pixel).
 
 = I am a developer. Can I help improve the plugin? =
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).

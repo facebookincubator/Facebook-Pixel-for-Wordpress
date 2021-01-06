@@ -23,7 +23,7 @@ class FacebookPluginConfig {
   const PLUGIN_VERSION = '2.2.2';
   const SOURCE = 'wordpress';
   const TEXT_DOMAIN = 'official-facebook-pixel';
-  const PLUGIN_NAME = 'Official Facebook Pixel';
+  const PLUGIN_NAME = 'Facebook for WordPress';
 
   const ADMIN_CAPABILITY = 'manage_options';
   const ADMIN_DISMISS_PIXEL_ID_NOTICE = 'dismiss_pixel_id_notice';
