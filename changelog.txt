@@ -1,4 +1,8 @@
 *** Facebook for WordPress Changelog ***
+2021-01-06 version 3.0.0
+* Adding Facebook Business Extension based configuration
+* Renaming to Facebook for WordPress
+
 2020-12-08 version 2.2.2
 * Update Business SDK to v9.0.1
 
