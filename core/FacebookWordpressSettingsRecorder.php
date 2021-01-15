@@ -29,7 +29,7 @@ class FacebookWordpressSettingsRecorder {
     }
 
     public function saveFbeSettings(){
-        if (!is_admin()) {
+        if (!current_user_can('administrator')) {
             $this->handleUnauthorizedRequest();
         }
         $pixel_id = $_POST['pixelId'];
@@ -50,7 +50,7 @@ class FacebookWordpressSettingsRecorder {
     }
 
     public function deleteFbeSettings(){
-        if (!is_admin()) {
+        if (!current_user_can('administrator')) {
             $this->handleUnauthorizedRequest();
         }
         \delete_option( FacebookPluginConfig::SETTINGS_KEY );

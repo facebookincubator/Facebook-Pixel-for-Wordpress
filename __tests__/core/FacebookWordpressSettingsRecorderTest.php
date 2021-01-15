@@ -42,7 +42,7 @@ final class FacebookWordpressSettingsRecorderTest
 
     public function testSaveSettingsWithAdmin(){
         $settingsRecorder = new FacebookWordpressSettingsRecorder();
-        \WP_Mock::userFunction('is_admin', array(
+        \WP_Mock::userFunction('current_user_can', array(
             'return' => true,
           ));
           \WP_Mock::userFunction('update_option', array(
