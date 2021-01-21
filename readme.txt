@@ -1,6 +1,6 @@
 === Facebook for WordPress ===
 Contributors: facebook
-Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, facebook retargeting, facebook standard events
+Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, Conversions API, facebook retargeting, facebook standard events
 Requires at least: 4.4
 Tested up to: 5.6
 Requires PHP: 5.6
@@ -11,9 +11,9 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Grow your business with Facebook for WordPress!
 
 == Description ==
-This plugin will install a Facebook Pixel for your page so you can capture the actions people take when they interact with your page, such as Lead, ViewContent, AddToCart, InitiateCheckout and Purchase events. Version 2.0.0 also includes support for the Conversions API, which lets you send events directly from your page's server so you can capture a more of these events when they happen. This can help you better understand your customer's journey from the moment they show interest in your business to the moment they complete a conversion. You can use this information to create ad campaigns that are relevant to your audience. [Learn More](https://www.facebook.com/business/learn/facebook-ads-pixel)
+This plugin will install a Facebook Pixel for your page so you can capture the actions people take when they interact with your page, such as Lead, ViewContent, AddToCart, InitiateCheckout and Purchase events. It also includes support for the Conversions API, which lets you send events directly from your page's server so you can capture a more of these events when they happen. This can help you better understand your customer's journey from the moment they show interest in your business to the moment they complete a conversion. You can use this information to create ad campaigns that are relevant to your audience. [Learn More](https://www.facebook.com/business/learn/facebook-ads-pixel)
 
-This plugin also includes built-in support for these other WordPress plugins:
+This plugin includes built-in support for these other WordPress plugins:
 * Caldera Forms
 * Contact Form 7
 * Easy Digital Downloads
@@ -43,6 +43,9 @@ After plugin installed: <br />
 == Frequently Asked Questions ==
 = Where can I find more information on Facebook Pixel? =
 You can find more information on the [Facebook Pixel](https://www.facebook.com/business/learn/facebook-ads-pixel).
+
+= Where can I find more information on Conversions API? =
+You can find more information on the [Conversions API](https://www.facebook.com/business/help/2041148702652965).
 
 = Where can I find more information on Facebook for WordPress plugin? =
 You can refer to [this page](https://www.facebook.com/business/help/881403525362441?helpref=faq_content)
