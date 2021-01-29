@@ -46,6 +46,7 @@ class ServerEventFactory {
               ->setEventId(EventIdGenerator::guidv4())
               ->setEventSourceUrl(
                 self::getRequestUri($prefer_referrer_for_event_src))
+              ->setActionSource('website')
               ->setUserData($user_data)
               ->setCustomData(new CustomData());
 

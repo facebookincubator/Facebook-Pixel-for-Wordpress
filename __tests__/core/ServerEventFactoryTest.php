@@ -48,6 +48,11 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $this->assertEquals('Lead', $event->getEventName());
   }
 
+  public function testNewEventHasActionSource() {
+    $event =  ServerEventFactory::newEvent('ViewContent');
+    $this->assertEquals('website', $event->getActionSource());
+  }
+
   public function testNewEventWorksWithIpV4() {
     $_SERVER['HTTP_X_FORWARDED_FOR'] = '24.17.77.101';
 

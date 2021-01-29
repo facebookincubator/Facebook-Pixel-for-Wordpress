@@ -9,7 +9,7 @@
   },
   "license": "GPL",
   "require": {
-    "facebook/php-business-sdk": "9.0.1",
+    "facebook/php-business-sdk": "9.0.3",
     "techcrunch/wp-async-task": "dev-master"
   },
   "autoload": {
