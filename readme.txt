@@ -57,6 +57,12 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2021-01-28 version 3.0.1 =
+* Support for WordPress 5.6
+* Adding banner for plugin review
+* Adding action_source parameter to Conversions API events
+* Update Business SDK to v9.0.3
+
 = 2021-01-06 version 3.0.0 =
 * Adding Facebook Business Extension based configuration
 * Renaming to Facebook for WordPress
