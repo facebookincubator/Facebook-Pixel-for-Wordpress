@@ -147,6 +147,12 @@ class FacebookWordpressSettingsPage {
         true)){
         add_action('admin_notices', array($this, 'fbeNotInstalledNotice'));
       }
+      if( $is_fbe_installed == '1' && !get_user_meta(
+        get_current_user_id(),
+        FacebookPluginConfig::ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE,
+        true)){
+        add_action('admin_notices', array($this, 'pluginReviewNotice'));
+      }
     }
   }
 
@@ -173,7 +179,7 @@ class FacebookWordpressSettingsPage {
       '<a href="%s">follow the setup steps.</a>';
   }
 
-  public function setNotice($notice, $dismiss_config) {
+  public function setNotice($notice, $dismiss_config, $notice_type) {
     $url = admin_url('options-general.php?page=' .
         FacebookPluginConfig::ADMIN_MENU_SLUG);
 
@@ -182,7 +188,7 @@ class FacebookWordpressSettingsPage {
       esc_url($url));
     printf(
       '
-<div class="notice notice-warning is-dismissible hide-last-button">
+<div class="notice notice-%s is-dismissible">
   <p>%s</p>
   <button
     type="button"
@@ -192,11 +198,27 @@ class FacebookWordpressSettingsPage {
   </button>
 </div>
       ',
+      $notice_type,
       $link,
       esc_url(add_query_arg($dismiss_config, '')),
       esc_html__(
         'Dismiss this notice.',
         FacebookPluginConfig::TEXT_DOMAIN));
+  }
+
+  public function pluginReviewNotice(){
+    $message = sprintf('Let us know what you think about <strong>%s</strong>. '.
+      'Leave a review on <a href="%s" target="_blank">this page</a>.',
+      FacebookPluginConfig::PLUGIN_NAME,
+      FacebookPluginConfig::PLUGIN_REVIEW_PAGE
+    );
+    $this->setNotice(
+      __(
+        $message,
+        FacebookPluginConfig::TEXT_DOMAIN),
+      FacebookPluginConfig::ADMIN_DISMISS_PLUGIN_REVIEW_NOTICE,
+      'info'
+    );
   }
 
   public function fbeNotInstalledNotice() {
@@ -205,7 +227,9 @@ class FacebookWordpressSettingsPage {
       __(
         $message,
         FacebookPluginConfig::TEXT_DOMAIN),
-      FacebookPluginConfig::ADMIN_DISMISS_FBE_NOT_INSTALLED_NOTICE);
+      FacebookPluginConfig::ADMIN_DISMISS_FBE_NOT_INSTALLED_NOTICE,
+      'warning'
+    );
   }
 
   public function dismissNotices() {
@@ -217,6 +241,12 @@ class FacebookWordpressSettingsPage {
         FacebookPluginConfig::ADMIN_IGNORE_FBE_NOT_INSTALLED_NOTICE,
         true);
     }
-
+    if (isset(
+      $_GET[FacebookPluginConfig::ADMIN_DISMISS_PLUGIN_REVIEW_NOTICE]
+    )){
+      update_user_meta($user_id,
+        FacebookPluginConfig::ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE,
+        true);
+    }
   }
 }

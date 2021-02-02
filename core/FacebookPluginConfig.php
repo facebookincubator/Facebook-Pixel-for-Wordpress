@@ -24,6 +24,7 @@ class FacebookPluginConfig {
   const SOURCE = 'wordpress';
   const TEXT_DOMAIN = 'official-facebook-pixel';
   const PLUGIN_NAME = 'Facebook for WordPress';
+  const PLUGIN_REVIEW_PAGE = 'https://wordpress.org/plugins/official-facebook-pixel/#reviews';
 
   const ADMIN_CAPABILITY = 'manage_options';
   const ADMIN_DISMISS_PIXEL_ID_NOTICE = 'dismiss_pixel_id_notice';
@@ -34,6 +35,10 @@ class FacebookPluginConfig {
     'dismiss_fbe_not_installed_notice';
   const ADMIN_IGNORE_FBE_NOT_INSTALLED_NOTICE =
     'ignore_fbe_not_installed_notice';
+  const ADMIN_DISMISS_PLUGIN_REVIEW_NOTICE =
+    'dismiss_plugin_review_notice';
+  const ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE =
+    'ignore_plugin_review_notice';
   const ADMIN_MENU_SLUG = 'facebook_pixel_options';
   const ADMIN_MENU_TITLE = 'Facebook Pixel';
   const ADMIN_OPTION_GROUP = 'facebook_option_group';
