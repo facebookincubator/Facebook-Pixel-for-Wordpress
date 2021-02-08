@@ -126,6 +126,23 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
     $this->assertContains('fbe_wordpress_', $external_business_id);
   }
 
+  public function testCanChangeDefaultPixelIdWithFilter() {
+    \WP_Mock::onFilter('default_facebook_pixel_id')
+            ->with('')
+            ->reply('4567');
+
+    self::mockEscJs('');
+    self::mockGetOption();
+    \WP_Mock::expectActionAdded('init', array('FacebookPixelPlugin\\Core\\FacebookWordpressOptions', 'registerUserInfo'), 0);
+    FacebookWordpressOptions::initialize();
+
+    $default_pixel_id = FacebookWordpressOptions::getDefaultPixelId();
+    $pixel_id = FacebookWordpressOptions::getPixelId();
+
+    $this->assertEquals('4567', $default_pixel_id);
+    $this->assertEquals('4567', $pixel_id);
+  }
+
   private function mockGetOption($mock_pixel_id=null, $mock_access_token=null,
     $mock_fbe_installed = '0') {
     \WP_Mock::userFunction('get_option', array(
