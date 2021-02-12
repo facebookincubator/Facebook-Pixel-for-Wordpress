@@ -1,4 +1,7 @@
 *** Facebook for WordPress Changelog ***
+2021-02-12 version 3.0.3
+* Adding nonce parameter to requests changing plugin settings
+
 2021-02-09 version 3.0.2
 * Removing Guzzle dependency
 
