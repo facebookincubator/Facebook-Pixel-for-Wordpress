@@ -45,12 +45,15 @@ final class FacebookWordpressSettingsRecorderTest
         \WP_Mock::userFunction('current_user_can', array(
             'return' => true,
           ));
-          \WP_Mock::userFunction('update_option', array(
-            'return' => true,
-          ));
-          \WP_Mock::userFunction('wp_send_json', array(
-            'return' => true,
-          ));
+        \WP_Mock::userFunction('update_option', array(
+          'return' => true,
+        ));
+        \WP_Mock::userFunction('wp_send_json', array(
+          'return' => true,
+        ));
+        \WP_Mock::userFunction('check_admin_referer', array(
+          'return' => true,
+        ));
         global $_POST;
         $_POST['pixelId'] = '123';
         $_POST['accessToken'] = 'abc';

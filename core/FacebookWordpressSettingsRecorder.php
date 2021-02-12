@@ -24,14 +24,17 @@ class FacebookWordpressSettingsRecorder {
             'success' => false,
             'msg' => 'Unauthorized user',
         );
-        wp_send_json($res);
+        wp_send_json($res, 403);
         return $res;
     }
 
     public function saveFbeSettings(){
         if (!current_user_can('administrator')) {
-            $this->handleUnauthorizedRequest();
+            return $this->handleUnauthorizedRequest();
         }
+        check_admin_referer(
+            FacebookPluginConfig::SAVE_FBE_SETTINGS_ACTION_NAME
+        );
         $pixel_id = $_POST['pixelId'];
         $access_token = $_POST['accessToken'];
         $external_business_id = $_POST['externalBusinessId'];
@@ -51,8 +54,11 @@ class FacebookWordpressSettingsRecorder {
 
     public function deleteFbeSettings(){
         if (!current_user_can('administrator')) {
-            $this->handleUnauthorizedRequest();
+            return $this->handleUnauthorizedRequest();
         }
+        check_admin_referer(
+            FacebookPluginConfig::DELETE_FBE_SETTINGS_ACTION_NAME
+        );
         \delete_option( FacebookPluginConfig::SETTINGS_KEY );
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
         return $this->handleSuccessRequest('Done');

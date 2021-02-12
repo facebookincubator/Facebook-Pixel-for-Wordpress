@@ -54,6 +54,9 @@ class FacebookPluginConfig {
   const IS_FBE_INSTALLED_KEY = 'facebook_is_fbe_installed';
   const AAM_SETTINGS_KEY = 'facebook_pixel_aam_settings';
 
+  const DELETE_FBE_SETTINGS_ACTION_NAME = 'delete_fbe_settings';
+  const SAVE_FBE_SETTINGS_ACTION_NAME = 'save_fbe_settings';
+
   // Keys used in the old settings
   const OLD_SETTINGS_KEY = 'facebook_config';
   const OLD_PIXEL_ID_KEY = 'pixel_id';

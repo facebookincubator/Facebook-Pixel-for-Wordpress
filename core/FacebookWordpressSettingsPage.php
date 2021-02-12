@@ -117,11 +117,27 @@ class FacebookWordpressSettingsPage {
   }
 
   public function getFbeSaveSettingsAjaxRoute(){
-    return admin_url('admin-ajax.php?action=save_fbe_settings');
+    $nonce_value = wp_create_nonce(
+      FacebookPluginConfig::SAVE_FBE_SETTINGS_ACTION_NAME
+    );
+    $simple_url = admin_url('admin-ajax.php');
+    $args = array(
+      'action' => FacebookPluginConfig::SAVE_FBE_SETTINGS_ACTION_NAME,
+      '_wpnonce' => $nonce_value
+    );
+    return add_query_arg($args, $simple_url);
   }
 
   public function getDeleteFbeSettingsAjaxRoute(){
-    return admin_url('admin-ajax.php?action=delete_fbe_settings');
+    $nonce_value = wp_create_nonce(
+      FacebookPluginConfig::DELETE_FBE_SETTINGS_ACTION_NAME
+    );
+    $simple_url = admin_url('admin-ajax.php');
+    $args = array(
+      'action' => FacebookPluginConfig::DELETE_FBE_SETTINGS_ACTION_NAME,
+      '_wpnonce' => $nonce_value
+    );
+    return add_query_arg($args, $simple_url);
   }
 
   public function addSettingsLink($links) {
