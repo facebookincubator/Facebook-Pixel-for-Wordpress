@@ -92,16 +92,20 @@ class FacebookWordpressSettingsPage {
 
 <script>
     window.facebookBusinessExtensionConfig = {
-      pixelId: '<?php echo FacebookWordpressOptions::getPixelId() ?>'
+      pixelId: '<?php echo esc_html(FacebookWordpressOptions::getPixelId()) ?>'
       ,popupOrigin: "https://business.facebook.com"
       ,setSaveSettingsRoute: '<?php echo $this->getFbeSaveSettingsAjaxRoute() ?>'
-      ,externalBusinessId: '<?php echo FacebookWordpressOptions::getExternalBusinessId() ?>'
+      ,externalBusinessId: '<?php echo esc_html(
+        FacebookWordpressOptions::getExternalBusinessId()
+      )?>'
       ,fbeLoginUrl: "https://business.facebook.com/fbe-iframe-get-started/?"
       ,deleteConfigKeys: '<?php echo $this->getDeleteFbeSettingsAjaxRoute() ?>'
       ,appId: '221646389321681'
       ,timeZone: 'America/Los_Angeles'
       ,installed: '<?php echo FacebookWordpressOptions::getIsFbeInstalled() ?>'
-      ,systemUserName: '<?php echo FacebookWordpressOptions::getExternalBusinessId()  ?>' + '_system_user'
+      ,systemUserName: '<?php echo esc_html(
+        FacebookWordpressOptions::getExternalBusinessId()
+        )  ?>' + '_system_user'
       ,businessVertical: 'ECOMMERCE'
       ,version: 'v8.0'
       ,currency: 'USD'

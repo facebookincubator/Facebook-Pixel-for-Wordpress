@@ -28,6 +28,15 @@ class FacebookWordpressSettingsRecorder {
         return $res;
     }
 
+    private function handleInvalidRequest(){
+        $res = array(
+            'success' => false,
+            'msg' => 'Invalid values',
+        );
+        wp_send_json($res, 400);
+        return $res;
+    }
+
     public function saveFbeSettings(){
         if (!current_user_can('administrator')) {
             return $this->handleUnauthorizedRequest();
@@ -35,9 +44,16 @@ class FacebookWordpressSettingsRecorder {
         check_admin_referer(
             FacebookPluginConfig::SAVE_FBE_SETTINGS_ACTION_NAME
         );
-        $pixel_id = $_POST['pixelId'];
-        $access_token = $_POST['accessToken'];
-        $external_business_id = $_POST['externalBusinessId'];
+        $pixel_id = sanitize_text_field($_POST['pixelId']);
+        $access_token = sanitize_text_field($_POST['accessToken']);
+        $external_business_id = sanitize_text_field(
+            $_POST['externalBusinessId']
+        );
+        if(empty($pixel_id)
+            || empty($access_token)
+            || empty($external_business_id)){
+            return $this->handleInvalidRequest();
+        }
         $settings = array(
             FacebookPluginConfig::PIXEL_ID_KEY => $pixel_id,
             FacebookPluginConfig::ACCESS_TOKEN_KEY => $access_token,
