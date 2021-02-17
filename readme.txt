@@ -57,6 +57,9 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+
+* Update Facebook Business SDK to v9.0.4
+
 = 2021-02-12 version 3.0.3 =
 * Adding nonce parameter to requests changing plugin settings
 

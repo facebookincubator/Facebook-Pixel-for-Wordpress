@@ -1,4 +1,7 @@
 *** Facebook for WordPress Changelog ***
+
+* Update Facebook Business SDK to v9.0.4
+
 2021-02-12 version 3.0.3
 * Adding nonce parameter to requests changing plugin settings
 

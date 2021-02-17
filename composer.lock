@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8f4e59db4fb83d9835136e3e476bfcb3",
+    "content-hash": "573acfcd8c3b5b5a23cbb2b27cc52df2",
     "packages": [
         {
             "name": "facebook/php-business-sdk",
-            "version": "9.0.3",
+            "version": "9.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/facebook/facebook-php-business-sdk.git",
-                "reference": "4d39da6c1e1cdc9916082d97a5191a549e127b0f"
+                "reference": "c29498ee7f180583cb16873e5047eeeada834067"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/facebook/facebook-php-business-sdk/zipball/4d39da6c1e1cdc9916082d97a5191a549e127b0f",
-                "reference": "4d39da6c1e1cdc9916082d97a5191a549e127b0f",
+                "url": "https://api.github.com/repos/facebook/facebook-php-business-sdk/zipball/c29498ee7f180583cb16873e5047eeeada834067",
+                "reference": "c29498ee7f180583cb16873e5047eeeada834067",
                 "shasum": ""
             },
             "require": {
@@ -45,7 +45,10 @@
                 "page",
                 "sdk"
             ],
-            "time": "2021-01-14T00:20:35+00:00"
+            "support": {
+                "source": "https://github.com/facebook/facebook-php-business-sdk/tree/9.0.4"
+            },
+            "time": "2021-02-16T22:35:02+00:00"
         },
         {
             "name": "techcrunch/wp-async-task",
