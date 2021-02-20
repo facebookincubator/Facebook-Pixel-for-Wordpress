@@ -4,7 +4,7 @@ Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events
 Requires at least: 4.4
 Tested up to: 5.6
 Requires PHP: 5.6
-Stable tag: 3.0.0
+Stable tag: 3.0.3
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,17 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+
+= 2021-02-17 version 3.0.4 =
+* Update Facebook Business SDK to v9.0.4
+* Validating, sanitizing and escaping plugin settings
+
+= 2021-02-12 version 3.0.3 =
+* Adding nonce parameter to requests changing plugin settings
+
+= 2021-02-09 version 3.0.2 =
+* Removing Guzzle dependency
+
 = 2021-01-28 version 3.0.1 =
 * Support for WordPress 5.6
 * Adding banner for plugin review

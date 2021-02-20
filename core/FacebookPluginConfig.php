@@ -20,7 +20,7 @@ namespace FacebookPixelPlugin\Core;
 defined('ABSPATH') or die('Direct access not allowed');
 
 class FacebookPluginConfig {
-  const PLUGIN_VERSION = '3.0.1';
+  const PLUGIN_VERSION = '3.0.4';
   const SOURCE = 'wordpress';
   const TEXT_DOMAIN = 'official-facebook-pixel';
   const PLUGIN_NAME = 'Facebook for WordPress';
@@ -40,7 +40,7 @@ class FacebookPluginConfig {
   const ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE =
     'ignore_plugin_review_notice';
   const ADMIN_MENU_SLUG = 'facebook_pixel_options';
-  const ADMIN_MENU_TITLE = 'Facebook Pixel';
+  const ADMIN_MENU_TITLE = 'Facebook';
   const ADMIN_OPTION_GROUP = 'facebook_option_group';
   const ADMIN_PAGE_TITLE = 'Facebook Pixel Settings';
   const ADMIN_PRIVACY_URL = 'https://developers.facebook.com/docs/privacy/';
@@ -53,6 +53,9 @@ class FacebookPluginConfig {
   const EXTERNAL_BUSINESS_ID_KEY = 'facebook_external_business_id';
   const IS_FBE_INSTALLED_KEY = 'facebook_is_fbe_installed';
   const AAM_SETTINGS_KEY = 'facebook_pixel_aam_settings';
+
+  const DELETE_FBE_SETTINGS_ACTION_NAME = 'delete_fbe_settings';
+  const SAVE_FBE_SETTINGS_ACTION_NAME = 'save_fbe_settings';
 
   // Keys used in the old settings
   const OLD_SETTINGS_KEY = 'facebook_config';

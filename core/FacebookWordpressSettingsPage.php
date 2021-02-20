@@ -92,16 +92,20 @@ class FacebookWordpressSettingsPage {
 
 <script>
     window.facebookBusinessExtensionConfig = {
-      pixelId: '<?php echo FacebookWordpressOptions::getPixelId() ?>'
+      pixelId: '<?php echo esc_html(FacebookWordpressOptions::getPixelId()) ?>'
       ,popupOrigin: "https://business.facebook.com"
       ,setSaveSettingsRoute: '<?php echo $this->getFbeSaveSettingsAjaxRoute() ?>'
-      ,externalBusinessId: '<?php echo FacebookWordpressOptions::getExternalBusinessId() ?>'
+      ,externalBusinessId: '<?php echo esc_html(
+        FacebookWordpressOptions::getExternalBusinessId()
+      )?>'
       ,fbeLoginUrl: "https://business.facebook.com/fbe-iframe-get-started/?"
       ,deleteConfigKeys: '<?php echo $this->getDeleteFbeSettingsAjaxRoute() ?>'
       ,appId: '221646389321681'
       ,timeZone: 'America/Los_Angeles'
       ,installed: '<?php echo FacebookWordpressOptions::getIsFbeInstalled() ?>'
-      ,systemUserName: '<?php echo FacebookWordpressOptions::getExternalBusinessId()  ?>' + '_system_user'
+      ,systemUserName: '<?php echo esc_html(
+        FacebookWordpressOptions::getExternalBusinessId()
+        )  ?>' + '_system_user'
       ,businessVertical: 'ECOMMERCE'
       ,version: 'v8.0'
       ,currency: 'USD'
@@ -117,11 +121,27 @@ class FacebookWordpressSettingsPage {
   }
 
   public function getFbeSaveSettingsAjaxRoute(){
-    return admin_url('admin-ajax.php?action=save_fbe_settings');
+    $nonce_value = wp_create_nonce(
+      FacebookPluginConfig::SAVE_FBE_SETTINGS_ACTION_NAME
+    );
+    $simple_url = admin_url('admin-ajax.php');
+    $args = array(
+      'action' => FacebookPluginConfig::SAVE_FBE_SETTINGS_ACTION_NAME,
+      '_wpnonce' => $nonce_value
+    );
+    return add_query_arg($args, $simple_url);
   }
 
   public function getDeleteFbeSettingsAjaxRoute(){
-    return admin_url('admin-ajax.php?action=delete_fbe_settings');
+    $nonce_value = wp_create_nonce(
+      FacebookPluginConfig::DELETE_FBE_SETTINGS_ACTION_NAME
+    );
+    $simple_url = admin_url('admin-ajax.php');
+    $args = array(
+      'action' => FacebookPluginConfig::DELETE_FBE_SETTINGS_ACTION_NAME,
+      '_wpnonce' => $nonce_value
+    );
+    return add_query_arg($args, $simple_url);
   }
 
   public function addSettingsLink($links) {
