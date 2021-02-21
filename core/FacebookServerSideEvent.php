@@ -47,7 +47,9 @@ class FacebookServerSideEvent {
     if( $sendNow ){
       do_action( 'send_server_events',
         array($event),
-        1
+        1,
+        FacebookWordpressOptions::getPixelId(),
+        FacebookWordpressOptions::getAccessToken()
       );
     }
     else{
@@ -78,14 +80,14 @@ class FacebookServerSideEvent {
     return null;
   }
 
-  public static function send($events) {
+  public static function send($events, $pixel_id = null, $access_token = null) {
     $events = apply_filters('before_conversions_api_event_sent', $events);
     if (empty($events)) {
       return;
     }
 
-    $pixel_id = FacebookWordpressOptions::getPixelId();
-    $access_token = FacebookWordpressOptions::getAccessToken();
+    $pixel_id = isset($pixel_id) ? $pixel_id : FacebookWordpressOptions::getPixelId();
+    $access_token = isset($access_token) ? $access_token : FacebookWordpressOptions::getAccessToken();
     $agent = FacebookWordpressOptions::getAgentString();
 
     if(empty($pixel_id) || empty($access_token)){

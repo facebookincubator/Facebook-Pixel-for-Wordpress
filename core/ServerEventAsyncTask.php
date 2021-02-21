@@ -101,6 +101,8 @@ class ServerEventAsyncTask extends \WP_Async_Task {
       if (!empty($data)) {
         $num_events = $data[1];
         $events = $data[0];
+        $pixel_id = isset($data[2]) ? $data[2] : FacebookWordpressOptions::getPixelId();
+        $access_token = isset($data[3]) ? $data[3] : FacebookWordpressOptions::getAccessToken();
         // $data[0] can be a single event or an array
         // We want to receive it as an array
         if($num_events == 1){
@@ -115,7 +117,9 @@ class ServerEventAsyncTask extends \WP_Async_Task {
         // and encoded in base 64
         return array(
           'event_data' => base64_encode(json_encode($events_as_array)),
-          'num_events'=>$data[1]
+          'num_events' => $num_events,
+          'pixel_id' => $pixel_id,
+          'access_token' => $access_token
         );
       }
     } catch (\Exception $ex) {
@@ -144,7 +148,9 @@ class ServerEventAsyncTask extends \WP_Async_Task {
         $event = $this->convert_array_to_event($event_as_array);
         $events[] = $event;
       }
-      FacebookServerSideEvent::send($events);
+      $pixel_id = isset($_POST['pixel_id']) ? $_POST['pixel_id'] : null;
+      $access_token = isset($_POST['access_token']) ? $_POST['access_token'] : null;
+      FacebookServerSideEvent::send($events, $pixel_id, $access_token);
     }
     catch (\Exception $ex) {
       error_log($ex);

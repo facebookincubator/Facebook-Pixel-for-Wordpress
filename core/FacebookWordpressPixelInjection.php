@@ -52,7 +52,9 @@ class FacebookWordpressPixelInjection {
       do_action(
         'send_server_events',
         $pending_events,
-        count($pending_events)
+        count($pending_events),
+        FacebookWordpressOptions::getPixelId(),
+        FacebookWordpressOptions::getAccessToken()
       );
     }
   }
