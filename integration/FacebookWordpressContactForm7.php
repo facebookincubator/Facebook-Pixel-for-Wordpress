@@ -36,6 +36,27 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
       'wpcf7_submit',
       array(__CLASS__, 'trackServerEvent'),
       10, 2);
+    add_action(
+      'wp_footer',
+      array(__CLASS__, 'injectMailSentListener'),
+      10, 2);
+  }
+
+  public static function injectMailSentListener(){
+    ob_start();
+    ?>
+    <!-- Facebook Pixel Event Code -->
+    <script type='text/javascript'>
+        document.addEventListener( 'wpcf7mailsent', function( event ) {
+        if( "fb_pxl_code" in event.detail.apiResponse){
+          eval(event.detail.apiResponse.fb_pxl_code);
+        }
+      }, false );
+    </script>
+    <!-- End Facebook Pixel Event Code -->
+    <?php
+    $listenerCode = ob_get_clean();
+    echo $listenerCode;
   }
 
   public static function trackServerEvent($form, $result) {
@@ -55,7 +76,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
     FacebookServerSideEvent::getInstance()->track($server_event);
 
     add_action(
-      'wpcf7_ajax_json_echo',
+      'wpcf7_feedback_response',
       array(__CLASS__, 'injectLeadEvent'),
       20, 2);
 
@@ -74,21 +95,17 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
     $event_id = $events[0]->getEventId();
     $fbq_calls = PixelRenderer::render($events, self::TRACKING_NAME, false);
     $code = sprintf("
-<!-- Facebook Pixel Event Code -->
-<script type='text/javascript'>
 if( typeof window.pixelLastGeneratedLeadEvent === 'undefined'
   || window.pixelLastGeneratedLeadEvent != '%s' ){
   window.pixelLastGeneratedLeadEvent = '%s';
   %s
 }
-</script>
-<!-- End Facebook Pixel Event Code -->
       ",
       $event_id ,
       $event_id ,
       $fbq_calls);
 
-    $response['message'] .= $code;
+    $response['fb_pxl_code'] = $code;
     return $response;
   }
 

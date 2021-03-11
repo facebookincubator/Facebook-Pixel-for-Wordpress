@@ -45,8 +45,8 @@ final class FacebookWordpressContactForm7Test
     $response =
       FacebookWordpressContactForm7::injectLeadEvent($mock_response, null);
     $this->assertRegexp(
-      '/contact-form-7[\s\S]+End Facebook Pixel Event Code/',
-      $response['message']);
+      '/Lead[\s\S]+contact-form-7/',
+      $response['fb_pxl_code']);
   }
 
   public function testTrackServerEventWithoutInternalUser() {
@@ -61,7 +61,7 @@ final class FacebookWordpressContactForm7Test
     $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
     \WP_Mock::expectActionAdded(
-      'wpcf7_ajax_json_echo',
+      'wpcf7_feedback_response',
       array(
         'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
         'injectLeadEvent'
@@ -100,7 +100,7 @@ final class FacebookWordpressContactForm7Test
     $mock_form = new MockContactForm7();
 
     \WP_Mock::expectActionAdded(
-      'wpcf7_ajax_json_echo',
+      'wpcf7_feedback_response',
       array(
         'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
         'injectLeadEvent'
@@ -133,7 +133,7 @@ final class FacebookWordpressContactForm7Test
     $mock_form->set_throw(true);
 
     \WP_Mock::expectActionAdded(
-      'wpcf7_ajax_json_echo',
+      'wpcf7_feedback_response',
       array(
         'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
         'injectLeadEvent'
@@ -163,7 +163,7 @@ final class FacebookWordpressContactForm7Test
 
     $response =
       FacebookWordpressContactForm7::injectLeadEvent($mock_response, null);
-    $this->assertEquals('Thank you for your message', $response['message']);
+    $this->assertArrayNotHasKey( 'fb_pxl_code', $response);
   }
 
   public function testInjectLeadEventWhenMailFails() {
