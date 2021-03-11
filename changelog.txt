@@ -1,4 +1,8 @@
 *** Facebook for WordPress Changelog ***
+2021-03-10 version 3.0.5
+* Support for WordPress 5.7
+* Fixing pixel events for Contact Form 7 in WP >= 5.7
+
 2021-02-17 version 3.0.4
 * Update Facebook Business SDK to v9.0.4
 * Validating, sanitizing and escaping plugin settings

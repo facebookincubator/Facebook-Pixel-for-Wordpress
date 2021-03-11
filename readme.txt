@@ -2,9 +2,9 @@
 Contributors: facebook
 Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, Conversions API, facebook retargeting, facebook standard events
 Requires at least: 4.4
-Tested up to: 5.6
+Tested up to: 5.7
 Requires PHP: 5.6
-Stable tag: 3.0.3
+Stable tag: 3.0.4
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,10 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+
+= 2021-03-10 version 3.0.5 =
+* Support for WordPress 5.7
+* Fixing pixel events for Contact Form 7 in WP >= 5.7
 
 = 2021-02-17 version 3.0.4 =
 * Update Facebook Business SDK to v9.0.4
