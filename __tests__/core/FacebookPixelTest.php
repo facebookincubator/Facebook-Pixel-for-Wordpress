@@ -32,6 +32,20 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
     $this->assertEquals('1', FacebookPixel::getPIxelId());
   }
 
+  public function testCanChangePixelIdWithFilter() {
+    \WP_Mock::onFilter('facebook_pixel_id')
+            ->with('123')
+            ->reply('456');
+
+    // won't be filtered
+    FacebookPixel::initialize('1');
+    $this->assertEquals('1', FacebookPixel::getPixelId());
+
+    // will be filtered
+    FacebookPixel::setPixelId('123');
+    $this->assertEquals('456', FacebookPixel::getPixelId());
+  }
+
   private function assertCodeStartAndEndWithScript($code) {
     $this->assertStringStartsWith('<script', $code);
     $this->assertStringEndsWith('</script>', $code);

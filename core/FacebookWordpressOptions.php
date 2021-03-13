@@ -40,13 +40,19 @@ class FacebookWordpressOptions {
   }
 
   public static function getDefaultPixelID() {
-    return is_null(FacebookPluginConfig::DEFAULT_PIXEL_ID)
-              ? '' : FacebookPluginConfig::DEFAULT_PIXEL_ID;
+    return apply_filters(
+      'default_facebook_pixel_id',
+      is_null(FacebookPluginConfig::DEFAULT_PIXEL_ID)
+         ? '' : FacebookPluginConfig::DEFAULT_PIXEL_ID
+    );
   }
 
   public static function getDefaultAccessToken() {
-    return is_null(FacebookPluginConfig::DEFAULT_ACCESS_TOKEN)
-              ? '' : FacebookPluginConfig::DEFAULT_ACCESS_TOKEN;
+    return apply_filters(
+      'default_facebook_access_token',
+      is_null(FacebookPluginConfig::DEFAULT_ACCESS_TOKEN)
+        ? '' : FacebookPluginConfig::DEFAULT_ACCESS_TOKEN
+    );
   }
 
   public static function getDefaultExternalBusinessId(){
@@ -120,7 +126,7 @@ class FacebookWordpressOptions {
 
   public static function getPixelId() {
     if (array_key_exists(FacebookPluginConfig::PIXEL_ID_KEY, self::$options)) {
-      return self::$options[FacebookPluginConfig::PIXEL_ID_KEY];
+      return apply_filters('facebook_pixel_id', self::$options[FacebookPluginConfig::PIXEL_ID_KEY]);
     }
 
     return self::getDefaultPixelID();
@@ -151,7 +157,7 @@ class FacebookWordpressOptions {
   public static function getAccessToken() {
     if (array_key_exists(
       FacebookPluginConfig::ACCESS_TOKEN_KEY, self::$options)) {
-      return self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY];
+      return apply_filters('facebook_access_token', self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY]);
     }
 
     return self::getDefaultAccessToken();

@@ -71,21 +71,21 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
 ";
 
   public static function initialize($pixel_id = '') {
-    self::$pixelId = $pixel_id;
+    self::setPixelId($pixel_id);
   }
 
   /**
    * Gets FB pixel ID
    */
   public static function getPixelId() {
-    return self::$pixelId;
+    return apply_filters('facebook_pixel_id', self::$pixelId);
   }
 
   /**
    * Sets FB pixel ID
    */
   public static function setPixelId($pixel_id) {
-    self::$pixelId = $pixel_id;
+    self::$pixelId = apply_filters('facebook_pixel_id', $pixel_id);
   }
 
   /**
@@ -99,7 +99,7 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
    * Gets FB pixel init code
    */
   public static function getPixelInitCode($agent_string, $param = array(), $with_script_tag = true) {
-    if (empty(self::$pixelId)) {
+    if (empty(self::getPixelId())) {
       return;
     }
 
@@ -114,7 +114,7 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
     return sprintf(
       $code,
       'init',
-      self::$pixelId,
+      self::getPixelId(),
       ', ' . $param_str,
       ', ' . json_encode($agent_param, JSON_PRETTY_PRINT));
   }
@@ -127,7 +127,7 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
    *   with its tracking name into the JS Parameter block
    */
   public static function getPixelTrackCode($event, $param = array(), $tracking_name = '', $with_script_tag = true) {
-    if (empty(self::$pixelId)) {
+    if (empty(self::getPixelId())) {
       return;
     }
 
@@ -154,7 +154,7 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
    * Gets FB pixel noscript code
    */
   public static function getPixelNoscriptCode($event = 'PageView', $cd = array(), $tracking_name = '') {
-    if (empty(self::$pixelId)) {
+    if (empty(self::getPixelId())) {
       return;
     }
 
@@ -167,7 +167,7 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
     }
     return sprintf(
       self::$pixelNoscriptCode,
-      self::$pixelId,
+      self::getPixelId(),
       $event,
       $data);
   }
