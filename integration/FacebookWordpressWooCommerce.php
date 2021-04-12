@@ -123,6 +123,8 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         $product_id,
         'product_cat'
       );
+    // get_the_terms() can return false or a WP_Error object
+    $categories = is_array($categories) ? $categories : [];
     return count($categories) > 0 ? $categories[0]->name : null;
   }
 
