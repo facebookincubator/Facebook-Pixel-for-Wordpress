@@ -57,6 +57,8 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2021-08-30 version 3.0.6 =
+* Update Facebook Business SDK to v11.0.0
 
 = 2021-03-10 version 3.0.5 =
 * Support for WordPress 5.7
