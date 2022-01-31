@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
   public static function injectMailSentListener(){
     ob_start();
     ?>
-    <!-- Facebook Pixel Event Code -->
+    <!-- Meta Pixel Event Code -->
     <script type='text/javascript'>
         document.addEventListener( 'wpcf7mailsent', function( event ) {
         if( "fb_pxl_code" in event.detail.apiResponse){
@@ -53,7 +53,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
         }
       }, false );
     </script>
-    <!-- End Facebook Pixel Event Code -->
+    <!-- End Meta Pixel Event Code -->
     <?php
     $listenerCode = ob_get_clean();
     echo $listenerCode;

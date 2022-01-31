@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     $result = FacebookWordpressNinjaForms::injectLeadEvent(
       $mock_actions,
       null,
-      $mock_form_data,
+      $mock_form_data
     );
 
     $this->assertNotEmpty($result);
@@ -66,7 +66,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     $this->assertArrayHasKey('success_msg', $result[0]['settings']);
     $msg = $result[0]['settings']['success_msg'];
     $this->assertRegexp(
-      '/ninja-forms[\s\S]+End Facebook Pixel Event Code/', $msg);
+      '/ninja-forms[\s\S]+End Meta Pixel Event Code/', $msg);
 
     $tracked_events =
       FacebookServerSideEvent::getInstance()->getTrackedEvents();

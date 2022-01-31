@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
       $download_id
     );
     $this->expectOutputRegex(
-      '/edd-add-to-cart[\s\S]+End Facebook Pixel Event Code/');
+      '/edd-add-to-cart[\s\S]+End Meta Pixel Event Code/');
   }
 
   public function testInjectAddToCartEventIdWithoutInternalUser() {
@@ -77,7 +77,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
     FacebookWordpressEasyDigitalDownloads::injectInitiateCheckoutEvent();
 
     $this->expectOutputRegex(
-      '/easy-digital-downloads[\s\S]+End Facebook Pixel Event Code/');
+      '/easy-digital-downloads[\s\S]+End Meta Pixel Event Code/');
 
     $tracked_events =
       FacebookServerSideEvent::getInstance()->getTrackedEvents();
@@ -182,7 +182,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest
 
     FacebookWordpressEasyDigitalDownloads::injectViewContentEvent(1234);
     $this->expectOutputRegex(
-      '/easy-digital-downloads[\s\S]+End Facebook Pixel Event Code/');
+      '/easy-digital-downloads[\s\S]+End Meta Pixel Event Code/');
     $tracked_events =
       FacebookServerSideEvent::getInstance()->getTrackedEvents();
 

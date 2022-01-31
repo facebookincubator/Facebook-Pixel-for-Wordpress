@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,18 +55,18 @@ class FacebookWordpressGravityForms extends FacebookWordpressIntegrationBase {
 
     $pixel_code = PixelRenderer::render(array($event), self::TRACKING_NAME);
     $code = sprintf("
-    <!-- Facebook Pixel Event Code -->
+    <!-- Meta Pixel Event Code -->
     %s
-    <!-- End Facebook Pixel Event Code -->
+    <!-- End Meta Pixel Event Code -->
     ", $pixel_code);
 
     if (is_string($confirmation)) {
         $confirmation .= $code;
     } elseif ( is_array($confirmation) && isset($confirmation['redirect'])) {
         $redirect_code = sprintf("
-            <!-- Facebook Pixel Gravity Forms Redirect Code -->
+            <!-- Meta Pixel Gravity Forms Redirect Code -->
             <script>%sdocument.location.href=%s;%s</script>
-            <!-- End Facebook Pixel Gravity Forms Redirect Code -->",
+            <!-- End Meta Pixel Gravity Forms Redirect Code -->",
             apply_filters('gform_cdata_open', ''),
             defined('JSON_HEX_TAG') ?
               json_encode($confirmation['redirect'], JSON_HEX_TAG)

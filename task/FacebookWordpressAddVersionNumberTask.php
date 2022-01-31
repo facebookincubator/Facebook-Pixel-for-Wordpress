@@ -1,6 +1,6 @@
 <?php
 /*
-* Copyright (C) 2017-present, Facebook, Inc.
+* Copyright (C) 2017-present, Meta, Inc.
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by

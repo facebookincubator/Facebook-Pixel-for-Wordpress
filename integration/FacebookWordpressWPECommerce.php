@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,9 +63,9 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 
     $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
     $code = sprintf("
-    <!-- Facebook Pixel Event Code -->
+    <!-- Meta Pixel Event Code -->
     %s
-    <!-- End Facebook Pixel Event Code -->
+    <!-- End Meta Pixel Event Code -->
          ",
       $code);
     $response['widget_output'] .= $code;
@@ -87,9 +87,9 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 
     $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
     printf("
-<!-- Facebook Pixel Event Code -->
+<!-- Meta Pixel Event Code -->
 %s
-<!-- End Facebook Pixel Event Code -->
+<!-- End Meta Pixel Event Code -->
       ",
       $code);
   }
@@ -114,9 +114,9 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
     $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
 
     printf("
-<!-- Facebook Pixel Event Code -->
+<!-- Meta Pixel Event Code -->
 %s
-<!-- End Facebook Pixel Event Code -->
+<!-- End Meta Pixel Event Code -->
      ",
       $code);
   }

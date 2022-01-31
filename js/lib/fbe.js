@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016-present, Facebook, Inc.
+ * Copyright (c) 2016-present, Meta, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -90,15 +90,15 @@ var FBEFlowContainer = React.createClass({
   saveSettings: function saveSettings( pixelId, accessToken, externalBusinessId ){
     var _this = this;
     if(!pixelId){
-      console.error('Facebook Business Extension Error: got no pixel_id');
+      console.error('Meta Business Extension Error: got no pixel_id');
       return;
     }
     if(!accessToken){
-      console.error('Facebook Business Extension Error: got no access token');
+      console.error('Meta Business Extension Error: got no access token');
       return;
     }
     if(!externalBusinessId){
-      console.error('Facebook Business Extension Error: got no external business id');
+      console.error('Meta Business Extension Error: got no external business id');
       return;
     }
     jQuery.ajax({
@@ -115,7 +115,7 @@ var FBEFlowContainer = React.createClass({
         let msg = '';
         if (response.success) {
           _this.setState({pixelId: pixelId});
-          msg = "The Facebook Pixel with ID: " + pixelId + " is now installed on your website.";
+          msg = "The Meta Pixel with ID: " + pixelId + " is now installed on your website.";
         } else {
           msg = "There was a problem saving the pixel. Please try again";
         }

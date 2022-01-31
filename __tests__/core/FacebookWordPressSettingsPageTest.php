@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
             new FacebookWordpressSettingsPage('facebook_for_wordpress');
         $message = $settings_page->getCustomizedFbeNotInstalledNotice();
         $expected_prefix = sprintf(
-            'Easily manage your connection to Facebook with <strong>%s</strong>.',
+            'Easily manage your connection to Meta with <strong>%s</strong>.',
             FacebookPluginConfig::PLUGIN_NAME
         );
         $this->assertStringStartsWith($expected_prefix, $message);

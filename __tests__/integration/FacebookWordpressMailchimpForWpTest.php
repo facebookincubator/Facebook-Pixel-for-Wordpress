@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 
     FacebookWordpressMailchimpForWp::injectLeadEvent();
     $this->expectOutputRegex(
-      '/mailchimp-for-wp[\s\S]+End Facebook Pixel Event Code/');
+      '/mailchimp-for-wp[\s\S]+End Meta Pixel Event Code/');
 
     $tracked_events =
       FacebookServerSideEvent::getInstance()->getTrackedEvents();

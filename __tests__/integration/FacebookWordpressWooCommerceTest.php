@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -275,7 +275,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     $server_event = new Event();
     $pixel_code = FacebookWordpressWooCommerce::enqueuePixelCode($server_event);
     $this->assertRegExp(
-      '/woocommerce[\s\S]+End Facebook Pixel Event Code/', $pixel_code);
+      '/woocommerce[\s\S]+End Meta Pixel Event Code/', $pixel_code);
   }
 
   public function testAddPixelCodeToAddToCartFragment(){

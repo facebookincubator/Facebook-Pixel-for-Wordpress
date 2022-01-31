@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ class FacebookPixel {
   private static $pixelId = '';
 
   private static $pixelBaseCode = "
-<!-- Facebook Pixel Code -->
+<!-- Meta Pixel Code -->
 <script type='text/javascript'>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
@@ -54,7 +54,7 @@ n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
 document,'script','https://connect.facebook.net/en_US/fbevents.js');
 </script>
-<!-- End Facebook Pixel Code -->
+<!-- End Meta Pixel Code -->
 ";
 
   private static $pixelFbqCodeWithoutScript = "
@@ -62,12 +62,12 @@ document,'script','https://connect.facebook.net/en_US/fbevents.js');
 ";
 
   private static $pixelNoscriptCode = "
-<!-- Facebook Pixel Code -->
+<!-- Meta Pixel Code -->
 <noscript>
 <img height=\"1\" width=\"1\" style=\"display:none\" alt=\"fbpx\"
 src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
 </noscript>
-<!-- End Facebook Pixel Code -->
+<!-- End Meta Pixel Code -->
 ";
 
   public static function initialize($pixel_id = '') {

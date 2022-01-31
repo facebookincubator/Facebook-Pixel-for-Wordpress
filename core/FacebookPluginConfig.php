@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ class FacebookPluginConfig {
   const PLUGIN_VERSION = '3.0.6';
   const SOURCE = 'wordpress';
   const TEXT_DOMAIN = 'official-facebook-pixel';
-  const PLUGIN_NAME = 'Facebook for WordPress';
+  const PLUGIN_NAME = 'Meta for WordPress';
   const PLUGIN_REVIEW_PAGE = 'https://wordpress.org/plugins/official-facebook-pixel/#reviews';
 
   const ADMIN_CAPABILITY = 'manage_options';
@@ -40,9 +40,9 @@ class FacebookPluginConfig {
   const ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE =
     'ignore_plugin_review_notice';
   const ADMIN_MENU_SLUG = 'facebook_pixel_options';
-  const ADMIN_MENU_TITLE = 'Facebook';
+  const ADMIN_MENU_TITLE = 'Meta';
   const ADMIN_OPTION_GROUP = 'facebook_option_group';
-  const ADMIN_PAGE_TITLE = 'Facebook Pixel Settings';
+  const ADMIN_PAGE_TITLE = 'Meta Pixel Settings';
   const ADMIN_PRIVACY_URL = 'https://developers.facebook.com/docs/privacy/';
   const ADMIN_S2S_URL = 'https://developers.facebook.com/docs/marketing-api/conversions-api';
   const ADMIN_SECTION_ID = 'facebook_settings_section';

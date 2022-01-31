@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $this->assertArrayHasKey('html', $out);
     $code = $out['html'];
     $this->assertRegexp(
-      '/caldera-forms[\s\S]+End Facebook Pixel Event Code/', $code);
+      '/caldera-forms[\s\S]+End Meta Pixel Event Code/', $code);
   }
 
   public function testInjectLeadEventWithoutInternalUserAndNotSubmitted() {
@@ -100,7 +100,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
     $this->assertArrayHasKey('html', $out);
     $code = $out['html'];
     $this->assertRegexp(
-      '/caldera-forms[\s\S]+End Facebook Pixel Event Code/', $code);
+      '/caldera-forms[\s\S]+End Meta Pixel Event Code/', $code);
 
     $tracked_events =
       FacebookServerSideEvent::getInstance()->getTrackedEvents();

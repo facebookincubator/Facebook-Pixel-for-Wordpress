@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
     FacebookWordpressWPForms::injectLeadEvent();
     $this->expectOutputRegex(
-      '/wpforms-lite[\s\S]+End Facebook Pixel Event Code/');
+      '/wpforms-lite[\s\S]+End Meta Pixel Event Code/');
   }
 
   public function testInjectLeadEventWithInternalUser() {

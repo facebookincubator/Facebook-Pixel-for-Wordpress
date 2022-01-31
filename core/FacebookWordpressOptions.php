@@ -1,6 +1,6 @@
 <?php
 /*
-* Copyright (C) 2017-present, Facebook, Inc.
+* Copyright (C) 2017-present, Meta, Inc.
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -231,7 +231,7 @@ class FacebookWordpressOptions {
       }
     }
     // If the settings are not present
-    // they are fetched from Facebook domain
+    // they are fetched from Meta domain
     // and cached in WP database if they are not null
     if(!self::$aamSettings){
       $refresh_interval =

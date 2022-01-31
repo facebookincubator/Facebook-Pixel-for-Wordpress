@@ -1,6 +1,6 @@
 <?php
 /*
-* Copyright (C) 2017-present, Facebook, Inc.
+* Copyright (C) 2017-present, Meta, Inc.
 *
 * This program is free software; you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -184,7 +184,7 @@ class FacebookWordpressSettingsPage {
       FacebookPluginConfig::PLUGIN_NAME);
     if($valid_pixel_id){
       if($valid_access_token){
-        $message = sprintf('Easily manage your connection to Facebook with %s.',
+        $message = sprintf('Easily manage your connection to Meta with %s.',
           $plugin_name_tag);
       }
       else{

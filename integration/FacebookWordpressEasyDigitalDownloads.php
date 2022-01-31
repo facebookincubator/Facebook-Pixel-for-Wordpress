@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2017-present, Facebook, Inc.
+ * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -170,11 +170,11 @@ jQuery(document).ready(function ($) {
     );
 
     printf("
-<!-- Facebook Pixel Event Code -->
+<!-- Meta Pixel Event Code -->
 <script>
 %s
 </script>
-<!-- End Facebook Pixel Event Code -->
+<!-- End Meta Pixel Event Code -->
       ",
       $listener_code);
   }
@@ -194,9 +194,9 @@ jQuery(document).ready(function ($) {
 
     $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
     printf("
-<!-- Facebook Pixel Event Code -->
+<!-- Meta Pixel Event Code -->
 %s
-<!-- End Facebook Pixel Event Code -->
+<!-- End Meta Pixel Event Code -->
       ",
       $code);
   }
@@ -226,9 +226,9 @@ jQuery(document).ready(function ($) {
     $code = PixelRenderer::render($events, self::TRACKING_NAME);
 
     printf("
-<!-- Facebook Pixel Event Code -->
+<!-- Meta Pixel Event Code -->
 %s
-<!-- End Facebook Pixel Event Code -->
+<!-- End Meta Pixel Event Code -->
       ",
       $code);
   }
@@ -249,9 +249,9 @@ jQuery(document).ready(function ($) {
 
     $code = PixelRenderer::render(array($server_event), self::TRACKING_NAME);
     printf("
-<!-- Facebook Pixel Event Code -->
+<!-- Meta Pixel Event Code -->
 %s
-<!-- End Facebook Pixel Event Code -->
+<!-- End Meta Pixel Event Code -->
       ",
       $code);
   }
