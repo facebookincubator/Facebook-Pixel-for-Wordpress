@@ -31,17 +31,17 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 
   private function convert_user_data($user_data_normalized){
     $norm_key_to_key = [
-      AAMSettingsFields::EMAIL => 'email',
-      AAMSettingsFields::FIRST_NAME => 'first_name',
-      AAMSettingsFields::LAST_NAME => 'last_name',
-      AAMSettingsFields::GENDER => 'gender',
-      AAMSettingsFields::DATE_OF_BIRTH => 'date_of_birth',
-      AAMSettingsFields::EXTERNAL_ID => 'external_id',
-      AAMSettingsFields::PHONE => 'phone',
-      AAMSettingsFields::CITY => 'city',
-      AAMSettingsFields::STATE => 'state',
-      AAMSettingsFields::ZIP_CODE => 'zip_code',
-      AAMSettingsFields::COUNTRY => 'country_code',
+      AAMSettingsFields::EMAIL => 'emails',
+      AAMSettingsFields::FIRST_NAME => 'first_names',
+      AAMSettingsFields::LAST_NAME => 'last_names',
+      AAMSettingsFields::GENDER => 'genders',
+      AAMSettingsFields::DATE_OF_BIRTH => 'dates_of_birth',
+      AAMSettingsFields::EXTERNAL_ID => 'external_ids',
+      AAMSettingsFields::PHONE => 'phones',
+      AAMSettingsFields::CITY => 'cities',
+      AAMSettingsFields::STATE => 'states',
+      AAMSettingsFields::ZIP_CODE => 'zip_codes',
+      AAMSettingsFields::COUNTRY => 'country_codes',
     ];
     $user_data = array();
     foreach($user_data_normalized as $norm_key => $field){
