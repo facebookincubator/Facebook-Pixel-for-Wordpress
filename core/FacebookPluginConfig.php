@@ -71,6 +71,12 @@ class FacebookPluginConfig {
   const IS_PIXEL_RENDERED = 'is_pixel_rendered';
   const IS_NOSCRIPT_RENDERED = 'is_noscript_rendered';
 
+  //open-bridge configs
+  const OPEN_BRIDGE_ENABLED = '0';
+  // OPEN_BRIDGE_PATH must match the value in cloudbridge-post -> b.host
+  // found in js/openbridge_plugin.js
+  const OPEN_BRIDGE_PATH = '/open-bridge/events';
+
   // integration config: INTEGRATION_KEY => PLUGIN_CLASS
   public static function integrationConfig() {
     return array(

@@ -33,6 +33,8 @@ require_once plugin_dir_path(__FILE__).'vendor/autoload.php';
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
+use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Core\FacebookWordpressOpenBridge;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
@@ -55,6 +57,9 @@ class FacebookForWordpress {
     FacebookPixel::initialize(FacebookWordpressOptions::getPixelId());
     // Register WordPress pixel injection controlling where to fire pixel
     add_action('init', array($this, 'registerPixelInjection'), 0);
+
+    // Listen on /events to parse pixel fired events
+    add_action('parse_request', array($this, 'handle_events_request'), 0);
 
     // initialize admin page config
     $this->registerSettingsPage();
@@ -79,6 +84,17 @@ class FacebookForWordpress {
       $plugin_name = plugin_basename(__FILE__);
       new FacebookWordpressSettingsPage($plugin_name);
       (new FacebookWordpressSettingsRecorder())->init();
+    }
+  }
+
+  public function handle_events_request(){
+    $request_uri = $_SERVER['REQUEST_URI'];
+    if(FacebookPluginUtils::endsWith($request_uri,
+        FacebookPluginConfig::OPEN_BRIDGE_PATH)
+      && $_SERVER['REQUEST_METHOD'] == 'POST'){
+      $data = json_decode(file_get_contents('php://input'), true);
+      FacebookWordpressOpenBridge::getInstance()->handleOpenBridgeReq($data);
+      exit();
     }
   }
 }

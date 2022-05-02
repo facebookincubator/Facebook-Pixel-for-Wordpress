@@ -21,6 +21,7 @@
     <!-- Fileset for all built JS files -->
     <fileset dir="${basedir}" id="all-fbe-js">
         <include name="js/fbe_allinone.js" />
+        <include name="js/openbridge_plugin.js" />
     </fileset>
 
     <!-- Fileset for files using GuzzleHttp-->

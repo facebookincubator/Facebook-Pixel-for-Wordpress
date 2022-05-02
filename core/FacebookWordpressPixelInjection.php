@@ -34,6 +34,9 @@ class FacebookWordpressPixelInjection {
       add_action(
         'wp_head',
         array($this, 'injectPixelNoscriptCode'));
+      add_action(
+        'wp_body_open',
+        array($this, 'injectOpenBridgeCode'));
 
       foreach (FacebookPluginConfig::integrationConfig() as $key => $value) {
         $class_name = 'FacebookPixelPlugin\\Integration\\'.$value;
@@ -73,6 +76,17 @@ class FacebookWordpressPixelInjection {
       FacebookWordpressOptions::getAgentString(),
       FacebookWordpressOptions::getUserInfo()));
     echo(FacebookPixel::getPixelPageViewCode());
+  }
+
+  public function injectOpenBridgeCode() {
+    if(!FacebookPluginConfig::OPEN_BRIDGE_ENABLED){
+      return;
+    }
+    $pixel_id = FacebookPixel::getPixelId();
+    if (empty($pixel_id)) {
+      return;
+    }
+    echo(FacebookPixel::getOpenBridgeConfiguration());
   }
 
   public function injectPixelNoscriptCode() {

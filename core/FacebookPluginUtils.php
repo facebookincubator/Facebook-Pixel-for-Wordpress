@@ -56,4 +56,12 @@ class FacebookPluginUtils {
   public static function isInternalUser() {
     return current_user_can('edit_posts') || current_user_can('upload_files');
   }
+
+  public static function endsWith( $haystack, $needle ) {
+    $length = strlen( $needle );
+    if( !$length ) {
+      return false;
+    }
+    return substr( $haystack, -$length ) === $needle;
+  }
 }
