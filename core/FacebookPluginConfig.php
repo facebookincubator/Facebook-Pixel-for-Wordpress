@@ -77,6 +77,11 @@ class FacebookPluginConfig {
   // found in js/openbridge_plugin.js
   const OPEN_BRIDGE_PATH = '/open-bridge/events';
 
+  const CAPI_INTEGRATION_STATUS = 'facebook_capi_integration_status';
+  const CAPI_INTEGRATION_STATUS_DEFAULT = '0';
+  const SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME =
+    'save_capi_integration_status';
+
   // integration config: INTEGRATION_KEY => PLUGIN_CLASS
   public static function integrationConfig() {
     return array(

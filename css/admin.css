@@ -7,5 +7,34 @@
 */
 
 .hide-last-button button:last-of-type{
-  display: none;
+    display: none;
+}
+
+.fb-adv-conf {
+    top: 550px;
+    position: absolute;
+    left: 20px;
+}
+
+.fb-adv-conf-title {
+    font-size: 1.0625rem;
+    padding-bottom: 20px;
+    color: rgb(5,5,5);
+    font-weight: 600;
+}
+
+.fb-capi-title {
+    font-size: .9375rem;
+    color: rgb(5,5,5);
+    font-weight: 600;
+}
+
+.fb-capi-title label {
+    padding-right: 5px;
+}
+
+.fb-capi-desc  {
+    padding-left: 25px;
+    color: rgb(5,5,5);
+    padding-top: 7px;
 }

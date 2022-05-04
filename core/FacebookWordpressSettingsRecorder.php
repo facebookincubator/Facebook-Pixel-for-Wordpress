@@ -8,6 +8,8 @@ class FacebookWordpressSettingsRecorder {
         add_action('wp_ajax_delete_fbe_settings',
             array($this, 'deleteFbeSettings')
         );
+        add_action('wp_ajax_save_capi_integration_status',
+            array($this, 'saveCapiIntegrationStatus'));
     }
 
     private function handleSuccessRequest($body){
@@ -68,6 +70,23 @@ class FacebookWordpressSettingsRecorder {
         return $this->handleSuccessRequest($settings);
     }
 
+    public function saveCapiIntegrationStatus(){
+        if (!current_user_can('administrator')) {
+            return $this->handleUnauthorizedRequest();
+        }
+        check_admin_referer(
+            FacebookPluginConfig::SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME
+        );
+        $val = sanitize_text_field($_POST['val']);
+
+        if(!($val === '0' || $val === '1')){
+            return $this->handleInvalidRequest();
+        }
+
+        \update_option(FacebookPluginConfig::CAPI_INTEGRATION_STATUS, $val);
+        return $this->handleSuccessRequest($val);
+    }
+
     public function deleteFbeSettings(){
         if (!current_user_can('administrator')) {
             return $this->handleUnauthorizedRequest();
@@ -77,6 +96,7 @@ class FacebookWordpressSettingsRecorder {
         );
         \delete_option( FacebookPluginConfig::SETTINGS_KEY );
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
+
         return $this->handleSuccessRequest('Done');
     }
 }

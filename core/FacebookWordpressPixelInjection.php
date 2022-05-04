@@ -27,6 +27,8 @@ class FacebookWordpressPixelInjection {
 
   public function inject() {
     $pixel_id = FacebookWordpressOptions::getPixelId();
+    $capiIntegrationStatus =
+      FacebookWordpressOptions::getCapiIntegrationStatus();
     if (FacebookPluginUtils::isPositiveInteger($pixel_id)) {
       add_action(
         'wp_head',
@@ -34,10 +36,11 @@ class FacebookWordpressPixelInjection {
       add_action(
         'wp_head',
         array($this, 'injectPixelNoscriptCode'));
-      add_action(
-        'wp_body_open',
-        array($this, 'injectOpenBridgeCode'));
-
+      if ($capiIntegrationStatus === '1') {
+        add_action(
+          'wp_body_open',
+          array($this, 'injectOpenBridgeCode'));
+      }
       foreach (FacebookPluginConfig::integrationConfig() as $key => $value) {
         $class_name = 'FacebookPixelPlugin\\Integration\\'.$value;
         $class_name::injectPixelCode();
@@ -79,9 +82,6 @@ class FacebookWordpressPixelInjection {
   }
 
   public function injectOpenBridgeCode() {
-    if(!FacebookPluginConfig::OPEN_BRIDGE_ENABLED){
-      return;
-    }
     $pixel_id = FacebookPixel::getPixelId();
     if (empty($pixel_id)) {
       return;

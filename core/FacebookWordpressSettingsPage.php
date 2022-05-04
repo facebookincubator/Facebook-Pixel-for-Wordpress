@@ -30,6 +30,7 @@ class FacebookWordpressSettingsPage {
       array($this, 'addSettingsLink'));
     add_action('admin_menu', array($this, 'addMenuFbe'));
     add_action('admin_init', array($this, 'dismissNotices'));
+
     add_action('admin_enqueue_scripts', array($this, 'registerPluginScripts'));
     add_action('current_screen', array($this, 'registerNotices'));
   }
@@ -50,6 +51,10 @@ class FacebookWordpressSettingsPage {
       FacebookPluginConfig::ADMIN_CAPABILITY,
       FacebookPluginConfig::ADMIN_MENU_SLUG,
       array($this, 'addFbeBox'));
+
+  // Adding option to save Capig Integration settings in wp_options
+  \add_option(FacebookPluginConfig::CAPI_INTEGRATION_STATUS,
+    FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT);
   }
 
   public function addFbeBox(){
@@ -88,6 +93,20 @@ class FacebookWordpressSettingsPage {
 <div>
   <div id="fbe-iframe">
   </div>
+  <div id="fb-adv-conf" class="fb-adv-conf" style="display: none;">
+    <div class="fb-adv-conf-title">Facebook Advanced Configuration</div>
+    <div>
+      <input type="checkbox" id="capi-cb" name="capi-cb">
+      <label class="fb-capi-title" for="capi-cb">Enable Conversions API</label>
+      <br/>
+      <div class="fb-capi-desc">
+        Send website events to Meta using Conversions API
+        <a href="https://developers.facebook.com/docs/marketing-api/conversions-api/">
+          Learn more
+        </a>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -114,6 +133,53 @@ class FacebookWordpressSettingsPage {
       ,channel: 'CONVERSIONS_API'
     };
     console.log(JSON.stringify(window.facebookBusinessExtensionConfig));
+
+    var pixelString =
+      '<?php echo esc_html(FacebookWordpressOptions::getPixelId()) ?>';
+
+    if (!pixelString.trim()) {
+      jQuery('#fb-adv-conf').hide();
+    } else {
+      jQuery('#fb-adv-conf').show();
+      var enableCapiCheckbox = document.getElementById("capi-cb");
+      var currentCapiIntegrationStatus =
+      '<?php echo FacebookWordpressOptions::getCapiIntegrationStatus() ?>';
+      updateCapiIntegrationCheckbox(currentCapiIntegrationStatus);
+
+      enableCapiCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+          saveCapiIntegrationStatus('1');
+        } else {
+          saveCapiIntegrationStatus('0');
+        }
+    });
+
+    function updateCapiIntegrationCheckbox(val) {
+      if (val === '1') {
+        enableCapiCheckbox.checked = true;
+      } else {
+        enableCapiCheckbox.checked = false;
+      }
+    }
+
+    function saveCapiIntegrationStatus(new_val) {
+      jQuery.ajax({
+        type : "post",
+        dataType : "json",
+        url : '<?php echo $this->getCapiIntegrationStatusSaveUrl() ?>',
+        data : {action:
+          '<?php
+          echo FacebookPluginConfig::SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME
+          ?>',
+          val : new_val},
+        success: function(response) {
+          // TODO Add an fade out msg
+      }}).fail(function (jqXHR, textStatus, error) {
+        // TODO Error logging
+        updateCapiIntegrationCheckbox((new_val === '1') ? '0' : '1');
+      });
+    }
+  }
 </script>
     <?php
     $initialScript = ob_get_clean();
@@ -127,6 +193,19 @@ class FacebookWordpressSettingsPage {
     $simple_url = admin_url('admin-ajax.php');
     $args = array(
       'action' => FacebookPluginConfig::SAVE_FBE_SETTINGS_ACTION_NAME,
+      '_wpnonce' => $nonce_value
+    );
+    return add_query_arg($args, $simple_url);
+  }
+
+  public function getCapiIntegrationStatusSaveUrl() {
+    $nonce_value = wp_create_nonce(
+      FacebookPluginConfig::SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME
+    );
+    $simple_url = admin_url('admin-ajax.php');
+    $args = array(
+      'action' =>
+        FacebookPluginConfig::SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME,
       '_wpnonce' => $nonce_value
     );
     return add_query_arg($args, $simple_url);

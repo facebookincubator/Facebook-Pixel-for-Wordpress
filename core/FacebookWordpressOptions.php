@@ -26,6 +26,7 @@ class FacebookWordpressOptions {
   private static $userInfo = array();
   private static $versionInfo = array();
   private static $aamSettings = null;
+  private static $capiIntegrationEnabled = null;
   const AAM_SETTINGS_REFRESH_IN_MINUTES = 20;
 
   public static function initialize() {
@@ -33,10 +34,22 @@ class FacebookWordpressOptions {
     self::setVersionInfo();
     self::setAAMSettings();
     self::setUserInfo();
+    self::setCapiIntegrationStatus();
   }
 
   public static function getOptions() {
     return self::$options;
+  }
+
+  public static function setCapiIntegrationStatus() {
+    self::$capiIntegrationEnabled =
+      \get_option(FacebookPluginConfig::CAPI_INTEGRATION_STATUS);
+  }
+  public static function getCapiIntegrationStatus() {
+    return is_null(self::$capiIntegrationEnabled) ?
+    (is_null(FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT)
+      ? '0' : FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT ) :
+    self::$capiIntegrationEnabled;
   }
 
   public static function getDefaultPixelID() {
