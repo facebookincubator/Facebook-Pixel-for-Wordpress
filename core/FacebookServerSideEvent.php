@@ -88,6 +88,13 @@ class FacebookServerSideEvent {
     $access_token = FacebookWordpressOptions::getAccessToken();
     $agent = FacebookWordpressOptions::getAgentString();
 
+    // If events are from openbridge, add _capi in user agent
+    if (count($events) === 1 &&
+    (($events[0]['custom_data']['custom_properties']['fb_integration_tracking']
+        ?? NULL) === 'wp-cloudbridge-plugin')) {
+      $agent .= '_capi';
+    }
+
     if(empty($pixel_id) || empty($access_token)){
       return;
     }

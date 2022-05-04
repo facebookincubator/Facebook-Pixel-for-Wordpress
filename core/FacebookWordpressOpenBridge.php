@@ -51,7 +51,7 @@ class FacebookWordpressOpenBridge {
         );
 
         $server_event->setEventId($data['event_id']);
-        FacebookServerSideEvent::getInstance()->track($server_event);
+        FacebookServerSideEvent::getInstance()->track($server_event, true);
     }
 
     public function extractFromDatabag($data){
