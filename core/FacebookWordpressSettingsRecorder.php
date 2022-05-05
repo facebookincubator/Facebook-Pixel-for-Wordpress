@@ -74,6 +74,16 @@ class FacebookWordpressSettingsRecorder {
         if (!current_user_can('administrator')) {
             return $this->handleUnauthorizedRequest();
         }
+
+        // Cross origin iframe and local wordpress options are not in sync.
+        // Thus if request is made and pixel is not available show error.
+        if (empty(FacebookWordPressOptions::getPixelId())) {
+            // Reset wp_option value
+            \update_option(FacebookPluginConfig::CAPI_INTEGRATION_STATUS,
+                FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT);
+            return $this->handleInvalidRequest();
+        }
+
         check_admin_referer(
             FacebookPluginConfig::SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME
         );
@@ -96,7 +106,8 @@ class FacebookWordpressSettingsRecorder {
         );
         \delete_option( FacebookPluginConfig::SETTINGS_KEY );
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
-
+        // Cross origin iframe and local wordpress options are not in sync.
+        // Thus do not delete Capi option along with Fbe.
         return $this->handleSuccessRequest('Done');
     }
 }

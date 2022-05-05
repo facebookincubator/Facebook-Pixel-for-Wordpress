@@ -98,6 +98,7 @@ class FacebookWordpressSettingsPage {
     <div>
       <input type="checkbox" id="capi-cb" name="capi-cb">
       <label class="fb-capi-title" for="capi-cb">Enable Conversions API</label>
+      <span id="fb-capi-se" class="fb-capi-se"></span>
       <br/>
       <div class="fb-capi-desc">
         Send website events to Meta using Conversions API
@@ -173,9 +174,11 @@ class FacebookWordpressSettingsPage {
           ?>',
           val : new_val},
         success: function(response) {
-          // TODO Add an fade out msg
       }}).fail(function (jqXHR, textStatus, error) {
-        // TODO Error logging
+        jQuery('#fb-capi-se').text('<?php
+            echo FacebookPluginConfig::CAPI_INTEGRATION_STATUS_UPDATE_ERROR
+            ?>');
+        jQuery("#fb-capi-se").show().delay(3000).fadeOut();
         updateCapiIntegrationCheckbox((new_val === '1') ? '0' : '1');
       });
     }

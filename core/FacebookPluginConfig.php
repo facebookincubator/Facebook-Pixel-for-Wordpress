@@ -71,14 +71,14 @@ class FacebookPluginConfig {
   const IS_PIXEL_RENDERED = 'is_pixel_rendered';
   const IS_NOSCRIPT_RENDERED = 'is_noscript_rendered';
 
-  //open-bridge configs
-  const OPEN_BRIDGE_ENABLED = '0';
   // OPEN_BRIDGE_PATH must match the value in cloudbridge-post -> b.host
   // found in js/openbridge_plugin.js
   const OPEN_BRIDGE_PATH = '/open-bridge/events';
 
   const CAPI_INTEGRATION_STATUS = 'facebook_capi_integration_status';
   const CAPI_INTEGRATION_STATUS_DEFAULT = '0';
+  const CAPI_INTEGRATION_STATUS_UPDATE_ERROR =
+    'Status could not be saved, please refresh the page and continue.';
   const SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME =
     'save_capi_integration_status';
 

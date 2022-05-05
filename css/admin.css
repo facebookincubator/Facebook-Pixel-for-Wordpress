@@ -29,6 +29,12 @@
     font-weight: 600;
 }
 
+.fb-capi-se {
+    color: #cc0000;
+    padding-top:2px;
+    padding-left: 10px;
+}
+
 .fb-capi-title label {
     padding-right: 5px;
 }
