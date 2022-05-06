@@ -27,6 +27,7 @@ class FacebookWordpressOptions {
   private static $versionInfo = array();
   private static $aamSettings = null;
   private static $capiIntegrationEnabled = null;
+  private static $capiIntegrationEventsFilter = null;
   const AAM_SETTINGS_REFRESH_IN_MINUTES = 20;
 
   public static function initialize() {
@@ -35,6 +36,7 @@ class FacebookWordpressOptions {
     self::setAAMSettings();
     self::setUserInfo();
     self::setCapiIntegrationStatus();
+    self::setCapiIntegrationEventsFilter();
   }
 
   public static function getOptions() {
@@ -45,11 +47,27 @@ class FacebookWordpressOptions {
     self::$capiIntegrationEnabled =
       \get_option(FacebookPluginConfig::CAPI_INTEGRATION_STATUS);
   }
+
   public static function getCapiIntegrationStatus() {
     return is_null(self::$capiIntegrationEnabled) ?
     (is_null(FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT)
       ? '0' : FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT ) :
     self::$capiIntegrationEnabled;
+  }
+
+  public static function setCapiIntegrationEventsFilter() {
+    self::$capiIntegrationEventsFilter =
+      \get_option(FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER);
+  }
+
+  public static function getCapiIntegrationEventsFilter() {
+    return is_null(self::$capiIntegrationEventsFilter) ?
+      FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT :
+      self::$capiIntegrationEventsFilter;
+  }
+
+  public static function getCapiIntegrationPageViewFiltered() {
+    return str_contains(self::getCapiIntegrationEventsFilter(), 'PageView');
   }
 
   public static function getDefaultPixelID() {

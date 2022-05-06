@@ -55,6 +55,9 @@ class FacebookWordpressSettingsPage {
   // Adding option to save Capig Integration settings in wp_options
   \add_option(FacebookPluginConfig::CAPI_INTEGRATION_STATUS,
     FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT);
+  \add_option(FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
+    FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT);
+
   }
 
   public function addFbeBox(){
@@ -97,14 +100,22 @@ class FacebookWordpressSettingsPage {
     <div class="fb-adv-conf-title">Facebook Advanced Configuration</div>
     <div>
       <input type="checkbox" id="capi-cb" name="capi-cb">
-      <label class="fb-capi-title" for="capi-cb">Enable Conversions API</label>
+      <label class="fb-capi-title" for="capi-cb">
+        Send website events to Meta using Conversions API
+      </label>
       <span id="fb-capi-se" class="fb-capi-se"></span>
       <br/>
       <div class="fb-capi-desc">
-        Send website events to Meta using Conversions API
-        <a href="https://developers.facebook.com/docs/marketing-api/conversions-api/">
-          Learn more
-        </a>
+        Enrich website event data using Openbridge javascript.
+      </div>
+    </div>
+    <div id="fb-capi-ef" style="display: none;">
+      <input type="checkbox" id="capi-ef" name="capi-ef">
+      <label class="fb-capi-title" for="capi-ef">Filter PageView Event</label>
+      <span id="fb-capi-ef-se" class="fb-capi-se"></span>
+      <br/>
+      <div class="fb-capi-desc">
+          Enable checkbox to filter PageView events from sending.
       </div>
     </div>
   </div>
@@ -153,36 +164,75 @@ class FacebookWordpressSettingsPage {
         } else {
           saveCapiIntegrationStatus('0');
         }
-    });
+      });
 
-    function updateCapiIntegrationCheckbox(val) {
-      if (val === '1') {
-        enableCapiCheckbox.checked = true;
-      } else {
-        enableCapiCheckbox.checked = false;
+      function updateCapiIntegrationCheckbox(val) {
+        if (val === '1') {
+          enableCapiCheckbox.checked = true;
+          jQuery('#fb-capi-ef').show();
+        } else {
+          enableCapiCheckbox.checked = false;
+          jQuery('#fb-capi-ef').hide();
+        }
       }
-    }
 
-    function saveCapiIntegrationStatus(new_val) {
-      jQuery.ajax({
-        type : "post",
-        dataType : "json",
-        url : '<?php echo $this->getCapiIntegrationStatusSaveUrl() ?>',
-        data : {action:
+      function saveCapiIntegrationStatus(new_val) {
+        jQuery.ajax({
+          type : "post",
+          dataType : "json",
+          url : '<?php echo $this->getCapiIntegrationStatusSaveUrl() ?>',
+          data : {action:
+            '<?php
+            echo FacebookPluginConfig::SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME
+            ?>',
+            val : new_val},
+            success: function(response) {
+              // This is needed to refresh Events Filter checkbox
+              updateCapiIntegrationCheckbox(new_val);
+        }}).fail(function (jqXHR, textStatus, error) {
+          jQuery('#fb-capi-se').text('<?php
+          echo FacebookPluginConfig::CAPI_INTEGRATION_STATUS_UPDATE_ERROR
+          ?>');
+          jQuery("#fb-capi-se").show().delay(3000).fadeOut();
+          updateCapiIntegrationCheckbox((new_val === '1') ? '0' : '1');
+        });
+      }
+
+      var enablePageViewFilterCheckBox = document.getElementById("capi-ef");
+      var capiIntegrationPageViewFiltered =
+      ('<?php echo
+      json_encode(FacebookWordpressOptions::getCapiIntegrationPageViewFiltered()
+      )?>' === 'true') ? '1' : '0';
+      updateCapiIntegrationEventsFilter(capiIntegrationPageViewFiltered);
+      enablePageViewFilterCheckBox.addEventListener('change', function() {
+        saveCapiIntegrationEventsFilter(this.checked ? '1' : '0');
+      });
+
+      function updateCapiIntegrationEventsFilter(val) {
+        enablePageViewFilterCheckBox.checked = (val === '1') ? true : false;
+      }
+
+      function saveCapiIntegrationEventsFilter(new_val) {
+        jQuery.ajax({
+          type : "post",
+          dataType : "json",
+          url : '<?php echo $this->getCapiIntegrationEventsFilterSaveUrl() ?>',
+          data : {action:
           '<?php
-          echo FacebookPluginConfig::SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME
+           echo
+           FacebookPluginConfig::SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME
           ?>',
           val : new_val},
-        success: function(response) {
-      }}).fail(function (jqXHR, textStatus, error) {
-        jQuery('#fb-capi-se').text('<?php
-            echo FacebookPluginConfig::CAPI_INTEGRATION_STATUS_UPDATE_ERROR
-            ?>');
-        jQuery("#fb-capi-se").show().delay(3000).fadeOut();
-        updateCapiIntegrationCheckbox((new_val === '1') ? '0' : '1');
-      });
+          success: function(response) {
+        }}).fail(function (jqXHR, textStatus, error) {
+          jQuery('#fb-capi-ef-se').text('<?php
+          echo FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_UPDATE_ERROR
+          ?>');
+          jQuery("#fb-capi-ef-se").show().delay(3000).fadeOut();
+          updateCapiIntegrationEventsFilter((new_val === '1') ? '0' : '1');
+        });
+      }
     }
-  }
 </script>
     <?php
     $initialScript = ob_get_clean();
@@ -209,6 +259,19 @@ class FacebookWordpressSettingsPage {
     $args = array(
       'action' =>
         FacebookPluginConfig::SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME,
+      '_wpnonce' => $nonce_value
+    );
+    return add_query_arg($args, $simple_url);
+  }
+
+  public function getCapiIntegrationEventsFilterSaveUrl() {
+    $nonce_value = wp_create_nonce(
+      FacebookPluginConfig::SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME
+    );
+    $simple_url = admin_url('admin-ajax.php');
+    $args = array(
+      'action' =>
+        FacebookPluginConfig::SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME,
       '_wpnonce' => $nonce_value
     );
     return add_query_arg($args, $simple_url);

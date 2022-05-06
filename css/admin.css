@@ -11,7 +11,7 @@
 }
 
 .fb-adv-conf {
-    top: 550px;
+    top: 540px;
     position: absolute;
     left: 20px;
 }
@@ -43,4 +43,5 @@
     padding-left: 25px;
     color: rgb(5,5,5);
     padding-top: 7px;
+    padding-bottom: 10px;
 }

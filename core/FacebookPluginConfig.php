@@ -77,10 +77,20 @@ class FacebookPluginConfig {
 
   const CAPI_INTEGRATION_STATUS = 'facebook_capi_integration_status';
   const CAPI_INTEGRATION_STATUS_DEFAULT = '0';
+  const CAPI_INTEGRATION_EVENTS_FILTER =
+    'facebook_capi_integration_events_filter';
+  const CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT =
+    'Microdata,SubscribedButtonClick';
   const CAPI_INTEGRATION_STATUS_UPDATE_ERROR =
     'Status could not be saved, please refresh the page and continue.';
+  const CAPI_INTEGRATION_EVENTS_FILTER_UPDATE_ERROR =
+    'Filter could not be saved, please refresh the page and continue.';
   const SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME =
     'save_capi_integration_status';
+  const SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME =
+    'save_capi_integration_events_filter';
+  const CAPI_INTEGRATION_FILTER_PAGE_VIEW_EVENT = '1';
+  const CAPI_INTEGRATION_KEEP_PAGE_VIEW_EVENT = '0';
 
   // integration config: INTEGRATION_KEY => PLUGIN_CLASS
   public static function integrationConfig() {

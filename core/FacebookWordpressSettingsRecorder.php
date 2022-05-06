@@ -10,6 +10,8 @@ class FacebookWordpressSettingsRecorder {
         );
         add_action('wp_ajax_save_capi_integration_status',
             array($this, 'saveCapiIntegrationStatus'));
+        add_action('wp_ajax_save_capi_integration_events_filter',
+            array($this, 'saveCapiIntegrationEventsFilter'));
     }
 
     private function handleSuccessRequest($body){
@@ -94,6 +96,49 @@ class FacebookWordpressSettingsRecorder {
         }
 
         \update_option(FacebookPluginConfig::CAPI_INTEGRATION_STATUS, $val);
+        return $this->handleSuccessRequest($val);
+    }
+
+    public function saveCapiIntegrationEventsFilter(){
+        if (!current_user_can('administrator')) {
+            return $this->handleUnauthorizedRequest();
+        }
+
+        // Cross origin iframe and local wordpress options are not in sync.
+        // Thus if request is made and pixel is not available show error.
+        if (empty(FacebookWordPressOptions::getPixelId())) {
+            // Reset wp_option value
+            \update_option(FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
+                FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT);
+            return $this->handleInvalidRequest();
+        }
+
+        check_admin_referer(
+        FacebookPluginConfig::SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME
+        );
+        $val = sanitize_text_field($_POST['val']);
+        $constFilterPageView =
+            FacebookPluginConfig::CAPI_INTEGRATION_FILTER_PAGE_VIEW_EVENT;
+        $constKeepPageView =
+            FacebookPluginConfig::CAPI_INTEGRATION_KEEP_PAGE_VIEW_EVENT;
+
+        if(!($val === $constFilterPageView || $val === $constKeepPageView)){
+            return $this->handleInvalidRequest();
+        }
+
+        $pageViewFiltered =
+            FacebookWordpressOptions::getCapiIntegrationPageViewFiltered();
+
+        // If pageViewFiltered and new val are not in sync update option
+        if ($val === $constKeepPageView && $pageViewFiltered) {
+            \update_option(FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
+                FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT);
+        } else if ($val === $constFilterPageView && !$pageViewFiltered) {
+            \update_option(FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
+                FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT .
+                    ',PageView');
+        }
+
         return $this->handleSuccessRequest($val);
     }
 

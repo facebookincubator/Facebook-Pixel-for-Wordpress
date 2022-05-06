@@ -59,7 +59,7 @@ document,'script','https://connect.facebook.net/en_US/fbevents.js');
 
   private static $pixelFbqCodeWithoutScript = "
   fbq('%s', '%s'%s%s);
-";
+  ";
 
   private static $pixelNoscriptCode = "
 <!-- Meta Pixel Code -->
@@ -156,9 +156,13 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
   public static function getOpenBridgeConfiguration() {
     return "<script type='text/javascript'>
       function updateConfig() {
+        var eventsFilter =
+          '". FacebookWordpressOptions::getCapiIntegrationEventsFilter() . "';
+        var eventsFilterList = eventsFilter.split(',');
         fbq.instance.pluginConfig.set('" . self::$pixelId . "', 'openbridge',
         {'endpoints':[{'targetDomain': window.location.href,'endpoint':
-          window.location.href + '.open-bridge'}],'eventsFilter':null});
+          window.location.href + '.open-bridge'}],'eventsFilter': ".
+          "{'eventNames':eventsFilterList, 'filteringMode':'blocklist'}});
         fbq.instance.configLoaded('" . self::$pixelId ."');
       }
 
