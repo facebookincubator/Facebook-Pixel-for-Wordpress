@@ -97,7 +97,7 @@ class FacebookWordpressSettingsPage {
   <div id="fbe-iframe">
   </div>
   <div id="fb-adv-conf" class="fb-adv-conf" style="display: none;">
-    <div class="fb-adv-conf-title">Facebook Advanced Configuration</div>
+    <div class="fb-adv-conf-title">Meta Advanced Configuration</div>
     <div>
       <input type="checkbox" id="capi-cb" name="capi-cb">
       <label class="fb-capi-title" for="capi-cb">
