@@ -152,6 +152,8 @@ class FacebookWordpressSettingsPage {
     if (!pixelString.trim()) {
       jQuery('#fb-adv-conf').hide();
     } else {
+      // Set advnaced configuration top relative to fbe iframe
+      setFbAdvConfTop();
       jQuery('#fb-adv-conf').show();
       var enableCapiCheckbox = document.getElementById("capi-cb");
       var currentCapiIntegrationStatus =
@@ -165,6 +167,19 @@ class FacebookWordpressSettingsPage {
           saveCapiIntegrationStatus('0');
         }
       });
+
+      function setFbAdvConfTop() {
+        var fbeIframeTop = 0;
+        // Add try catch to handle any error and avoid breaking js
+        try {
+          fbeIframeTop = jQuery('#fbe-iframe')[0].getBoundingClientRect().top;
+        } catch (e){}
+
+        var fbAdvConfTop = <?php
+          echo FacebookPluginConfig::CAPI_INTEGRATION_DIV_TOP
+          ?> + fbeIframeTop;
+        jQuery('#fb-adv-conf').css({'top' : fbAdvConfTop + 'px'});
+      }
 
       function updateCapiIntegrationCheckbox(val) {
         if (val === '1') {

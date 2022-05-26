@@ -74,7 +74,7 @@ class FacebookPluginConfig {
   // OPEN_BRIDGE_PATH must match the value in cloudbridge-post -> b.host
   // found in js/openbridge_plugin.js
   const OPEN_BRIDGE_PATH = '/open-bridge/events';
-
+  const CAPI_INTEGRATION_DIV_TOP = 530;
   const CAPI_INTEGRATION_STATUS = 'facebook_capi_integration_status';
   const CAPI_INTEGRATION_STATUS_DEFAULT = '0';
   const CAPI_INTEGRATION_EVENTS_FILTER =
