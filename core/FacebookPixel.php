@@ -158,7 +158,7 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
     $eventsFilter = FacebookWordpressOptions::getCapiIntegrationEventsFilter();
     $obFilePath = plugins_url( '../js/openbridge_plugin.js', __FILE__ );
 
-    echo <<<EOT
+    return <<<EOT
     <script type='text/javascript'>
 
       function updateConfig() {

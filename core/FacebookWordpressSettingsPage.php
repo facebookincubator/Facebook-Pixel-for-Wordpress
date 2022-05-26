@@ -152,7 +152,7 @@ class FacebookWordpressSettingsPage {
     if (!pixelString.trim()) {
       jQuery('#fb-adv-conf').hide();
     } else {
-      // Set advnaced configuration top relative to fbe iframe
+      // Set advanced configuration top relative to fbe iframe
       setFbAdvConfTop();
       jQuery('#fb-adv-conf').show();
       var enableCapiCheckbox = document.getElementById("capi-cb");
