@@ -34,7 +34,7 @@ class FacebookWordpressPixelInjection {
         'wp_head',
         array($this, 'injectPixelCode'));
       add_action(
-        'wp_head',
+        'wp_body_open',
         array($this, 'injectPixelNoscriptCode'));
       if ($capiIntegrationStatus === '1') {
         add_action(
