@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Facebook for WordPress
+ * Plugin Name: Meta pixel for WordPress
  * Plugin URI: https://www.facebook.com/business/help/881403525362441
  * Description: <strong><em>***ATTENTION: After upgrade the plugin may be deactivated due to a known issue, to workaround please refresh this page and activate plugin.***</em></strong> The Facebook pixel is an analytics tool that helps you measure the effectiveness of your advertising. You can use the Facebook pixel to understand the actions people are taking on your website and reach audiences you care about.
  * Author: Facebook
