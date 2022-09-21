@@ -1,14 +1,14 @@
-=== Facebook for WordPress ===
+=== Meta pixel for WordPress ===
 Contributors: facebook
-Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, Conversions API, facebook retargeting, facebook standard events
+Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, Conversions API, facebook retargeting, facebook standard events, Meta, Meta pixel, Meta Conversion API,
 Requires at least: 4.4
-Tested up to: 5.7
+Tested up to: 6.0
 Requires PHP: 5.6
-Stable tag: 3.0.4
+Stable tag: 3.0.7
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Grow your business with Facebook for WordPress!
+Grow your business with Meta for WordPress!
 
 == Description ==
 This plugin will install a Facebook Pixel for your page so you can capture the actions people take when they interact with your page, such as Lead, ViewContent, AddToCart, InitiateCheckout and Purchase events. It also includes support for the Conversions API, which lets you send events directly from your page's server so you can capture a more of these events when they happen. This can help you better understand your customer's journey from the moment they show interest in your business to the moment they complete a conversion. You can use this information to create ad campaigns that are relevant to your audience. [Learn More](https://www.facebook.com/business/learn/facebook-ads-pixel)
@@ -40,6 +40,11 @@ After plugin installed: <br />
 3. Complete the Facebook Business Extension flow. <br />
 4. Agree to share your access token with your site. <br />
 
+__Enable sending events via conversion API__ <br />
+You must complete the Facebook Business Extension flow before enabling sending events via conversions API.
+1. Go to settings page of the plugin. <br />
+2. Under, Meta Advanced Configuration, toggle the checkbox to enable/disable send website events to Meta using Conversions API
+
 == Frequently Asked Questions ==
 = Where can I find more information on Facebook Pixel? =
 You can find more information on the [Facebook Pixel](https://www.facebook.com/business/learn/facebook-ads-pixel).
@@ -57,6 +62,11 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2022-08-02 version 3.0.7 =
+* Update Facebook Business SDK to v12.0.0
+* Added the ability to send website events using conversion API and OpenBridge Javascript. This can be enabled/disabled from the settings page.
+* Added ads metrics and insights on the settings page.
+
 = 2021-08-30 version 3.0.6 =
 * Update Facebook Business SDK to v11.0.0
 
