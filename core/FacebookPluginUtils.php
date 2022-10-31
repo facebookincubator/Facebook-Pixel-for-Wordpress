@@ -44,6 +44,7 @@ class FacebookPluginUtils {
       'email' => $current_user->user_email,
       'first_name' => $current_user->user_firstname,
       'last_name' => $current_user->user_lastname,
+      'id' => $current_user->ID,
     );
   }
 
