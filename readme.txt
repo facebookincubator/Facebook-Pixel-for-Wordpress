@@ -11,19 +11,11 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Grow your business with Meta for WordPress!
 
 == Description ==
-This plugin will install a Facebook Pixel for your page so you can capture the actions people take when they interact with your page, such as Lead, ViewContent, AddToCart, InitiateCheckout and Purchase events. It also includes support for the Conversions API, which lets you send events directly from your page's server so you can capture a more of these events when they happen. This can help you better understand your customer's journey from the moment they show interest in your business to the moment they complete a conversion. You can use this information to create ad campaigns that are relevant to your audience. [Learn More](https://www.facebook.com/business/learn/facebook-ads-pixel)
+This plugin will install a Meta Pixel for your page so you can capture the actions people take when they interact with your page, such as Lead, ViewContent, AddToCart, InitiateCheckout and Purchase events. It also includes support for the Conversions API.
 
-This plugin includes built-in support for these other WordPress plugins:
-* Caldera Forms
-* Contact Form 7
-* Easy Digital Downloads
-* Formidable Forms
-* Gravity Forms
-* MailChimp for WordPress
-* Ninja Forms
-* WP eCommerce
-* WPForms
-* WooCommerce
+You’ll be able to see when customers took an action after seeing your ad on Facebook and Instagram, which can help you with retargeting. And when you use the Conversions API alongside the Pixel, it creates a more reliable connection that helps the delivery system decrease your costs. [Learn More](https://www.facebook.com/business/learn/facebook-ads-pixel)
+
+The Conversions API is designed to create a direct connection between your marketing data and the Meta systems, which help optimise ad targeting, decrease cost per action and measure results across Meta technologies. [Learn More](https://www.facebook.com/business/help/2041148702652965?id=818859032317965)
 
 == Installation ==
 __To install from your WordPress site__ <br />
@@ -62,6 +54,10 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2022-10-31 version 3.0.8 =
+* Fix PII drop when converting Pixel payload to Conversion API payload
+* Rebranded the extension from Facebook pixel to Meta pixel
+
 = 2022-08-02 version 3.0.7 =
 * Update Facebook Business SDK to v12.0.0
 * Added the ability to send website events using conversion API and OpenBridge Javascript. This can be enabled/disabled from the settings page.
