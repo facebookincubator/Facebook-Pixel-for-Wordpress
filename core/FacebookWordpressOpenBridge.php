@@ -80,7 +80,6 @@ class FacebookWordpressOpenBridge {
             'value' => self::getCustomData('value', $databag),
             'content_type' => self::getCustomData('content_type', $databag),
             'content_name' => self::getCustomData('content_name', $databag),
-            'contents' => self::getCustomDataArray('contents', $databag),
             'content_ids' => self::getCustomDataArray('content_ids', $databag),
             'content_category' =>
                 self::getCustomData('content_category', $databag),
