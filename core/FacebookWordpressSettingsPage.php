@@ -92,6 +92,22 @@ class FacebookWordpressSettingsPage {
 
   private function getFbeBrowserSettings(){
     ob_start();
+    $fbe_extras = json_encode(array(
+      "business_config" => array(
+         "business" =>  array(
+           "name" => "Solutions_Engineering_Team"
+         ),
+      ),
+       "setup" => array(
+         "external_business_id" =>
+          FacebookWordpressOptions::getExternalBusinessId(),
+         "timezone" => 'America/Los_Angeles',
+         "currency" => "USD",
+         "business_vertical" => "ECOMMERCE",
+         "channel" => "DEFAULT"
+       ),
+       "repeat" => false,
+     ));
     ?>
 <div>
   <div id="fbe-iframe">
@@ -119,13 +135,53 @@ class FacebookWordpressSettingsPage {
       </div>
     </div>
   </div>
+
+  <script async defer src="https://connect.facebook.net/en_US/sdk.js"></script>
+  <div id="meta-ads-plugin">
+  <div id="ad-creation-plugin">
+  <h3 class="mt-5">Ads Creation</h3>
+      <div
+        class="my-3 p-3 bg-white rounded shadow-sm"
+        style="background-color: white">
+        <div id="ad-creation-plugin-iframe" class="fb-lwi-ads-creation"
+        data-lazy=true
+        data-hide-manage-button=true
+        data-fbe-extras='<?php echo $fbe_extras; ?>'
+        data-fbe-scopes=
+          'manage_business_extension,business_management,ads_management'
+        data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler' ></div>
+      </div>
+  </div>
+  <div id="ad-insights-plugin">
+      <h3 class="mt-5">Ads Insights</h3>
+      <div
+        class="my-3 p-3 bg-white d-block rounded shadow-sm"
+        style="background-color: white">
+        <div id="ad-insights-plugin-iframe" class="fb-lwi-ads-insights"
+        data-lazy=true
+        data-fbe-extras='<?php echo $fbe_extras; ?>'
+        data-fbe-scopes=
+          'manage_business_extension,business_management,ads_management'
+        data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler' ></div>
+      </div>
+  </div>
+  </div>
 </div>
 
 <script>
+     window.fbAsyncInit = function() {
+      FB.init({
+        appId            : '221646389321681',
+        autoLogAppEvents : true,
+        xfbml            : true,
+        version          : 'v13.0'
+      });
+    };
     window.facebookBusinessExtensionConfig = {
       pixelId: '<?php echo esc_html(FacebookWordpressOptions::getPixelId()) ?>'
       ,popupOrigin: "https://business.facebook.com"
-      ,setSaveSettingsRoute: '<?php echo $this->getFbeSaveSettingsAjaxRoute() ?>'
+      ,setSaveSettingsRoute:
+        '<?php echo $this->getFbeSaveSettingsAjaxRoute() ?>'
       ,externalBusinessId: '<?php echo esc_html(
         FacebookWordpressOptions::getExternalBusinessId()
       )?>'
@@ -142,7 +198,7 @@ class FacebookWordpressSettingsPage {
       ,currency: 'USD'
       ,businessName: 'Solutions Engineering Team'
       ,debug: true
-      ,channel: 'CONVERSIONS_API'
+      ,channel: 'DEFAULT'
     };
     console.log(JSON.stringify(window.facebookBusinessExtensionConfig));
 
@@ -246,6 +302,40 @@ class FacebookWordpressSettingsPage {
           jQuery("#fb-capi-ef-se").show().delay(3000).fadeOut();
           updateCapiIntegrationEventsFilter((new_val === '1') ? '0' : '1');
         });
+      }
+    }
+    var currentFBEInstalledStatus =
+      <?php echo FacebookWordpressOptions::getIsFbeInstalled() ?>;
+    jQuery('#ad-creation-plugin-iframe')
+      .attr('data-fbe-extras', getFBEExtras());
+    jQuery('#ad-insights-plugin-iframe')
+      .attr('data-fbe-extras', getFBEExtras());
+    updateAdInsightsPlugin(currentFBEInstalledStatus);
+
+    function getFBEExtras() {
+      $fbeConfig = window.facebookBusinessExtensionConfig;
+      return JSON.stringify({
+      business_config: {
+         business:  {
+           name: $fbeConfig.businessName
+         },
+      },
+       setup: {
+         external_business_id: $fbeConfig.externalBusinessId,
+         timezone: $fbeConfig.timeZone,
+         currency: $fbeConfig.currency,
+         business_vertical: $fbeConfig.businessVertical,
+         channel: $fbeConfig.channel
+       },
+       repeat: false,
+      });
+    }
+    function updateAdInsightsPlugin(isFBEInstalled) {
+      if (isFBEInstalled)
+      {
+        jQuery('#meta-ads-plugin').show();
+      } else {
+        jQuery('#meta-ads-plugin').hide();
       }
     }
 </script>

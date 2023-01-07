@@ -20,7 +20,7 @@ namespace FacebookPixelPlugin\Core;
 defined('ABSPATH') or die('Direct access not allowed');
 
 class FacebookPluginConfig {
-  const PLUGIN_VERSION = '3.0.6';
+  const PLUGIN_VERSION = '3.0.8';
   const SOURCE = 'wordpress';
   const TEXT_DOMAIN = 'official-facebook-pixel';
   const PLUGIN_NAME = 'Meta for WordPress';
@@ -74,9 +74,10 @@ class FacebookPluginConfig {
   // OPEN_BRIDGE_PATH must match the value in cloudbridge-post -> b.host
   // found in js/openbridge_plugin.js
   const OPEN_BRIDGE_PATH = '/open-bridge/events';
-  const CAPI_INTEGRATION_DIV_TOP = 530;
+  const CAPI_INTEGRATION_DIV_TOP = 500;
   const CAPI_INTEGRATION_STATUS = 'facebook_capi_integration_status';
-  const CAPI_INTEGRATION_STATUS_DEFAULT = '0';
+  // Default CAPI integration status: Enabled
+  const CAPI_INTEGRATION_STATUS_DEFAULT = '1';
   const CAPI_INTEGRATION_EVENTS_FILTER =
     'facebook_capi_integration_events_filter';
   const CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT =

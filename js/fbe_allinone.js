@@ -215,10 +215,12 @@ var FBEFlowContainer = React.createClass({
         if(action != null && action === 'delete') {
           // Delete asset ids stored in db instance.
           _this.consoleLog("Successfully uninstalled FBE");
-            _this.deleteFBAssets();
+          _this.deleteFBAssets();
+          _this.hideAdsPlugin();
         }else if(action != null && action === 'create') {
           _this.saveSettings(pixelId, accessToken, window.facebookBusinessExtensionConfig.externalBusinessId);
           _this.setState({installed: 'true'});
+          _this.showAdsPlugin();
         }
       }else {
         _this.consoleLog("No response received after setup");
@@ -284,6 +286,12 @@ var FBEFlowContainer = React.createClass({
       }
     });
   },
+  showAdsPlugin: function showAdsPlugin() {
+    jQuery("#meta-ads-plugin").show();
+  },
+  hideAdsPlugin: function hideAdsPlugin() {
+    jQuery("#meta-ads-plugin").hide();
+  },
   componentDidMount: function componentDidMount() {
     this.bindMessageEvents();
   },
@@ -294,15 +302,16 @@ var FBEFlowContainer = React.createClass({
   },
   queryParams: function queryParams() {
     return 'app_id='+window.facebookBusinessExtensionConfig.appId +
-            '&timezone='+window.facebookBusinessExtensionConfig.timeZone+
-            '&external_business_id='+window.facebookBusinessExtensionConfig.externalBusinessId+
-            '&installed='+this.state.installed+
-            '&system_user_name='+window.facebookBusinessExtensionConfig.systemUserName+
-            '&business_vertical='+window.facebookBusinessExtensionConfig.businessVertical+
-            '&version='+window.facebookBusinessExtensionConfig.version+
-            '&currency='+ window.facebookBusinessExtensionConfig.currency +
-            '&business_name='+ window.facebookBusinessExtensionConfig.businessName +
-            '&channel=' + window.facebookBusinessExtensionConfig.channel;
+      '&timezone=' + window.facebookBusinessExtensionConfig.timeZone +
+      '&external_business_id=' + window.facebookBusinessExtensionConfig.externalBusinessId +
+      '&installed=' + this.state.installed +
+      '&system_user_name=' + window.facebookBusinessExtensionConfig.systemUserName +
+      '&business_vertical=' + window.facebookBusinessExtensionConfig.businessVertical +
+      '&version=' + window.facebookBusinessExtensionConfig.version +
+      '&currency=' + window.facebookBusinessExtensionConfig.currency +
+      '&business_name=' + window.facebookBusinessExtensionConfig.businessName +
+      '&channel=' + window.facebookBusinessExtensionConfig.channel +
+      '&hide_create_ad_button=' + true;
   },
   render: function render() {
     var _this = this;
@@ -312,7 +321,7 @@ var FBEFlowContainer = React.createClass({
         'iframe',
         {
           src:window.facebookBusinessExtensionConfig.fbeLoginUrl + _this.queryParams(),
-          style: {border:'none',width:'1100px',height:'700px'}
+          style: { border: 'none', width: '100%', height: '700px' }
         }
       );
     } catch (err) {
@@ -1546,7 +1555,7 @@ module.exports = camelizeStyleName;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 var isTextNode = require('./isTextNode');
@@ -1795,7 +1804,7 @@ module.exports = createNodesFromMarkup;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 function makeEmptyFunction(arg) {
@@ -2214,7 +2223,7 @@ module.exports = isTextNode;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  * @typechecks static-only
  */
 
@@ -2296,7 +2305,7 @@ module.exports = performanceNow;
  * LICENSE file in the root directory of this source tree.
  *
  * @typechecks
- * 
+ *
  */
 
 /*eslint-disable no-self-compare */
@@ -4290,7 +4299,7 @@ module.exports = CSSPropertyOperations;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -5963,7 +5972,7 @@ module.exports = EventPluginHub;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -6903,7 +6912,7 @@ module.exports = HTMLDOMPropertyConfig;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -7099,7 +7108,7 @@ module.exports = LinkedValueUtils;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -7712,7 +7721,7 @@ module.exports = ReactComponentBrowserEnvironment;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -11656,7 +11665,7 @@ module.exports = ReactDOMUnknownPropertyHook;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -12166,7 +12175,7 @@ module.exports = {
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -12213,7 +12222,7 @@ module.exports = ReactEmptyComponent;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -12473,7 +12482,7 @@ module.exports = ReactEventListener;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -12561,7 +12570,7 @@ module.exports = ReactHostComponent;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -12791,7 +12800,7 @@ module.exports = ReactInstanceMap;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -12815,7 +12824,7 @@ module.exports = { debugTool: debugTool };
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -13884,7 +13893,7 @@ module.exports = ReactMultiChild;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -13924,7 +13933,7 @@ module.exports = ReactNodeTypes;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -14017,7 +14026,7 @@ module.exports = ReactOwner;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -14041,7 +14050,7 @@ module.exports = ReactPropTypeLocationNames;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -14400,7 +14409,7 @@ module.exports = ReactReconciler;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -14578,7 +14587,7 @@ module.exports = ReactServerRenderingTransaction;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -15700,7 +15709,7 @@ module.exports = SelectEventPlugin;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -16745,7 +16754,7 @@ module.exports = SyntheticWheelEvent;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -16996,7 +17005,7 @@ module.exports = ViewportMetrics;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -17053,7 +17062,7 @@ module.exports = accumulateInto;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -17472,7 +17481,7 @@ module.exports = findDOMNode;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -17547,7 +17556,7 @@ module.exports = flattenChildren;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -17836,7 +17845,7 @@ module.exports = getHostComponentFromComposite;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -18385,7 +18394,7 @@ module.exports = isEventSupported;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -18458,7 +18467,7 @@ module.exports = quoteAttributeValueForBrowser;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 'use strict';
 
@@ -19924,7 +19933,7 @@ module.exports = ReactChildren;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -20302,7 +20311,7 @@ module.exports = ReactComponentTreeHook;
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -21226,7 +21235,7 @@ module.exports = '15.7.0';
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';
@@ -21361,7 +21370,7 @@ arguments[4][145][0].apply(exports,arguments)
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * 
+ *
  */
 
 'use strict';

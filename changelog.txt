@@ -1,4 +1,9 @@
 *** Facebook for WordPress Changelog ***
+2022-08-01 version
+* Update Facebook Business SDK to v12.0.0
+* Added the ability to send website events using conversion API and OpenBridge Javascript. This can be enabled/disabled from the settings page.
+* Added ads metrics and insights on the settings page.
+
 2021-08-30 version 3.0.6
 * Update Facebook Business SDK to v11.0.0
 
