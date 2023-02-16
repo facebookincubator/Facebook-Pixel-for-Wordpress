@@ -156,7 +156,6 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
   public static function getOpenBridgeConfiguration() {
     $pixelId = self::$pixelId;
     $eventsFilter = FacebookWordpressOptions::getCapiIntegrationEventsFilter();
-    $obFilePath = plugins_url( '../js/openbridge_plugin.js', __FILE__ );
 
     return <<<EOT
     <script type='text/javascript'>
