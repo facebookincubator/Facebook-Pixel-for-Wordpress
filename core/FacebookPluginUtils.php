@@ -65,4 +65,8 @@ class FacebookPluginUtils {
     }
     return substr( $haystack, -$length ) === $needle;
   }
+
+  public static function string_contains($haystack, $needle) {
+    return (bool) strstr($haystack, $needle);
+  }
 }
