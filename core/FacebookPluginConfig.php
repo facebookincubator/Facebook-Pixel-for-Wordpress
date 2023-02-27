@@ -71,7 +71,7 @@ class FacebookPluginConfig {
   const IS_PIXEL_RENDERED = 'is_pixel_rendered';
   const IS_NOSCRIPT_RENDERED = 'is_noscript_rendered';
 
-  const OPEN_BRIDGE_PATH = '/open-bridge/events';
+  const OPEN_BRIDGE_PATH = 'open-bridge/events';
   const CAPI_INTEGRATION_DIV_TOP = 500;
   const CAPI_INTEGRATION_STATUS = 'facebook_capi_integration_status';
   // Default CAPI integration status: Enabled
