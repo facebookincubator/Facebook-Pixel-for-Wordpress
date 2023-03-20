@@ -18,6 +18,7 @@
 namespace FacebookPixelPlugin\Core;
 
 use FacebookAds\Object\ServerSide\AdsPixelSettings;
+use FacebookPixelPlugin\Core\FacebookPluginUtils;
 
 defined('ABSPATH') or die('Direct access not allowed');
 
@@ -67,7 +68,8 @@ class FacebookWordpressOptions {
   }
 
   public static function getCapiIntegrationPageViewFiltered() {
-    return str_contains(self::getCapiIntegrationEventsFilter(), 'PageView');
+    return FacebookPluginUtils::string_contains(
+      self::getCapiIntegrationEventsFilter(), 'PageView');
   }
 
   public static function getDefaultPixelID() {

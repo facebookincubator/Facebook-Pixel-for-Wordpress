@@ -44,6 +44,7 @@ class FacebookPluginUtils {
       'email' => $current_user->user_email,
       'first_name' => $current_user->user_firstname,
       'last_name' => $current_user->user_lastname,
+      'id' => $current_user->ID,
     );
   }
 
@@ -63,5 +64,9 @@ class FacebookPluginUtils {
       return false;
     }
     return substr( $haystack, -$length ) === $needle;
+  }
+
+  public static function string_contains($haystack, $needle) {
+    return (bool) strstr($haystack, $needle);
   }
 }
