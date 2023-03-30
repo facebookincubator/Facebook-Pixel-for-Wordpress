@@ -58,7 +58,9 @@ document,'script','https://connect.facebook.net/en_US/fbevents.js');
 ";
 
   private static $pixelFbqCodeWithoutScript = "
-  fbq('%s', '%s'%s%s);
+    setTimeout(function() {
+      fbq('%s', '%s'%s%s);
+    }, 2000);
   ";
 
   private static $pixelNoscriptCode = "
@@ -103,9 +105,11 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
       return;
     }
 
+    $pixelFbqCodeWithoutScript = "fbq('%s', '%s'%s%s)";
+
     $code = $with_script_tag
-    ? "<script type='text/javascript'>" . self::$pixelFbqCodeWithoutScript . "</script>"
-    : self::$pixelFbqCodeWithoutScript;
+    ? "<script type='text/javascript'>" . $pixelFbqCodeWithoutScript . "</script>"
+    : $pixelFbqCodeWithoutScript;
     $param_str = $param;
     if (is_array($param)) {
       $param_str = json_encode($param, JSON_PRETTY_PRINT | JSON_FORCE_OBJECT);

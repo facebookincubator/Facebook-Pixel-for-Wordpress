@@ -29,8 +29,10 @@ class PixelRenderer {
   const FB_INTEGRATION_TRACKING = 'fb_integration_tracking';
   const SCRIPT_TAG = "<script type='text/javascript'>%s</script>";
   const FBQ_EVENT_CODE = "
-  fbq('%s', '%s', %s, %s);
-";
+    setTimeout(function() {
+      fbq('%s', '%s', %s, %s);
+    }, 2000);
+  ";
   const FBQ_AGENT_CODE = "
   fbq('set', 'agent', '%s', '%s');";
 
