@@ -61,6 +61,9 @@ class FacebookForWordpress {
     // Listen on /events to parse pixel fired events
     add_action('parse_request', array($this, 'handle_events_request'), 0);
 
+    // load the jquery library
+    add_action('wp_enqueue_scripts', array($this, 'enqueue_jquery_scripts'), 0);
+
     // initialize admin page config
     $this->registerSettingsPage();
 
@@ -96,6 +99,10 @@ class FacebookForWordpress {
       FacebookWordpressOpenBridge::getInstance()->handleOpenBridgeReq($data);
       exit();
     }
+  }
+
+  public function enqueue_jquery_scripts() {
+    wp_enqueue_script( 'jquery' );
   }
 }
 
