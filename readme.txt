@@ -54,6 +54,12 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2022-10-31 version 3.0.9 =
+* Removed hard coded OpenBridge Javascript
+* Fix async events UserData key mapping. #32
+* Delay pixel events firing, to track engaged visitors
+* Bug Fixes
+
 = 2022-10-31 version 3.0.8 =
 * Fix PII drop when converting Pixel payload to Conversion API payload
 * Rebranded the extension from Facebook pixel to Meta pixel
