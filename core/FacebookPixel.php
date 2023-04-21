@@ -153,44 +153,6 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
   }
 
   /**
-   * Loads open_bridge configs
-   */
-  public static function getOpenBridgeConfiguration() {
-    $pixelId = self::$pixelId;
-    $eventsFilter = FacebookWordpressOptions::getCapiIntegrationEventsFilter();
-
-    return <<<EOT
-    <script type='text/javascript'>
-      function updateConfig() {
-        let openBridgeScript = jQuery('script[src*="openbridge"]');
-        if (openBridgeScript.length == 0) return;
-        openBridgeScript[0].onload = function() {
-          var eventsFilter = "$eventsFilter";
-          var eventsFilterList = eventsFilter.split(',');
-          fbq.instance.pluginConfig.set("$pixelId", 'openbridge',
-            {'endpoints':
-              [{
-                'targetDomain': window.location.href,
-                'endpoint': window.location.href + 'open-bridge'
-              }],
-              'eventsFilter': {
-                'eventNames':eventsFilterList,
-                'filteringMode':'blocklist'
-              }
-            }
-          );
-          fbq.instance.configLoaded("$pixelId");
-        }
-      }
-      window.onload = function() {
-        fbq.loadPlugin('openbridge3');
-        updateConfig();
-      }
-    </script>
-EOT;
-  }
-
-  /**
    * Gets FB pixel noscript code
    */
   public static function getPixelNoscriptCode($event = 'PageView', $cd = array(), $tracking_name = '') {
