@@ -58,9 +58,7 @@ document,'script','https://connect.facebook.net/en_US/fbevents.js');
 ";
 
   private static $pixelFbqCodeWithoutScript = "
-    setTimeout(function() {
-      fbq('%s', '%s'%s%s);
-    }, 2000);
+    fbq('%s', '%s'%s%s);
   ";
 
   private static $pixelNoscriptCode = "
