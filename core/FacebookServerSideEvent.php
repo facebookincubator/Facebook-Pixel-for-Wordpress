@@ -88,10 +88,7 @@ class FacebookServerSideEvent {
     $access_token = FacebookWordpressOptions::getAccessToken();
     $agent = FacebookWordpressOptions::getAgentString();
 
-    // If events are from openbridge, add _capi in user agent
-    if (count($events) === 1 &&
-    (($events[0]['custom_data']['custom_properties']['fb_integration_tracking']
-        ?? NULL) === 'wp-cloudbridge-plugin')) {
+    if(self::isOpenBridgeEvent($events)){
       $agent .= '_capi';
     }
 
@@ -109,5 +106,23 @@ class FacebookServerSideEvent {
     } catch (Exception $e) {
       error_log(json_encode($e));
     }
+  }
+
+  private static function isOpenBridgeEvent($events) {
+    if(count($events) !== 1){
+        return false;
+    }
+
+    $customData = $events[0]->getCustomData();
+    if (!$customData) {
+        return false;
+    }
+
+    $customProperties = $customData->getCustomProperties();
+    if (!$customProperties || !isset($customProperties['fb_integration_tracking'])) {
+        return false;
+    }
+
+    return $customProperties['fb_integration_tracking'] === 'wp-cloudbridge-plugin';
   }
 }
