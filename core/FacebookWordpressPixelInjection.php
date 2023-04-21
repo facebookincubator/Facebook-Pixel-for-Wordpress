@@ -27,8 +27,6 @@ class FacebookWordpressPixelInjection {
 
   public function inject() {
     $pixel_id = FacebookWordpressOptions::getPixelId();
-    $capiIntegrationStatus =
-      FacebookWordpressOptions::getCapiIntegrationStatus();
     if (FacebookPluginUtils::isPositiveInteger($pixel_id)) {
       add_action(
         'wp_head',
@@ -70,6 +68,11 @@ class FacebookWordpressPixelInjection {
 
     self::$renderCache[FacebookPluginConfig::IS_PIXEL_RENDERED] = true;
     echo(FacebookPixel::getPixelBaseCode());
+    $capiIntegrationStatus =
+    FacebookWordpressOptions::getCapiIntegrationStatus();
+    if($capiIntegrationStatus === '1'){
+      echo(FacebookPixel::getOpenBridgeConfigCode());
+    }
     echo(FacebookPixel::getPixelInitCode(
       FacebookWordpressOptions::getAgentString(),
       FacebookWordpressOptions::getUserInfo()));
