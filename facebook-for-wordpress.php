@@ -93,7 +93,9 @@ class FacebookForWordpress {
         FacebookPluginConfig::OPEN_BRIDGE_PATH)
       && $_SERVER['REQUEST_METHOD'] == 'POST'){
       $data = json_decode(file_get_contents('php://input'), true);
-      FacebookWordpressOpenBridge::getInstance()->handleOpenBridgeReq($data);
+      if (!is_null($data)) {
+        FacebookWordpressOpenBridge::getInstance()->handleOpenBridgeReq($data);
+      }
       exit();
     }
   }
