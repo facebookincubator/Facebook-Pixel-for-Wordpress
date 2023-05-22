@@ -98,7 +98,6 @@ class FacebookPluginConfig {
       'CONTACT_FORM_7' => 'FacebookWordpressContactForm7',
       'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
       'FORMIDABLE_FORM' => 'FacebookWordpressFormidableForm',
-      'GRAVITY_FORMS' => 'FacebookWordpressGravityForms',
       'MAILCHIMP_FOR_WP' => 'FacebookWordpressMailchimpForWp',
       'NINJA_FORMS' => 'FacebookWordpressNinjaForms',
       'WPFORMS' => 'FacebookWordpressWPForms',
