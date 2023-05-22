@@ -54,7 +54,10 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
-= 2023-04-25 version 3.0.9 =
+= 2023-05-22 version 3.0.11 =
+* Remove the dependency of Gravity Forms
+
+= 2023-04-25 version 3.0.10 =
 * Remove delays in firing pixel events
 * Upgrade to PHP SDK 16.0.*
 * Fix compatibility issues for PHP
