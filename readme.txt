@@ -4,7 +4,7 @@ Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events
 Requires at least: 5.7
 Tested up to: 6.2
 Requires PHP: 7.2
-Stable tag: 3.0.11
+Stable tag: 3.0.12
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,6 +54,9 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2023-07-12 version 3.0.13 =
+* Revise openBridge Firing Logic for Cleaner URL Indexing
+
 = 2023-06-13 version 3.0.12 =
 * Remove async processing from OpenBridge events
 * Get PII from session
