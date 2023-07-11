@@ -106,7 +106,7 @@ src=\"https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1\" />
 
     $code = "
       <script type='text/javascript'>
-        var url = window.location.href + '?ob=open-bridge';
+        var url = window.location.origin + '?ob=open-bridge';
         fbq('set', 'openbridge', '%s', url);
       </script>
     ";
