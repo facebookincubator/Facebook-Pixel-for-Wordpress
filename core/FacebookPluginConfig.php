@@ -100,7 +100,6 @@ class FacebookPluginConfig {
       'FORMIDABLE_FORM' => 'FacebookWordpressFormidableForm',
       'MAILCHIMP_FOR_WP' => 'FacebookWordpressMailchimpForWp',
       'NINJA_FORMS' => 'FacebookWordpressNinjaForms',
-      'WPFORMS' => 'FacebookWordpressWPForms',
       'WP_E_COMMERCE' => 'FacebookWordpressWPECommerce',
       'WOOCOMMERCE' => 'FacebookWordpressWooCommerce'
     );
