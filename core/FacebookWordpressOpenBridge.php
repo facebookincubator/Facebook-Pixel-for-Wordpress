@@ -41,6 +41,9 @@ class FacebookWordpressOpenBridge {
     }
 
     public function handleOpenBridgeReq($data){
+        if (!session_id()) {
+            session_start();
+        }
         $event_name = $data['event_name'];
         if(in_array($event_name, self::$blocked_events)){
             return;
@@ -88,7 +91,29 @@ class FacebookWordpressOpenBridge {
     }
 
     private static function getPIIFromSession(){
-        $current_user = FacebookPluginUtils::getLoggedInUserInfo();
+        $current_user = array_filter(FacebookPluginUtils::getLoggedInUserInfo());
+
+        if(empty($current_user)) {
+
+            if(isset($_SESSION[AAMSettingsFields::EMAIL])){
+                $current_user['email'] = $_SESSION[AAMSettingsFields::EMAIL];
+            }
+
+            if(isset($_SESSION[AAMSettingsFields::FIRST_NAME])){
+                $current_user['first_name'] = $_SESSION[AAMSettingsFields::FIRST_NAME];
+            }
+
+            if(isset($_SESSION[AAMSettingsFields::LAST_NAME])){
+                $current_user['last_name'] = $_SESSION[AAMSettingsFields::LAST_NAME];
+            }
+
+            if(isset($_SESSION[AAMSettingsFields::PHONE])){
+                $current_user['phone'] = $_SESSION[AAMSettingsFields::PHONE];
+            }
+
+            return array_filter($current_user);
+        }
+
         $user_id = get_current_user_id();
         if($user_id != 0){
           $current_user['city'] = get_user_meta($user_id, 'billing_city', true);
@@ -168,7 +193,9 @@ class FacebookWordpressOpenBridge {
             return '';
         }
         if(array_key_exists($key, $pixel_data[self::ADVANCED_MATCHING_LABEL])){
-            return $pixel_data[self::ADVANCED_MATCHING_LABEL][$key];
+            $value = $pixel_data[self::ADVANCED_MATCHING_LABEL][$key];
+            $_SESSION[$key] = $value;
+            return $value;
         }
         return '';
     }
