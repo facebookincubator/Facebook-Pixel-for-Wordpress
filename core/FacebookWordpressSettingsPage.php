@@ -134,6 +134,15 @@ class FacebookWordpressSettingsPage {
           Enable checkbox to filter PageView events from sending.
       </div>
     </div>
+    <div id="fb-capi-ch">
+      <input type="checkbox" id="capi-ch" name="capi-ch">
+      <label class="fb-capi-title" for="capi-ch">Enable Events Enrichment</label>
+      <span id="fb-capi-ef-se" class="fb-capi-se"></span>
+      <br/>
+      <div class="fb-capi-desc">
+          When turned on, PII will be cached for non logged in users.
+      </div>
+    </div>
   </div>
 
   <script async defer src="https://connect.facebook.net/en_US/sdk.js"></script>
@@ -212,15 +221,31 @@ class FacebookWordpressSettingsPage {
       setFbAdvConfTop();
       jQuery('#fb-adv-conf').show();
       var enableCapiCheckbox = document.getElementById("capi-cb");
+      var enablePiiCachingCheckbox = document.getElementById("capi-ch");
       var currentCapiIntegrationStatus =
       '<?php echo FacebookWordpressOptions::getCapiIntegrationStatus() ?>';
       updateCapiIntegrationCheckbox(currentCapiIntegrationStatus);
+
+      var piiCachingStatus =
+      '<?php echo FacebookWordpressOptions::getCapiPiiCachingStatus() ?>';
+      console.log("getCapiPiiCachingStatus returned: "+piiCachingStatus);
+      updateCapiPiiCachingCheckbox(piiCachingStatus);
 
       enableCapiCheckbox.addEventListener('change', function() {
         if (this.checked) {
           saveCapiIntegrationStatus('1');
         } else {
           saveCapiIntegrationStatus('0');
+        }
+      });
+
+      enablePiiCachingCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+          console.log("Enabled caching");
+          saveCapiPiiCachingStatus('1');
+        } else {
+          console.log("Disabled caching");
+          saveCapiPiiCachingStatus('0');
         }
       });
 
@@ -247,6 +272,14 @@ class FacebookWordpressSettingsPage {
         }
       }
 
+      function updateCapiPiiCachingCheckbox(val) {
+        if (val === '1') {
+          enablePiiCachingCheckbox.checked = true;
+        } else {
+          enablePiiCachingCheckbox.checked = false;
+        }
+      }
+
       function saveCapiIntegrationStatus(new_val) {
         jQuery.ajax({
           type : "post",
@@ -266,6 +299,27 @@ class FacebookWordpressSettingsPage {
           ?>');
           jQuery("#fb-capi-se").show().delay(3000).fadeOut();
           updateCapiIntegrationCheckbox((new_val === '1') ? '0' : '1');
+        });
+      }
+
+      function saveCapiPiiCachingStatus(new_val) {
+        jQuery.ajax({
+          type : "post",
+          dataType : "json",
+          url : '<?php echo $this->getCapiPiiCachingStatusSaveUrl() ?>',
+          data : {action:
+            '<?php
+            echo FacebookPluginConfig::SAVE_CAPI_PII_CACHING_STATUS_ACTION_NAME
+            ?>',
+            val : new_val},
+            success: function(response) {
+              updateCapiPiiCachingCheckbox(new_val);
+        }}).fail(function (jqXHR, textStatus, error) {
+          jQuery('#fb-capi-se').text('<?php
+          echo FacebookPluginConfig::CAPI_PII_CACHING_STATUS_UPDATE_ERROR
+          ?>');
+          jQuery("#fb-capi-se").show().delay(3000).fadeOut();
+          updateCapiPiiCachingCheckbox((new_val === '1') ? '0' : '1');
         });
       }
 
@@ -377,6 +431,19 @@ class FacebookWordpressSettingsPage {
     $args = array(
       'action' =>
         FacebookPluginConfig::SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME,
+      '_wpnonce' => $nonce_value
+    );
+    return add_query_arg($args, $simple_url);
+  }
+
+  public function getCapiPiiCachingStatusSaveUrl() {
+    $nonce_value = wp_create_nonce(
+      FacebookPluginConfig::SAVE_CAPI_PII_CACHING_STATUS_ACTION_NAME
+    );
+    $simple_url = admin_url('admin-ajax.php');
+    $args = array(
+      'action' =>
+        FacebookPluginConfig::SAVE_CAPI_PII_CACHING_STATUS_ACTION_NAME,
       '_wpnonce' => $nonce_value
     );
     return add_query_arg($args, $simple_url);

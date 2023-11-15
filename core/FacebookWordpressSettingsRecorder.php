@@ -12,6 +12,8 @@ class FacebookWordpressSettingsRecorder {
             array($this, 'saveCapiIntegrationStatus'));
         add_action('wp_ajax_save_capi_integration_events_filter',
             array($this, 'saveCapiIntegrationEventsFilter'));
+        add_action('wp_ajax_save_capi_pii_caching_status',
+            array($this, 'saveCapiPiiCachingStatus'));
     }
 
     private function handleSuccessRequest($body){
@@ -139,6 +141,33 @@ class FacebookWordpressSettingsRecorder {
                     ',PageView');
         }
 
+        return $this->handleSuccessRequest($val);
+    }
+
+    public function saveCapiPiiCachingStatus(){
+        if (!current_user_can('administrator')) {
+            return $this->handleUnauthorizedRequest();
+        }
+
+        // Cross origin iframe and local wordpress options are not in sync.
+        // Thus if request is made and pixel is not available show error.
+        if (empty(FacebookWordPressOptions::getPixelId())) {
+            // Reset wp_option value
+            \update_option(FacebookPluginConfig::CAPI_PII_CACHING_STATUS,
+                FacebookPluginConfig::CAPI_PII_CACHING_STATUS_DEFAULT);
+            return $this->handleInvalidRequest();
+        }
+
+        check_admin_referer(
+            FacebookPluginConfig::SAVE_CAPI_PII_CACHING_STATUS_ACTION_NAME
+        );
+        $val = sanitize_text_field($_POST['val']);
+
+        if(!($val === '0' || $val === '1')){
+            return $this->handleInvalidRequest();
+        }
+
+        \update_option(FacebookPluginConfig::CAPI_PII_CACHING_STATUS, $val);
         return $this->handleSuccessRequest($val);
     }
 

@@ -92,8 +92,9 @@ class FacebookWordpressOpenBridge {
 
     private static function getPIIFromSession(){
         $current_user = array_filter(FacebookPluginUtils::getLoggedInUserInfo());
+        $capiPiiCachingStatus = FacebookWordpressOptions::getCapiPiiCachingStatus();
 
-        if(empty($current_user)) {
+        if(empty($current_user) && $capiPiiCachingStatus === '1') {
 
             if(isset($_SESSION[AAMSettingsFields::EMAIL])){
                 $current_user['email'] = $_SESSION[AAMSettingsFields::EMAIL];
