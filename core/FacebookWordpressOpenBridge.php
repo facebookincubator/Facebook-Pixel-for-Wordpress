@@ -26,6 +26,7 @@ defined('ABSPATH') or die('Direct access not allowed');
 class FacebookWordpressOpenBridge {
     const ADVANCED_MATCHING_LABEL = 'fb.advanced_matching';
     const CUSTOM_DATA_LABEL = 'custom_data';
+    const EXTERNAL_ID_COOKIE = 'obeid';
 
     private static $instance = null;
     private static $blocked_events = array('Microdata');
@@ -38,6 +39,18 @@ class FacebookWordpressOpenBridge {
           self::$instance = new FacebookWordpressOpenBridge();
         }
         return self::$instance;
+    }
+
+    public static function generateExternalIdCookieIfNotExists() {
+        $eid = "";
+
+        if (!isset($_COOKIE[self::EXTERNAL_ID_COOKIE])) {
+            $eid = FacebookPluginUtils::newGUID();
+        } else {
+            $eid = $_COOKIE[self::EXTERNAL_ID_COOKIE];
+        }
+
+        setcookie(self::EXTERNAL_ID_COOKIE, $eid, time()+60*60*24*30*6);
     }
 
     public function handleOpenBridgeReq($data){
@@ -148,10 +161,26 @@ class FacebookWordpressOpenBridge {
     }
 
     private static function getExternalID($current_user_data, $pixel_data){
-        if(isset($current_user_data['id'])){
-            return (string) $current_user_data['id'];
+        $external_ids = array();
+
+        if( isset( $current_user_data['id'] ) ){
+            $external_ids[] = (string) $current_user_data['id'];
         }
-        return self::getAAMField(AAMSettingsFields::EXTERNAL_ID, $pixel_data);
+
+        $temp_external_id = self::getAAMField(
+            AAMSettingsFields::EXTERNAL_ID,
+            $pixel_data
+        );
+
+        if ( $temp_external_id ) {
+            $external_ids[] = $temp_external_id;
+        }
+
+        if (isset($_COOKIE[self::EXTERNAL_ID_COOKIE])) {
+            $external_ids[] = $_COOKIE[self::EXTERNAL_ID_COOKIE];
+        }
+
+        return implode(",", $external_ids);
     }
 
     private static function getPhone($current_user_data, $pixel_data){

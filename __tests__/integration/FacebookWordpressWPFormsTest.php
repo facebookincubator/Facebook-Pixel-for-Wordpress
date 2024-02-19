@@ -30,15 +30,13 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
   public function testInjectPixelCode() {
     \WP_Mock::expectActionAdded(
       'wpforms_process_before',
-      array(
-        'FacebookPixelPlugin\\Integration\\FacebookWordpressWPForms',
-        'trackEvent'
-      ),
+      array(FacebookWordpressWPForms::class, 'trackEvent'),
       20,
       2
     );
 
     FacebookWordpressWPForms::injectPixelCode();
+    $this->assertHooksAdded();
   }
 
   public function testInjectLeadEventWithoutInternalUser() {
@@ -70,8 +68,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
     \WP_Mock::expectActionAdded(
       'wp_footer',
-      array(
-        'FacebookPixelPlugin\\Integration\\FacebookWordpressWPForms',
+      array(FacebookWordpressWPForms::class,
         'injectLeadEvent'
       ),
       20
@@ -110,8 +107,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
     \WP_Mock::expectActionAdded(
       'wp_footer',
-      array(
-        'FacebookPixelPlugin\\Integration\\FacebookWordpressWPForms',
+      array(FacebookWordpressWPForms::class,
         'injectLeadEvent'
       ),
       20

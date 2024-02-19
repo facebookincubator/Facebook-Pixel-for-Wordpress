@@ -81,6 +81,8 @@ abstract class FacebookWordpressTestBase extends TestCase {
     else{
       $this->mocked_options->shouldReceive('getAAMSettings')->andReturn($aam_settings);
     }
+    $this->mocked_options ->shouldReceive('getCapiPiiCachingStatus')
+                          ->andReturn(0);
   }
 
   protected function getDefaultAAMSettings(){

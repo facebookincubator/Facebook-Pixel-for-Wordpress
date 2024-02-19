@@ -120,9 +120,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId1\"
-});
-
-  fbq('track', 'Lead', {
+});\n  \n    fbq('track', 'Lead', {
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId2\"

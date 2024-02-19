@@ -58,6 +58,8 @@ class FacebookForWordpress {
     // Register WordPress pixel injection controlling where to fire pixel
     add_action('init', array($this, 'registerPixelInjection'), 0);
 
+    add_action('init', array($this, 'setup_openbridge_plugin_cookies'), 0);
+
     // Listen on /events to parse pixel fired events
     add_action('parse_request', array($this, 'handle_events_request'), 0);
 
@@ -87,16 +89,25 @@ class FacebookForWordpress {
     }
   }
 
+  public function setup_openbridge_plugin_cookies() {
+    FacebookWordpressOpenBridge::generateExternalIdCookieIfNotExists();
+  }
+
   public function handle_events_request(){
     $request_uri = $_SERVER['REQUEST_URI'];
-    if(FacebookPluginUtils::endsWith($request_uri,
-        FacebookPluginConfig::OPEN_BRIDGE_PATH)
-      && $_SERVER['REQUEST_METHOD'] == 'POST'){
-      $data = json_decode(file_get_contents('php://input'), true);
-      if (!is_null($data)) {
-        FacebookWordpressOpenBridge::getInstance()->handleOpenBridgeReq($data);
-      }
-      exit();
+    if(
+      FacebookPluginUtils::endsWith(
+        $request_uri,
+        FacebookPluginConfig::OPEN_BRIDGE_PATH) &&
+        $_SERVER['REQUEST_METHOD'] == 'POST'
+      ) {
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (!is_null($data)) {
+          FacebookWordpressOpenBridge::getInstance()->handleOpenBridgeReq(
+            $data
+          );
+        }
+        exit();
     }
   }
 

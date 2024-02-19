@@ -35,7 +35,6 @@ final class FacebookWordpressPixelInjectionTest
     'FacebookWordpressContactForm7',
     'FacebookWordpressEasyDigitalDownloads',
     'FacebookWordpressFormidableForm',
-    'FacebookWordpressGravityForms',
     'FacebookWordpressMailchimpForWp',
     'FacebookWordpressNinjaForms',
     'FacebookWordpressWPForms',

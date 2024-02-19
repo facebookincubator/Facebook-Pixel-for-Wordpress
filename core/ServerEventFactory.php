@@ -127,6 +127,14 @@ class ServerEventFactory {
       $fbc = $_COOKIE['_fbc'];
     }
 
+    if (!$fbc) {
+      if (isset($_GET['fbclid'])) {
+        $fbclid = $_GET['fbclid'];
+        $cur_time = (int)(microtime(true)*1000);
+        $fbc = "fb." . "1." . $cur_time . "." . $fbclid;
+      }
+    }
+
     return $fbc;
   }
 

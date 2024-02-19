@@ -63,6 +63,14 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
       $pending_events[0]->getEventName());
   }
 
+  public function testExternalId() {
+    self::mockFacebookWordpressOptions();
+    $event = ServerEventFactory::newEvent('Lead');
+
+    $userData = $event->getUserData();
+    $this->assertEquals('test', $userData['external_id']);
+  }
+
   public function testStoresPendingPixelEvents(){
     self::mockFacebookWordpressOptions();
 

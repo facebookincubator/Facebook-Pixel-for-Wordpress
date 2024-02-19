@@ -153,6 +153,17 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $this->assertEquals('http://www.pikachu.com/index.php', $event->getEventSourceUrl());
   }
 
+  public function testFBClidExtractedFromUrlIfFbcNotFound() {
+    $_GET['fbclid'] = 'fbclid_str';
+
+    $event = ServerEventFactory::newEvent('Lead');
+
+    $event_fbc =  $event->getUserData()->getFbc();
+
+    $this->assertEquals(TRUE, str_starts_with($event_fbc, 'fb.1.'));
+    $this->assertEquals(TRUE, str_ends_with($event_fbc, '.fbclid_str'));
+  }
+
   public function testNewEventHasFbc() {
     $_COOKIE['_fbc'] = '_fbc_value';
     $event = ServerEventFactory::newEvent('Lead');
