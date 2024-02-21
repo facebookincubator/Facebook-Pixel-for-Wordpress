@@ -58,8 +58,6 @@ class FacebookForWordpress {
     // Register WordPress pixel injection controlling where to fire pixel
     add_action('init', array($this, 'registerPixelInjection'), 0);
 
-    add_action('init', array($this, 'setup_openbridge_plugin_cookies'), 0);
-
     // Listen on /events to parse pixel fired events
     add_action('parse_request', array($this, 'handle_events_request'), 0);
 
