@@ -41,22 +41,37 @@ class FacebookWordpressOpenBridge {
         return self::$instance;
     }
 
-    public static function generateExternalIdCookieIfNotExists() {
-        $eid = "";
-
-        if (!isset($_COOKIE[self::EXTERNAL_ID_COOKIE])) {
-            $eid = FacebookPluginUtils::newGUID();
-        } else {
-            $eid = $_COOKIE[self::EXTERNAL_ID_COOKIE];
+    private static function startNewPhpSessionIfNeeded() {
+        if (session_id()) {
+            return;
         }
 
-        setcookie(self::EXTERNAL_ID_COOKIE, $eid, time()+60*60*24*30*6);
+        $secure = false;
+        $httponly = true;
+        $samesite = 'lax';
+        $maxlifetime = 7776000;
+        if(PHP_VERSION_ID < 70300) {
+            session_set_cookie_params($maxlifetime, '/; samesite='.$samesite, $_SERVER['HTTP_HOST'], $secure, $httponly);
+        } else {
+            session_set_cookie_params([
+                'lifetime' => $maxlifetime,
+                'path' => '/',
+                'domain' => $_SERVER['HTTP_HOST'],
+                'secure' => $secure,
+                'httponly' => $httponly,
+                'samesite' => $samesite
+            ]);
+        }
+
+        session_start();
+
+        $_SESSION[self::EXTERNAL_ID_COOKIE] = isset($_SESSION[self::EXTERNAL_ID_COOKIE]) ? $_SESSION[self::EXTERNAL_ID_COOKIE] : FacebookPluginUtils::newGUID();
     }
 
     public function handleOpenBridgeReq($data){
-        if (!session_id()) {
-            session_start();
-        }
+
+        self::startNewPhpSessionIfNeeded();
+
         $event_name = $data['event_name'];
         if(in_array($event_name, self::$blocked_events)){
             return;
@@ -68,7 +83,6 @@ class FacebookWordpressOpenBridge {
             'wp-cloudbridge-plugin',
             true
         );
-
         $event->setEventId($data['event_id']);
         FacebookServerSideEvent::send([$event]);
     }
@@ -176,11 +190,10 @@ class FacebookWordpressOpenBridge {
             $external_ids[] = $temp_external_id;
         }
 
-        if (isset($_COOKIE[self::EXTERNAL_ID_COOKIE])) {
-            $external_ids[] = $_COOKIE[self::EXTERNAL_ID_COOKIE];
+        if (isset($_SESSION[self::EXTERNAL_ID_COOKIE])) {
+            $external_ids[] = $_SESSION[self::EXTERNAL_ID_COOKIE];
         }
-
-        return implode(",", $external_ids);
+        return $external_ids;
     }
 
     private static function getPhone($current_user_data, $pixel_data){

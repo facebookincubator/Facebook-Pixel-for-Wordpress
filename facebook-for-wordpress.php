@@ -87,10 +87,6 @@ class FacebookForWordpress {
     }
   }
 
-  public function setup_openbridge_plugin_cookies() {
-    FacebookWordpressOpenBridge::generateExternalIdCookieIfNotExists();
-  }
-
   public function handle_events_request(){
     $request_uri = $_SERVER['REQUEST_URI'];
     if(
@@ -108,7 +104,6 @@ class FacebookForWordpress {
         exit();
     }
   }
-
 }
 
 $WP_FacebookForWordpress = new FacebookForWordpress();

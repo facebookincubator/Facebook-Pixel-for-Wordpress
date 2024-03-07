@@ -40,12 +40,12 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 
     $expected = sprintf("<script type='text/javascript'>
   fbq('set', 'agent', '%s', '');
-  fbq('track', 'Lead', {
+    fbq('track', 'Lead', {
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId\"
 });
-</script>", $agent_string);
+  </script>", $agent_string);
 
     $this->assertEquals($expected, $code);
   }
@@ -62,12 +62,12 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 
     $expected = sprintf("<script type='text/javascript'>
   fbq('set', 'agent', '%s', '');
-  fbq('trackCustom', 'Custom', {
+    fbq('trackCustom', 'Custom', {
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId\"
 });
-</script>", $agent_string);
+  </script>", $agent_string);
 
     $this->assertEquals($expected, $code);
   }
@@ -89,14 +89,14 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 
     $expected = sprintf("<script type='text/javascript'>
   fbq('set', 'agent', '%s', '');
-  fbq('track', 'Purchase', {
+    fbq('track', 'Purchase', {
     \"value\": \"30.00\",
     \"currency\": \"usd\",
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId\"
 });
-</script>", $agent_string);
+  </script>", $agent_string);
 
     $this->assertEquals($expected, $code);
   }
@@ -116,7 +116,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 
     $expected = sprintf("<script type='text/javascript'>
   fbq('set', 'agent', '%s', '');
-  fbq('track', 'Lead', {
+    fbq('track', 'Lead', {
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId1\"
@@ -125,7 +125,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 }, {
     \"eventID\": \"TestEventId2\"
 });
-</script>", $agent_string);
+  </script>", $agent_string);
 
     $this->assertEquals($expected, $code);
   }

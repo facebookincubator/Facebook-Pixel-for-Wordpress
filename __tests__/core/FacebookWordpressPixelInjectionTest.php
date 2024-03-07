@@ -37,7 +37,6 @@ final class FacebookWordpressPixelInjectionTest
     'FacebookWordpressFormidableForm',
     'FacebookWordpressMailchimpForWp',
     'FacebookWordpressNinjaForms',
-    'FacebookWordpressWPForms',
     'FacebookWordpressWPECommerce',
   );
 

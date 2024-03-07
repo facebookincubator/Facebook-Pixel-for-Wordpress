@@ -33,8 +33,7 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
         \WP_Mock::userFunction('wp_get_current_user', array('return' => []));
         \WP_Mock::userFunction('get_current_user_id', array('return' => 0));
         \WP_Mock::userFunction('com_create_guid', array('return' => 'GUID'));
-        $_COOKIE['obeid'] = 'GUID';
-        FacebookWordpressOpenBridge::generateExternalIdCookieIfNotExists();
+        $_SESSION['obeid'] = 'GUID';
 
         $event = ServerEventFactory::newEvent('Lead');
         $openBridgeInstance = FacebookWordpressOpenBridge::getInstance();
@@ -48,14 +47,14 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
         self::mockFacebookWordpressOptions();
         \WP_Mock::userFunction('wp_get_current_user', array('return' => []));
         \WP_Mock::userFunction('get_current_user_id', array('return' => 0));
-        $_COOKIE['obeid'] = 'test';
+        $_SESSION['obeid'] = 'testObeid';
 
         $event = ServerEventFactory::newEvent('Lead');
         $openBridgeInstance = FacebookWordpressOpenBridge::getInstance();
 
         $ev = $openBridgeInstance->extractFromDatabag($event);
 
-        $this->assertEquals('test', $ev['external_id']);
+        $this->assertEquals('testObeid', $ev['external_id']);
     }
 
     public function testExternalIdFetchedFromUserIdIfFirstTime() {
@@ -74,7 +73,7 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
             array('return' => 'testUser')
         );
 
-        $_COOKIE['obeid'] = 'testObeid';
+        $_SESSION['obeid'] = 'testObeid';
 
         $event = ServerEventFactory::newEvent('Lead');
         $openBridgeInstance = FacebookWordpressOpenBridge::getInstance();
@@ -88,7 +87,7 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
         self::mockFacebookWordpressOptions();
         \WP_Mock::userFunction('wp_get_current_user', array('return' => []));
         \WP_Mock::userFunction('get_current_user_id', array('return' => 0));
-        $_COOKIE['obeid'] = 'testObeid';
+        $_SESSION['obeid'] = 'testObeid';
 
         $openBridgeInstance = FacebookWordpressOpenBridge::getInstance();
         $event = array(

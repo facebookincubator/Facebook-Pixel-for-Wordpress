@@ -71,8 +71,17 @@ final class AAMFieldsExtractor {
     // https://developers.facebook.com/docs/facebook-pixel/advanced/advanced-matching
     foreach($user_data_array as $field => $data){
       try{
-        $normalized_value = Normalizer::normalize($field, $data);
-        $user_data_array[$field] = $normalized_value;
+        if (is_array($data)){
+          $res = array();
+          foreach($data as $key => $value) {
+            $normalized_value = Normalizer::normalize($field, $value);
+            $res[$key] = $normalized_value;
+          }
+          $user_data_array[$field] = $res;
+        } else {
+          $normalized_value = Normalizer::normalize($field, $data);
+          $user_data_array[$field] = $normalized_value;
+        }
       }
       catch(\Exception $e){
         unset($user_data_array[$field]);

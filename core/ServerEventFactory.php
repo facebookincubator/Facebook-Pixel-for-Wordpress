@@ -125,14 +125,21 @@ class ServerEventFactory {
 
     if (!empty($_COOKIE['_fbc'])) {
       $fbc = $_COOKIE['_fbc'];
+      $_SESSION['_fbc'] = $fbc;
     }
 
-    if (!$fbc) {
-      if (isset($_GET['fbclid'])) {
-        $fbclid = $_GET['fbclid'];
-        $cur_time = (int)(microtime(true)*1000);
-        $fbc = "fb." . "1." . $cur_time . "." . $fbclid;
-      }
+    if (!$fbc && isset($_GET['fbclid'])) {
+      $fbclid = $_GET['fbclid'];
+      $cur_time = (int)(microtime(true)*1000);
+      $fbc = "fb.1.".$cur_time.".".rawurldecode($fbclid);
+    }
+
+    if (!$fbc && isset($_SESSION['_fbc'])) {
+      $fbc = $_SESSION['_fbc'];
+    }
+
+    if ($fbc) {
+      $_SESSION['_fbc'] = $fbc;
     }
 
     return $fbc;
@@ -201,7 +208,6 @@ class ServerEventFactory {
         AAMFieldsExtractor::getNormalizedUserData($user_data_array);
 
       $user_data = $event->getUserData();
-
       if(
         array_key_exists(AAMSettingsFields::EMAIL, $user_data_array)
       ){
@@ -240,9 +246,18 @@ class ServerEventFactory {
         array_key_exists(AAMSettingsFields::EXTERNAL_ID, $user_data_array) &&
         !is_null($user_data_array[AAMSettingsFields::EXTERNAL_ID])
       ){
-        $user_data->setExternalId(
-          hash("sha256", $user_data_array[AAMSettingsFields::EXTERNAL_ID])
-        );
+        if (is_array($user_data_array[AAMSettingsFields::EXTERNAL_ID])) {
+          $external_ids = $user_data_array[AAMSettingsFields::EXTERNAL_ID];
+          $hashed_eids = array();
+          foreach($external_ids as $k => $v) {
+            $hashed_eids[$k] = hash("sha256", $v);
+          }
+          $user_data->setExternalIds($hashed_eids);
+        } else {
+          $user_data->setExternalId(
+            hash("sha256", $user_data_array[AAMSettingsFields::EXTERNAL_ID])
+          );
+        }
       }
       if(
         array_key_exists(AAMSettingsFields::PHONE, $user_data_array)
@@ -315,7 +330,7 @@ class ServerEventFactory {
         $custom_data->setContentCategory($custom_data_array['content_category']);
       }
     } catch (\Exception $e) {
-      // Need to log
+      error_log(json_encode($e));
     }
 
     return $event;
