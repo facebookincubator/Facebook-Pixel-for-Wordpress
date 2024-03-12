@@ -1,4 +1,8 @@
 *** Facebook for WordPress Changelog ***
+2024-03-08 version 3.0.16
+* Updated OpenBridge session management
+* Fixed failing tests
+
 2024-02-16 version 3.0.15
 * Updates to OpenBridge integration
 * Fixing some failing tests
