@@ -89,7 +89,7 @@ class FacebookServerSideEvent {
     $agent = FacebookWordpressOptions::getAgentString();
 
     if(self::isOpenBridgeEvent($events)){
-      $agent .= '_capi';
+      $agent .= '_ob'; //  agent suffix is openbridge
     }
 
     if(empty($pixel_id) || empty($access_token)){
