@@ -45,7 +45,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
     ];
     $user_data = array();
     foreach($user_data_normalized as $norm_key => $field){
-      if(array_key_exists($norm_key, $norm_key_to_key)){
+      if(isset($norm_key_to_key[$norm_key])){
         $user_data[$norm_key_to_key[$norm_key]] = $field;
       }
       else{
@@ -59,7 +59,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
     $event = new Event($event_as_array);
     // If user_data exists, an UserData object is created
     // and set
-    if(array_key_exists('user_data', $event_as_array)){
+    if(isset($event_as_array['user_data'])){
       // The method convert_user_data converts the keys used in the
       // normalized array to the keys used in the constructor of UserData
       $user_data = new UserData($this->convert_user_data(
@@ -68,26 +68,25 @@ class ServerEventAsyncTask extends \WP_Async_Task {
       $event->setUserData($user_data);
     }
     // If custom_data exists, a CustomData object is created and set
-    if(array_key_exists('custom_data', $event_as_array)){
+    if(isset($event_as_array['custom_data'])){
       $custom_data = new CustomData($event_as_array['custom_data']);
       // If contents exists in custom_data, an array of Content is created
       // and set
-      if(array_key_exists('contents', $event_as_array['custom_data'])){
+      if(isset($event_as_array['custom_data']['contents'])){
         $contents = array();
         foreach(
           $event_as_array['custom_data']['contents'] as $contents_as_array
         ){
           // The normalized contents array encodes product id as id
           // but the constructor of Content requires product_id
-          if(array_key_exists('id', $contents_as_array)){
+          if(isset($contents_as_array['id'])){
             $contents_as_array['product_id'] = $contents_as_array['id'];
           }
           $contents[] = new Content($contents_as_array);
         }
         $custom_data->setContents($contents);
       }
-      if(array_key_exists('fb_integration_tracking',
-        $event_as_array['custom_data'])){
+      if(isset($event_as_array['custom_data']['fb_integration_tracking'])){
         $custom_data->addCustomProperty('fb_integration_tracking',
           $event_as_array['custom_data']['fb_integration_tracking']);
       }

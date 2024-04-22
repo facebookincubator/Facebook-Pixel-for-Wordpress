@@ -121,14 +121,13 @@ final class FacebookWordpressFormidableFormTest
 
     self::setupErrorForm($mock_entry_id);
 
-    FacebookWordpressFormidableForm::trackServerEvent(
-      $mock_entry_id, $mock_form_id);
+    FacebookWordpressFormidableForm::trackServerEvent($mock_entry_id, $mock_form_id);
 
     $tracked_events =
       FacebookServerSideEvent::getInstance()->getTrackedEvents();
 
     $this->assertCount(1, $tracked_events);
-
+    
     $event = $tracked_events[0];
     $this->assertEquals('Lead', $event->getEventName());
     $this->assertNotNull($event->getEventTime());

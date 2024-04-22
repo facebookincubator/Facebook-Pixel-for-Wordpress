@@ -232,10 +232,10 @@ class FacebookWordpressOpenBridge {
     }
 
     private static function getAAMField($key, $pixel_data){
-        if(!array_key_exists(self::ADVANCED_MATCHING_LABEL, $pixel_data)){
+        if(!isset($pixel_data[self::ADVANCED_MATCHING_LABEL])){
             return '';
         }
-        if(array_key_exists($key, $pixel_data[self::ADVANCED_MATCHING_LABEL])){
+        if(isset($pixel_data[self::ADVANCED_MATCHING_LABEL][$key])){
             $value = $pixel_data[self::ADVANCED_MATCHING_LABEL][$key];
             $_SESSION[$key] = $value;
             return $value;
@@ -244,20 +244,20 @@ class FacebookWordpressOpenBridge {
     }
 
     private static function getCustomData($key, $pixel_data){
-        if(!array_key_exists(self::CUSTOM_DATA_LABEL, $pixel_data)){
+        if(!isset($pixel_data[self::CUSTOM_DATA_LABEL])){
             return '';
         }
-        if(array_key_exists($key, $pixel_data[self::CUSTOM_DATA_LABEL])){
+        if(isset($pixel_data[self::CUSTOM_DATA_LABEL][$key])){
             return $pixel_data[self::CUSTOM_DATA_LABEL][$key];
         }
         return '';
     }
 
     private static function getCustomDataArray($key, $pixel_data){
-        if(!array_key_exists(self::CUSTOM_DATA_LABEL, $pixel_data)){
+        if(!isset($pixel_data[self::CUSTOM_DATA_LABEL])){
             return '';
         }
-        if(array_key_exists($key, $pixel_data[self::CUSTOM_DATA_LABEL])){
+        if(isset($pixel_data[self::CUSTOM_DATA_LABEL][$key])){
             return $pixel_data[self::CUSTOM_DATA_LABEL][$key];
         }
         return [];

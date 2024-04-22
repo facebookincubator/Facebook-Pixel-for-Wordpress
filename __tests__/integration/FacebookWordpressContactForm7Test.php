@@ -29,33 +29,38 @@ use FacebookPixelPlugin\Core\ServerEventFactory;
  * Stop preserving global state from the parent process.
  */
 
-final class FacebookWordpressContactForm7Test
-  extends FacebookWordpressTestBase {
-  public function testInjectLeadEventWithoutInternalUser() {
+final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase
+{
+  public function testInjectLeadEventWithoutInternalUser()
+  {
     self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions();
 
     $mock_response = array(
       'status' => 'mail_sent',
-      'message' => 'Thank you for your message');
+      'message' => 'Thank you for your message'
+    );
 
     $event = ServerEventFactory::newEvent('Lead');
     FacebookServerSideEvent::getInstance()->track($event);
 
     $response =
       FacebookWordpressContactForm7::injectLeadEvent($mock_response, null);
-    $this->assertRegexp(
+    $this->assertMatchesRegularExpression(
       '/Lead[\s\S]+contact-form-7/',
-      $response['fb_pxl_code']);
+      $response['fb_pxl_code']
+    );
   }
 
-  public function testTrackServerEventWithoutInternalUser() {
+  public function testTrackServerEventWithoutInternalUser()
+  {
     self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions();
 
     $mock_result = array(
       'status' => 'mail_sent',
-      'message' => 'Thank you for your message');
+      'message' => 'Thank you for your message'
+    );
 
     $mock_form = $this->createMockForm();
     $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
@@ -66,7 +71,8 @@ final class FacebookWordpressContactForm7Test
         'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
         'injectLeadEvent'
       ),
-      20, 2
+      20,
+      2
     );
 
     $result =
@@ -84,20 +90,24 @@ final class FacebookWordpressContactForm7Test
     $this->assertEquals('pika', $event->getUserData()->getFirstName());
     $this->assertEquals('chu', $event->getUserData()->getLastName());
     $this->assertEquals('12223334444', $event->getUserData()->getPhone());
-    $this->assertEquals('contact-form-7',
-      $event->getCustomData()->getCustomProperty('fb_integration_tracking'));
+    $this->assertEquals(
+      'contact-form-7',
+      $event->getCustomData()->getCustomProperty('fb_integration_tracking')
+    );
     $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
   }
 
-  public function testTrackServerEventWithoutFormData() {
+  public function testTrackServerEventWithoutFormData()
+  {
     self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions();
 
     $mock_result = array(
       'status' => 'mail_sent',
-      'message' => 'Thank you for your message');
+      'message' => 'Thank you for your message'
+    );
 
-    $mock_form = new MockContactForm7();
+    $mock_form = $this->createMockForm();
 
     \WP_Mock::expectActionAdded(
       'wpcf7_feedback_response',
@@ -105,11 +115,11 @@ final class FacebookWordpressContactForm7Test
         'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
         'injectLeadEvent'
       ),
-      20, 2
+      20,
+      2
     );
 
-    $result =
-      FacebookWordpressContactForm7::trackServerEvent($mock_form, $mock_result);
+    $result = FacebookWordpressContactForm7::trackServerEvent($mock_form, $mock_result);
 
     $tracked_events =
       FacebookServerSideEvent::getInstance()->getTrackedEvents();
@@ -121,15 +131,17 @@ final class FacebookWordpressContactForm7Test
     $this->assertNotNull($event->getEventTime());
   }
 
-  public function testTrackServerEventErrorReadingData() {
+  public function testTrackServerEventErrorReadingData()
+  {
     self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions();
 
     $mock_result = array(
       'status' => 'mail_sent',
-      'message' => 'Thank you for your message');
+      'message' => 'Thank you for your message'
+    );
 
-    $mock_form = new MockContactForm7();
+    $mock_form = $this->createMockForm();
     $mock_form->set_throw(true);
 
     \WP_Mock::expectActionAdded(
@@ -138,7 +150,8 @@ final class FacebookWordpressContactForm7Test
         'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
         'injectLeadEvent'
       ),
-      20, 2
+      20,
+      2
     );
 
     $result =
@@ -154,19 +167,22 @@ final class FacebookWordpressContactForm7Test
     $this->assertNotNull($event->getEventTime());
   }
 
-  public function testInjectLeadEventWithInternalUser() {
+  public function testInjectLeadEventWithInternalUser()
+  {
     self::mockIsInternalUser(true);
 
     $mock_response = array(
       'status' => 'mail_sent',
-      'message' => 'Thank you for your message');
+      'message' => 'Thank you for your message'
+    );
 
     $response =
       FacebookWordpressContactForm7::injectLeadEvent($mock_response, null);
-    $this->assertArrayNotHasKey( 'fb_pxl_code', $response);
+    $this->assertArrayNotHasKey('fb_pxl_code', $response);
   }
 
-  public function testInjectLeadEventWhenMailFails() {
+  public function testInjectLeadEventWhenMailFails()
+  {
     self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions();
 
@@ -195,7 +211,8 @@ final class FacebookWordpressContactForm7Test
     $this->assertCount(0, $tracked_events);
   }
 
-  private function createMockForm() {
+  private function createMockForm()
+  {
     $mock_form = new MockContactForm7();
 
     $mock_form->add_tag('email', 'your-email', 'pika.chu@s2s.com');

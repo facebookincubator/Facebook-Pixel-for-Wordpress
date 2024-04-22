@@ -18,7 +18,8 @@ use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookAds\Object\ServerSide\AdsPixelSettings;
 
 abstract class FacebookWordpressTestBase extends TestCase {
-  public function setUp() {
+  
+  public function setUp(): void {
     \WP_Mock::setUp();
     $GLOBALS['wp_version'] = '1.0';
     \Mockery::getConfiguration()->setConstantsMap([
@@ -32,7 +33,7 @@ abstract class FacebookWordpressTestBase extends TestCase {
     $_SERVER['REQUEST_URI'] = '/index.php';
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     $this->addToAssertionCount(
       \Mockery::getContainer()->mockery_getExpectationCount());
     unset($GLOBALS['wp_version']);

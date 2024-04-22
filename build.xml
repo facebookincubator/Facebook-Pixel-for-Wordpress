@@ -78,9 +78,15 @@
     <!-- ============================================  -->
     <!-- Target: Test                                  -->
     <!-- ============================================  -->
-    <target name="Test" description="Run tests" depends="Clean">
+    <!-- <target name="Test" description="Run tests" depends="Clean"> -->
+    <target name="Test" description="Run tests">
         <echo msg="Running Test..." />
-        <exec command="./vendor/bin/phpunit --bootstrap ${testdir}/bootstrap.php --colors ${testdir}" dir="${basedir}" passthru="true" />
+        <exec executable="./vendor/bin/phpunit" dir="${basedir}" passthru="true">
+            <arg value="--bootstrap"/>
+            <arg value="./__tests__/bootstrap.php" />
+            <arg value="--colors" />
+            <arg value="${testdir}" />
+        </exec>
         <echo msg="Test complete" />
     </target>
 

@@ -11,8 +11,10 @@
 * GNU General Public License for more details.
 */
 
-require_once "phing/Task.php";
+require_once dirname(__FILE__)."/../vendor/phing/phing/src/Phing/Task.php";
 require_once dirname(__FILE__).'/../vendor/autoload.php';
+
+use Phing\Task;
 
 abstract class BaseTask extends Task {
 

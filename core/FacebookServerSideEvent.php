@@ -72,7 +72,7 @@ class FacebookServerSideEvent {
   }
 
   public function getPendingPixelEvent($callback_name){
-    if(array_key_exists($callback_name, $this->pendingPixelEvents)){
+    if(isset($this->pendingPixelEvents[$callback_name])){
       return $this->pendingPixelEvents[$callback_name];
     }
     return null;
@@ -89,7 +89,7 @@ class FacebookServerSideEvent {
     $agent = FacebookWordpressOptions::getAgentString();
 
     if(self::isOpenBridgeEvent($events)){
-      $agent .= '_ob'; //  agent suffix is openbridge
+      $agent .= '_capig';
     }
 
     if(empty($pixel_id) || empty($access_token)){

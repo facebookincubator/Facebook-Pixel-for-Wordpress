@@ -60,7 +60,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
     $this->assertArrayHasKey('widget_output', $response);
     $code = $response['widget_output'];
-    $this->assertRegexp(
+    $this->assertMatchesRegularExpression(
       '/wp-e-commerce[\s\S]+End Meta Pixel Event Code/', $code);
 
     $tracked_events =

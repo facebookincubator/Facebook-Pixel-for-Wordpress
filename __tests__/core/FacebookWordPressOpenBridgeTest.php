@@ -26,9 +26,11 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * make sure tests are isolated.
  * Stop preserving global state from the parent process.
  */
-final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
+final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase
+{
 
-    public function testWhenNoLoggedInUserNewGUIDShouldBeGenerated() {
+    public function testWhenNoLoggedInUserNewGUIDShouldBeGenerated()
+    {
         self::mockFacebookWordpressOptions();
         \WP_Mock::userFunction('wp_get_current_user', array('return' => []));
         \WP_Mock::userFunction('get_current_user_id', array('return' => 0));
@@ -40,10 +42,70 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 
         $ev = $openBridgeInstance->extractFromDatabag($event);
 
-        $this->assertEquals('GUID', $ev['external_id']);
+        $this->assertEquals(['GUID'], $ev['external_id']);
     }
 
-    public function testExternalIdFetchedFromCookieWhenObeidExists() {
+    private function setupCustomerBillingAddress()
+    {
+        \WP_Mock::userFunction(
+            'wp_get_current_user',
+            array(
+                'return' => (object) [
+                    'ID' => 1,
+                    'user_email' => 'foo@foo.com',
+                    'user_firstname' => 'John',
+                    'user_lastname' => 'Doe',
+                ]
+            )
+        );
+        \WP_Mock::userFunction(
+            'get_current_user_id',
+            array('return' => 1)
+        );
+        \WP_Mock::userFunction(
+            'get_user_meta',
+            array(
+                'times' => 1,
+                'args' => array(\WP_Mock\Functions::type('int'), 'billing_city', true),
+                'return' => 'Springfield'
+            )
+        );
+        \WP_Mock::userFunction(
+            'get_user_meta',
+            array(
+                'times' => 1,
+                'args' => array(\WP_Mock\Functions::type('int'), 'billing_state', true),
+                'return' => 'Ohio'
+            )
+        );
+        \WP_Mock::userFunction(
+            'get_user_meta',
+            array(
+                'times' => 1,
+                'args' => array(\WP_Mock\Functions::type('int'), 'billing_postcode', true),
+                'return' => '12345'
+            )
+        );
+        \WP_Mock::userFunction(
+            'get_user_meta',
+            array(
+                'times' => 1,
+                'args' => array(\WP_Mock\Functions::type('int'), 'billing_country', true),
+                'return' => 'US'
+            )
+        );
+        \WP_Mock::userFunction(
+            'get_user_meta',
+            array(
+                'times' => 1,
+                'args' => array(\WP_Mock\Functions::type('int'), 'billing_phone', true),
+                'return' => '2062062006'
+            )
+        );
+    }
+
+    public function testExternalIdFetchedFromCookieWhenObeidExists()
+    {
         self::mockFacebookWordpressOptions();
         \WP_Mock::userFunction('wp_get_current_user', array('return' => []));
         \WP_Mock::userFunction('get_current_user_id', array('return' => 0));
@@ -54,25 +116,13 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 
         $ev = $openBridgeInstance->extractFromDatabag($event);
 
-        $this->assertEquals('testObeid', $ev['external_id']);
+        $this->assertEquals(['testObeid'], $ev['external_id']);
     }
 
-    public function testExternalIdFetchedFromUserIdIfFirstTime() {
+    public function testExternalIdFetchedFromUserIdIfFirstTime()
+    {
         self::mockFacebookWordpressOptions();
-        \WP_Mock::userFunction(
-            'wp_get_current_user',
-            array('return' => (object) [
-                'ID' => 'testUser',
-                'user_email' => 'foo@foo.com',
-                'user_firstname' => 'John',
-                'user_lastname' => 'Doe',
-          ])
-        );
-        \WP_Mock::userFunction(
-            'get_current_user_id',
-            array('return' => 'testUser')
-        );
-
+        $this->setupCustomerBillingAddress();
         $_SESSION['obeid'] = 'testObeid';
 
         $event = ServerEventFactory::newEvent('Lead');
@@ -80,10 +130,11 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 
         $ev = $openBridgeInstance->extractFromDatabag($event);
 
-        $this->assertEquals('testUser,testObeid', $ev['external_id']);
+        $this->assertEquals(['1', 'testObeid'], $ev['external_id']);
     }
 
-    public function testExternalIdFetchedFromAAMIfFirstTimeAndUserIdNotFound() {
+    public function testExternalIdFetchedFromAAMIfFirstTimeAndUserIdNotFound()
+    {
         self::mockFacebookWordpressOptions();
         \WP_Mock::userFunction('wp_get_current_user', array('return' => []));
         \WP_Mock::userFunction('get_current_user_id', array('return' => 0));
@@ -91,13 +142,13 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 
         $openBridgeInstance = FacebookWordpressOpenBridge::getInstance();
         $event = array(
-            'fb.advanced_matching' => array (
+            'fb.advanced_matching' => array(
                 'external_id' => 'testAM'
-                )
-            );
+            )
+        );
 
         $ev = $openBridgeInstance->extractFromDatabag($event);
 
-        $this->assertEquals('testAM,testObeid', $ev['external_id']);
+        $this->assertEquals(['testAM', 'testObeid'], $ev['external_id']);
     }
 }

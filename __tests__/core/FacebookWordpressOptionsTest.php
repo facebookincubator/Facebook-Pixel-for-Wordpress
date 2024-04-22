@@ -123,7 +123,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
     $this->assertEquals($pixel_id, '');
     $this->assertEquals($access_token, '');
     $this->assertEquals($is_fbe_installed, '0');
-    $this->assertContains('fbe_wordpress_', $external_business_id);
+    $this->assertTrue(str_contains($external_business_id,'fbe_wordpress_'));
   }
 
   private function mockGetOption($mock_pixel_id=null, $mock_access_token=null,
