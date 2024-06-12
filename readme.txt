@@ -2,9 +2,9 @@
 Contributors: facebook
 Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, Conversions API, facebook retargeting, facebook standard events, Meta, Meta pixel, Meta Conversion API,
 Requires at least: 5.7
-Tested up to: 6.2
-Requires PHP: 7.2
-Stable tag: 3.0.15
+Tested up to: 6.5
+Requires PHP: 8.1
+Stable tag: 3.0.16
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,11 +31,6 @@ After plugin installed: <br />
 2. Click Get Started. <br />
 3. Complete the Facebook Business Extension flow. <br />
 4. Agree to share your access token with your site. <br />
-
-__Enable sending events via conversion API__ <br />
-You must complete the Facebook Business Extension flow before enabling sending events via conversions API.
-1. Go to settings page of the plugin. <br />
-2. Under, Meta Advanced Configuration, toggle the checkbox to enable/disable send website events to Meta using Conversions API
 
 == Frequently Asked Questions ==
 = Where can I find more information on Facebook Pixel? =

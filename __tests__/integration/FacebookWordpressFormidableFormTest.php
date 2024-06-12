@@ -122,7 +122,9 @@ final class FacebookWordpressFormidableFormTest
     self::setupErrorForm($mock_entry_id);
 
     FacebookWordpressFormidableForm::trackServerEvent(
-      $mock_entry_id, $mock_form_id);
+      $mock_entry_id,
+      $mock_form_id
+    );
 
     $tracked_events =
       FacebookServerSideEvent::getInstance()->getTrackedEvents();

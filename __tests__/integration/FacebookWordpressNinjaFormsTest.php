@@ -65,7 +65,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     $this->assertArrayHasKey('settings', $result[0]);
     $this->assertArrayHasKey('success_msg', $result[0]['settings']);
     $msg = $result[0]['settings']['success_msg'];
-    $this->assertRegexp(
+    $this->assertMatchesRegularExpression(
       '/ninja-forms[\s\S]+End Meta Pixel Event Code/', $msg);
 
     $tracked_events =
