@@ -5,8 +5,8 @@ Grow your business with Facebook for WordPress! This plugin will install a Faceb
 # Requirements
 
 Facebook for WordPress requires
-* WordPress 4.4+ or higher
-* PHP 5.6 or greater
+* WordPress 5.7 or higher
+* PHP 8.0 or greater
 
 # Get started
 
