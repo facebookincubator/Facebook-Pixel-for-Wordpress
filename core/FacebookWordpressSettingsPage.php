@@ -136,6 +136,53 @@ class FacebookWordpressSettingsPage {
     </div>
   </div>
 
+  <div class="events-manager-wrapper">
+    <h3>Coversion API Tests</h3>
+
+    <div class="events-manager-container">
+      <div>
+        <h3>Plugin Connected to Meta Events Manager</h3>
+        <p>Meta Events Manager is a tool that enables you to view and manage your event data. In Events Manager, you can set up, monitor and troubleshoot issues with your integrations, such as the Conversions API and Meta pixel.</p>
+      </div>
+
+      <div class="pixel-block events-manager-block">
+        <label>Pixel ID</label>
+        <input type="text" placeholder="1845790006837299" disabled />
+
+        <a href="#">Events Manager</a>
+      </div>
+
+      <div class="test-events-block events-manager-block">
+        <form class="test-form" action="javascript:void(0);">
+          <div class="test-form-field-wrapper">
+            <div class="text-form-inputs">
+              <div>
+                <label>Test Event Code</label>
+                <input type="text" placeholder="TEST4039" />
+              </div>
+  
+              <div>
+                <label for="event-type">Event Type</label>
+                <select name="event-type" id="event-type">
+                  <option value="purchase">Purchase</option>
+                  <option value="page_view">Page View</option>
+                </select>
+              </div>
+            </div>
+
+            <span class="advanced-edit-toggle">Advanced | Edit Event Data</span>
+          </div>
+
+          <button>Submit Event</button>
+        </form>
+
+        <div class="event-log-block">
+          <h4>Event Log</h4>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script async defer src="https://connect.facebook.net/en_US/sdk.js"></script>
   <div id="meta-ads-plugin">
   <div id="ad-creation-plugin">
