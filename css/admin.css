@@ -47,6 +47,10 @@
 }
 
 /* Events Manager Section */
+.events-manager-wrapper {
+  display: none;
+}
+
 .events-manager-container {
   display: flex;
   flex-direction: column;
