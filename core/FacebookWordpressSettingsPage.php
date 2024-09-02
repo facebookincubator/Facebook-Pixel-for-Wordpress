@@ -149,7 +149,7 @@ class FacebookWordpressSettingsPage {
         <label>Pixel ID</label>
         <input type="text" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
 
-        <a href="#">Events Manager</a>
+        <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Events Manager</a>
       </div>
 
       <div class="test-events-block events-manager-block">
