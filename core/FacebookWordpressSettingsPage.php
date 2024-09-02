@@ -147,7 +147,7 @@ class FacebookWordpressSettingsPage {
 
       <div class="pixel-block events-manager-block">
         <label>Pixel ID</label>
-        <input type="text" placeholder="1845790006837299" disabled />
+        <input type="text" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
 
         <a href="#">Events Manager</a>
       </div>
