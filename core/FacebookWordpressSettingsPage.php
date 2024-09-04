@@ -158,7 +158,7 @@ class FacebookWordpressSettingsPage {
             <div class="text-form-inputs">
               <div>
                 <label>Test Event Code</label>
-                <input type="text" placeholder="TEST4039" />
+                <input type="text" id="event-test-code" placeholder="TEST4039" />
               </div>
   
               <div>
@@ -191,7 +191,7 @@ class FacebookWordpressSettingsPage {
 						<textarea rows="13" id="advanced-payload" placeholder="Enter payload" class="hidden"></textarea>
           </div>
 
-          <button>Submit Event</button>
+          <button onclick="sendTestEvent(event);">Submit Event</button>
         </form>
 
         <div class="event-log-block">
@@ -407,6 +407,74 @@ class FacebookWordpressSettingsPage {
       } else {
         jQuery('#meta-ads-plugin').hide();
       }
+    }
+
+    function sendTestEvent(e){
+      e.preventDefault();
+			var advancedPayloadElement = document.getElementById('advanced-payload');
+			var testEventCode = '';
+			var testEventName = '';
+			var data = '';
+			if (!advancedPayloadElement.classList.contains('hidden')) {
+				if (!advancedPayloadElement.value){
+					alert("You must enter payload.");
+					return;
+				}
+				advancedPayload = advancedPayloadElement.value;
+				data = JSON.parse(advancedPayload);
+				if (data.test_event_code) {
+					testEventCode = data.test_event_code;
+				}
+				if (data.data[0].event_name) {
+					testEventName = data.data[0].event_name;
+				}
+			} else {
+				testEventCode = document.getElementById('event-test-code').value;
+      	testEventName = document.getElementById('test-event-name').value;
+				data = {
+					"data": [
+						{
+							"event_name": testEventName,
+							"event_time": Math.floor(Date.now() / 1000),
+							"event_id": "event.id." + Math.floor(Math.random() * 901 + 100),
+							"event_source_url": window.location.origin,
+							"action_source": "website",
+							"user_data": {
+									"em": [
+										"309a0a5c3e211326ae75ca18196d301a9bdbd1a882a4d2569511033da23f0abd"
+									],
+									"ph": [
+										"254aa248acb47dd654ca3ea53f48c2c26d641d23d7e2e93a1ec56258df7674c4"
+									]
+							},
+							"custom_data": {
+									"value": 100.2,
+									"currency": "USD",
+							}
+						}
+					],
+					"test_event_code": testEventCode
+				}
+			}
+
+      fetch("https://graph.facebook.com/v<?php echo ApiConfig::APIVersion; ?>/<?php echo FacebookWordpressOptions::getPixelId(); ?>/events?access_token=<?php echo FacebookWordpressOptions::getAccessToken(); ?>", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (!data.error) {
+          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${testEventCode}</td><td>${testEventName}</td><td>Success</td></tr>`);
+        } else {
+          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${data.error.message}</td><td>${testEventName}</td><td title="${data.error.error_user_title} - ${data.error.error_user_msg}">Error</td></tr>`);
+        }
+      })
+      .catch(error => {
+        document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${error.message}</td><td>${testEventName}</td><td>Error(${error.error_user_title} - ${error.error_user_msg})</td></tr>`);
+      });
     }
 
 		function toggleAdvancedPayload(){
