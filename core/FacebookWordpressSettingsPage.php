@@ -170,7 +170,9 @@ class FacebookWordpressSettingsPage {
               </div>
             </div>
 
-            <span class="advanced-edit-toggle">Advanced | Edit Event Data</span>
+            <span class="advanced-edit-toggle" onclick="toggleAdvancedPayload();">Advanced | Edit Event Data</span>
+
+						<textarea rows="13" id="advanced-payload" class="hidden"></textarea>
           </div>
 
           <button>Submit Event</button>
@@ -380,6 +382,10 @@ class FacebookWordpressSettingsPage {
         jQuery('#meta-ads-plugin').hide();
       }
     }
+
+		function toggleAdvancedPayload(){
+			document.getElementById('advanced-payload').classList.toggle('hidden');
+		}
 </script>
     <?php
     $initialScript = ob_get_clean();
