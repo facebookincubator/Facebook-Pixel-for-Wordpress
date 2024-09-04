@@ -163,9 +163,25 @@ class FacebookWordpressSettingsPage {
   
               <div>
                 <label for="event-type">Event Type</label>
-                <select name="event-type" id="event-type">
-                  <option value="purchase">Purchase</option>
-                  <option value="page_view">Page View</option>
+                <select name="event-type" id="test-event-name">
+                  <option>Purchase</option>
+                  <option>PageView</option>
+                  <option>AddToCart</option>
+                  <option>AddToWishlist</option>
+                  <option>ViewContent</option>
+                  <option>Subscribe</option>
+                  <option>Search</option>
+                  <option>AddPaymentInfo</option>
+                  <option>CompleteRegistration</option>
+                  <option>Contact</option>
+                  <option>CustomizeProduct</option>
+                  <option>Donate</option>
+                  <option>FindLocation</option>
+                  <option>InitiateCheckout</option>
+                  <option>Lead</option>
+                  <option>Schedule</option>
+                  <option>StartTrial</option>
+                  <option>SubmitApplication</option>
                 </select>
               </div>
             </div>
