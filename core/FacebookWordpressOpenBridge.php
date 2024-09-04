@@ -29,7 +29,7 @@ class FacebookWordpressOpenBridge {
     const EXTERNAL_ID_COOKIE = 'obeid';
 
     private static $instance = null;
-    private static $blocked_events = array('Microdata');
+    private static $blocked_events = array('SubscribedButtonClick','Microdata','InputData');
 
     public function __construct() {
     }
