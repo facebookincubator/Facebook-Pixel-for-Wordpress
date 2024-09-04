@@ -188,7 +188,7 @@ class FacebookWordpressSettingsPage {
 
             <span class="advanced-edit-toggle" onclick="toggleAdvancedPayload();">Advanced | Edit Event Data</span>
 
-						<textarea rows="13" id="advanced-payload" class="hidden"></textarea>
+						<textarea rows="13" id="advanced-payload" placeholder="Enter payload" class="hidden"></textarea>
           </div>
 
           <button>Submit Event</button>
