@@ -196,6 +196,16 @@ class FacebookWordpressSettingsPage {
 
         <div class="event-log-block">
           <h4>Event Log</h4>
+          <table>
+            <thead>
+              <tr>
+                <td>Code/Message</td>
+                <td>Event Type</td>
+                <td>Status</td>
+              </tr>
+            </thead>
+							<tbody></tbody>
+          </table>
         </div>
       </div>
     </div>
