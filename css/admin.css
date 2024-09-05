@@ -72,6 +72,16 @@
   border: none;
 }
 
+.events-manager-container textarea {
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+  box-shadow: 3px 2px 17px 0px rgba(0,0,0,0.25);
+  border: none;
+  resize: none;
+  margin-bottom: 10px;
+}
+
 .events-manager-container input:disabled {
   background-color: #E2E5E9;
   color: #00000050;
@@ -155,4 +165,6 @@
 .advanced-edit-toggle {
   font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
+  width: max-content;
 }
