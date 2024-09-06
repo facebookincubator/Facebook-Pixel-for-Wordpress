@@ -143,17 +143,20 @@ class FacebookWordpressSettingsPage {
       <div>
         <h3>Plugin Connected to Meta Events Manager</h3>
         <p>Meta Events Manager is a tool that enables you to view and manage your event data. In Events Manager, you can set up, monitor and troubleshoot issues with your integrations, such as the Conversions API and Meta pixel.</p>
+        <p>Visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Meta Events Manager</a> to view the events being tracked.</p>
       </div>
 
       <div class="pixel-block events-manager-block">
         <label>Pixel ID</label>
         <input type="text" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
-
-        <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Events Manager</a>
       </div>
 
       <div class="test-events-block events-manager-block">
         <form class="test-form" action="javascript:void(0);">
+          <div class="test-hints" style="margin-bottom: 20px;">
+            <p>To obtain the Test Event Code, visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>/test_events">Test events section</a> in the Events Manager and input the site's URL (printed below) to start testing.</p>
+            <input style="width: 100%; color: #333;" type="text" value="<?php echo get_site_url(); ?>" disabled />
+          </div>
           <div class="test-form-field-wrapper">
             <div class="text-form-inputs">
               <div>
