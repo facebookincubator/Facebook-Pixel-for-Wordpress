@@ -47,10 +47,6 @@
 }
 
 /* Events Manager Section */
-.events-manager-wrapper {
-  display: none;
-}
-
 .events-manager-container {
   display: flex;
   flex-direction: column;
@@ -126,11 +122,17 @@
   gap: 36px;
 }
 
-.test-form, .event-log-block {
+.test-form,
+.event-log-block {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-height: 428px;
+  width: 48%;
+}
+
+.event-log-block {
+  justify-content: flex-start;
 }
 
 .test-form-field-wrapper {
