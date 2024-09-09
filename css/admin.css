@@ -57,7 +57,7 @@
 
 .events-manager-container p {
   max-width: 500px;
-  margin: 0;
+  margin: 0 0 1.5em;
 }
 
 .events-manager-container input, .text-form-inputs select {
@@ -126,19 +126,16 @@
 .event-log-block {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   min-height: 428px;
   width: 48%;
-}
-
-.event-log-block {
-  justify-content: flex-start;
 }
 
 .test-form-field-wrapper {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-bottom: 20px;
 }
 
 .text-form-inputs {
