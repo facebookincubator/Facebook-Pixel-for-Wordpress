@@ -115,6 +115,7 @@
   border-radius: 6px;
   border: none;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .test-events-block {
