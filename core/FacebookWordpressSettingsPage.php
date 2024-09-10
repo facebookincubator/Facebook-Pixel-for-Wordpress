@@ -188,9 +188,10 @@ class FacebookWordpressSettingsPage {
                 </select>
               </div>
             </div>
-
-            <span class="advanced-edit-toggle" onclick="toggleAdvancedPayload();">Advanced | Edit Event Data</span>
-
+		 				<div class="advanced-payload-controls-wrapper">
+							<span class="advanced-edit-toggle" onclick="toggleAdvancedPayload();">Advanced | Edit Event Data</span>
+							<span id="populate-payload-button" class="hidden" onclick="populateAdvancedEvent(event);">Click here to load default payload</span>
+						</div>
 						<textarea rows="13" id="advanced-payload" placeholder="Enter payload" class="hidden"></textarea>
           </div>
 
@@ -482,6 +483,40 @@ class FacebookWordpressSettingsPage {
 
 		function toggleAdvancedPayload(){
 			document.getElementById('advanced-payload').classList.toggle('hidden');
+			document.getElementById('populate-payload-button').classList.toggle('hidden');
+		}
+
+		function populateAdvancedEvent(e){
+			e.preventDefault();
+			var exampleEvent = {
+				"data": [
+					{
+						"event_name": "Purchase",
+						"event_time": Math.floor(Date.now() / 1000),
+						"event_id": "event.id." + Math.floor(Math.random() * 901 + 100),
+						"event_source_url": window.location.origin,
+						"action_source": "website",
+						"user_data": {
+								"em": [
+									"309a0a5c3e211326ae75ca18196d301a9bdbd1a882a4d2569511033da23f0abd"
+								],
+								"ph": [
+									"254aa248acb47dd654ca3ea53f48c2c26d641d23d7e2e93a1ec56258df7674c4"
+								]
+						},
+						"custom_data": {
+								"value": 100.2,
+								"currency": "USD",
+								"content_ids": [
+									"product.id.123"
+								],
+								"content_type": "product"
+						},
+					}
+				],
+				"test_event_code": "TEST4039"
+			};
+			document.getElementById('advanced-payload').value = JSON.stringify(exampleEvent, null, 2);
 		}
 </script>
     <?php
