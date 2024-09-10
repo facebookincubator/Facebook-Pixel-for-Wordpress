@@ -167,3 +167,16 @@
   cursor: pointer;
   width: max-content;
 }
+
+.advanced-payload-controls-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#populate-payload-button {
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
