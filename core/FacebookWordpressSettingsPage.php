@@ -425,12 +425,17 @@ class FacebookWordpressSettingsPage {
 					return;
 				}
 				advancedPayload = advancedPayloadElement.value;
-				data = JSON.parse(advancedPayload);
-				if (data.test_event_code) {
-					testEventCode = data.test_event_code;
-				}
-				if (data.data[0].event_name) {
-					testEventName = data.data[0].event_name;
+				try {
+					data = JSON.parse(advancedPayload);
+					if (data.test_event_code) {
+						testEventCode = data.test_event_code;
+					}
+					if (data.data[0].event_name) {
+						testEventName = data.data[0].event_name;
+					}
+				} catch (e) {
+					alert("Invalid JSON in payload.");
+					return;
 				}
 			} else {
 				testEventCode = document.getElementById('event-test-code').value;
