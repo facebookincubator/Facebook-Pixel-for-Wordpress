@@ -466,6 +466,12 @@ class FacebookWordpressSettingsPage {
 				}
 			}
 
+			if (!testEventCode) {
+				alert("You must enter test event code.");
+				return;
+			}
+
+			
       fetch("https://graph.facebook.com/v<?php echo ApiConfig::APIVersion; ?>/<?php echo FacebookWordpressOptions::getPixelId(); ?>/events?access_token=<?php echo FacebookWordpressOptions::getAccessToken(); ?>", {
         method: 'POST',
         headers: {
