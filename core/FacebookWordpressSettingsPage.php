@@ -495,14 +495,17 @@ class FacebookWordpressSettingsPage {
 		function toggleAdvancedPayload(){
 			document.getElementById('advanced-payload').classList.toggle('hidden');
 			document.getElementById('populate-payload-button').classList.toggle('hidden');
+			if (!document.getElementById('advanced-payload').value && !document.getElementById('advanced-payload').classList.contains('hidden')) {
+				populateAdvancedEvent();
+			}
 		}
 
-		function populateAdvancedEvent(e){
-			e.preventDefault();
+		function populateAdvancedEvent(){
+			testEventName = document.getElementById('test-event-name').value;
 			var exampleEvent = {
 				"data": [
 					{
-						"event_name": "Purchase",
+						"event_name": testEventName,
 						"event_time": Math.floor(Date.now() / 1000),
 						"event_id": "event.id." + Math.floor(Math.random() * 901 + 100),
 						"event_source_url": window.location.origin,
