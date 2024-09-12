@@ -17,6 +17,8 @@ You’ll be able to see when customers took an action after seeing your ad on Fa
 
 The Conversions API is designed to create a direct connection between your marketing data and the Meta systems, which help optimise ad targeting, decrease cost per action and measure results across Meta technologies. [Learn More](https://www.facebook.com/business/help/2041148702652965?id=818859032317965)
 
+You can find more information about our Privacy Policy [here](https://developers.facebook.com/terms/).
+
 == Installation ==
 __To install from your WordPress site__ <br />
 1. Log in to your WordPress dashboard, navigate to the Plugins menu and click Add New. <br />
