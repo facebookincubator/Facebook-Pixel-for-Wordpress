@@ -188,11 +188,11 @@ class FacebookWordpressSettingsPage {
                 </select>
               </div>
             </div>
-		 				<div class="advanced-payload-controls-wrapper">
-							<span class="advanced-edit-toggle" onclick="toggleAdvancedPayload();">Advanced | Edit Event Data</span>
-							<span id="populate-payload-button" class="hidden" onclick="populateAdvancedEvent(event);">Click here to load default payload</span>
-						</div>
-						<textarea rows="13" id="advanced-payload" placeholder="Enter payload" class="hidden"></textarea>
+             <div class="advanced-payload-controls-wrapper">
+              <span class="advanced-edit-toggle" onclick="toggleAdvancedPayload();">Advanced | Edit Event Data</span>
+              <span id="populate-payload-button" class="hidden" onclick="populateAdvancedEvent(event);">Click here to load default payload</span>
+            </div>
+            <textarea rows="13" id="advanced-payload" placeholder="Enter payload" class="hidden"></textarea>
           </div>
 
           <button onclick="sendTestEvent(event);">Submit Event</button>
@@ -208,7 +208,7 @@ class FacebookWordpressSettingsPage {
                 <td>Status</td>
               </tr>
             </thead>
-							<tbody></tbody>
+              <tbody></tbody>
           </table>
         </div>
       </div>
@@ -415,63 +415,63 @@ class FacebookWordpressSettingsPage {
 
     function sendTestEvent(e){
       e.preventDefault();
-			var advancedPayloadElement = document.getElementById('advanced-payload');
-			var testEventCode = '';
-			var testEventName = '';
-			var data = '';
-			if (!advancedPayloadElement.classList.contains('hidden')) {
-				if (!advancedPayloadElement.value){
-					alert("You must enter payload.");
-					return;
-				}
-				advancedPayload = advancedPayloadElement.value;
-				try {
-					data = JSON.parse(advancedPayload);
-					if (data.test_event_code) {
-						testEventCode = data.test_event_code;
-					}
-					if (data.data[0].event_name) {
-						testEventName = data.data[0].event_name;
-					}
-				} catch (e) {
-					alert("Invalid JSON in payload.");
-					return;
-				}
-			} else {
-				testEventCode = document.getElementById('event-test-code').value;
-      	testEventName = document.getElementById('test-event-name').value;
-				data = {
-					"data": [
-						{
-							"event_name": testEventName,
-							"event_time": Math.floor(Date.now() / 1000),
-							"event_id": "event.id." + Math.floor(Math.random() * 901 + 100),
-							"event_source_url": window.location.origin,
-							"action_source": "website",
-							"user_data": {
-									"em": [
-										"309a0a5c3e211326ae75ca18196d301a9bdbd1a882a4d2569511033da23f0abd"
-									],
-									"ph": [
-										"254aa248acb47dd654ca3ea53f48c2c26d641d23d7e2e93a1ec56258df7674c4"
-									]
-							},
-							"custom_data": {
-									"value": 100.2,
-									"currency": "USD",
-							}
-						}
-					],
-					"test_event_code": testEventCode
-				}
-			}
+      var advancedPayloadElement = document.getElementById('advanced-payload');
+      var testEventCode = '';
+      var testEventName = '';
+      var data = '';
+      if (!advancedPayloadElement.classList.contains('hidden')) {
+        if (!advancedPayloadElement.value){
+          alert("You must enter payload.");
+          return;
+        }
+        advancedPayload = advancedPayloadElement.value;
+        try {
+          data = JSON.parse(advancedPayload);
+          if (data.test_event_code) {
+            testEventCode = data.test_event_code;
+          }
+          if (data.data[0].event_name) {
+            testEventName = data.data[0].event_name;
+          }
+        } catch (e) {
+          alert("Invalid JSON in payload.");
+          return;
+        }
+      } else {
+        testEventCode = document.getElementById('event-test-code').value;
+        testEventName = document.getElementById('test-event-name').value;
+        data = {
+          "data": [
+            {
+              "event_name": testEventName,
+              "event_time": Math.floor(Date.now() / 1000),
+              "event_id": "event.id." + Math.floor(Math.random() * 901 + 100),
+              "event_source_url": window.location.origin,
+              "action_source": "website",
+              "user_data": {
+                  "em": [
+                    "309a0a5c3e211326ae75ca18196d301a9bdbd1a882a4d2569511033da23f0abd"
+                  ],
+                  "ph": [
+                    "254aa248acb47dd654ca3ea53f48c2c26d641d23d7e2e93a1ec56258df7674c4"
+                  ]
+              },
+              "custom_data": {
+                  "value": 100.2,
+                  "currency": "USD",
+              }
+            }
+          ],
+          "test_event_code": testEventCode
+        }
+      }
 
-			if (!testEventCode) {
-				alert("You must enter test event code.");
-				return;
-			}
+      if (!testEventCode) {
+        alert("You must enter test event code.");
+        return;
+      }
 
-			
+      
       fetch("https://graph.facebook.com/v<?php echo ApiConfig::APIVersion; ?>/<?php echo FacebookWordpressOptions::getPixelId(); ?>/events?access_token=<?php echo FacebookWordpressOptions::getAccessToken(); ?>", {
         method: 'POST',
         headers: {
@@ -492,46 +492,46 @@ class FacebookWordpressSettingsPage {
       });
     }
 
-		function toggleAdvancedPayload(){
-			document.getElementById('advanced-payload').classList.toggle('hidden');
-			document.getElementById('populate-payload-button').classList.toggle('hidden');
-			if (!document.getElementById('advanced-payload').value && !document.getElementById('advanced-payload').classList.contains('hidden')) {
-				populateAdvancedEvent();
-			}
-		}
+    function toggleAdvancedPayload(){
+      document.getElementById('advanced-payload').classList.toggle('hidden');
+      document.getElementById('populate-payload-button').classList.toggle('hidden');
+      if (!document.getElementById('advanced-payload').value && !document.getElementById('advanced-payload').classList.contains('hidden')) {
+        populateAdvancedEvent();
+      }
+    }
 
-		function populateAdvancedEvent(){
-			testEventName = document.getElementById('test-event-name').value;
-			var exampleEvent = {
-				"data": [
-					{
-						"event_name": testEventName,
-						"event_time": Math.floor(Date.now() / 1000),
-						"event_id": "event.id." + Math.floor(Math.random() * 901 + 100),
-						"event_source_url": window.location.origin,
-						"action_source": "website",
-						"user_data": {
-								"em": [
-									"309a0a5c3e211326ae75ca18196d301a9bdbd1a882a4d2569511033da23f0abd"
-								],
-								"ph": [
-									"254aa248acb47dd654ca3ea53f48c2c26d641d23d7e2e93a1ec56258df7674c4"
-								]
-						},
-						"custom_data": {
-								"value": 100.2,
-								"currency": "USD",
-								"content_ids": [
-									"product.id.123"
-								],
-								"content_type": "product"
-						},
-					}
-				],
-				"test_event_code": "TEST4039"
-			};
-			document.getElementById('advanced-payload').value = JSON.stringify(exampleEvent, null, 2);
-		}
+    function populateAdvancedEvent(){
+      testEventName = document.getElementById('test-event-name').value;
+      var exampleEvent = {
+        "data": [
+          {
+            "event_name": testEventName,
+            "event_time": Math.floor(Date.now() / 1000),
+            "event_id": "event.id." + Math.floor(Math.random() * 901 + 100),
+            "event_source_url": window.location.origin,
+            "action_source": "website",
+            "user_data": {
+                "em": [
+                  "309a0a5c3e211326ae75ca18196d301a9bdbd1a882a4d2569511033da23f0abd"
+                ],
+                "ph": [
+                  "254aa248acb47dd654ca3ea53f48c2c26d641d23d7e2e93a1ec56258df7674c4"
+                ]
+            },
+            "custom_data": {
+                "value": 100.2,
+                "currency": "USD",
+                "content_ids": [
+                  "product.id.123"
+                ],
+                "content_type": "product"
+            },
+          }
+        ],
+        "test_event_code": "TEST4039"
+      };
+      document.getElementById('advanced-payload').value = JSON.stringify(exampleEvent, null, 2);
+    }
 </script>
     <?php
     $initialScript = ob_get_clean();
