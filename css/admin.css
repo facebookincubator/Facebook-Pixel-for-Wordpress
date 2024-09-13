@@ -120,6 +120,11 @@
   border: none;
   text-decoration: none;
   cursor: pointer;
+  transition: 0.3s;
+}
+
+.test-form button:hover {
+  box-shadow: 3px 2px 17px 0px rgba(0,0,0,0.25);
 }
 
 .test-events-block {
@@ -194,24 +199,36 @@
 }
 
 .test-event-td,
-.test-event-msg {
+.test-event-pill {
     font-size: 12px;
 }
 
-.test-event-msg span {
+.test-event-td {
+    color: #00000080;
+}
+
+.test-event-pill span {
+   display: block;
+   width: 80px;
    padding: 1px 6px;
    border-radius: 5px;
    font-weight: 700;
+   text-align: center;
 }
 
-.test-event-msg--success span {
+.test-event-pill--success span {
     color: #007e59;
     background-color: #daf2c2;
 }
 
-.test-event-msg--error span {
+.test-event-pill--error span {
     background-color: #DE3F2466;
     color: #DE3F24;
+}
+
+.test-event-pill--type span {
+    background-color: #ECECEC;
+    width: 108px;
 }
 
 .advanced-edit-toggle {
@@ -225,6 +242,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: 15px;
 }
 
 #populate-payload-button {
