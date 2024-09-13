@@ -203,8 +203,8 @@ class FacebookWordpressSettingsPage {
           <table>
             <thead class="event-log-block__head">
               <tr>
+                <td>Time</td>
                 <td>Code/Message</td>
-                <td>Event Type</td>
                 <td>Status</td>
               </tr>
             </thead>
@@ -440,6 +440,21 @@ class FacebookWordpressSettingsPage {
       } else {
         testEventCode = document.getElementById('event-test-code').value;
         testEventName = document.getElementById('test-event-name').value;
+        testEventTime = new Date();
+        yesterday = new Date();
+        yesterday.setDate(testEventTime.getDate() - 1);
+
+        isToday = testEventTime.toDateString() === testEventTime.toDateString();
+        isYesterday = testEventTime.toDateString() === yesterday.toDateString();
+
+        if (isToday) {
+            formattedDate = `Today at ${testEventTime.toLocaleTimeString()}`;
+        } else if (isYesterday) {
+            formattedDate = `Yesterday at ${testEventTime.toLocaleDateString()}`;
+        } else {
+            formattedDate = `${testEventTime.toLocaleDateString('de-DE')} at ${testEventTime.toLocaleTimeString()}`;
+        }
+
         data = {
           "data": [
             {
@@ -464,13 +479,15 @@ class FacebookWordpressSettingsPage {
           ],
           "test_event_code": testEventCode
         }
+
+        testEvenDate = data.data[0].event_time;
+
       }
 
       if (!testEventCode) {
         alert("You must enter test event code.");
         return;
       }
-
       
       fetch("https://graph.facebook.com/v<?php echo ApiConfig::APIVersion; ?>/<?php echo FacebookWordpressOptions::getPixelId(); ?>/events?access_token=<?php echo FacebookWordpressOptions::getAccessToken(); ?>", {
         method: 'POST',
@@ -482,9 +499,9 @@ class FacebookWordpressSettingsPage {
       .then(response => response.json())
       .then(data => {
         if (!data.error) {
-          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td class="test-event-td test-event-msg">${testEventCode}</td><td>${testEventName}</td><td class="test-event-td test-event-status"><span>Success</span></td></tr>`);
+          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td class="test-event-td">${formattedDate}</td><td>${testEventCode}</td><td class="test-event-td test-event-msg test-event-msg--success"><span>Success</span></td></tr>`);
         } else {
-          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td class="test-event-td test-event-msg--error">${data.error.message}</td><td>${testEventName}</td><td title="${data.error.error_user_title} - ${data.error.error_user_msg}">Error</td></tr>`);
+          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td class="test-event-td">${data.error.message}</td><td>${testEventName}</td><td class="test-event-msg test-event-msg--error" title="${data.error.error_user_title} - ${data.error.error_user_msg}"><span>Error</span></td></tr>`);
         }
       })
       .catch(error => {
