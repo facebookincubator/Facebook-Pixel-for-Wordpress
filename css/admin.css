@@ -181,26 +181,37 @@
     align-items: center;
     height: 100%;
     min-height: 40px;
+    border-bottom: 1px solid #E2E5E9;
+}
+
+.event-log-block .event-log-block__head tr {
+    border-bottom: 1px solid #000;
 }
 
 .event-log-block__head {
     display: block;
     height: 40px;
-    border-bottom: 1px solid #E2E5E9;
 }
 
-
-
-.test-event-td {
+.test-event-td,
+.test-event-msg {
     font-size: 12px;
 }
 
-.test-event-status span {
-   color: #007e59;
-   background-color: #daf2c2;
+.test-event-msg span {
    padding: 1px 6px;
    border-radius: 5px;
    font-weight: 700;
+}
+
+.test-event-msg--success span {
+    color: #007e59;
+    background-color: #daf2c2;
+}
+
+.test-event-msg--error span {
+    background-color: #DE3F2466;
+    color: #DE3F24;
 }
 
 .advanced-edit-toggle {
