@@ -203,8 +203,8 @@ class FacebookWordpressSettingsPage {
           <table>
             <thead class="event-log-block__head">
               <tr>
-                <td>Time</td>
                 <td>Code/Message</td>
+                <td>Event Type</td>
                 <td>Status</td>
               </tr>
             </thead>
@@ -440,21 +440,6 @@ class FacebookWordpressSettingsPage {
       } else {
         testEventCode = document.getElementById('event-test-code').value;
         testEventName = document.getElementById('test-event-name').value;
-        testEventTime = new Date();
-        yesterday = new Date();
-        yesterday.setDate(testEventTime.getDate() - 1);
-
-        isToday = testEventTime.toDateString() === testEventTime.toDateString();
-        isYesterday = testEventTime.toDateString() === yesterday.toDateString();
-
-        if (isToday) {
-            formattedDate = `Today at ${testEventTime.toLocaleTimeString()}`;
-        } else if (isYesterday) {
-            formattedDate = `Yesterday at ${testEventTime.toLocaleDateString()}`;
-        } else {
-            formattedDate = `${testEventTime.toLocaleDateString('de-DE')} at ${testEventTime.toLocaleTimeString()}`;
-        }
-
         data = {
           "data": [
             {
@@ -479,9 +464,6 @@ class FacebookWordpressSettingsPage {
           ],
           "test_event_code": testEventCode
         }
-
-        testEvenDate = data.data[0].event_time;
-
       }
 
       if (!testEventCode) {
@@ -499,9 +481,9 @@ class FacebookWordpressSettingsPage {
       .then(response => response.json())
       .then(data => {
         if (!data.error) {
-          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td class="test-event-td">${formattedDate}</td><td>${testEventCode}</td><td class="test-event-td test-event-msg test-event-msg--success"><span>Success</span></td></tr>`);
+          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td clas="test-event-td">${testEventCode}</td><td class="test-event-pill test-event-pill--type"><span>${testEventName}</span></td><td class="test-event-pill test-event-pill--success"><span>Success</span></td></tr>`);
         } else {
-          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td class="test-event-td">${data.error.message}</td><td>${testEventName}</td><td class="test-event-msg test-event-msg--error" title="${data.error.error_user_title} - ${data.error.error_user_msg}"><span>Error</span></td></tr>`);
+          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${data.error.message}</td><td>${testEventName}</td><td class="test-event-pill test-event-pill--error" title="${data.error.error_user_title} - ${data.error.error_user_msg}"><span>Error</span></td></tr>`);
         }
       })
       .catch(error => {
