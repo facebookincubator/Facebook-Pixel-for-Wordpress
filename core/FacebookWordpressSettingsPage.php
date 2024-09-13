@@ -151,8 +151,8 @@ class FacebookWordpressSettingsPage {
         <input type="text" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
       </div>
 
-      <div class="test-events-block events-manager-block">
-        <form class="test-form" action="javascript:void(0);">
+      <div class="test-events-block">
+        <form class="test-form events-manager-block" action="javascript:void(0);">
           <div class="test-hints" style="margin-bottom: 20px;">
             <p>To obtain the Test Event Code, visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>/test_events">Test events section</a> in the Events Manager and input the site's URL (printed below) to start testing.</p>
             <input style="width: 100%; color: #333;" type="text" value="<?php echo get_site_url(); ?>" disabled />
@@ -198,17 +198,17 @@ class FacebookWordpressSettingsPage {
           <button onclick="sendTestEvent(event);">Submit Event</button>
         </form>
 
-        <div class="event-log-block">
+        <div class="event-log-block events-manager-block">
           <h4>Event Log</h4>
           <table>
-            <thead>
+            <thead class="event-log-block__head">
               <tr>
                 <td>Code/Message</td>
                 <td>Event Type</td>
                 <td>Status</td>
               </tr>
             </thead>
-              <tbody></tbody>
+            <tbody></tbody>
           </table>
         </div>
       </div>
@@ -482,9 +482,9 @@ class FacebookWordpressSettingsPage {
       .then(response => response.json())
       .then(data => {
         if (!data.error) {
-          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${testEventCode}</td><td>${testEventName}</td><td>Success</td></tr>`);
+          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td class="test-event-td test-event-msg">${testEventCode}</td><td>${testEventName}</td><td class="test-event-td test-event-status"><span>Success</span></td></tr>`);
         } else {
-          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${data.error.message}</td><td>${testEventName}</td><td title="${data.error.error_user_title} - ${data.error.error_user_msg}">Error</td></tr>`);
+          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td class="test-event-td test-event-msg--error">${data.error.message}</td><td>${testEventName}</td><td title="${data.error.error_user_title} - ${data.error.error_user_msg}">Error</td></tr>`);
         }
       })
       .catch(error => {
