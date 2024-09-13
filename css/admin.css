@@ -222,8 +222,15 @@
 }
 
 .test-event-pill--error span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background-color: #DE3F2466;
     color: #DE3F24;
+}
+
+.test-event-pill--error svg:hover {
+    cursor: pointer;
 }
 
 .test-event-pill--type span {

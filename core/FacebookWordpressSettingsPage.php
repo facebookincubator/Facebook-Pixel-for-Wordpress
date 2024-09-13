@@ -489,8 +489,8 @@ class FacebookWordpressSettingsPage {
         if (!data.error) {
           document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td clas="test-event-td">${testEventCode}</td><td class="test-event-pill test-event-pill--type"><span>${testEventName}</span></td><td class="test-event-pill test-event-pill--success"><span>Success</span></td></tr>`);
         } else {
-          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${data.error.message}</td><td>${testEventName}</td><td class="test-event-pill test-event-pill--error" title="${data.error.error_user_title} - ${data.error.error_user_msg}"><span>Error</span></td></tr>`);
-        }
+            document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${data.error.message}</td><td>${testEventName}</td><td class="test-event-pill test-event-pill--error" title="${data.error.error_user_title} - ${data.error.error_user_msg}"><span>Error <svg class="advanced-edit-toggle-arrow" width="9" height="6" viewBox="0 0 9 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 1L4.5 4.5L1 1" stroke="#929292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td></tr>`);
+            }
       })
       .catch(error => {
         document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${error.message}</td><td>${testEventName}</td><td>Error(${error.error_user_title} - ${error.error_user_msg})</td></tr>`);
