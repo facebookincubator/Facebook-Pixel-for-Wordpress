@@ -151,67 +151,73 @@ class FacebookWordpressSettingsPage {
         <input type="text" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
       </div>
 
-      <div class="test-events-block">
-        <form class="test-form events-manager-block" action="javascript:void(0);">
-          <div class="test-hints" style="margin-bottom: 20px;">
-            <p>To obtain the Test Event Code, visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>/test_events">Test events section</a> in the Events Manager and input the site's URL (printed below) to start testing.</p>
-            <input style="width: 100%; color: #333;" type="text" value="<?php echo get_site_url(); ?>" disabled />
-          </div>
-          <div class="test-form-field-wrapper">
-            <div class="text-form-inputs">
-              <div>
-                <label>Test Event Code</label>
-                <input type="text" id="event-test-code" placeholder="TEST4039" />
-              </div>
+	  <div class="test-events-block events-manager-block">
+		<form class="test-form" action="javascript:void(0);">
+		  <div class="test-hints" style="margin-bottom: 20px;">
+			<p>To obtain the Test Event Code, visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>/test_events">Test events section</a> in the Events Manager and input the site's URL (printed below) to start testing.</p>
+			<input style="width: 100%; color: #333;" type="text" value="<?php echo get_site_url(); ?>" disabled />
+		  </div>
+		  <div class="test-form-field-wrapper">
+			<div class="text-form-inputs">
+			  <div>
+				<label>Test Event Code</label>
+				<input type="text" id="event-test-code" placeholder="TEST4039" />
+			  </div>
   
-              <div>
-                <label for="event-type">Event Type</label>
-                <select name="event-type" id="test-event-name">
-                  <option>Purchase</option>
-                  <option>PageView</option>
-                  <option>AddToCart</option>
-                  <option>AddToWishlist</option>
-                  <option>ViewContent</option>
-                  <option>Subscribe</option>
-                  <option>Search</option>
-                  <option>AddPaymentInfo</option>
-                  <option>CompleteRegistration</option>
-                  <option>Contact</option>
-                  <option>CustomizeProduct</option>
-                  <option>Donate</option>
-                  <option>FindLocation</option>
-                  <option>InitiateCheckout</option>
-                  <option>Lead</option>
-                  <option>Schedule</option>
-                  <option>StartTrial</option>
-                  <option>SubmitApplication</option>
-                </select>
-              </div>
-            </div>
-             <div class="advanced-payload-controls-wrapper">
-              <span class="advanced-edit-toggle" onclick="toggleAdvancedPayload();">Advanced | Edit Event Data</span>
-              <span id="populate-payload-button" class="hidden" onclick="populateAdvancedEvent(event);">Click here to load default payload</span>
-            </div>
-            <textarea rows="13" id="advanced-payload" placeholder="Enter payload" class="hidden"></textarea>
-          </div>
+			  <div>
+				<label for="event-type">Event Type</label>
+				<select name="event-type" id="test-event-name">
+				  <option>Purchase</option>
+				  <option>PageView</option>
+				  <option>AddToCart</option>
+				  <option>AddToWishlist</option>
+				  <option>ViewContent</option>
+				  <option>Subscribe</option>
+				  <option>Search</option>
+				  <option>AddPaymentInfo</option>
+				  <option>CompleteRegistration</option>
+				  <option>Contact</option>
+				  <option>CustomizeProduct</option>
+				  <option>Donate</option>
+				  <option>FindLocation</option>
+				  <option>InitiateCheckout</option>
+				  <option>Lead</option>
+				  <option>Schedule</option>
+				  <option>StartTrial</option>
+				  <option>SubmitApplication</option>
+				</select>
+			  </div>
+			</div>
+            <div class="advanced-payload-controls-wrapper">
+                <span class="advanced-edit-toggle" onclick="toggleAdvancedPayload();">Advanced | Edit Event Data
+                    <svg class="advanced-edit-toggle-arrow" width="9" height="6" viewBox="0 0 9 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 1L4.5 4.5L1 1" stroke="#929292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
 
-          <button onclick="sendTestEvent(event);">Submit Event</button>
-        </form>
+			  <span id="populate-payload-button" class="hidden" onclick="populateAdvancedEvent(event);">Click here to load default payload</span>
+			</div>
+			<textarea rows="13" id="advanced-payload" placeholder="Enter payload" class="hidden"></textarea>
+		  </div>
 
-        <div class="event-log-block events-manager-block">
-          <h4>Event Log</h4>
-          <table>
-            <thead class="event-log-block__head">
-              <tr>
-                <td>Code/Message</td>
-                <td>Event Type</td>
-                <td>Status</td>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
+		  <button onclick="sendTestEvent(event);">Submit Event</button>
+		</form>
+
+		<div class="event-log-block">
+		  <h4>Event Log</h4>
+		  <table>
+			<thead class="event-log-block__head">
+			  <tr>
+				<td>Code/Message</td>
+				<td>Event Type</td>
+				<td>Status</td>
+			  </tr>
+			</thead>
+			<tbody></tbody>
+		  </table>
+		</div>
+	  </div>
+
     </div>
   </div>
 
@@ -494,6 +500,8 @@ class FacebookWordpressSettingsPage {
     function toggleAdvancedPayload(){
       document.getElementById('advanced-payload').classList.toggle('hidden');
       document.getElementById('populate-payload-button').classList.toggle('hidden');
+      document.querySelector('.advanced-edit-toggle-arrow').classList.toggle('open');
+
       if (!document.getElementById('advanced-payload').value && !document.getElementById('advanced-payload').classList.contains('hidden')) {
         populateAdvancedEvent();
       }

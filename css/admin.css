@@ -51,7 +51,7 @@
   display: flex;
   flex-direction: column;
   gap: 36px;
-  padding: 16px;
+  padding: 36px 20px;
   background-color: #ffffff;
 }
 
@@ -228,14 +228,25 @@
 
 .test-event-pill--type span {
     background-color: #ECECEC;
+    color: #797979;
     width: 108px;
 }
 
 .advanced-edit-toggle {
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  width: max-content;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    width: max-content;
+}
+
+.advanced-edit-toggle-arrow {
+    margin-left: 19px;
+}
+
+.advanced-edit-toggle-arrow.open {
+    transform: rotate(180deg)
 }
 
 .advanced-payload-controls-wrapper {
