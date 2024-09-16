@@ -154,7 +154,7 @@ class FacebookWordpressSettingsPage {
 	  <div class="test-events-block events-manager-block">
 		<form class="test-form" action="javascript:void(0);">
 		  <div class="test-hints" style="margin-bottom: 20px;">
-			<p>To obtain the Test Event Code, visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>/test_events">Test events section</a> in the Events Manager and input the site's URL (printed below) to start testing.</p>
+			<p>To obtain the Test Event Code, visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>/test_events">Test events section</a> in the <b>Events Manager</b> and input the site's URL (printed below) to start testing.</p>
 			<input style="width: 100%; color: #333;" type="text" value="<?php echo get_site_url(); ?>" disabled />
 		  </div>
 		  <div class="test-form-field-wrapper">
@@ -489,7 +489,7 @@ class FacebookWordpressSettingsPage {
         if (!data.error) {
           document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td clas="test-event-td">${testEventCode}</td><td><span class="test-event-pill test-event-pill--type">${testEventName}</span></td><td><span class="test-event-pill test-event-pill--success">Success</span></td></tr>`);
         } else {
-                document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr class="test-event--error"><td class="test-event-td--error">${data.error.message}</td><td class="test-event-pill test-event-pill--type">${testEventName}</td><td title="${data.error.error_user_title} - ${data.error.error_user_msg}"><span class="test-event-pill test-event-button--error">Error <svg id="show-error-btn" class="advanced-edit-toggle-arrow" width="9" height="6" viewBox="0 0 9 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 1L4.5 4.5L1 1" stroke="#929292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td></tr> <p class="test-event-msg--error hidden">${data.error.error_user_msg}</p>`);
+                document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr class="test-event--error"><td class="test-event-td test-event-td--error">${data.error.message}</td><td class="test-event-pill test-event-pill--type">${testEventName}</td><td title="${data.error.error_user_title} - ${data.error.error_user_msg}"><span class="test-event-pill test-event-button--error">Error <svg id="show-error-btn" class="advanced-edit-toggle-arrow" width="9" height="6" viewBox="0 0 9 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 1L4.5 4.5L1 1" stroke="#929292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td></tr> <p class="test-event-msg--error hidden">${data.error.error_user_msg}</p>`);
 
                 const testErrorButton = document.querySelectorAll('.test-event-button--error');
                 testErrorButton.forEach(button => {
