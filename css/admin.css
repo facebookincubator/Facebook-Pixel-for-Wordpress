@@ -207,7 +207,7 @@
     color: #00000080;
 }
 
-.test-event-pill span {
+.test-event-pill {
    display: block;
    width: 80px;
    padding: 1px 6px;
@@ -216,12 +216,28 @@
    text-align: center;
 }
 
-.test-event-pill--success span {
+.test-event-pill--success {
     color: #007e59;
     background-color: #daf2c2;
 }
 
-.test-event-pill--error span {
+.test-event-msg--error {
+    background: #fff;
+    color: #000;
+    font-weight: 100;
+    position: absolute;
+    border: 1px solid;
+    text-align: left;
+    padding: 7px;
+    font-size: 12px;
+    width: 14vw;
+}
+
+.test-event-msg--error.hidden {
+    display: none;
+}
+
+.test-event-pill--error {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -229,11 +245,11 @@
     color: #DE3F24;
 }
 
-.test-event-pill--error svg:hover {
+.test-event-pill--error:hover {
     cursor: pointer;
 }
 
-.test-event-pill--type span {
+.test-event-pill--type {
     background-color: #ECECEC;
     color: #797979;
     width: 108px;
