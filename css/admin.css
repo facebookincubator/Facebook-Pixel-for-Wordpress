@@ -127,6 +127,22 @@
   box-shadow: 3px 2px 17px 0px rgba(0,0,0,0.25);
 }
 
+.test-hints {
+    background-color: #BFDCFF;
+}
+
+.test-hints p {
+    max-width: none;
+    padding: 12px 45px;
+    margin: 0;
+    color: #000;
+}
+
+.test-hints input {
+    border-radius: 0;
+    margin-left: 0;
+}
+
 .test-events-block {
     display: flex;
     flex-direction: row;
@@ -189,6 +205,12 @@
     border-bottom: 1px solid #000;
 }
 
+.event-log-block table tbody tr td {
+    display: block;
+    color: #00000080;
+    font-size: 14px;
+}
+
 .event-log-block__head {
     display: block;
     height: 40px;
@@ -197,10 +219,6 @@
 .test-event-td,
 .test-event-pill {
     font-size: 12px;
-}
-
-.test-event-td {
-    color: #00000080;
 }
 
 .test-event-pill {
@@ -230,6 +248,7 @@
     transition: all 0.2s ease-out;
     padding: 7px;
     opacity: 1;
+    margin-bottom: 0;
 }
 
 .event-log-block table .test-event-msg--error.hidden {
