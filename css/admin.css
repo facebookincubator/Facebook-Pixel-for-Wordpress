@@ -127,13 +127,21 @@
   box-shadow: 3px 2px 17px 0px rgba(0,0,0,0.25);
 }
 
-.test-hints {
+.test-hints__wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 22px;
     background-color: #BFDCFF;
+    padding: 12px 45px;
+}
+.test-hints__wrapper svg {
+    min-width: 16px;
+    min-height: 16px;
 }
 
 .test-hints p {
     max-width: none;
-    padding: 12px 45px;
     margin: 0;
     color: #000;
 }
