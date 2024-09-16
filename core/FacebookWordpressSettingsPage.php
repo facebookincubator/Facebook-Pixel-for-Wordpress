@@ -137,7 +137,7 @@ class FacebookWordpressSettingsPage {
   </div>
 
   <div class="events-manager-wrapper">
-    <h3>Coversion API Tests</h3>
+    <h3>Conversion API Tests</h3>
 
     <div class="events-manager-container">
       <div>
