@@ -151,6 +151,8 @@ class FacebookWordpressSettingsPage {
         <input type="text" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
       </div>
 
+      <?php echo '<img class="test-form-img" src = ' . plugin_dir_url( __DIR__ ) . 'assets/event-log-head.png alt="Test form image">'; ?>
+
 	  <div class="test-events-block events-manager-block">
 		<form class="test-form" action="javascript:void(0);">
         <div class="test-hints" style="margin-bottom: 20px;">
