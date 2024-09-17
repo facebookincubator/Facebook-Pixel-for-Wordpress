@@ -134,7 +134,7 @@
     align-items: center;
     gap: 22px;
     background-color: #BFDCFF;
-    padding: 12px 45px;
+    padding: 12px 22px;
 }
 .test-hints__wrapper svg {
     min-width: 16px;
@@ -237,7 +237,8 @@
 }
 
 .event-log-block .event-log-block__head tr {
-    border-bottom: 1px solid #000;
+    border-bottom: 1px solid #717375;
+    align-items: self-end;
 }
 
 .event-log-block table tbody tr td {
