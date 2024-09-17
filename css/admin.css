@@ -173,7 +173,7 @@
     position: absolute;
     top: 0;
     right: 0;
-    transform: translate(0, 50px);
+    transform: translate(0, 163px);
     width: 636px;
     height: 376px;
     z-index: 2;
@@ -182,14 +182,14 @@
 @media screen and (max-width: 1200px) {
     .test-form-img {
         height: fit-content;
-        transform: translate(-15%, 95%);
+        transform: translate(-15%, 106%);
         width: 400px;
     }
 }
 
 @media screen and (min-width: 1400px) {
     .test-form-img {
-        transform: translate(0, 59%);
+        transform: translate(-6vw, 43%);
     }
 }
 
@@ -375,12 +375,13 @@
 
 @media screen and (min-width: 1920px) {
     .test-events-block {
-        max-width: 1500px;
+        max-width: 1107px;
     }
 
     .test-form-img {
-        transform: translate(-30vw, 32%);
-        width: 25vw;
-        height: 401px;
+        left: 500px;
+        transform:translate(0, 43%);
+        width: 636px;
+        height: fit-content;
     }
 }
