@@ -143,7 +143,7 @@ class FacebookWordpressSettingsPage {
       <div>
         <h3>Plugin Connected to Meta Events Manager</h3>
         <p>Meta Events Manager is a tool that enables you to view and manage your event data. In Events Manager, you can set up, monitor and troubleshoot issues with your integrations, such as the Conversions API and Meta pixel.</p>
-        <p>Visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Meta Events Manager</a> to view the events being tracked.</p>
+        <p style="margin-bottom: 0px;">Visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Meta Events Manager</a> to view the events being tracked.</p>
       </div>
 
       <div class="pixel-block events-manager-block">
