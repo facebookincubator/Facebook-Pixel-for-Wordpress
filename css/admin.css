@@ -187,6 +187,12 @@
     }
 }
 
+@media screen and (min-width: 1400px) {
+    .test-form-img {
+        transform: translate(0, 59%);
+    }
+}
+
 .test-form-field-wrapper {
   display: flex;
   flex-direction: column;
@@ -299,11 +305,13 @@
     cursor: pointer;
 }
 
-.test-event-pill--type {
+.event-log-block table tbody tr .test-event-pill--type {
     background-color: #ECECEC;
     color: #797979;
     max-width: 109px;
-    width: 109px;
+    min-width: fit-content;
+    width: auto;
+    font-size: 12px;
 }
 
 .advanced-edit-toggle {
