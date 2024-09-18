@@ -83,29 +83,21 @@ class FacebookCapiEvent {
 			$payload = json_encode( $_POST['payload'] );
 		}
 
-		$ch = curl_init( $url );
-
-		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-		curl_setopt(
-			$ch,
-			CURLOPT_HTTPHEADER,
-			array(
-				'Content-Type: application/json',
-				'Accept: */*',
-			)
+		$args = array(
+			'body'    => $payload,
+			'headers' => array(
+				'Content-Type' => 'application/json',
+				'Accept'       => '*/*',
+			),
+			'method'  => 'POST',
 		);
-		curl_setopt( $ch, CURLOPT_POST, true );
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, $payload );
 
-		$response = curl_exec( $ch );
-		$error    = curl_error( $ch );
+		$response = wp_remote_post( $url, $args );
 
-		curl_close( $ch );
-
-		if ( $error ) {
-			wp_send_json_error( $error );
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error( $response->get_error_message() );
 		} else {
-			wp_send_json_success( $response );
+			wp_send_json_success( wp_remote_retrieve_body( $response ) );
 		}
 		wp_die();
 	}
