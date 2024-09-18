@@ -466,8 +466,8 @@ class FacebookWordpressSettingsPage {
         type:"POST",
         url:"<?php echo admin_url('admin-ajax.php'); ?>",
         data: {
-          action: "send_capi_test_event",
-          nonce: `<?php echo wp_create_nonce('send_capi_test_event_nonce'); ?>`,
+          action: "send_capi_event",
+          nonce: `<?php echo wp_create_nonce('send_capi_event_nonce'); ?>`,
           event_name: testEventName,
           test_event_code: testEventCode,
           payload: data
