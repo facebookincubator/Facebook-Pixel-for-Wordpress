@@ -53,6 +53,11 @@ class FacebookCapiEvent {
 	}
 
 	public function send_capi_event() {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'send_capi_event_nonce' ) ) {
+			wp_send_json_error( array( 'message' => 'Invalid nonce' ), 400 );
+			wp_die();
+		}
+
 		$api_version  = ApiConfig::APIVersion;
 		$pixel_id     = FacebookWordpressOptions::getPixelId();
 		$access_token = FacebookWordpressOptions::getAccessToken();
