@@ -550,6 +550,9 @@ class FacebookWordpressSettingsPage {
         ],
         "test_event_code": "TEST4039"
       };
+      if (!['Purchase', 'AddToCart', 'InitiateCheckout', 'ViewContent', 'Search', 'AddPaymentInfo', 'AddToWishlist'].includes(testEventName)){
+        delete exampleEvent.data[0].custom_data;
+      }
       document.getElementById('advanced-payload').value = JSON.stringify(exampleEvent, null, 2);
     }
 
