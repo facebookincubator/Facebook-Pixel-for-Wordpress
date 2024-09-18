@@ -164,8 +164,8 @@ class FacebookWordpressSettingsPage {
                 </svg>
                 <p>To obtain the Test Event Code, visit the <a target="_blank" href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>/test_events">Test events section</a> in the <b>Events Manager</b> and input the site's URL (printed below) to start testing.</p>
             </div>
-			<input style="width: 100%; color: #333;" type="text" value="<?php echo get_site_url(); ?>" disabled />
 		  </div>
+          
 		  <div class="test-form-field-wrapper">
 			<div class="text-form-inputs">
 			  <div>
