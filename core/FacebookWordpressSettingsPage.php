@@ -455,30 +455,6 @@ class FacebookWordpressSettingsPage {
       } else {
         testEventCode = document.getElementById('event-test-code').value;
         testEventName = document.getElementById('test-event-name').value;
-        data = {
-          "data": [
-            {
-              "event_name": testEventName,
-              "event_time": Math.floor(Date.now() / 1000),
-              "event_id": "event.id." + Math.floor(Math.random() * 901 + 100),
-              "event_source_url": window.location.origin,
-              "action_source": "website",
-              "user_data": {
-                  "em": [
-                    "309a0a5c3e211326ae75ca18196d301a9bdbd1a882a4d2569511033da23f0abd"
-                  ],
-                  "ph": [
-                    "254aa248acb47dd654ca3ea53f48c2c26d641d23d7e2e93a1ec56258df7674c4"
-                  ]
-              },
-              "custom_data": {
-                  "value": 100.2,
-                  "currency": "USD",
-              }
-            }
-          ],
-          "test_event_code": testEventCode
-        }
       }
 
       if (!testEventCode) {
@@ -486,28 +462,33 @@ class FacebookWordpressSettingsPage {
         return;
       }
 
-      fetch("https://graph.facebook.com/v<?php echo ApiConfig::APIVersion; ?>/<?php echo FacebookWordpressOptions::getPixelId(); ?>/events?access_token=<?php echo FacebookWordpressOptions::getAccessToken(); ?>", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
+      jQuery.ajax({
+        type:"POST",
+        url:"<?php echo admin_url('admin-ajax.php'); ?>",
+        data: {
+          action: "send_capi_test_event",
+          nonce: `<?php echo wp_create_nonce('send_capi_test_event_nonce'); ?>`,
+          event_name: testEventName,
+          test_event_code: testEventCode,
+          payload: data
         },
-        body: JSON.stringify(data)
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (!data.error) {
-          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td clas="test-event-td">${testEventCode}</td><td><span class="test-event-pill test-event-pill--type">${testEventName}</span></td><td><span class="test-event-pill test-event-pill--success">Success</span></td></tr>`);
-        } else {
-                document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr class="test-event--error"><td class="test-event-td test-event-td--error">${data.error.message}</td><td class="test-event-pill test-event-pill--type">${testEventName}</td><td title="${data.error.error_user_title} - ${data.error.error_user_msg}"><span class="test-event-pill test-event-button--error">Error <svg id="show-error-btn" class="advanced-edit-toggle-arrow" width="9" height="6" viewBox="0 0 9 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 1L4.5 4.5L1 1" stroke="#929292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td></tr> <p class="test-event-msg--error hidden">${data.error.error_user_msg}</p>`);
+        success: function(response){
+          data = JSON.parse(response.data);
+          if (!data.error) {
+            document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td clas="test-event-td">${testEventCode}</td><td><span class="test-event-pill test-event-pill--type">${testEventName}</span></td><td><span class="test-event-pill test-event-pill--success">Success</span></td></tr>`);
+          } else {
+            document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${data.error.message}</td><td>${testEventName}</td><td title="${data.error.error_user_title} - ${data.error.error_user_msg}"><span class="test-event-pill test-event-pill--error"">Error <svg id="show-error-btn" class="advanced-edit-toggle-arrow" width="9" height="6" viewBox="0 0 9 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 1L4.5 4.5L1 1" stroke="#929292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> <span class="test-event-msg--error hidden">${data.error.error_user_msg}</span></td></tr>`);
 
-                const testErrorButton = document.querySelectorAll('.test-event-button--error');
-                testErrorButton.forEach(button => {
-                    button.addEventListener('click', handleButtonClick);
-                });
-            }
-        })
-      .catch(error => {
-        document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${error.message}</td><td>${testEventName}</td><td>Error(${error.error_user_title} - ${error.error_user_msg})</td></tr>`);
+            const showErrBtn =  document.querySelector('.test-event-pill--error');
+            showErrBtn.addEventListener('click', function() {
+              document.querySelector('.test-event-msg--error').classList.toggle('hidden');
+              document.getElementById('show-error-btn').classList.toggle('open');
+            })
+          }
+        },
+        error: function(error) {
+          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${error.message}</td><td>${testEventName}</td><td>Error(${error.error_user_title} - ${error.error_user_msg})</td></tr>`);
+        }
       });
     }
 
