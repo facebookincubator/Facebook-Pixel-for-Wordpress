@@ -33,6 +33,7 @@ class FacebookWordpressSettingsPage {
 
     add_action('admin_enqueue_scripts', array($this, 'registerPluginScripts'));
     add_action('current_screen', array($this, 'registerNotices'));
+    $capi_event = new FacebookCapiEvent;
   }
 
   public function registerPluginScripts(){
