@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<ruleset name="WordPress Plugin Coding Standards">
+    <description>PHP CodeSniffer ruleset for WordPress plugin development</description>
+
+    <!-- Define the standard to use -->
+    <rule ref="WordPress"/>
+
+    <!-- Check all PHP files by default -->
+    <file>.</file>
+
+    <!-- Only check .php files -->
+    <arg name="extensions" value="php"/>
+
+    <!-- Show progress and sniff codes in all reports -->
+    <arg value="p"/>
+
+    <!-- Exclude specific directories -->
+    <exclude-pattern>vendor/*</exclude-pattern>
+    <exclude-pattern>node_modules/*</exclude-pattern>
+</ruleset>
