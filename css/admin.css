@@ -130,19 +130,20 @@
 
 .test-hints__wrapper {
     display: flex;
-    justify-content: center;
     align-items: center;
     gap: 22px;
     background-color: #BFDCFF;
-    padding: 12px 22px;
+    padding: 10px 14px;
+    border-radius: 6px;
 }
+
 .test-hints__wrapper svg {
     min-width: 16px;
     min-height: 16px;
 }
 
 .test-hints p {
-    max-width: none;
+    max-width: 50ch;
     margin: 0;
     color: #000;
 }
