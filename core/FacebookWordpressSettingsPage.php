@@ -138,96 +138,102 @@ class FacebookWordpressSettingsPage {
   </div>
 
   <div class="events-manager-wrapper">
-    <h3>Conversion API Tests</h3>
+	<h3>Conversion API Tests</h3>
 
-    <div class="events-manager-container">
-      <div>
-        <h3>Plugin Connected to Meta Events Manager</h3>
-        <p>Meta Events Manager is a tool that enables you to view and manage your event data. In Events Manager, you can set up, monitor and troubleshoot issues with your integrations, such as the Conversions API and Meta pixel.</p>
-        <p style="margin-bottom: 0px;">Visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Meta Events Manager</a> to view the events being tracked.</p>
-      </div>
+	<div class="events-manager-container">
+		<div>
+			<h3>Plugin Connected to Meta Events Manager</h3>
 
-      <div class="pixel-block events-manager-block">
-        <label>Your Pixel ID</label>
-        <input type="text" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
-        <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Go to Meta’s Event Manager</a>
-      </div>
-
-      <?php echo '<img class="test-form-img" src = ' . plugin_dir_url( __DIR__ ) . 'assets/event-log-head.png alt="Test form image">'; ?>
-
-	  <div class="test-events-block events-manager-block">
-		<form class="test-form" action="javascript:void(0);">
-        <div class="test-hints" style="margin-bottom: 20px;">
-		  <div class="test-hints__wrapper">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M16 8C16 10.1217 15.1571 12.1566 13.6569 13.6569C12.1566 15.1571 10.1217 16 8 16C5.87827 16 3.84344 15.1571 2.34315 13.6569C0.842855 12.1566 0 10.1217 0 8C0 5.87827 0.842855 3.84344 2.34315 2.34315C3.84344 0.842855 5.87827 0 8 0C10.1217 0 12.1566 0.842855 13.6569 2.34315C15.1571 3.84344 16 5.87827 16 8ZM8 5C7.8243 4.99983 7.65165 5.04595 7.49945 5.13373C7.34724 5.22151 7.22085 5.34784 7.133 5.5C7.06957 5.61788 6.98311 5.72182 6.87876 5.80566C6.77441 5.8895 6.65429 5.95154 6.52552 5.9881C6.39675 6.02466 6.26194 6.03499 6.12911 6.01849C5.99627 6.00198 5.86809 5.95897 5.75218 5.89201C5.63628 5.82505 5.53499 5.7355 5.45433 5.62867C5.37367 5.52184 5.31529 5.3999 5.28263 5.27008C5.24997 5.14027 5.24371 5.00522 5.26421 4.87294C5.28472 4.74065 5.33157 4.61384 5.402 4.5C5.73222 3.92811 6.24191 3.48116 6.85203 3.22846C7.46214 2.97576 8.13859 2.93144 8.77647 3.10236C9.41434 3.27328 9.978 3.64989 10.38 4.1738C10.782 4.6977 11 5.33962 11 6C11.0002 6.62062 10.8079 7.22603 10.4498 7.73285C10.0916 8.23968 9.58508 8.62299 9 8.83V9C9 9.26522 8.89464 9.51957 8.70711 9.70711C8.51957 9.89464 8.26522 10 8 10C7.73478 10 7.48043 9.89464 7.29289 9.70711C7.10536 9.51957 7 9.26522 7 9V8C7 7.73478 7.10536 7.48043 7.29289 7.29289C7.48043 7.10536 7.73478 7 8 7C8.26522 7 8.51957 6.89464 8.70711 6.70711C8.89464 6.51957 9 6.26522 9 6C9 5.73478 8.89464 5.48043 8.70711 5.29289C8.51957 5.10536 8.26522 5 8 5ZM8 13C8.26522 13 8.51957 12.8946 8.70711 12.7071C8.89464 12.5196 9 12.2652 9 12C9 11.7348 8.89464 11.4804 8.70711 11.2929C8.51957 11.1054 8.26522 11 8 11C7.73478 11 7.48043 11.1054 7.29289 11.2929C7.10536 11.4804 7 11.7348 7 12C7 12.2652 7.10536 12.5196 7.29289 12.7071C7.48043 12.8946 7.73478 13 8 13Z" fill="black"/>
-                </svg>
-                <p>To obtain the Test Event Code, visit the Test Event section in the <a target="_blank" href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>/test_events"><b>Events Manager</b></a>.</p>
-            </div>
-		  </div>
-
-		  <div class="test-form-field-wrapper">
-			<div class="text-form-inputs">
-			  <div>
-				<label>Test Event Code</label>
-				<input type="text" id="event-test-code" placeholder="TEST4039" />
-			  </div>
-
-			  <div>
-				<label for="event-type">Event Type</label>
-				<select name="event-type" id="test-event-name">
-				  <option>Purchase</option>
-				  <option>PageView</option>
-				  <option>AddToCart</option>
-				  <option>AddToWishlist</option>
-				  <option>ViewContent</option>
-				  <option>Subscribe</option>
-				  <option>Search</option>
-				  <option>AddPaymentInfo</option>
-				  <option>CompleteRegistration</option>
-				  <option>Contact</option>
-				  <option>CustomizeProduct</option>
-				  <option>Donate</option>
-				  <option>FindLocation</option>
-				  <option>InitiateCheckout</option>
-				  <option>Lead</option>
-				  <option>Schedule</option>
-				  <option>StartTrial</option>
-				  <option>SubmitApplication</option>
-				</select>
-			  </div>
-			</div>
-            <div class="advanced-payload-controls-wrapper">
-                <span class="advanced-edit-toggle" onclick="toggleAdvancedPayload();">Advanced | Edit Event Data
-                    <svg class="advanced-edit-toggle-arrow" width="9" height="6" viewBox="0 0 9 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 1L4.5 4.5L1 1" stroke="#929292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </span>
-
-			  <span id="populate-payload-button" class="hidden" onclick="populateAdvancedEvent(event);">Click here to load default payload</span>
-			</div>
-			<textarea rows="13" id="advanced-payload" placeholder="Enter payload" class="hidden"></textarea>
-		  </div>
-
-		  <button onclick="sendTestEvent(event);">Submit Event</button>
-		</form>
-
-		<div class="event-log-block">
-		  <h4>Event Log</h4>
-		  <table>
-			<thead class="event-log-block__head">
-			  <tr>
-				<td>Code/Message</td>
-				<td>Event Type</td>
-				<td>Status</td>
-			  </tr>
-			</thead>
-			<tbody></tbody>
-		  </table>
+			<p>Meta Events Manager is a tool that enables you to view and manage your event data. In Events Manager, you can set up, monitor and troubleshoot issues with your integrations, such as the Conversions API and Meta pixel.</p>
+			<p style="margin-bottom: 0px;">Visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Meta Events Manager</a> to view the events being tracked.</p>
 		</div>
-	  </div>
 
-    </div>
+		<div class="pixel-block events-manager-block">
+			<label>Your Pixel ID</label>
+
+			<input type="text" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
+			<a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Go to Meta’s Event Manager</a>
+		</div>
+
+		<?php echo '<img class="test-form-img" src = ' . plugin_dir_url( __DIR__ ) . 'assets/event-log-head.png alt="Test form image">'; ?>
+
+		<div class="test-events-block events-manager-block">
+			<form class="test-form" action="javascript:void(0);">
+				<div class="test-hints" style="margin-bottom: 20px;">
+					<div class="test-hints__wrapper">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+							<path fill-rule="evenodd" clip-rule="evenodd" d="M16 8C16 10.1217 15.1571 12.1566 13.6569 13.6569C12.1566 15.1571 10.1217 16 8 16C5.87827 16 3.84344 15.1571 2.34315 13.6569C0.842855 12.1566 0 10.1217 0 8C0 5.87827 0.842855 3.84344 2.34315 2.34315C3.84344 0.842855 5.87827 0 8 0C10.1217 0 12.1566 0.842855 13.6569 2.34315C15.1571 3.84344 16 5.87827 16 8ZM8 5C7.8243 4.99983 7.65165 5.04595 7.49945 5.13373C7.34724 5.22151 7.22085 5.34784 7.133 5.5C7.06957 5.61788 6.98311 5.72182 6.87876 5.80566C6.77441 5.8895 6.65429 5.95154 6.52552 5.9881C6.39675 6.02466 6.26194 6.03499 6.12911 6.01849C5.99627 6.00198 5.86809 5.95897 5.75218 5.89201C5.63628 5.82505 5.53499 5.7355 5.45433 5.62867C5.37367 5.52184 5.31529 5.3999 5.28263 5.27008C5.24997 5.14027 5.24371 5.00522 5.26421 4.87294C5.28472 4.74065 5.33157 4.61384 5.402 4.5C5.73222 3.92811 6.24191 3.48116 6.85203 3.22846C7.46214 2.97576 8.13859 2.93144 8.77647 3.10236C9.41434 3.27328 9.978 3.64989 10.38 4.1738C10.782 4.6977 11 5.33962 11 6C11.0002 6.62062 10.8079 7.22603 10.4498 7.73285C10.0916 8.23968 9.58508 8.62299 9 8.83V9C9 9.26522 8.89464 9.51957 8.70711 9.70711C8.51957 9.89464 8.26522 10 8 10C7.73478 10 7.48043 9.89464 7.29289 9.70711C7.10536 9.51957 7 9.26522 7 9V8C7 7.73478 7.10536 7.48043 7.29289 7.29289C7.48043 7.10536 7.73478 7 8 7C8.26522 7 8.51957 6.89464 8.70711 6.70711C8.89464 6.51957 9 6.26522 9 6C9 5.73478 8.89464 5.48043 8.70711 5.29289C8.51957 5.10536 8.26522 5 8 5ZM8 13C8.26522 13 8.51957 12.8946 8.70711 12.7071C8.89464 12.5196 9 12.2652 9 12C9 11.7348 8.89464 11.4804 8.70711 11.2929C8.51957 11.1054 8.26522 11 8 11C7.73478 11 7.48043 11.1054 7.29289 11.2929C7.10536 11.4804 7 11.7348 7 12C7 12.2652 7.10536 12.5196 7.29289 12.7071C7.48043 12.8946 7.73478 13 8 13Z" fill="black" />
+						</svg>
+
+						<p>To obtain the Test Event Code, visit the Test Event section in the <a target="_blank" href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>/test_events"><b>Events Manager</b></a>.</p>
+					</div>
+				</div>
+
+				<div class="test-form-field-wrapper">
+					<div class="text-form-inputs">
+						<div>
+							<label>Test Event Code</label>
+							<input type="text" id="event-test-code" placeholder="TEST4039" />
+						</div>
+
+						<div>
+							<label for="event-type">Event Type</label>
+
+							<select name="event-type" id="test-event-name">
+								<option>Purchase</option>
+								<option>PageView</option>
+								<option>AddToCart</option>
+								<option>AddToWishlist</option>
+								<option>ViewContent</option>
+								<option>Subscribe</option>
+								<option>Search</option>
+								<option>AddPaymentInfo</option>
+								<option>CompleteRegistration</option>
+								<option>Contact</option>
+								<option>CustomizeProduct</option>
+								<option>Donate</option>
+								<option>FindLocation</option>
+								<option>InitiateCheckout</option>
+								<option>Lead</option>
+								<option>Schedule</option>
+								<option>StartTrial</option>
+								<option>SubmitApplication</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="advanced-payload-controls-wrapper">
+						<span class="advanced-edit-toggle" onclick="toggleAdvancedPayload();">Advanced | Edit Event Data
+							<svg class="advanced-edit-toggle-arrow" width="9" height="6" viewBox="0 0 9 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M8 1L4.5 4.5L1 1" stroke="#929292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
+						</span>
+
+						<span id="populate-payload-button" class="hidden" onclick="populateAdvancedEvent(event);">Click here to load default payload</span>
+					</div>
+
+					<textarea rows="13" id="advanced-payload" placeholder="Enter payload" class="hidden"></textarea>
+				</div>
+
+				<button onclick="sendTestEvent(event);">Submit Event</button>
+			</form>
+
+			<div class="event-log-block">
+				<h4>Event Log</h4>
+
+				<table>
+					<thead class="event-log-block__head">
+						<tr>
+							<td>Code/Message</td>
+							<td>Event Type</td>
+							<td>Status</td>
+						</tr>
+					</thead>          
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+	</div>
   </div>
 
   <script async defer src="https://connect.facebook.net/en_US/sdk.js"></script>
