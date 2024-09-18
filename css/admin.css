@@ -48,55 +48,57 @@
 
 /* Events Manager Section */
 .events-manager-container {
-  display: flex;
-  flex-direction: column;
-  gap: 36px;
-  padding: 36px 20px;
-  background-color: #ffffff;
-  position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    padding: 36px 20px;
+    background-color: #ffffff;
+    position: relative;
 }
 
 .events-manager-container p {
-  max-width: 500px;
-  margin: 0 0 1.5em;
+    max-width: 500px;
+    margin: 0 0 1.5em;
 }
 
-.events-manager-container input, .text-form-inputs select {
-  padding: 6px 12px;
-  font-size: 14px;
-  border-radius: 6px;
-  box-shadow: 3px 2px 17px 0px rgba(0,0,0,0.25);
-  border: none;
+.events-manager-container input,
+.text-form-inputs select {
+    padding: 6px 12px;
+    font-size: 14px;
+    border-radius: 6px;
+    box-shadow: 3px 2px 17px 0px rgba(0, 0, 0, 0.25);
+    border: none;
 }
 
 .events-manager-container textarea {
-  padding: 6px 12px;
-  font-size: 14px;
-  border-radius: 6px;
-  box-shadow: 3px 2px 17px 0px rgba(0,0,0,0.25);
-  border: none;
-  resize: none;
-  margin-bottom: 10px;
+    padding: 6px 12px;
+    font-size: 14px;
+    border-radius: 6px;
+    box-shadow: 3px 2px 17px 0px rgba(0, 0, 0, 0.25);
+    border: none;
+    resize: none;
+    margin-bottom: 10px;
 }
 
 .events-manager-container input:disabled {
-  background-color: #E2E5E9;
-  color: #00000050;
-  box-shadow: none;
-  cursor: not-allowed;
+    background-color: #e2e5e9;
+    color: #00000050;
+    box-shadow: none;
+    cursor: not-allowed;
 }
 
-.events-manager-container label, .event-log-block h4 {
-  font-size: 16px;
-  font-weight: 600;
+.events-manager-container label,
+.event-log-block h4 {
+    font-size: 16px;
+    font-weight: 600;
 }
 
 .events-manager-block {
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  border-radius: 6px;
-  box-shadow: 3px 2px 17px 0px rgba(0,0,0,0.25);
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    border-radius: 6px;
+    box-shadow: 3px 2px 17px 0px rgba(0, 0, 0, 0.25);
 }
 
 .events-manager-block tbody {
@@ -104,35 +106,36 @@
 }
 
 .pixel-block {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 362px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 362px;
 }
 
-.pixel-block a, .test-form button {
-  padding: 10px 6px;
-  text-align: center;
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  background-color: #1B74E4;
-  border-radius: 6px;
-  border: none;
-  text-decoration: none;
-  cursor: pointer;
-  transition: 0.3s;
+.pixel-block a,
+.test-form button {
+    padding: 10px 6px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: #1b74e4;
+    border-radius: 6px;
+    border: none;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.3s;
 }
 
 .test-form button:hover {
-  box-shadow: 3px 2px 17px 0px rgba(0,0,0,0.25);
+    box-shadow: 3px 2px 17px 0px rgba(0, 0, 0, 0.25);
 }
 
 .test-hints__wrapper {
     display: flex;
     align-items: center;
     gap: 22px;
-    background-color: #BFDCFF;
+    background-color: #bfdcff;
     padding: 10px 14px;
     border-radius: 6px;
 }
@@ -163,11 +166,11 @@
 
 .test-form,
 .event-log-block {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  min-height: 428px;
-  width: 48%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    min-height: 428px;
+    width: 48%;
 }
 
 .test-form-img {
@@ -195,33 +198,33 @@
 }
 
 .test-form-field-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
 .text-form-inputs {
-  display: flex;
-  gap: 10px;
+    display: flex;
+    gap: 10px;
 }
 
 .text-form-inputs div {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .text-form-inputs div:first-child {
-  width: 362px;
+    width: 362px;
 }
 
 .text-form-inputs select {
-  width: 160px;
+    width: 160px;
 }
 
 .event-log-block h4 {
-  margin: 0;
+    margin: 0;
 }
 
 .event-log-block table {
@@ -234,7 +237,7 @@
     align-items: center;
     height: 100%;
     min-height: 40px;
-    border-bottom: 1px solid #E2E5E9;
+    border-bottom: 1px solid #e2e5e9;
 }
 
 .event-log-block .event-log-block__head tr {
@@ -259,12 +262,12 @@
 }
 
 .test-event-pill {
-   display: block;
-   width: 80px;
-   padding: 1px 6px;
-   border-radius: 5px;
-   font-weight: 700;
-   text-align: center;
+    display: block;
+    width: 80px;
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-weight: 700;
+    text-align: center;
 }
 
 .test-event-pill--success {
@@ -299,8 +302,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #DE3F2466;
-    color: #DE3F24;
+    background-color: #de3f2466;
+    color: #de3f24;
 }
 
 .test-event-button--error:hover {
@@ -308,7 +311,7 @@
 }
 
 .event-log-block table tbody tr .test-event-pill--type {
-    background-color: #ECECEC;
+    background-color: #ececec;
     color: #797979;
     max-width: 109px;
     min-width: fit-content;
@@ -330,26 +333,22 @@
 }
 
 .advanced-edit-toggle-arrow.open {
-    transform: rotate(180deg)
+    transform: rotate(180deg);
 }
 
 .advanced-payload-controls-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 15px;
 }
 
 #populate-payload-button {
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
 }
-
-
-//Responsive
-
 
 @media screen and (max-width: 1200px) {
     .test-form-img {
@@ -381,7 +380,7 @@
 
     .test-form-img {
         left: 500px;
-        transform:translate(0, 43%);
+        transform: translate(0, 43%);
         width: 636px;
         height: fit-content;
     }
