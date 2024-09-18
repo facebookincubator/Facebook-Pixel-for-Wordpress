@@ -41,7 +41,7 @@ class FacebookCapiEvent {
 	);
 
 	public function __construct() {
-		add_action( 'wp_ajax_send_capi_test_event', array( $this, 'send_capi_test_event' ) );
+		add_action( 'wp_ajax_send_capi_event', array( $this, 'send_capi_event' ) );
 	}
 
 	public static function get_event_data( $custom_data_required ) {
@@ -52,7 +52,7 @@ class FacebookCapiEvent {
 		}
 	}
 
-	public function send_capi_test_event() {
+	public function send_capi_event() {
 		$api_version  = ApiConfig::APIVersion;
 		$pixel_id     = FacebookWordpressOptions::getPixelId();
 		$access_token = FacebookWordpressOptions::getAccessToken();
@@ -67,7 +67,7 @@ class FacebookCapiEvent {
 				$event_name,
 				array( $this, 'get_event_data' ),
 				array( $custom_data_required ),
-				'wp-fb-capi-test',
+				'fb-capi-event',
 				true
 			);
 
