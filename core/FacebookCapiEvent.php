@@ -23,32 +23,15 @@ use FacebookAds\ApiConfig;
 defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
 
 class FacebookCapiEvent {
-	const EVENTS_WITH_CUSTOM_DATA = array(
-		'Purchase',
-		'AddToCart',
-		'InitiateCheckout',
-		'ViewContent',
-		'Search',
-		'AddPaymentInfo',
-		'AddToWishlist',
-	);
-
-	const EVENT_CUSTOM_DATA_EXAMPLE = array(
-		'currency'     => 'USD',
-		'value'        => 123.321,
-		'content_type' => 'product',
-		'content_ids'  => array( 123, 321 ),
-	);
-
 	public function __construct() {
 		add_action( 'wp_ajax_send_capi_event', array( $this, 'send_capi_event' ) );
 	}
 
-	public static function get_event_data( $custom_data_required ) {
-		if ( $custom_data_required ) {
-			return self::EVENT_CUSTOM_DATA_EXAMPLE;
-		} else {
+	public static function get_event_custom_data( $custom_data ) {
+		if ( empty( $custom_data ) ) {
 			return array();
+		} else {
+			return $custom_data;
 		}
 	}
 
@@ -67,11 +50,11 @@ class FacebookCapiEvent {
 		$event_name = $_POST['event_name'];
 
 		if ( empty( $_POST['payload'] ) ) {
-			$custom_data_required = in_array( $event_name, self::EVENTS_WITH_CUSTOM_DATA, true );
-			$event                = ServerEventFactory::safeCreateEvent(
+			$custom_data = $_POST['custom_data'];
+			$event       = ServerEventFactory::safeCreateEvent(
 				$event_name,
-				array( $this, 'get_event_data' ),
-				array( $custom_data_required ),
+				array( $this, 'get_event_custom_data' ),
+				array( $custom_data ),
 				'fb-capi-event',
 				true
 			);
