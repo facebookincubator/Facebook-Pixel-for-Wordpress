@@ -241,6 +241,10 @@
     width: 50%;
 }
 
+.event-log-block h4 {
+    margin: 0 0 4px 0px;
+}
+
 .event-log-block table {
     display: block;
 }
@@ -251,7 +255,7 @@
 
 .event-log-block table tr {
     display: grid;
-    grid-template-columns: 2fr 1.5fr 1fr;
+    grid-template-columns: auto 150px 150px;
     align-items: center;
     height: 100%;
     min-height: 40px;
@@ -263,12 +267,12 @@
     align-items: self-end;
 }
 
-.event-log-block .event-log-block__head tr td:last-child {
-    text-align: right;
+.event-log-block .event-log-block__head tr td {
+    margin-bottom: 5px;
 }
 
-.event-log-block table tbody tr td:last-child {
-    justify-self: end;
+.event-log-block .event-log-block__head tr td:last-child {
+    text-align: right;
 }
 
 .event-log-block table tbody tr td {
@@ -276,6 +280,10 @@
     display: block;
     color: #00000080;
     font-size: 14px;
+}
+
+.event-log-block table tbody tr td:last-child {
+    justify-self: end;
 }
 
 .event-log-block__head {
@@ -314,6 +322,7 @@
     display: block;
     min-height: 0;
     max-width: none;
+    width: 200px;
     font-weight: 100;
     text-align: left;
     font-size: 12px;
@@ -363,7 +372,6 @@
 .event-log-block table tbody tr .test-event-pill--type {
     background-color: #ececec;
     color: #797979;
-    max-width: 109px;
     min-width: fit-content;
     width: auto;
     font-size: 12px;
