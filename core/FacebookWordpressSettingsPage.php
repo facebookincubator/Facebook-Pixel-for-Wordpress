@@ -202,9 +202,9 @@ class FacebookWordpressSettingsPage {
 
 					<div class="advanced-payload-controls-wrapper">
 						<span class="advanced-edit-toggle" onclick="toggleAdvancedPayload();">Advanced | Edit Event Data
-							<svg class="advanced-edit-toggle-arrow" width="9" height="6" viewBox="0 0 9 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M8 1L4.5 4.5L1 1" stroke="#929292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-							</svg>
+                            <svg class="advanced-edit-toggle-arrow" width="12" height="8" viewBox="0 0 14 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2 0L7 5L12 0L14 1L7 8L0 1L2 0Z" fill="#555555"></path>
+                            </svg>
 						</span>
 
 						<span id="populate-payload-button" onclick="populateAdvancedEvent(event);">Click here to load default payload</span>

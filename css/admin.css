@@ -231,9 +231,10 @@
 }
 
 .advanced-edit-toggle-arrow {
-    margin-left: 15px;
-    margin-top: 2px;
-    transform: rotate(180deg);
+    height: 6px;
+    margin-left: 8px;
+    margin-top: 3px;
+    transform: rotate(-180deg);
     transition: all 0.5s ease;
 }
 
