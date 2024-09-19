@@ -74,7 +74,7 @@
 
 .events-manager-container input,
 .events-manager-container select,
-.events-manager-container textarea {
+.events-manager-container textarea.open {
     padding: 6px 12px;
     font-size: 14px;
     border-radius: 6px;
@@ -85,6 +85,13 @@
 .events-manager-container textarea {
     resize: none;
     margin-bottom: 10px;
+    height: 0;
+    padding: 0;
+}
+
+.events-manager-container textarea.open {
+    height: auto;
+    transition: all 0.5s ease;
 }
 
 .events-manager-container input:disabled {
