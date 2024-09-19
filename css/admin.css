@@ -246,6 +246,10 @@
     display: block;
 }
 
+.event-log-block tbody {
+    display: grid;
+}
+
 .event-log-block table tr {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -261,6 +265,7 @@
 }
 
 .event-log-block table tbody tr td {
+    position: relative;
     display: block;
     color: #00000080;
     font-size: 14px;
@@ -283,6 +288,7 @@
     border-radius: 5px;
     font-weight: 700;
     text-align: center;
+    background-color: #ececec;
 }
 
 .test-event-pill--success {
@@ -290,7 +296,13 @@
     background-color: #daf2c2;
 }
 
+.test-event-pill--error {
+    color: #de3f24;
+    background-color: #f2bab0;
+}
+
 .event-log-block table .test-event-msg--error {
+    position: absolute;
     display: block;
     min-height: 0;
     max-width: none;
@@ -303,6 +315,7 @@
     padding: 7px;
     opacity: 1;
     margin-bottom: 0;
+    border-radius: 6px;
 }
 
 .event-log-block table .test-event-msg--error.hidden {
