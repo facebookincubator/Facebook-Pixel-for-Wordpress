@@ -568,7 +568,7 @@ class FacebookWordpressSettingsPage {
       document.getElementById('populate-payload-button').classList.toggle('show');
       document.querySelector('.advanced-edit-toggle-arrow').classList.toggle('open');
 
-      if (!document.getElementById('advanced-payload').value && !document.getElementById('advanced-payload').classList.contains('open')) {
+      if (!document.getElementById('advanced-payload').value && document.getElementById('advanced-payload').classList.contains('open')) {
         populateAdvancedEvent();
       }
     }
