@@ -538,7 +538,7 @@ class FacebookWordpressSettingsPage {
         }
 
         this.firstElementChild.classList.toggle('open');
-        const errorMessage = errorRow.querySelector('test-event-msg--error');
+        const errorMessage = errorRow.querySelector('.test-event-msg--error');
 
         if (errorMessage) {
             toggleHeight(errorMessage);
