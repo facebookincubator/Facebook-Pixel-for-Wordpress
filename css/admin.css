@@ -223,10 +223,10 @@
 .advanced-edit-toggle-arrow {
     margin-left: 15px;
     margin-top: 2px;
+    transform: rotate(180deg);
 }
 
 .advanced-edit-toggle-arrow.open {
-    transform: rotate(180deg);
     transition: all 0.5s ease;
 }
 
@@ -388,7 +388,11 @@
     cursor: pointer;
 }
 
-@media screen and (max-width: 1024px) {
+@media screen and (max-width: 1360px) {
+    .pixel-block {
+        width: auto;
+    } 
+
     .test-events-block {
         flex-direction: column;
         width: auto;
@@ -403,3 +407,4 @@
         display: none;
     }
 }
+
