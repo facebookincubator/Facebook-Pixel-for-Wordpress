@@ -83,6 +83,7 @@
 }
 
 .events-manager-container textarea {
+    height: 0;
     resize: none;
     margin-bottom: 10px;
     opacity: 0;
@@ -92,6 +93,7 @@
 }
 
 .events-manager-container textarea.open {
+    height: auto;
     opacity: 1;
     pointer-events: initial;
 }
@@ -148,7 +150,6 @@
 }
 
 .test-form {
-    min-height: 538px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
