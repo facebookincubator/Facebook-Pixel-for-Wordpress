@@ -58,6 +58,7 @@
 
 .events-manager-container h3 {
     font-size: 18px;
+    margin-top: 0;
 }
 
 .events-manager-container p {
@@ -192,6 +193,10 @@
     width: 160px;
 }
 
+.test-event-code-wrapper input::placeholder {
+    color: #cccccc;
+}
+
 .test-form button {
     width: 100%;
 }
@@ -217,10 +222,12 @@
 
 .advanced-edit-toggle-arrow {
     margin-left: 15px;
+    margin-top: 2px;
 }
 
 .advanced-edit-toggle-arrow.open {
     transform: rotate(180deg);
+    transition: all 0.5s ease;
 }
 
 .advanced-payload-controls-wrapper {
