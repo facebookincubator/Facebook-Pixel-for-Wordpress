@@ -493,6 +493,8 @@ class FacebookWordpressSettingsPage {
                         <span class="test-event-pill test-event-button--error">
                             Error
                             <svg
+                                id="show-error-btn" 
+                                class="advanced-edit-toggle-arrow"
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="16"
                                 height="16"
