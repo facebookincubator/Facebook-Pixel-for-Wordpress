@@ -150,9 +150,7 @@ class FacebookWordpressSettingsPage {
 
 		<div class="pixel-block events-manager-block">
 			<label>Your Pixel ID</label>
-
 			<input type="text" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
-			<a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Go to Meta’s Event Manager</a>
 		</div>
 
 		<?php echo '<img class="test-form-img" src = ' . plugin_dir_url( __DIR__ ) . 'assets/event-log-head.png alt="Test form image">'; ?>
