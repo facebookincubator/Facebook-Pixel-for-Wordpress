@@ -563,12 +563,12 @@ class FacebookWordpressSettingsPage {
         } 
     }
 
-    function toggleAdvancedPayload(){
-      document.getElementById('advanced-payload').classList.toggle('hidden');
+    function toggleAdvancedPayload() {
+      document.getElementById('advanced-payload').classList.toggle('open');
       document.getElementById('populate-payload-button').classList.toggle('hidden');
       document.querySelector('.advanced-edit-toggle-arrow').classList.toggle('open');
 
-      if (!document.getElementById('advanced-payload').value && !document.getElementById('advanced-payload').classList.contains('hidden')) {
+      if (!document.getElementById('advanced-payload').value && document.getElementById('advanced-payload').classList.contains('open')) {
         populateAdvancedEvent();
       }
     }
