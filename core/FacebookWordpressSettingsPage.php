@@ -171,7 +171,7 @@ class FacebookWordpressSettingsPage {
                     </div>
 
 					<div class="text-form-inputs">
-						<div>
+						<div class="test-event-code-wrapper">
 							<label>Test Event Code</label>
 							<input type="text" id="event-test-code" placeholder="TEST4039" />
 						</div>
