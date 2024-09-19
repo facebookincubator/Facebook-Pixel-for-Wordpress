@@ -483,7 +483,38 @@ class FacebookWordpressSettingsPage {
           if (!data.error) {
             document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td clas="test-event-td">${testEventCode}</td><td><span class="test-event-pill test-event-pill--type">${testEventName}</span></td><td><span class="test-event-pill test-event-pill--success">Success</span></td></tr>`);
           } else {
-            document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr class="test-event--error"><td class="test-event-td test-event-td--error">${data.error.message}</td><td class="test-event-pill test-event-pill--type">${testEventName}</td><td title="${data.error.error_user_title} - ${data.error.error_user_msg}"><span class="test-event-pill test-event-button--error">Error <svg id="show-error-btn" class="advanced-edit-toggle-arrow" width="9" height="6" viewBox="0 0 9 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 1L4.5 4.5L1 1" stroke="#929292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td></tr> <p class="test-event-msg--error hidden">${data.error.error_user_msg}</p>`);
+            let tableRow = `
+                <tr class="test-event--error">
+                    <td class="test-event-td test-event-td--error">
+                        ${data.error.message}
+                    </td>
+                    <td class="test-event-pill test-event-pill--type">${testEventName}</td>
+                    <td title="${data.error.error_user_title} - ${data.error.error_user_msg}">
+                        <span class="test-event-pill test-event-button--error">
+                            Error
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    clip-rule="evenodd"
+                                    d="M16 8C16 10.1217 15.1571 12.1566 13.6569 13.6569C12.1566 15.1571 10.1217 16 8 16C5.87827 16 3.84344 15.1571 2.34315 13.6569C0.842855 12.1566 0 10.1217 0 8C0 5.87827 0.842855 3.84344 2.34315 2.34315C3.84344 0.842855 5.87827 0 8 0C10.1217 0 12.1566 0.842855 13.6569 2.34315C15.1571 3.84344 16 5.87827 16 8ZM8 5C7.8243 4.99983 7.65165 5.04595 7.49945 5.13373C7.34724 5.22151 7.22085 5.34784 7.133 5.5C7.06957 5.61788 6.98311 5.72182 6.87876 5.80566C6.77441 5.8895 6.65429 5.95154 6.52552 5.9881C6.39675 6.02466 6.26194 6.03499 6.12911 6.01849C5.99627 6.00198 5.86809 5.95897 5.75218 5.89201C5.63628 5.82505 5.53499 5.7355 5.45433 5.62867C5.37367 5.52184 5.31529 5.3999 5.28263 5.27008C5.24997 5.14027 5.24371 5.00522 5.26421 4.87294C5.28472 4.74065 5.33157 4.61384 5.402 4.5C5.73222 3.92811 6.24191 3.48116 6.85203 3.22846C7.46214 2.97576 8.13859 2.93144 8.77647 3.10236C9.41434 3.27328 9.978 3.64989 10.38 4.1738C10.782 4.6977 11 5.33962 11 6C11.0002 6.62062 10.8079 7.22603 10.4498 7.73285C10.0916 8.23968 9.58508 8.62299 9 8.83V9C9 9.26522 8.89464 9.51957 8.70711 9.70711C8.51957 9.89464 8.26522 10 8 10C7.73478 10 7.48043 9.89464 7.29289 9.70711C7.10536 9.51957 7 9.26522 7 9V8C7 7.73478 7.10536 7.48043 7.29289 7.29289C7.48043 7.10536 7.73478 7 8 7C8.26522 7 8.51957 6.89464 8.70711 6.70711C8.89464 6.51957 9 6.26522 9 6C9 5.73478 8.89464 5.48043 8.70711 5.29289C8.51957 5.10536 8.26522 5 8 5ZM8 13C8.26522 13 8.51957 12.8946 8.70711 12.7071C8.89464 12.5196 9 12.2652 9 12C9 11.7348 8.89464 11.4804 8.70711 11.2929C8.51957 11.1054 8.26522 11 8 11C7.73478 11 7.48043 11.1054 7.29289 11.2929C7.10536 11.4804 7 11.7348 7 12C7 12.2652 7.10536 12.5196 7.29289 12.7071C7.48043 12.8946 7.73478 13 8 13Z"
+                                    fill="black"
+                                />
+                            </svg>
+                        </span>
+                        <p class="test-event-msg--error hidden">
+                            ${data.error.error_user_msg}
+                        </p>
+                    </td>
+                </tr>
+                `;
+
+            document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', tableRow);
 
             const testErrorButton = document.querySelectorAll('.test-event-button--error');
             testErrorButton.forEach(button => {
