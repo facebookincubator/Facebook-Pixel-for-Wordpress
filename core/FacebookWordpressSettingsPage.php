@@ -520,7 +520,7 @@ class FacebookWordpressSettingsPage {
 
             const testErrorButton = document.querySelectorAll('.test-event-button--error');
             testErrorButton.forEach(button => {
-              button.addEventListener('click', handleButtonClick);
+              button.addEventListener('click', handleErrorMessageClick);
             });
           }
         },
@@ -530,22 +530,19 @@ class FacebookWordpressSettingsPage {
       });
     }
 
-    function handleButtonClick() {
+    function handleErrorMessageClick() {
         const errorRow = this.closest('.test-event--error');
-        this.firstElementChild.classList.toggle('open');
 
         if (!errorRow) {
             return;
         }
 
-        let nextElement = errorRow.nextElementSibling;
+        this.firstElementChild.classList.toggle('open');
+        const errorMessage = errorRow.querySelector('test-event-msg--error');
 
-        if (nextElement && nextElement.classList.contains('test-event-msg--error')) {
-            toggleHeight(nextElement);
-        } else {
-            errorMsg.style.height = '0';
-            toggleHeight(errorMsg);
-        }
+        if (errorMessage) {
+            toggleHeight(errorMessage);
+        } 
     }
 
     function toggleAdvancedPayload(){
