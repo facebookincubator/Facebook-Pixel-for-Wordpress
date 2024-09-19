@@ -137,7 +137,7 @@
 }
 
 .test-form {
-    min-height: 544px;
+    min-height: 538px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -171,7 +171,6 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-bottom: 20px;
 }
 
 .text-form-inputs {
@@ -264,11 +263,11 @@
     align-items: self-end;
 }
 
-.event-log-block .event-log-block__head tr:last-child {
+.event-log-block .event-log-block__head tr td:last-child {
     text-align: right;
 }
 
-.event-log-block table tbody tr:last-child {
+.event-log-block table tbody tr td:last-child {
     justify-self: end;
 }
 
