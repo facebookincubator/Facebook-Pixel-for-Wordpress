@@ -132,7 +132,8 @@
 .test-events-block {
     display: flex;
     flex-direction: row;
-    gap: 36px;
+    width: fit-content;
+    gap: 30px;
     background: #fff;
     z-index: 3;
 }
@@ -249,7 +250,7 @@
 }
 
 .event-log-block h4 {
-    margin: 0 0 4px 0px;
+    margin: 0 0 3px 0px;
 }
 
 .event-log-block table {
@@ -262,7 +263,7 @@
 
 .event-log-block table tr {
     display: grid;
-    grid-template-columns: auto 150px 150px;
+    grid-template-columns: minmax(250px, auto) 150px 150px;
     align-items: center;
     height: 100%;
     min-height: 40px;
