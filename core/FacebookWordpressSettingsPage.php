@@ -520,7 +520,8 @@ class FacebookWordpressSettingsPage {
 
             const testErrorButton = document.querySelectorAll('.test-event-button--error');
             testErrorButton.forEach(button => {
-              button.addEventListener('click', handleErrorMessageClick);
+              button.addEventListener('onMouseOver', handleErrorMessageToggle);
+              button.addEventListener('onMouseOut', handleErrorMessageToggle);
             });
           }
         },
@@ -530,7 +531,7 @@ class FacebookWordpressSettingsPage {
       });
     }
 
-    function handleErrorMessageClick() {
+    function handleErrorMessageToggle() {
         const errorRow = this.closest('.test-event--error');
 
         if (!errorRow) {
