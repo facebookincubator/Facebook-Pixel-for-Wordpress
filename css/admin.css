@@ -204,11 +204,10 @@
 
 .test-form-img {
     position: absolute;
-    top: 0;
-    right: 0;
-    transform: translate(0, 163px);
-    width: 636px;
-    height: 376px;
+    top: 130px;
+    left: 35%;
+    width: 600px;
+    height: 370px;
     z-index: 2;
 }
 
@@ -389,36 +388,10 @@
     cursor: pointer;
 }
 
-@media screen and (min-width: 1400px) {
-    .test-form-img {
-        transform: translate(-6vw, 43%);
-    }
-}
-
-@media screen and (min-width: 1920px) {
-    .test-events-block {
-        max-width: 1107px;
-    }
-
-    .test-form-img {
-        left: 500px;
-        transform: translate(0, 43%);
-        width: 636px;
-        height: fit-content;
-    }
-}
-
-@media screen and (max-width: 1200px) {
-    .test-form-img {
-        height: fit-content;
-        transform: translate(-15%, 95%);
-        width: 400px;
-    }
-}
-
 @media screen and (max-width: 1024px) {
     .test-events-block {
         flex-direction: column;
+        width: auto;
     }
 
     .test-form,
