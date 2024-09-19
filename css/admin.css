@@ -136,6 +136,13 @@
     z-index: 3;
 }
 
+.test-form {
+    min-height: 540px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
 .test-hints__wrapper {
     display: flex;
     align-items: center;
