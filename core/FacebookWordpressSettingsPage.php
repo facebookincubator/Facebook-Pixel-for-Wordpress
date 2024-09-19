@@ -476,7 +476,8 @@ class FacebookWordpressSettingsPage {
           nonce: `<?php echo wp_create_nonce('send_capi_event_nonce'); ?>`,
           event_name: testEventName,
           test_event_code: testEventCode,
-          payload: data
+          payload: data,
+          custom_data: setCustomData(data, testEventName)
         },
         success: function(response){
           data = JSON.parse(response.data);
@@ -529,6 +530,22 @@ class FacebookWordpressSettingsPage {
           document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${error.message}</td><td>${testEventName}</td><td>Error(${error.error_user_title} - ${error.error_user_msg})</td></tr>`);
         }
       });
+    }
+
+    function setCustomData(data, testEventName){
+      if (data){
+        return data.data[0].custom_data;
+      } else {
+        if (['Purchase', 'AddToCart', 'InitiateCheckout', 'ViewContent', 'Search', 'AddPaymentInfo', 'AddToWishlist'].includes(testEventName)){
+          return {
+            "value": 123.321,
+            "currency": "USD",
+        		"content_type": "product"
+          };
+        } else {
+          return null;
+        }
+      }
     }
 
     function handleErrorMessageToggle() {
