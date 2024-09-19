@@ -209,10 +209,10 @@ class FacebookWordpressSettingsPage {
 							</svg>
 						</span>
 
-						<span id="populate-payload-button" class="hidden" onclick="populateAdvancedEvent(event);">Click here to load default payload</span>
+						<span id="populate-payload-button" onclick="populateAdvancedEvent(event);">Click here to load default payload</span>
 					</div>
 
-					<textarea rows="13" id="advanced-payload" placeholder="Enter payload" class="hidden"></textarea>
+					<textarea rows="13" id="advanced-payload" placeholder="Enter payload"></textarea>
 				</div>
 
 				<button onclick="sendTestEvent(event);">Submit Event</button>
@@ -565,7 +565,7 @@ class FacebookWordpressSettingsPage {
 
     function toggleAdvancedPayload() {
       document.getElementById('advanced-payload').classList.toggle('open');
-      document.getElementById('populate-payload-button').classList.toggle('hidden');
+      document.getElementById('populate-payload-button').classList.toggle('show');
       document.querySelector('.advanced-edit-toggle-arrow').classList.toggle('open');
 
       if (!document.getElementById('advanced-payload').value && document.getElementById('advanced-payload').classList.contains('open')) {

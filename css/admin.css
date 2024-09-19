@@ -85,13 +85,14 @@
 .events-manager-container textarea {
     resize: none;
     margin-bottom: 10px;
-    height: 0;
-    padding: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.5s ease;
 }
 
 .events-manager-container textarea.open {
-    height: auto;
-    transition: all 0.5s ease;
+    opacity: 1;
+    pointer-events: initial;
 }
 
 .events-manager-container input:disabled {
@@ -231,10 +232,11 @@
     margin-left: 15px;
     margin-top: 2px;
     transform: rotate(180deg);
+    transition: all 0.5s ease;
 }
 
 .advanced-edit-toggle-arrow.open {
-    transition: all 0.5s ease;
+    transform: rotate(0);
 }
 
 .advanced-payload-controls-wrapper {
@@ -249,6 +251,13 @@
     font-weight: 600;
     cursor: pointer;
     text-decoration: underline;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#populate-payload-button.show {
+    opacity: 1;
+    pointer-events: initial;
 }
 
 .event-log-block {
