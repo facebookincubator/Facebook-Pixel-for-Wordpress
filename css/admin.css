@@ -347,7 +347,7 @@
     grid-column: 1 / 4;
     display: block;
     min-height: 0;
-    max-width: none;
+    max-width: 536px;
     margin-bottom: 10px;
     font-weight: 100;
     text-align: left;
@@ -377,8 +377,8 @@
 }
 
 .show-error-icon {
-    margin-left: 4px;
-    margin-top: 1px;
+    margin-left: 5px;
+    margin-top: 2px;
     width: 10px;
     height: 10px;
     transform: rotate(-180deg);
@@ -387,6 +387,7 @@
 
 .show-error-icon.open {
     transform: rotate(0);
+    margin-top: 1px;
 }
 
 .show-error-icon path {
