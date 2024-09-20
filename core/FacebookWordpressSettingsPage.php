@@ -530,7 +530,7 @@ class FacebookWordpressSettingsPage {
 
     function setCustomData(data, testEventName){
       if (data){
-        return data.data[0].custom_data;
+        return;
       } else {
         if (['Purchase', 'AddToCart', 'InitiateCheckout', 'ViewContent', 'Search', 'AddPaymentInfo', 'AddToWishlist'].includes(testEventName)){
           return {
