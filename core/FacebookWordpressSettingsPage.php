@@ -438,7 +438,7 @@ class FacebookWordpressSettingsPage {
       var testEventCode = '';
       var testEventName = '';
       var data = '';
-      if (!advancedPayloadElement.classList.contains('hidden')) {
+      if (advancedPayloadElement.classList.contains('open')) {
         if (!advancedPayloadElement.value){
           alert("You must enter payload.");
           return;
