@@ -488,7 +488,7 @@ class FacebookWordpressSettingsPage {
                         ${data.error.message}
                     </td>
                     <td class="test-event-pill test-event-pill--type">${testEventName}</td>
-                    <td title="${data.error.error_user_title} - ${data.error.error_user_msg}">
+                    <td>
                         <span class="test-event-pill test-event-button--error">
                             Error
                             <svg
