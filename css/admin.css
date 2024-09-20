@@ -274,6 +274,7 @@
 
 .event-log-block table {
     display: block;
+    max-width: 550px;
 }
 
 .event-log-block tbody {
@@ -347,7 +348,7 @@
     grid-column: 1 / 4;
     display: block;
     min-height: 0;
-    max-width: 536px;
+    width: 97.5%;
     margin-bottom: 10px;
     font-weight: 100;
     text-align: left;
@@ -423,6 +424,10 @@
 
     .test-form-img {
         display: none;
+    }
+
+    .event-log-block table {
+        max-width: auto;
     }
 }
 
