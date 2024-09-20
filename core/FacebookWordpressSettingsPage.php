@@ -449,9 +449,7 @@ class FacebookWordpressSettingsPage {
           if (data.test_event_code) {
             testEventCode = data.test_event_code;
           }
-          if (data.data[0].event_name) {
-            testEventName = data.data[0].event_name;
-          }
+          testEventName += data.data.map(event => event.event_name).join(', ')
         } catch (e) {
           alert("Invalid JSON in payload.");
           return;
