@@ -23,6 +23,24 @@ use FacebookAds\ApiConfig;
 defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
 
 class FacebookCapiEvent {
+	const VALID_CUSTOM_DATA = array(
+		'value',
+		'currency',
+		'content_name',
+		'content_category',
+		'content_ids',
+		'contents',
+		'content_type',
+		'order_id',
+		'predicted_ltv',
+		'num_items',
+		'status',
+		'search_string',
+		'item_number',
+		'delivery_category',
+		'custom_properties',
+	);
+
 	public function __construct() {
 		add_action( 'wp_ajax_send_capi_event', array( $this, 'send_capi_event' ) );
 	}
@@ -68,7 +86,23 @@ class FacebookCapiEvent {
 
 			$payload = json_encode( $event_request->normalize() );
 		} else {
-			$payload = json_encode( $_POST['payload'] );
+			$invalid_custom_data = self::get_invalid_event_custom_data( $_POST['payload'] );
+			if ( ! empty( $invalid_custom_data ) ) {
+				$invalid_custom_data_msg = implode( ',', $invalid_custom_data );
+				wp_send_json_error(
+					json_encode(
+						array(
+							'error' => array(
+								'message'        => 'Invalid custom_data attribute',
+								'error_user_msg' => "Invalid custom_data attributes: {$invalid_custom_data_msg}",
+							),
+						)
+					)
+				);
+				wp_die();
+			} else {
+				$payload = json_encode( $_POST['payload'] );
+			}
 		}
 
 		$args = array(
@@ -88,5 +122,18 @@ class FacebookCapiEvent {
 			wp_send_json_success( wp_remote_retrieve_body( $response ) );
 		}
 		wp_die();
+	}
+
+	public function get_invalid_event_custom_data( $payload ) {
+		$invalid_custom_data = array();
+		foreach ( $payload['data'] as $event ) {
+			$custom_data = $event['custom_data'];
+			foreach ( $custom_data as $key => $value ) {
+				if ( ! in_array( $key, self::VALID_CUSTOM_DATA, true ) ) {
+					array_push( $invalid_custom_data, $key );
+				}
+			}
+		}
+		return $invalid_custom_data;
 	}
 }
