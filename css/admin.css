@@ -303,7 +303,6 @@
 }
 
 .event-log-block table tbody tr td {
-    position: relative;
     display: block;
     color: #00000080;
     font-size: 14px;
@@ -344,8 +343,6 @@
 }
 
 .event-log-block table .test-event-msg--error {
-    position: absolute;
-    right: 0;
     display: block;
     min-height: 0;
     max-width: none;
