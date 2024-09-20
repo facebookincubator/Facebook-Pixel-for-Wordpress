@@ -584,7 +584,7 @@ class FacebookWordpressSettingsPage {
             },
           }
         ],
-        "test_event_code": testEventCode
+        "test_event_code": testEventCode ? testEventCode : "TEST4039"
       };
       if (!['Purchase', 'AddToCart', 'InitiateCheckout', 'ViewContent', 'Search', 'AddPaymentInfo', 'AddToWishlist'].includes(testEventName)){
         delete exampleEvent.data[0].custom_data;
