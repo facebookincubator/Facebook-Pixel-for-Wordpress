@@ -557,6 +557,7 @@ class FacebookWordpressSettingsPage {
 
     function populateAdvancedEvent(){
       testEventName = document.getElementById('test-event-name').value;
+      testEventCode = document.getElementById('event-test-code').value;
       var exampleEvent = {
         "data": [
           {
@@ -583,7 +584,7 @@ class FacebookWordpressSettingsPage {
             },
           }
         ],
-        "test_event_code": "TEST4039"
+        "test_event_code": testEventCode
       };
       if (!['Purchase', 'AddToCart', 'InitiateCheckout', 'ViewContent', 'Search', 'AddPaymentInfo', 'AddToWishlist'].includes(testEventName)){
         delete exampleEvent.data[0].custom_data;
