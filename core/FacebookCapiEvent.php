@@ -55,7 +55,16 @@ class FacebookCapiEvent {
 
 	public function send_capi_event() {
 		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'send_capi_event_nonce' ) ) {
-			wp_send_json_error( array( 'message' => 'Invalid nonce' ), 400 );
+			wp_send_json_error(
+				json_encode(
+					array(
+						'error' => array(
+							'message'        => 'Invalid nonce',
+							'error_user_msg' => 'Invalid nonce',
+						),
+					)
+				)
+			);
 			wp_die();
 		}
 
