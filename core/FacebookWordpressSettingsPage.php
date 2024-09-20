@@ -486,7 +486,7 @@ class FacebookWordpressSettingsPage {
                         ${data.error.message}
                     </td>
                     <td class="test-event-pill test-event-pill--type">${testEventName}</td>
-                    <td>
+                    <td style="margin-left:auto;">
                         <span class="test-event-pill test-event-button--error">
                             Error
                             <svg id="show-error-btn" class="show-error-icon" width="12" height="8" viewBox="0 0 14 8" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -594,7 +594,7 @@ class FacebookWordpressSettingsPage {
     // Function to toggle height with transition
     function toggleHeight(element) {
         if (element.style.height === '0px' || element.style.height === '') {
-            element.style.height = `${element.scrollHeight}px`;
+            element.style.height = `fit-content`;
             element.classList.remove('hidden');
         } else {
             element.style.height = '0';

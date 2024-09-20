@@ -343,10 +343,10 @@
 }
 
 .event-log-block table .test-event-msg--error {
+    grid-column: 1 / 4;
     display: block;
     min-height: 0;
     max-width: none;
-    width: 200px;
     font-weight: 100;
     text-align: left;
     font-size: 12px;
