@@ -493,9 +493,9 @@ class FacebookWordpressSettingsPage {
                                 <path d="M2 0L7 5L12 0L14 1L7 8L0 1L2 0Z" fill="#555555"></path>
                             </svg>
                         </span>
-                        <p class="test-event-msg--error hidden">
-                            ${data.error.error_user_msg}
-                        </p>
+                    </td>
+                    <td class="test-event-msg--error hidden">
+                        ${data.error.error_user_msg}
                     </td>
                 </tr>
                 `;
