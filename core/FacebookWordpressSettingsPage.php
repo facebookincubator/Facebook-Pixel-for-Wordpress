@@ -525,7 +525,7 @@ class FacebookWordpressSettingsPage {
           }
         },
         error: function(error) {
-          document.querySelector('.event-log-block>table>tbody').insertAdjacentHTML('beforeend', `<tr><td>${error.message}</td><td>${testEventName}</td><td>Error(${error.error_user_title} - ${error.error_user_msg})</td></tr>`);
+          console.log(error);
         }
       });
     }
