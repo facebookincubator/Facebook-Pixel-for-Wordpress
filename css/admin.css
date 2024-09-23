@@ -168,15 +168,15 @@
 .event-hints__wrapper {
     display: flex;
     align-items: center;
-    gap: 22px;
-    padding: 10px 14px;
+    gap: 12px;
+    padding: 10px 12px;
     border-radius: 6px;
 }
 
 .test-hints__wrapper svg,
 .event-hints__wrapper svg {
-    min-width: 16px;
-    min-height: 16px;
+    min-width: 19px;
+    min-height: 19px;
 }
 
 .test-hints {
