@@ -117,7 +117,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    width: 362px;
+    width: 378px;
 }
 
 .pixel-block a,
@@ -222,7 +222,7 @@
 }
 
 .text-form-inputs div:first-child {
-    width: 362px;
+    width: 378px;
 }
 
 .text-form-inputs select {
@@ -445,6 +445,12 @@
     .test-form,
     .event-log-block {
         width: 100%;
+    }
+
+    .test-form button,
+    .test-hints, 
+    .event-hints {
+        max-width: 550px;
     }
 
     .test-form-img {
