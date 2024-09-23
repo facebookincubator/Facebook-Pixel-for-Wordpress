@@ -156,15 +156,24 @@
 }
 
 .test-hints__wrapper {
+    background-color: #bfdcff;
+}
+
+.event-hints__wrapper {
+    background-color: #e2e5e9;
+}
+
+.test-hints__wrapper,
+.event-hints__wrapper {
     display: flex;
     align-items: center;
     gap: 22px;
-    background-color: #bfdcff;
     padding: 10px 14px;
     border-radius: 6px;
 }
 
-.test-hints__wrapper svg {
+.test-hints__wrapper svg,
+.event-hints__wrapper svg {
     min-width: 16px;
     min-height: 16px;
 }
@@ -173,7 +182,8 @@
     margin-bottom: 10px;
 }
 
-.test-hints p {
+.test-hints p,
+.event-hints p {
     max-width: 50ch;
     margin: 0;
     color: #000000;
