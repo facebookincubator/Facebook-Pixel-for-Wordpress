@@ -173,10 +173,24 @@
     border-radius: 6px;
 }
 
-.test-hints__wrapper svg,
-.event-hints__wrapper svg {
-    min-width: 19px;
-    min-height: 19px;
+.test-hints__wrapper span,
+.event-hints__wrapper span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    font: 15px;
+    font-weight: 600;
+    border-radius: 50%;
+    background-color: #000000;
+}
+
+.test-hints__wrapper span {
+    color: #bfdcff;
+}
+
+.event-hints__wrapper span {
+    color: #e2e5e9;
 }
 
 .test-hints {
