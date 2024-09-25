@@ -20,7 +20,7 @@ namespace FacebookPixelPlugin\Core;
 defined('ABSPATH') or die('Direct access not allowed');
 
 class FacebookPluginConfig {
-  const PLUGIN_VERSION = '4.0.0';
+  const PLUGIN_VERSION = '4.0.1';
   const SOURCE = 'wordpress';
   const TEXT_DOMAIN = 'official-facebook-pixel';
   const PLUGIN_NAME = 'Meta for WordPress';

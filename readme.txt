@@ -4,7 +4,7 @@ Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events
 Requires at least: 5.7
 Tested up to: 6.5
 Requires PHP: 8.1
-Stable tag: 4.0.0
+Stable tag: 4.0.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,7 +17,7 @@ You’ll be able to see when customers took an action after seeing your ad on Fa
 
 The Conversions API is designed to create a direct connection between your marketing data and the Meta systems, which help optimise ad targeting, decrease cost per action and measure results across Meta technologies. [Learn More](https://www.facebook.com/business/help/2041148702652965?id=818859032317965)
 
-You can find more information about our Privacy Policy [here](https://developers.facebook.com/terms/).
+You can find more information about our Privacy Policy [here](https://www.facebook.com/privacy/policy/?entry_point=data_policy_redirect&entry=0).
 
 == Installation ==
 __To install from your WordPress site__ <br />
@@ -51,6 +51,15 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2024-09-24 version 4.0.1 =
+* Updated the readme.txt to point to Meta Privacy Policy
+
+= 2024-09-12 version 4.0.0 =
+* Tested WP up to 6.5.5
+* Updated the supported PHP version to 8.1, and updated the code to conform to the PHP 8.1 standards
+* Added a link to the Meta Platform Terms in readme.txt
+* Updated the Facebook Business SDK to v19.0.0
+
 = 2023-11-14 version 3.0.14 =
 * Introduced PII Caching to improve events quality
 * Removed WPFroms from the integrations. There is no need for the integrations since OpenBridge will send the events automatically.
