@@ -166,4 +166,55 @@ class FacebookCapiEvent {
 		}
 		return $invalid_custom_data;
 	}
+
+	public function validate_payload( $payload ) {
+		$response = array(
+			'valid' => true
+		);
+		if ( empty( $payload ) ) {
+			$response['valid']          = false;
+			$response['message']        = 'Empty payload';
+			$response['error_user_msg'] = 'Payload is empty.';
+		} else if ( ! self::validate_json( $payload ) ) {
+			$response['valid']          = false;
+			$response['message']        = 'Invalid JSON in payload';
+			$response['error_user_msg'] = 'Invalid JSON in payload.';
+		} else {
+			foreach ( $payload['data'] as $event ) {
+				foreach ( self::REQUIRED_EVENT_DATA as $attribute ) {
+					if ( ! array_key_exists( $attribute, $event ) ) {
+						if ( ! empty( $response['message'] ) ) {
+							$response['error_user_msg'] .= ", {$attribute} attribute is missing";
+						} else {
+							$response['valid']          = false;
+							$response['message']        = 'Missing required attribute';
+							$response['error_user_msg'] = "{$attribute} attribute is missing";
+						}
+					}
+				}
+
+				if ( $response['valid'] && isset( $event['custom_data'] ) ) {
+					$invalid_custom_data = self::get_invalid_event_custom_data( $event['custom_data'] );
+					if ( ! empty( $invalid_custom_data ) ) {
+						$invalid_custom_data_msg    = implode( ',', $invalid_custom_data );
+						$response['valid']          = false;
+						$response['message']        = 'Invalid custom_data attribute';
+						$response['error_user_msg'] = "Invalid custom_data attributes: {$invalid_custom_data_msg}";
+					}
+				}
+			}
+		}
+		
+		return $response;
+	}
+
+	public function validate_json( $payload ) {
+		json_encode( $payload );
+    
+		if ( json_last_error() === JSON_ERROR_NONE ) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 }
