@@ -133,14 +133,11 @@ class FacebookCapiEvent {
 		wp_die();
 	}
 
-	public function get_invalid_event_custom_data( $payload ) {
+	public function get_invalid_event_custom_data( $custom_data ) {
 		$invalid_custom_data = array();
-		foreach ( $payload['data'] as $event ) {
-			$custom_data = $event['custom_data'];
-			foreach ( $custom_data as $key => $value ) {
-				if ( ! in_array( $key, self::VALID_CUSTOM_DATA, true ) ) {
-					array_push( $invalid_custom_data, $key );
-				}
+		foreach ( $custom_data as $key => $value ) {
+			if ( ! in_array( $key, self::VALID_CUSTOM_DATA, true ) ) {
+				array_push( $invalid_custom_data, $key );
 			}
 		}
 		return $invalid_custom_data;
