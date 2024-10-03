@@ -78,22 +78,38 @@ class FacebookCapiEvent {
 
 		if ( empty( $_POST['payload'] ) ) {
 			$custom_data = $_POST['custom_data'];
-			$event       = ServerEventFactory::safeCreateEvent(
-				$event_name,
-				array( $this, 'get_event_custom_data' ),
-				array( $custom_data ),
-				'fb-capi-event',
-				true
-			);
+			$invalid_custom_data = self::get_invalid_event_custom_data( $custom_data );
+			if ( ! empty( $invalid_custom_data ) ) {
+				$invalid_custom_data_msg = implode( ',', $invalid_custom_data );
+				wp_send_json_error(
+					json_encode(
+						array(
+							'error' => array(
+								'message'        => 'Invalid custom_data attribute',
+								'error_user_msg' => "Invalid custom_data attributes: {$invalid_custom_data_msg}",
+							),
+						)
+					)
+				);
+				wp_die();
+			} else {
+				$event = ServerEventFactory::safeCreateEvent(
+					$event_name,
+					array( $this, 'get_event_custom_data' ),
+					array( $custom_data ),
+					'fb-capi-event',
+					true
+				);
 
-			$events = array();
-			array_push( $events, $event );
+				$events = array();
+				array_push( $events, $event );
 
-			$event_request = ( new EventRequest( $pixel_id ) )
-				->setEvents( $events )
-				->setTestEventCode( $_POST['test_event_code'] );
+				$event_request = ( new EventRequest( $pixel_id ) )
+					->setEvents( $events )
+					->setTestEventCode( $_POST['test_event_code'] );
 
-			$payload = json_encode( $event_request->normalize() );
+				$payload = json_encode( $event_request->normalize() );
+			}
 		} else {
 			$invalid_custom_data = self::get_invalid_event_custom_data( $_POST['payload'] );
 			if ( ! empty( $invalid_custom_data ) ) {
