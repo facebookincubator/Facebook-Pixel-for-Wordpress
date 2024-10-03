@@ -1,0 +1,25 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test-and-code-style:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: [8.1]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist
+
+      - name: Run tests
+        run: vendor/bin/phpunit --bootstrap __tests__/bootstrap.php __tests__
+
+      - name: Run PHPCS
+        run: vendor/bin/phpcs --standard=WordPress --extensions=php --ignore=vendor/ .
