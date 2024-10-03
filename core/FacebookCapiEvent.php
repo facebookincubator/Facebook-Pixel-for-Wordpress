@@ -23,6 +23,14 @@ use FacebookAds\ApiConfig;
 defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
 
 class FacebookCapiEvent {
+	const REQUIRED_EVENT_DATA = array(
+		'event_name',
+		'event_time',
+		'user_data',
+		'action_source',
+		'event_source_url',
+	);
+
 	const VALID_CUSTOM_DATA = array(
 		'value',
 		'currency',
