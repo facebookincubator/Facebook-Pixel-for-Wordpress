@@ -119,15 +119,14 @@ class FacebookCapiEvent {
 				$payload = json_encode( $event_request->normalize() );
 			}
 		} else {
-			$invalid_custom_data = self::get_invalid_event_custom_data( $_POST['payload'] );
-			if ( ! empty( $invalid_custom_data ) ) {
-				$invalid_custom_data_msg = implode( ',', $invalid_custom_data );
+			$validated_payload = self::validate_payload( $_POST['payload'] );
+			if ( ! $validated_payload['valid'] ) {
 				wp_send_json_error(
 					json_encode(
 						array(
 							'error' => array(
-								'message'        => 'Invalid custom_data attribute',
-								'error_user_msg' => "Invalid custom_data attributes: {$invalid_custom_data_msg}",
+								'message'        => $validated_payload['message'],
+								'error_user_msg' => $validated_payload['error_user_msg'],
 							),
 						)
 					)
