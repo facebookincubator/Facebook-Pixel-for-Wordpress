@@ -31,6 +31,24 @@ class FacebookCapiEvent {
 		'event_source_url',
 	);
 
+	const VALID_EVENT_ATTRIBUTES_TYPE = array(
+		'event_name'                      => 'string',
+		'event_time'                      => 'integer',
+		'user_data'                       => 'object',
+		'custom_data'                     => 'object',
+		'event_source_url'                => 'string',
+		'opt_out'                         => 'boolean',
+		'event_id'                        => 'string',
+		'action_source'                   => 'string',
+		'data_processing'                 => 'string',
+		'data_processing_options'         => 'array',
+		'data_processing_options_country' => 'integer',
+		'data_processing_options_state'   => 'integer',
+		'app_data'                        => 'object',
+		'extinfo'                         => 'object',
+		'referrer_url'                    => 'string',
+	);
+
 	const VALID_CUSTOM_DATA = array(
 		'value',
 		'currency',
