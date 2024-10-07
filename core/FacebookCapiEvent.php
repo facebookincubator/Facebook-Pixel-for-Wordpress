@@ -210,21 +210,21 @@ class FacebookCapiEvent {
 					}
 				}
 
-				if ( $response['valid'] && isset( $event['custom_data'] ) ) {
-					$invalid_custom_data = self::get_invalid_event_custom_data( $event['custom_data'] );
-					if ( ! empty( $invalid_custom_data ) ) {
-						$invalid_custom_data_msg    = implode( ',', $invalid_custom_data );
+				if ( $response['valid'] ) {
+					$invalid_attributes = self::validate_event_attributes_type( $event );
+					if ( ! empty( $invalid_attributes ) ) {
+						$invalid_attributes_msg     = implode( ',', $invalid_attributes );
 						$response['valid']          = false;
-						$response['message']        = 'Invalid custom_data attribute';
-						$response['error_user_msg'] = "Invalid custom_data attributes: {$invalid_custom_data_msg}";
-					} else {
-						$invalid_attributes = self::validate_event_attributes_type( $event );
-						if ( ! empty( $invalid_attributes ) ) {
-							$invalid_attributes_msg     = implode( ',', $invalid_attributes );
+						$response['message']        = 'Invalid attribute type';
+						$response['error_user_msg'] = "Invalid attribute type: {$invalid_attributes_msg}";
+					} else if ( isset( $event['custom_data'] ) ) {
+						$invalid_custom_data = self::get_invalid_event_custom_data( $event['custom_data'] );
+						if ( ! empty( $invalid_custom_data ) ) {
+							$invalid_custom_data_msg    = implode( ',', $invalid_custom_data );
 							$response['valid']          = false;
-							$response['message']        = 'Invalid attribute type';
-							$response['error_user_msg'] = "Invalid attribute type: {$invalid_attributes_msg}";
-						}
+							$response['message']        = 'Invalid custom_data attribute';
+							$response['error_user_msg'] = "Invalid custom_data attributes: {$invalid_custom_data_msg}";
+						} 
 					}
 				}
 			}
@@ -249,13 +249,13 @@ class FacebookCapiEvent {
 		}
 		$invalid_attributes = array();
 		$event              = json_decode( json_encode( $event ) );
-		foreach (self::REQUIRED_EVENT_DATA as $key => $value) {
-			if ( $value == 'integer' ) {
-				if ( ! is_numeric( $event->{$key} ) ) {
+		foreach ($event as $key => $value) {
+			if ( self::VALID_EVENT_ATTRIBUTES_TYPE[ $key ] == 'integer') {
+				if ( ! is_numeric( $value ) ) {
 					array_push( $invalid_attributes, $key );
 				}
 			} else {
-				if ( gettype( $event->{$key} ) != $value ) {
+				if ( gettype( $value ) != self::VALID_EVENT_ATTRIBUTES_TYPE[ $key ] ) {
 					array_push( $invalid_attributes, $key );
 				}
 			}
