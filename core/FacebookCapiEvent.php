@@ -24,11 +24,11 @@ defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
 
 class FacebookCapiEvent {
 	const REQUIRED_EVENT_DATA = array(
-		'event_name'       => 'string',
-		'event_time'       => 'integer',
-		'user_data'        => 'object',
-		'action_source'    => 'string',
-		'event_source_url' => 'string',
+		'event_name',
+		'event_time',
+		'user_data',
+		'action_source',
+		'event_source_url',
 	);
 
 	const VALID_CUSTOM_DATA = array(
@@ -180,7 +180,7 @@ class FacebookCapiEvent {
 			$response['error_user_msg'] = 'Invalid JSON in payload.';
 		} else {
 			foreach ( $payload['data'] as $event ) {
-				foreach ( self::REQUIRED_EVENT_DATA as $attribute => $type ) {
+				foreach ( self::REQUIRED_EVENT_DATA as $attribute ) {
 					if ( ! array_key_exists( $attribute, $event ) ) {
 						if ( ! empty( $response['message'] ) ) {
 							$response['error_user_msg'] .= ", {$attribute} attribute is missing";
