@@ -234,13 +234,10 @@ class FacebookCapiEvent {
 	}
 
 	public function validate_json( $payload ) {
-		json_encode( $payload );
-    
-		if ( json_last_error() === JSON_ERROR_NONE ) {
-			return true;
-		} else {
-			return false;
-		}
+		$json_string = json_encode( $payload );
+		$regex       = '/^(?:\{.*\}|\[.*\])$/s';
+
+		return preg_match($regex, $json_string);
 	}
 
 	public function validate_event_attributes_type( $event ) {
