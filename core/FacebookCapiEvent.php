@@ -102,7 +102,7 @@ class FacebookCapiEvent {
 
 		$event_name = $_POST['event_name'];
 
-		if ( empty( $_POST['payload'] ) ) {
+		if ( empty( $_POST['payload'] ) && ! empty( $event_name ) ) {
 			$custom_data = $_POST['custom_data'];
 			$invalid_custom_data = self::get_invalid_event_custom_data( $custom_data );
 			if ( ! empty( $invalid_custom_data ) ) {
