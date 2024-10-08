@@ -137,7 +137,7 @@ class FacebookWordpressSettingsPage {
     </div>
   </div>
 
-  <div class="events-manager-wrapper">
+  <div class="events-manager-wrapper <?php echo empty( FacebookWordpressOptions::getPixelId() ) ? 'hidden' : ''; ?>">
 	<h3>Conversion API Tests</h3>
 
 	<div class="events-manager-container">
