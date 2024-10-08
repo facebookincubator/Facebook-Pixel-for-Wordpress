@@ -332,6 +332,11 @@
 .event-log-block .event-log-block__head tr {
     border-bottom: 1px solid #717375;
     align-items: self-end;
+    text-align: center;
+}
+
+.event-log-block .event-log-block__head tr td:first-child {
+    text-align: left;
 }
 
 .event-log-block .event-log-block__head tr td {
