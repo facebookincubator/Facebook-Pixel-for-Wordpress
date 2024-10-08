@@ -150,7 +150,7 @@ class FacebookWordpressSettingsPage {
 
 		<div class="pixel-block events-manager-block">
 			<label>Your Pixel ID</label>
-			<input type="text" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
+			<input type="text" id="pixel-id" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
 		</div>
 
 		<?php echo '<img class="test-form-img" src = ' . plugin_dir_url( __DIR__ ) . 'assets/event-log-head.png alt="Test form image">'; ?>
