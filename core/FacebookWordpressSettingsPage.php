@@ -232,7 +232,9 @@ class FacebookWordpressSettingsPage {
                     <div class="event-hints__wrapper">
                         <span>&#8505;</span>
 
-                        <p>No events logged yet.</p>
+                        <p class="event-hints__text initial-text">No events logged yet.</p>
+
+                        <span class="event-hints__close-icon hidden">&#x2717;</span>
                     </div>
                 </div>
 			</div>
@@ -514,7 +516,20 @@ class FacebookWordpressSettingsPage {
             });
           }
 
-          document.querySelector('.event-hints').classList.add('hidden');
+          const eventHintsText = document.querySelector(".event-hints__text");
+
+          if (eventHintsText.classList.contains('innitial-text')) {
+            const noteCloseButton = document.querySelector('.event-hints__close-icon');
+
+
+            noteCloseButton.addEventListener("click", () => {
+                document.querySelector(".event-hints").classList.add("hidden");
+            });
+            eventHintsText.textContent =
+                "Note that events can take up to a few minutes to appear in the Events Manager.";
+            eventHintsText.classList.remove('innitial-text');
+            noteCloseButton.classList.remove('hidden');
+          }
         },
         error: function(error) {
           console.log(error);
