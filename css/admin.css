@@ -234,11 +234,11 @@
 }
 
 .text-form-inputs div:first-child {
-    width: 378px;
+    width: 320px;
 }
 
 .text-form-inputs select {
-    width: 160px;
+    width: 218px;
 }
 
 .test-event-code-wrapper input::placeholder {
