@@ -93,18 +93,12 @@ final class FacebookCapiTest extends FacebookWordpressTestBase {
 	 * Test get_invalid_event_custom_data returns invalid keys.
 	 */
 	public function test_get_invalid_event_custom_data() {
-		$payload = array(
-			'data' => array(
-				array(
-					'custom_data' => array(
+		$custom_data = array(
 						'value'       => '100',
 						'invalid_key' => 'Invalid Data',
-					),
-				),
-			),
-		);
+					);
 
-		$invalid_data = $this->capi_event->get_invalid_event_custom_data( $payload );
+		$invalid_data = $this->capi_event->get_invalid_event_custom_data( $custom_data );
 		$this->assertContains( 'invalid_key', $invalid_data );
 		$this->assertCount( 1, $invalid_data );
 	}
@@ -113,18 +107,12 @@ final class FacebookCapiTest extends FacebookWordpressTestBase {
 	 * Test get_invalid_event_custom_data with valid data returns empty.
 	 */
 	public function test_valid_custom_data() {
-		$payload = array(
-			'data' => array(
-				array(
-					'custom_data' => array(
+		$custom_data = array(
 						'value'    => '100',
 						'currency' => 'USD',
-					),
-				),
-			),
-		);
+					);
 
-		$invalid_data = $this->capi_event->get_invalid_event_custom_data( $payload );
+		$invalid_data = $this->capi_event->get_invalid_event_custom_data( $custom_data );
 		$this->assertEmpty( $invalid_data );
 	}
 }
