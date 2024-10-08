@@ -160,6 +160,7 @@
 }
 
 .event-hints__wrapper {
+    position: relative;
     margin-top: 10px;
     background-color: #e2e5e9;
 }
@@ -191,6 +192,14 @@
 
 .event-hints__wrapper span {
     color: #e2e5e9;
+}
+
+.event-hints__close-icon {
+    position: absolute;
+}
+
+.event-hints__close-icon.hidden {
+    display: none;
 }
 
 .test-hints {
