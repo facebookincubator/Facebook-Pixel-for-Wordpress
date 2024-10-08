@@ -274,6 +274,7 @@ var FBEFlowContainer = React.createClass({
       success: function onSuccess(data, _textStatus, _jqXHR) {
         let msg = '';
         if(data.success) {
+          _this.hideEventsManagerSection();
           msg = data.message;
         }else {
           msg = data.error_message;
@@ -327,6 +328,10 @@ var FBEFlowContainer = React.createClass({
     } catch (err) {
       console.error(err);
     }
+  },
+  hideEventsManagerSection: function hideEventsManagerSection() {
+    jQuery(".events-manager-wrapper").hide();
+    jQuery(".events-manager-wrapper input#pixel-id").val('');
   }
 });
 
