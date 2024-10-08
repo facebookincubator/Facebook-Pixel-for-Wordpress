@@ -194,7 +194,7 @@
     color: #e2e5e9;
 }
 
-.event-hints__close-icon {
+.event-hints__wrapper .event-hints__close-icon {
     position: absolute;
     right: 12px;
     cursor: pointer;
