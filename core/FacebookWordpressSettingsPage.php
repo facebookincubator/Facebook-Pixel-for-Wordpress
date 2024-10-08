@@ -518,16 +518,15 @@ class FacebookWordpressSettingsPage {
 
           const eventHintsText = document.querySelector(".event-hints__text");
 
-          if (eventHintsText.classList.contains('innitial-text')) {
+          if (eventHintsText.classList.contains('initial-text')) {
             const noteCloseButton = document.querySelector('.event-hints__close-icon');
-
 
             noteCloseButton.addEventListener("click", () => {
                 document.querySelector(".event-hints").classList.add("hidden");
             });
             eventHintsText.textContent =
                 "Note that events can take up to a few minutes to appear in the Events Manager.";
-            eventHintsText.classList.remove('innitial-text');
+            eventHintsText.classList.remove('initial-text');
             noteCloseButton.classList.remove('hidden');
           }
         },
