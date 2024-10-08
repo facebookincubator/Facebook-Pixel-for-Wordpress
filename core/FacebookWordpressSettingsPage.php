@@ -234,7 +234,7 @@ class FacebookWordpressSettingsPage {
 
                         <p class="event-hints__text initial-text">No events logged yet.</p>
 
-                        <span class="event-hints__close-icon hidden">&#x00d7;</span>
+                        <span class="event-hints__close-icon hidden">&#x2715;</span>
                     </div>
                 </div>
 			</div>
