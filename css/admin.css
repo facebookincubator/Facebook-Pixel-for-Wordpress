@@ -308,8 +308,9 @@
 
 .event-log-block table tr {
     display: grid;
-    grid-template-columns: minmax(250px, auto) 150px 150px;
+    grid-template-columns: minmax(250px, auto) 150px 95px;
     grid-template-rows: 42px auto;
+    gap: 0 10px;
     align-items: center;
     height: 100%;
     min-height: 40px;
@@ -323,10 +324,6 @@
 
 .event-log-block .event-log-block__head tr td {
     margin-bottom: 5px;
-}
-
-.event-log-block .event-log-block__head tr td:last-child {
-    text-align: right;
 }
 
 .event-log-block table tbody tr td {
