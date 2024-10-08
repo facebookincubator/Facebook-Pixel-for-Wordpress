@@ -100,7 +100,7 @@ class FacebookCapiEvent {
 
 		$url = "https://graph.facebook.com/v{$api_version}/{$pixel_id}/events?access_token={$access_token}";
 
-		$event_name = $_POST['event_name'];
+		$event_name = $_POST['event_name'] ?? null;
 
 		if ( empty( $_POST['payload'] ) && ! empty( $event_name ) ) {
 			$custom_data = $_POST['custom_data'];
