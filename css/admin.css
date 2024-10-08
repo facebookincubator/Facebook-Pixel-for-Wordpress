@@ -198,6 +198,7 @@
     position: absolute;
     right: 12px;
     cursor: pointer;
+    font-size: 12px;
 }
 
 .event-hints__close-icon.hidden {
