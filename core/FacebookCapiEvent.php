@@ -134,7 +134,15 @@ class FacebookCapiEvent {
 					->setEvents( $events )
 					->setTestEventCode( $_POST['test_event_code'] );
 
-				$payload = json_encode( $event_request->normalize() );
+				$normalized_event = $event_request->normalize();
+				
+				if ( ! empty( $_POST['user_data'] ) ) {
+					foreach ( $normalized_event['data'] as $key => $value ) {
+						$normalized_event['data'][ $key ]['user_data'] += $_POST['user_data'];
+					}
+				}
+				
+				$payload = json_encode( $normalized_event );
 			}
 		} else {
 			$validated_payload = self::validate_payload( $_POST['payload'] );
