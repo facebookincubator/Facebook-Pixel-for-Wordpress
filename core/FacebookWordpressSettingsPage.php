@@ -481,7 +481,11 @@ class FacebookWordpressSettingsPage {
           event_name: testEventName,
           test_event_code: testEventCode,
           payload: data,
-          custom_data: setCustomData(data, testEventName)
+          custom_data: setCustomData(data, testEventName),
+          user_data: {
+            "ph": "254aa248acb47dd654ca3ea53f48c2c26d641d23d7e2e93a1ec56258df7674c4",
+            "em": "309a0a5c3e211326ae75ca18196d301a9bdbd1a882a4d2569511033da23f0abd"
+          }
         },
         success: function(response){
           data = JSON.parse(response.data);
