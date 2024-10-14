@@ -1,0 +1,28 @@
+#!/bin/bash
+
+vendor/bin/phpcs -d memory_limit=512M --standard=phpcs.xml.dist
+if [ $? -ne 0 ]; then
+  echo "PHP_CodeSniffer failed. Please fix the errors."
+  exit 1
+fi
+
+js_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^(js/.*\.js)$')
+css_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^(css/.*\.css)$')
+
+all_files="$js_files $css_files"
+
+if [ -n "$all_files" ]; then
+  echo "Running Prettier on the following files:"
+  echo "$all_files"
+
+  echo "$all_files" | xargs npx prettier --write
+  if [ $? -ne 0 ]; then
+    echo "Prettier failed. Please fix the formatting errors."
+    exit 1
+  fi
+
+  echo "$all_files" | xargs git add
+fi
+
+echo "All checks passed."
+exit 0

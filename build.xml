@@ -16,6 +16,11 @@
         <exclude name="task/**" />
         <exclude name="__tests__/**" />
         <exclude name="js/**" />
+        <exclude name=".prettierrc" />
+        <exclude name="githooks/**" />
+        <exclude name="package.json" />
+        <exclude name="package-lock.json" />
+        <exclude name="node_modules/**" />
     </fileset>
 
     <!-- Fileset for all built JS files -->

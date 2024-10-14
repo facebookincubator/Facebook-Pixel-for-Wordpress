@@ -4,7 +4,9 @@
   "type": "project",
   "require-dev": {
     "phing/phing": "^3.0.0-RC3",
-    "10up/wp_mock": "1.0.1"
+    "10up/wp_mock": "1.0.1",
+    "squizlabs/php_codesniffer": "^3.10",
+    "wp-coding-standards/wpcs": "^3.1"
   },
   "prefer-stable" : true,
   "license": "GPL",
@@ -27,5 +29,10 @@
   },
   "replace": {
     "guzzlehttp/guzzle": "*"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
   }
 }
