@@ -14,6 +14,11 @@
     top: 540px;
     position: absolute;
     left: 20px;
+    display: none;
+}
+
+.fb-capi-ef {
+    display: none;
 }
 
 .fb-adv-conf-title {
@@ -44,6 +49,10 @@
     color: rgb(5,5,5);
     padding-top: 5px;
     padding-bottom: 5px;
+}
+
+.bg-white {
+    background-color: white;
 }
 
 /* Events Manager Section */
@@ -107,6 +116,10 @@
     color: #00000050;
     box-shadow: none;
     cursor: not-allowed;
+}
+
+.events-manager-container .meta-event-manager {
+    margin-bottom: 0px;
 }
 
 .events-manager-block {
