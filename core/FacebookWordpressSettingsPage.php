@@ -115,9 +115,9 @@ class FacebookWordpressSettingsPage {
 <div>
   <div id="fbe-iframe">
   </div>
-  <div id="fb-adv-conf" class="fb-adv-conf" style="display: none;">
+  <div id="fb-adv-conf" class="fb-adv-conf">
     <div class="fb-adv-conf-title">Meta Advanced Configuration</div>
-    <div id="fb-capi-ef" style="display: none;">
+    <div id="fb-capi-ef">
       <input type="checkbox" id="capi-ef" name="capi-ef">
       <label class="fb-capi-title" for="capi-ef">Filter PageView Event</label>
       <span id="fb-capi-ef-se" class="fb-capi-se"></span>
@@ -147,7 +147,7 @@ class FacebookWordpressSettingsPage {
 			<h3>Plugin Connected to Meta Events Manager</h3>
 
 			<p>Meta Events Manager is a tool that enables you to view and manage your event data. In Events Manager, you can set up, monitor and troubleshoot issues with your integrations, such as the Conversions API and Meta pixel.</p>
-			<p style="margin-bottom: 0px;">Visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Meta Events Manager</a> to view the events being tracked.</p>
+			<p class="meta-event-manager">Visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Meta Events Manager</a> to view the events being tracked.</p>
 		</div>
 
 		<div class="pixel-block events-manager-block">
@@ -249,8 +249,7 @@ class FacebookWordpressSettingsPage {
   <div id="ad-creation-plugin">
   <h3 class="mt-5">Ads Creation</h3>
       <div
-        class="my-3 p-3 bg-white rounded shadow-sm"
-        style="background-color: white">
+        class="my-3 p-3 bg-white rounded shadow-sm">
         <div id="ad-creation-plugin-iframe" class="fb-lwi-ads-creation"
         data-lazy=true
         data-hide-manage-button=true
@@ -263,8 +262,7 @@ class FacebookWordpressSettingsPage {
   <div id="ad-insights-plugin">
       <h3 class="mt-5">Ads Insights</h3>
       <div
-        class="my-3 p-3 bg-white d-block rounded shadow-sm"
-        style="background-color: white">
+        class="my-3 p-3 bg-white d-block rounded shadow-sm">
         <div id="ad-insights-plugin-iframe" class="fb-lwi-ads-insights"
         data-lazy=true
         data-fbe-extras='<?php echo $fbe_extras; ?>'
