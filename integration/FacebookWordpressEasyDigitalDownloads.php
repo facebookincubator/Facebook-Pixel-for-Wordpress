@@ -31,46 +31,6 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
   const PLUGIN_FILE = 'easy-digital-downloads/easy-digital-downloads.php';
   const TRACKING_NAME = 'easy-digital-downloads';
 
-  private static $addToCartJS = "
-jQuery(document).ready(function ($) {
-  $('.edd-add-to-cart').click(function (e) {
-    e.preventDefault();
-
-    var _this = $(this), form = _this.closest('form');
-    var download = _this.data('download-id');
-    var currency = $('.edd_purchase_' + download + ' meta[itemprop=\'priceCurrency\']').attr('content');
-    var form = _this.parents('form').last();
-    var value = 0;
-    var variable_price = _this.data('variable-price');
-    var event_id = form.find(\"input[name='facebook_event_id']\").val();
-    if( variable_price == 'yes' ) {
-      form.find('.edd_price_option_' + download + ':checked', form).each(function(index) {
-        value = $(this).data('price');
-      });
-    } else {
-      if ( _this.data('price') && _this.data('price') > 0 ) {
-        value = _this.data('price');
-      }
-    }
-
-    var param = {
-      'content_ids': [download],
-      'content_type': 'product',
-      'currency': currency,
-      '%s': '%s',
-      'value': value
-    };
-    fbq('set', 'agent', '%s', '%s');
-    if(event_id){
-      fbq('track', 'AddToCart', param, {'eventID': event_id});
-    }
-    else{
-      fbq('track', 'AddToCart', param);
-    }
-  });
-});
-";
-
   public static function injectPixelCode() {
     // AddToCart JS listener
     add_action(
@@ -161,22 +121,23 @@ jQuery(document).ready(function ($) {
       return;
     }
 
-    $listener_code = sprintf(
-      self::$addToCartJS,
-      FacebookPixel::FB_INTEGRATION_TRACKING_KEY,
-      self::TRACKING_NAME,
-      FacebookWordpressOptions::getAgentString(),
-      FacebookWordpressOptions::getPixelId()
+    wp_register_script(
+      'facebook-pixel-add-to-cart',
+      plugins_url('../js/facebook_pixel_add_to_cart.js', __FILE__),
+      array('jquery'),
+      '1.0',
+      true
     );
 
-    printf("
-<!-- Meta Pixel Event Code -->
-<script>
-%s
-</script>
-<!-- End Meta Pixel Event Code -->
-      ",
-      $listener_code);
+    wp_localize_script('facebook-pixel-add-to-cart', 'facebookPixelData', array(
+      'fbIntegrationKey' => FacebookPixel::FB_INTEGRATION_TRACKING_KEY,
+      'trackingName' => self::TRACKING_NAME,
+      'agentString' => FacebookWordpressOptions::getAgentString(),
+      'pixelId' => FacebookWordpressOptions::getPixelId()
+    ));
+
+
+    wp_enqueue_script('facebook-pixel-add-to-cart');
   }
 
   public static function injectInitiateCheckoutEvent() {
