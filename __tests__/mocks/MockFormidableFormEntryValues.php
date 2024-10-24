@@ -14,22 +14,22 @@
 namespace FacebookPixelPlugin\Tests\Mocks;
 
 final class MockFormidableFormEntryValues {
-  private $field_values;
-  private $throw;
+	private $field_values;
+	private $throw;
 
-  public function __construct($field_values) {
-    $this->field_values = $field_values;
-  }
+	public function __construct( $field_values ) {
+		$this->field_values = $field_values;
+	}
 
-  public function set_throw($throw) {
-    $this->throw = $throw;
-  }
+	public function set_throw( $throw ) {
+		$this->throw = $throw;
+	}
 
-  public function get_field_values() {
-    if ($this->throw) {
-      throw new \Exception('Unable to read field values!');
-    }
+	public function get_field_values() {
+		if ( $this->throw ) {
+			throw new \Exception( 'Unable to read field values!' );
+		}
 
-    return $this->field_values;
-  }
+		return $this->field_values;
+	}
 }

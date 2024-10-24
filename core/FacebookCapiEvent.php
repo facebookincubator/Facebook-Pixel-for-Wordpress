@@ -103,7 +103,7 @@ class FacebookCapiEvent {
 		$event_name = $_POST['event_name'] ?? null;
 
 		if ( empty( $_POST['payload'] ) && ! empty( $event_name ) ) {
-			$custom_data = $_POST['custom_data'] ?? array();
+			$custom_data         = $_POST['custom_data'] ?? array();
 			$invalid_custom_data = self::get_invalid_event_custom_data( $custom_data );
 			if ( ! empty( $invalid_custom_data ) ) {
 				$invalid_custom_data_msg = implode( ',', $invalid_custom_data );
@@ -135,13 +135,13 @@ class FacebookCapiEvent {
 					->setTestEventCode( $_POST['test_event_code'] );
 
 				$normalized_event = $event_request->normalize();
-				
+
 				if ( ! empty( $_POST['user_data'] ) ) {
 					foreach ( $normalized_event['data'] as $key => $value ) {
 						$normalized_event['data'][ $key ]['user_data'] += $_POST['user_data'];
 					}
 				}
-				
+
 				$payload = json_encode( $normalized_event );
 			}
 		} else {
@@ -194,13 +194,13 @@ class FacebookCapiEvent {
 
 	public function validate_payload( $payload ) {
 		$response = array(
-			'valid' => true
+			'valid' => true,
 		);
 		if ( empty( $payload ) ) {
 			$response['valid']          = false;
 			$response['message']        = 'Empty payload';
 			$response['error_user_msg'] = 'Payload is empty.';
-		} else if ( ! self::validate_json( $payload ) ) {
+		} elseif ( ! self::validate_json( $payload ) ) {
 			$response['valid']          = false;
 			$response['message']        = 'Invalid JSON in payload';
 			$response['error_user_msg'] = 'Invalid JSON in payload.';
@@ -225,19 +225,19 @@ class FacebookCapiEvent {
 						$response['valid']          = false;
 						$response['message']        = 'Invalid attribute type';
 						$response['error_user_msg'] = "Invalid attribute type: {$invalid_attributes_msg}";
-					} else if ( isset( $event['custom_data'] ) ) {
+					} elseif ( isset( $event['custom_data'] ) ) {
 						$invalid_custom_data = self::get_invalid_event_custom_data( $event['custom_data'] );
 						if ( ! empty( $invalid_custom_data ) ) {
 							$invalid_custom_data_msg    = implode( ',', $invalid_custom_data );
 							$response['valid']          = false;
 							$response['message']        = 'Invalid custom_data attribute';
 							$response['error_user_msg'] = "Invalid custom_data attributes: {$invalid_custom_data_msg}";
-						} 
+						}
 					}
 				}
 			}
 		}
-		
+
 		return $response;
 	}
 
@@ -245,7 +245,7 @@ class FacebookCapiEvent {
 		$json_string = json_encode( $payload );
 		$regex       = '/^(?:\{.*\}|\[.*\])$/s';
 
-		return preg_match($regex, $json_string);
+		return preg_match( $regex, $json_string );
 	}
 
 	public function validate_event_attributes_type( $event ) {
@@ -254,15 +254,13 @@ class FacebookCapiEvent {
 		}
 		$invalid_attributes = array();
 		$event              = json_decode( json_encode( $event ) );
-		foreach ($event as $key => $value) {
-			if ( self::VALID_EVENT_ATTRIBUTES_TYPE[ $key ] == 'integer') {
+		foreach ( $event as $key => $value ) {
+			if ( self::VALID_EVENT_ATTRIBUTES_TYPE[ $key ] == 'integer' ) {
 				if ( ! is_numeric( $value ) ) {
 					array_push( $invalid_attributes, $key );
 				}
-			} else {
-				if ( gettype( $value ) != self::VALID_EVENT_ATTRIBUTES_TYPE[ $key ] ) {
+			} elseif ( gettype( $value ) != self::VALID_EVENT_ATTRIBUTES_TYPE[ $key ] ) {
 					array_push( $invalid_attributes, $key );
-				}
 			}
 		}
 		return $invalid_attributes;

@@ -15,20 +15,20 @@ use FacebookPixelPlugin\Core\FacebookPluginConfig;
 
 class FacebookWordpressGetVersionNumberTask extends BaseTask {
 
-  /**
-   * The version number property
-   */
-  private $versionprop;
+	/**
+	 * The version number property
+	 */
+	private $versionprop;
 
-  /**
-   * The setter for the attribute "versionprop"
-   */
-  public function setVersionProp($versionprop) {
-    $this->versionprop = $versionprop;
-  }
+	/**
+	 * The setter for the attribute "versionprop"
+	 */
+	public function setVersionProp( $versionprop ) {
+		$this->versionprop = $versionprop;
+	}
 
-  public function main() {
-    $version = FacebookPluginConfig::PLUGIN_VERSION;
-    $this->project->setProperty($this->versionprop, $version);
-  }
+	public function main() {
+		$version = FacebookPluginConfig::PLUGIN_VERSION;
+		$this->project->setProperty( $this->versionprop, $version );
+	}
 }

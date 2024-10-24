@@ -14,17 +14,20 @@
 namespace FacebookPixelPlugin\Tests\Mocks;
 
 final class MockGravityFormField {
-  public $type;
-  public $id;
-  public $inputs = array();
+	public $type;
+	public $id;
+	public $inputs = array();
 
-  public function __construct($type, $id) {
-    $this->type = $type;
-    $this->id = $id;
-  }
+	public function __construct( $type, $id ) {
+		$this->type = $type;
+		$this->id   = $id;
+	}
 
-  public function addLabel($label, $id) {
-    $input = array('label' => $label, 'id' => $id);
-    $this->inputs[] = $input;
-  }
+	public function addLabel( $label, $id ) {
+		$input          = array(
+			'label' => $label,
+			'id'    => $id,
+		);
+		$this->inputs[] = $input;
+	}
 }

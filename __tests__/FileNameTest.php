@@ -22,8 +22,8 @@ use FacebookPixelPlugin\Core\FacebookPixel;
  * up deactivate the plugin.
 **/
 final class FileNameTest extends FacebookWordpressTestBase {
-  public function testEntryPointFileNamePersists() {
-    $exist = \file_exists(dirname(__FILE__).'/../facebook-for-wordpress.php');
-    $this->assertTrue($exist);
-  }
+	public function testEntryPointFileNamePersists() {
+		$exist = \file_exists( dirname( __FILE__ ) . '/../facebook-for-wordpress.php' );
+		$this->assertTrue( $exist );
+	}
 }

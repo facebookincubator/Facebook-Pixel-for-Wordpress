@@ -14,34 +14,34 @@
 namespace FacebookPixelPlugin\Tests\Mocks;
 
 final class MockWCProduct {
-  private $id = null;
-  private $type = null;
-  private $title = null;
-  private $price = null;
+	private $id    = null;
+	private $type  = null;
+	private $title = null;
+	private $price = null;
 
-  public function __construct($id, $type = null, $title = null, $price = null) {
-    $this->id = $id;
-    $this->type = $type;
-    $this->title = $title;
-    $this->price = $price;
-  }
+	public function __construct( $id, $type = null, $title = null, $price = null ) {
+		$this->id    = $id;
+		$this->type  = $type;
+		$this->title = $title;
+		$this->price = $price;
+	}
 
-  public function get_id() {
-    return $this->id;
-  }
+	public function get_id() {
+		return $this->id;
+	}
 
-  public function get_sku() {
-    return '';
-  }
+	public function get_sku() {
+		return '';
+	}
 
-  public function get_title() {
-    return $this->title;
-  }
+	public function get_title() {
+		return $this->title;
+	}
 
-  public function get_price() {
-    return $this->price;
-  }
-  public function is_type($type) {
-    return $this->type === $type;
-  }
+	public function get_price() {
+		return $this->price;
+	}
+	public function is_type( $type ) {
+		return $this->type === $type;
+	}
 }

@@ -17,10 +17,10 @@
 
 namespace FacebookPixelPlugin\Integration;
 
-defined('ABSPATH') or die('Direct access not allowed');
+defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
 
 class IntegrationUtils {
-  public static function getFormidableFormsEntryValues($entry_id) {
-    return new \FrmEntryValues($entry_id);
-  }
+	public static function getFormidableFormsEntryValues( $entry_id ) {
+		return new \FrmEntryValues( $entry_id );
+	}
 }

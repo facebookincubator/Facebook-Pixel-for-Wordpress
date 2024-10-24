@@ -14,13 +14,13 @@
 namespace FacebookPixelPlugin\Tests\Mocks;
 
 final class MockFormidableFormField {
-  public $type;
-  public $name;
-  public $description;
+	public $type;
+	public $name;
+	public $description;
 
-  public function __construct($type, $name, $description) {
-    $this->type = $type;
-    $this->name = $name;
-    $this->description = $description;
-  }
+	public function __construct( $type, $name, $description ) {
+		$this->type        = $type;
+		$this->name        = $name;
+		$this->description = $description;
+	}
 }

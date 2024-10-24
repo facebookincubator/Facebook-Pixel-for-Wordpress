@@ -7,6 +7,8 @@
  * Author URI: https://www.facebook.com/
  * Version: {*VERSION_NUMBER*}
  * Text Domain: official-facebook-pixel
+ *
+ * @package FacebookPixelPlugin
  */
 
 /*
@@ -21,15 +23,11 @@
 * GNU General Public License for more details.
 */
 
-/**
- * @package FacebookPixelPlugin
- */
-
 namespace FacebookPixelPlugin;
 
-defined('ABSPATH') or die('Direct access not allowed');
+defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
 
-require_once plugin_dir_path(__FILE__).'vendor/autoload.php';
+require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
@@ -42,74 +40,76 @@ use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
 use FacebookPixelPlugin\Core\ServerEventAsyncTask;
 
 class FacebookForWordpress {
-  public function __construct() {
-    // initialize options
-    FacebookWordpressOptions::initialize();
+	public function __construct() {
+		// initialize options
+		FacebookWordpressOptions::initialize();
 
-    // load textdomain
-    load_plugin_textdomain(
-      FacebookPluginConfig::TEXT_DOMAIN,
-      false,
-      dirname(plugin_basename(__FILE__)) . '/languages/');
+		// load textdomain
+		load_plugin_textdomain(
+			FacebookPluginConfig::TEXT_DOMAIN,
+			false,
+			dirname( plugin_basename( __FILE__ ) ) . '/languages/'
+		);
 
-    // initialize pixel
-    $options = FacebookWordpressOptions::getOptions();
-    FacebookPixel::initialize(FacebookWordpressOptions::getPixelId());
-    // Register WordPress pixel injection controlling where to fire pixel
-    add_action('init', array($this, 'registerPixelInjection'), 0);
+		// initialize pixel
+		$options = FacebookWordpressOptions::getOptions();
+		FacebookPixel::initialize( FacebookWordpressOptions::getPixelId() );
+		// Register WordPress pixel injection controlling where to fire pixel
+		add_action( 'init', array( $this, 'registerPixelInjection' ), 0 );
 
-    // Listen on /events to parse pixel fired events
-    add_action('parse_request', array($this, 'handle_events_request'), 0);
+		// Listen on /events to parse pixel fired events
+		add_action( 'parse_request', array( $this, 'handle_events_request' ), 0 );
 
-    // initialize admin page config
-    $this->registerSettingsPage();
+		// initialize admin page config
+		$this->registerSettingsPage();
 
-    // initialize the s2s event async task
-    new ServerEventAsyncTask();
-  }
+		// initialize the s2s event async task
+		new ServerEventAsyncTask();
+	}
 
-  /**
-   * Helper function for registering pixel injection.
-   */
-  public function registerPixelInjection() {
-    $injectionObj = new FacebookWordpressPixelInjection();
-    $injectionObj->inject();
-  }
+	/**
+	 * Helper function for registering pixel injection.
+	 */
+	public function registerPixelInjection() {
+		$injectionObj = new FacebookWordpressPixelInjection();
+		$injectionObj->inject();
+	}
 
-  /**
-   * Helper function for registering the settings page.
-   */
-  public function registerSettingsPage() {
-    if (is_admin()) {
-      $plugin_name = plugin_basename(__FILE__);
-      new FacebookWordpressSettingsPage($plugin_name);
-      (new FacebookWordpressSettingsRecorder())->init();
-    }
-  }
+	/**
+	 * Helper function for registering the settings page.
+	 */
+	public function registerSettingsPage() {
+		if ( is_admin() ) {
+			$plugin_name = plugin_basename( __FILE__ );
+			new FacebookWordpressSettingsPage( $plugin_name );
+			( new FacebookWordpressSettingsRecorder() )->init();
+		}
+	}
 
-  public function handle_events_request(){
-    $request_uri = $_SERVER['REQUEST_URI'];
+	public function handle_events_request() {
+		$request_uri = $_SERVER['REQUEST_URI'];
 
-    if(
-      FacebookPluginUtils::endsWith(
-        $request_uri,
-        FacebookPluginConfig::OPEN_BRIDGE_PATH) &&
-        $_SERVER['REQUEST_METHOD'] == 'POST'
-      ) {
-        $data = json_decode(file_get_contents('php://input'), true);
-        if (!is_null($data)) {
-          FacebookWordpressOpenBridge::getInstance()->handleOpenBridgeReq(
-            $data
-          );
-        }
-        if (isset($_SERVER['HTTP_ORIGIN'])) {
-          header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
-          header('Access-Control-Allow-Credentials: true');
-          header('Access-Control-Max-Age: 86400');
-        }
-        exit();
-    }
-  }
+		if (
+		FacebookPluginUtils::endsWith(
+			$request_uri,
+			FacebookPluginConfig::OPEN_BRIDGE_PATH
+		) &&
+		$_SERVER['REQUEST_METHOD'] == 'POST'
+		) {
+			$data = json_decode( file_get_contents( 'php://input' ), true );
+			if ( ! is_null( $data ) ) {
+				FacebookWordpressOpenBridge::getInstance()->handleOpenBridgeReq(
+					$data
+				);
+			}
+			if ( isset( $_SERVER['HTTP_ORIGIN'] ) ) {
+				header( "Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}" );
+				header( 'Access-Control-Allow-Credentials: true' );
+				header( 'Access-Control-Max-Age: 86400' );
+			}
+			exit();
+		}
+	}
 }
 
 $WP_FacebookForWordpress = new FacebookForWordpress();

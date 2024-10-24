@@ -11,7 +11,7 @@
  * GNU General Public License for more details.
  */
 
-require_once dirname(__FILE__) . '/../vendor/autoload.php';
+require_once dirname( __FILE__ ) . '/../vendor/autoload.php';
 
 // Now call the bootstrap method of WP Mock
 WP_Mock::bootstrap();

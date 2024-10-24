@@ -25,13 +25,13 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * Stop preserving global state from the parent process.
  */
 final class EventIdGeneratorTest extends FacebookWordpressTestBase {
-  public function testGuidv4GeneratesUniqueValues() {
-    $event_ids = array();
-    for ($i = 0; $i < 100; $i++) {
-      $event_ids[] = EventIdGenerator::guidv4();
-    }
+	public function testGuidv4GeneratesUniqueValues() {
+		$event_ids = array();
+		for ( $i = 0; $i < 100; $i++ ) {
+			$event_ids[] = EventIdGenerator::guidv4();
+		}
 
-    $event_ids = array_unique($event_ids);
-    $this->assertEquals(100, count($event_ids));
-  }
+		$event_ids = array_unique( $event_ids );
+		$this->assertEquals( 100, count( $event_ids ) );
+	}
 }

@@ -25,52 +25,67 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * Stop preserving global state from the parent process.
  */
 final class FacebookPluginUtilsTest extends FacebookWordpressTestBase {
-  public function testWhenIsPositiveInteger() {
-    $this->assertTrue(FacebookPluginUtils::isPositiveInteger('1'));
-    $this->assertFalse(FacebookPluginUtils::isPositiveInteger('0'));
-    $this->assertFalse(FacebookPluginUtils::isPositiveInteger('-1'));
-  }
+	public function testWhenIsPositiveInteger() {
+		$this->assertTrue( FacebookPluginUtils::isPositiveInteger( '1' ) );
+		$this->assertFalse( FacebookPluginUtils::isPositiveInteger( '0' ) );
+		$this->assertFalse( FacebookPluginUtils::isPositiveInteger( '-1' ) );
+	}
 
-  public function testIsInternalUser_WhenUserIsExternal() {
-    \WP_Mock::userFunction('current_user_can', array(
-      'times' => 1,
-      'args' => 'edit_posts',
-      'return' => false,
-    ));
-    \WP_Mock::userFunction('current_user_can', array(
-      'times' => 1,
-      'args' => 'upload_files',
-      'return' => false,
-    ));
-    $isInternalUser = FacebookPluginUtils::isInternalUser();
+	public function testIsInternalUser_WhenUserIsExternal() {
+		\WP_Mock::userFunction(
+			'current_user_can',
+			array(
+				'times'  => 1,
+				'args'   => 'edit_posts',
+				'return' => false,
+			)
+		);
+		\WP_Mock::userFunction(
+			'current_user_can',
+			array(
+				'times'  => 1,
+				'args'   => 'upload_files',
+				'return' => false,
+			)
+		);
+		$isInternalUser = FacebookPluginUtils::isInternalUser();
 
-    $this->assertFalse($isInternalUser);
-  }
+		$this->assertFalse( $isInternalUser );
+	}
 
-  public function testIsInternalUser_WhenUserCanEditPosts() {
-    \WP_Mock::userFunction('current_user_can', array(
-      'times' => 1,
-      'args' => 'edit_posts',
-      'return' => true,
-    ));
-    $isInternalUser = FacebookPluginUtils::isInternalUser();
+	public function testIsInternalUser_WhenUserCanEditPosts() {
+		\WP_Mock::userFunction(
+			'current_user_can',
+			array(
+				'times'  => 1,
+				'args'   => 'edit_posts',
+				'return' => true,
+			)
+		);
+		$isInternalUser = FacebookPluginUtils::isInternalUser();
 
-    $this->assertTrue($isInternalUser);
-  }
+		$this->assertTrue( $isInternalUser );
+	}
 
-  public function testIsInternalUser_WhenUserCanUploadFiles() {
-    \WP_Mock::userFunction('current_user_can', array(
-      'times' => 1,
-      'args' => 'edit_posts',
-      'return' => false,
-    ));
-    \WP_Mock::userFunction('current_user_can', array(
-      'times' => 1,
-      'args' => 'upload_files',
-      'return' => true,
-    ));
-    $isInternalUser = FacebookPluginUtils::isInternalUser();
+	public function testIsInternalUser_WhenUserCanUploadFiles() {
+		\WP_Mock::userFunction(
+			'current_user_can',
+			array(
+				'times'  => 1,
+				'args'   => 'edit_posts',
+				'return' => false,
+			)
+		);
+		\WP_Mock::userFunction(
+			'current_user_can',
+			array(
+				'times'  => 1,
+				'args'   => 'upload_files',
+				'return' => true,
+			)
+		);
+		$isInternalUser = FacebookPluginUtils::isInternalUser();
 
-    $this->assertTrue($isInternalUser);
-  }
+		$this->assertTrue( $isInternalUser );
+	}
 }
