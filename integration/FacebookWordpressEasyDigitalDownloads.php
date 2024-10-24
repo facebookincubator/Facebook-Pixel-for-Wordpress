@@ -236,8 +236,8 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 
 	public static function createInitiateCheckoutEvent() {
 		$event_data             = FacebookPluginUtils::getLoggedInUserInfo();
-		$event_data['currency'] = EDDUtils::getCurrency();
-		$event_data['value']    = EDDUtils::getCartTotal();
+		$event_data['currency'] = EDDUtils::get_currency();
+		$event_data['value']    = EDDUtils::get_cart_total();
 
 		return $event_data;
 	}
@@ -271,7 +271,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 
 	public static function createViewContentEvent( $download_id ) {
 		$event_data = FacebookPluginUtils::getLoggedInUserInfo();
-		$currency   = EDDUtils::getCurrency();
+		$currency   = EDDUtils::get_currency();
 		$download   = edd_get_download( $download_id );
 		$title      = $download ? $download->post_title : '';
 
@@ -295,7 +295,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 
 	public static function createAddToCartEvent( $download_id ) {
 		$event_data = FacebookPluginUtils::getLoggedInUserInfo();
-		$currency   = EDDUtils::getCurrency();
+		$currency   = EDDUtils::get_currency();
 		$download   = edd_get_download( $download_id );
 		$title      = $download ? $download->post_title : '';
 		if ( get_post_meta( $download_id, '_variable_pricing', true ) ) {
