@@ -14,25 +14,25 @@
 namespace FacebookPixelPlugin\Tests\Mocks;
 
 final class MockWCOrderItem {
-  private $id;
-  private $quantity;
-  private $total;
+	private $id;
+	private $quantity;
+	private $total;
 
-  public function __construct($id, $quantity, $total) {
-    $this->id = $id;
-    $this->quantity = $quantity;
-    $this->total = $total;
-  }
+	public function __construct( $id, $quantity, $total ) {
+		$this->id       = $id;
+		$this->quantity = $quantity;
+		$this->total    = $total;
+	}
 
-  public function get_product_id() {
-    return $this->id;
-  }
+	public function get_product_id() {
+		return $this->id;
+	}
 
-  public function get_quantity() {
-    return $this->quantity;
-  }
+	public function get_quantity() {
+		return $this->quantity;
+	}
 
-  public function get_total() {
-    return $this->total;
-  }
+	public function get_total() {
+		return $this->total;
+	}
 }

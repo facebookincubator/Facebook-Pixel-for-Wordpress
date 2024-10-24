@@ -29,65 +29,72 @@ use FacebookAds\Object\ServerSide\CustomData;
  * Stop preserving global state from the parent process.
  */
 final class PixelRendererTest extends FacebookWordpressTestBase {
-  public function testPixelRenderForStandardEvent() {
-    FacebookWordpressOptions::setVersionInfo();
-    $agent_string = FacebookWordpressOptions::getAgentString();
+	public function testPixelRenderForStandardEvent() {
+		FacebookWordpressOptions::setVersionInfo();
+		$agent_string = FacebookWordpressOptions::getAgentString();
 
-    $event = (new Event())
-              ->setEventName('Lead')
-              ->setEventId('TestEventId');
-    $code = PixelRenderer::render(array($event), 'Test');
+		$event = ( new Event() )
+				->setEventName( 'Lead' )
+				->setEventId( 'TestEventId' );
+		$code  = PixelRenderer::render( array( $event ), 'Test' );
 
-    $expected = sprintf("<script type='text/javascript'>
+		$expected = sprintf(
+			"<script type='text/javascript'>
   fbq('set', 'agent', '%s', '');
     fbq('track', 'Lead', {
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId\"
 });
-  </script>", $agent_string);
+  </script>",
+			$agent_string
+		);
 
-    $this->assertEquals($expected, $code);
-  }
+		$this->assertEquals( $expected, $code );
+	}
 
-  public function testPixelRenderForCustomEvent() {
-    FacebookWordpressOptions::setVersionInfo();
-    $agent_string = FacebookWordpressOptions::getAgentString();
+	public function testPixelRenderForCustomEvent() {
+		FacebookWordpressOptions::setVersionInfo();
+		$agent_string = FacebookWordpressOptions::getAgentString();
 
-    $event = (new Event())
-              ->setEventName('Custom')
-              ->setEventId('TestEventId');
+		$event = ( new Event() )
+				->setEventName( 'Custom' )
+				->setEventId( 'TestEventId' );
 
-    $code = PixelRenderer::render(array($event), 'Test');
+		$code = PixelRenderer::render( array( $event ), 'Test' );
 
-    $expected = sprintf("<script type='text/javascript'>
+		$expected = sprintf(
+			"<script type='text/javascript'>
   fbq('set', 'agent', '%s', '');
     fbq('trackCustom', 'Custom', {
     \"fb_integration_tracking\": \"Test\"
 }, {
     \"eventID\": \"TestEventId\"
 });
-  </script>", $agent_string);
+  </script>",
+			$agent_string
+		);
 
-    $this->assertEquals($expected, $code);
-  }
+		$this->assertEquals( $expected, $code );
+	}
 
-  public function testPixelRenderForCustomData() {
-    FacebookWordpressOptions::setVersionInfo();
-    $agent_string = FacebookWordpressOptions::getAgentString();
+	public function testPixelRenderForCustomData() {
+		FacebookWordpressOptions::setVersionInfo();
+		$agent_string = FacebookWordpressOptions::getAgentString();
 
-    $custom_data = (new CustomData())
-                    ->setCurrency('USD')
-                    ->setValue('30.00');
+		$custom_data = ( new CustomData() )
+					->setCurrency( 'USD' )
+					->setValue( '30.00' );
 
-    $event = (new Event())
-              ->setEventName('Purchase')
-              ->setEventId('TestEventId')
-              ->setCustomData($custom_data);
+		$event = ( new Event() )
+				->setEventName( 'Purchase' )
+				->setEventId( 'TestEventId' )
+				->setCustomData( $custom_data );
 
-    $code = PixelRenderer::render(array($event), 'Test');
+		$code = PixelRenderer::render( array( $event ), 'Test' );
 
-    $expected = sprintf("<script type='text/javascript'>
+		$expected = sprintf(
+			"<script type='text/javascript'>
   fbq('set', 'agent', '%s', '');
     fbq('track', 'Purchase', {
     \"value\": \"30.00\",
@@ -96,25 +103,28 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 }, {
     \"eventID\": \"TestEventId\"
 });
-  </script>", $agent_string);
+  </script>",
+			$agent_string
+		);
 
-    $this->assertEquals($expected, $code);
-  }
+		$this->assertEquals( $expected, $code );
+	}
 
-  public function testPixelRenderForMultipleEvents() {
-    FacebookWordpressOptions::setVersionInfo();
-    $agent_string = FacebookWordpressOptions::getAgentString();
+	public function testPixelRenderForMultipleEvents() {
+		FacebookWordpressOptions::setVersionInfo();
+		$agent_string = FacebookWordpressOptions::getAgentString();
 
-    $event1 = (new Event())
-              ->setEventName('Lead')
-              ->setEventId('TestEventId1');
-    $event2 = (new Event())
-              ->setEventName('Lead')
-              ->setEventId('TestEventId2');
+		$event1 = ( new Event() )
+				->setEventName( 'Lead' )
+				->setEventId( 'TestEventId1' );
+		$event2 = ( new Event() )
+				->setEventName( 'Lead' )
+				->setEventId( 'TestEventId2' );
 
-    $code = PixelRenderer::render(array($event1, $event2), 'Test');
+		$code = PixelRenderer::render( array( $event1, $event2 ), 'Test' );
 
-    $expected = sprintf("<script type='text/javascript'>
+		$expected = sprintf(
+			"<script type='text/javascript'>
   fbq('set', 'agent', '%s', '');
     fbq('track', 'Lead', {
     \"fb_integration_tracking\": \"Test\"
@@ -125,8 +135,10 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 }, {
     \"eventID\": \"TestEventId2\"
 });
-  </script>", $agent_string);
+  </script>",
+			$agent_string
+		);
 
-    $this->assertEquals($expected, $code);
-  }
+		$this->assertEquals( $expected, $code );
+	}
 }

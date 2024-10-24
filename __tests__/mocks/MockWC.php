@@ -14,9 +14,9 @@
 namespace FacebookPixelPlugin\Tests\Mocks;
 
 final class MockWC {
-  public $cart = null;
+	public $cart = null;
 
-  public function __construct($cart) {
-    $this->cart = $cart;
-  }
+	public function __construct( $cart ) {
+		$this->cart = $cart;
+	}
 }

@@ -27,199 +27,226 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * Stop preserving global state from the parent process.
  */
 final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
-  public function testCanInitialize() {
-    self::mockGetOption('1234', '1234');
-    self::mockEscJs('1234');
-    self::mockGetTransientAAMSettings('1234', true,
-      AAMSettingsFields::getAllFields());
-    \WP_Mock::expectActionAdded(
-      'init',
-      array(
-        'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-        'registerUserInfo'
-      ),
-      0
-    );
-    FacebookWordpressOptions::initialize();
+	public function testCanInitialize() {
+		self::mockGetOption( '1234', '1234' );
+		self::mockEscJs( '1234' );
+		self::mockGetTransientAAMSettings(
+			'1234',
+			true,
+			AAMSettingsFields::getAllFields()
+		);
+		\WP_Mock::expectActionAdded(
+			'init',
+			array(
+				'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
+				'registerUserInfo',
+			),
+			0
+		);
+		FacebookWordpressOptions::initialize();
 
-    $pixel_id = FacebookWordpressOptions::getPixelId();
-    $version_info = FacebookWordpressOptions::getVersionInfo();
+		$pixel_id     = FacebookWordpressOptions::getPixelId();
+		$version_info = FacebookWordpressOptions::getVersionInfo();
 
-    $this->assertEquals($pixel_id, '1234');
-    $this->assertEquals(
-      $version_info['pluginVersion'],
-      FacebookPluginConfig::PLUGIN_VERSION
-    );
-    $this->assertEquals($version_info['source'], FacebookPluginConfig::SOURCE);
-    $this->assertEquals($version_info['version'], '1.0');
-    $this->assertConditionsMet();
-    $this->assertHooksAdded();
-  }
+		$this->assertEquals( $pixel_id, '1234' );
+		$this->assertEquals(
+			$version_info['pluginVersion'],
+			FacebookPluginConfig::PLUGIN_VERSION
+		);
+		$this->assertEquals( $version_info['source'], FacebookPluginConfig::SOURCE );
+		$this->assertEquals( $version_info['version'], '1.0' );
+		$this->assertConditionsMet();
+		$this->assertHooksAdded();
+	}
 
-  public function testCanRegisterUserInfo() {
-    self::mockWpGetCurrentUser('1234');
+	public function testCanRegisterUserInfo() {
+		self::mockWpGetCurrentUser( '1234' );
 
-    self::mockGetOption('1234', '1234', '1');
-    self::mockEscJs('1234');
-    self::mockGetTransientAAMSettings('1234', true,
-      AAMSettingsFields::getAllFields());
-    \WP_Mock::expectActionAdded(
-      'init',
-      array(
-        'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-        'registerUserInfo'
-      ),
-      0
-    );
-    FacebookWordpressOptions::initialize();
+		self::mockGetOption( '1234', '1234', '1' );
+		self::mockEscJs( '1234' );
+		self::mockGetTransientAAMSettings(
+			'1234',
+			true,
+			AAMSettingsFields::getAllFields()
+		);
+		\WP_Mock::expectActionAdded(
+			'init',
+			array(
+				'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
+				'registerUserInfo',
+			),
+			0
+		);
+		FacebookWordpressOptions::initialize();
 
-    FacebookWordpressOptions::registerUserInfo();
-    $user_info = FacebookWordpressOptions::getUserInfo();
-    $this->assertEquals($user_info['em'], 'foo@foo.com');
-    $this->assertEquals($user_info['fn'], 'john');
-    $this->assertEquals($user_info['ln'], 'doe');
-  }
+		FacebookWordpressOptions::registerUserInfo();
+		$user_info = FacebookWordpressOptions::getUserInfo();
+		$this->assertEquals( $user_info['em'], 'foo@foo.com' );
+		$this->assertEquals( $user_info['fn'], 'john' );
+		$this->assertEquals( $user_info['ln'], 'doe' );
+	}
 
-  public function testCannotRegisterUserInfoWithoutUserId() {
-    self::mockWpGetCurrentUser();
+	public function testCannotRegisterUserInfoWithoutUserId() {
+		self::mockWpGetCurrentUser();
 
-    self::mockGetOption('1234', '1234');
-    self::mockEscJs('1234');
-    self::mockGetTransientAAMSettings('1234', true,
-      AAMSettingsFields::getAllFields());
-    \WP_Mock::expectActionAdded(
-      'init',
-      array(
-        'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-        'registerUserInfo'
-      ),
-      0
-    );
-    FacebookWordpressOptions::initialize();
+		self::mockGetOption( '1234', '1234' );
+		self::mockEscJs( '1234' );
+		self::mockGetTransientAAMSettings(
+			'1234',
+			true,
+			AAMSettingsFields::getAllFields()
+		);
+		\WP_Mock::expectActionAdded(
+			'init',
+			array(
+				'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
+				'registerUserInfo',
+			),
+			0
+		);
+		FacebookWordpressOptions::initialize();
 
-    FacebookWordpressOptions::registerUserInfo();
-    $user_info = FacebookWordpressOptions::getUserInfo();
-    $this->assertEquals(\count($user_info), 0);
-  }
+		FacebookWordpressOptions::registerUserInfo();
+		$user_info = FacebookWordpressOptions::getUserInfo();
+		$this->assertEquals( \count( $user_info ), 0 );
+	}
 
-  public function testCannotRegisterUserInfoWithoutUsePII() {
-    self::mockWpGetCurrentUser('1234');
+	public function testCannotRegisterUserInfoWithoutUsePII() {
+		self::mockWpGetCurrentUser( '1234' );
 
-    self::mockGetOption('1234', '1234');
-    self::mockEscJs();
-    self::mockGetTransientAAMSettings('1234', false,
-      AAMSettingsFields::getAllFields());
-    \WP_Mock::expectActionAdded(
-      'init',
-      array(
-        'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-        'registerUserInfo'
-      ),
-      0
-    );
-    FacebookWordpressOptions::initialize();
+		self::mockGetOption( '1234', '1234' );
+		self::mockEscJs();
+		self::mockGetTransientAAMSettings(
+			'1234',
+			false,
+			AAMSettingsFields::getAllFields()
+		);
+		\WP_Mock::expectActionAdded(
+			'init',
+			array(
+				'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
+				'registerUserInfo',
+			),
+			0
+		);
+		FacebookWordpressOptions::initialize();
 
-    FacebookWordpressOptions::registerUserInfo();
-    $user_info = FacebookWordpressOptions::getUserInfo();
+		FacebookWordpressOptions::registerUserInfo();
+		$user_info = FacebookWordpressOptions::getUserInfo();
 
-    $this->assertEquals(\count($user_info), 0);
-  }
+		$this->assertEquals( \count( $user_info ), 0 );
+	}
 
-  public function testCanSetVersionInfoAndGetAgentString() {
-    $GLOBALS['wp_version'] = '1.1';
-    FacebookWordpressOptions::setVersionInfo();
+	public function testCanSetVersionInfoAndGetAgentString() {
+		$GLOBALS['wp_version'] = '1.1';
+		FacebookWordpressOptions::setVersionInfo();
 
-    $version_info = FacebookWordpressOptions::getVersionInfo();
-    $this->assertEquals(
-      $version_info['pluginVersion'],
-      FacebookPluginConfig::PLUGIN_VERSION
-    );
-    $this->assertEquals($version_info['source'], FacebookPluginConfig::SOURCE);
-    $this->assertEquals($version_info['version'], '1.1');
+		$version_info = FacebookWordpressOptions::getVersionInfo();
+		$this->assertEquals(
+			$version_info['pluginVersion'],
+			FacebookPluginConfig::PLUGIN_VERSION
+		);
+		$this->assertEquals( $version_info['source'], FacebookPluginConfig::SOURCE );
+		$this->assertEquals( $version_info['version'], '1.1' );
 
-    $agent_string = FacebookWordpressOptions::getAgentString();
-    $this->assertEquals(
-      $agent_string,
-      FacebookPluginConfig::SOURCE .
-      '-1.1-' .
-      FacebookPluginConfig::PLUGIN_VERSION
-    );
-  }
+		$agent_string = FacebookWordpressOptions::getAgentString();
+		$this->assertEquals(
+			$agent_string,
+			FacebookPluginConfig::SOURCE .
+			'-1.1-' .
+			FacebookPluginConfig::PLUGIN_VERSION
+		);
+	}
 
-  public function testDefaultValuesAreCorrect() {
-    self::mockEscJs('');
-    self::mockGetOption();
-    \WP_Mock::expectActionAdded(
-      'init',
-      array(
-        'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-        'registerUserInfo'
-      ),
-      0
-    );
-    FacebookWordpressOptions::initialize();
+	public function testDefaultValuesAreCorrect() {
+		self::mockEscJs( '' );
+		self::mockGetOption();
+		\WP_Mock::expectActionAdded(
+			'init',
+			array(
+				'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
+				'registerUserInfo',
+			),
+			0
+		);
+		FacebookWordpressOptions::initialize();
 
-    $pixel_id = FacebookWordpressOptions::getPixelId();
-    $version_info = FacebookWordpressOptions::getVersionInfo();
-    $access_token = FacebookWordpressOptions::getAccessToken();
-    $is_fbe_installed = FacebookWordpressOptions::getIsFbeInstalled();
-    $external_business_id = FacebookWordpressOptions::getExternalBusinessId();
+		$pixel_id             = FacebookWordpressOptions::getPixelId();
+		$version_info         = FacebookWordpressOptions::getVersionInfo();
+		$access_token         = FacebookWordpressOptions::getAccessToken();
+		$is_fbe_installed     = FacebookWordpressOptions::getIsFbeInstalled();
+		$external_business_id = FacebookWordpressOptions::getExternalBusinessId();
 
-    $this->assertEquals($pixel_id, '');
-    $this->assertEquals($access_token, '');
-    $this->assertEquals($is_fbe_installed, '0');
-    $this->assertTrue(str_contains($external_business_id,'fbe_wordpress_'));
-  }
+		$this->assertEquals( $pixel_id, '' );
+		$this->assertEquals( $access_token, '' );
+		$this->assertEquals( $is_fbe_installed, '0' );
+		$this->assertTrue( str_contains( $external_business_id, 'fbe_wordpress_' ) );
+	}
 
-  private function mockGetOption($mock_pixel_id=null, $mock_access_token=null,
-    $mock_fbe_installed = '0') {
-    \WP_Mock::userFunction('get_option', array(
-      'return' =>
-        array(
-          FacebookPluginConfig::PIXEL_ID_KEY =>
-            is_null($mock_pixel_id) ?
-            FacebookWordpressOptions::getDefaultPixelID() :
-            $mock_pixel_id,
-          FacebookPluginConfig::ACCESS_TOKEN_KEY =>
-            is_null($mock_access_token) ?
-            FacebookWordpressOptions::getDefaultAccessToken() :
-            $mock_access_token,
-          FacebookPluginConfig::IS_FBE_INSTALLED_KEY =>
-            $mock_fbe_installed
-        ),
-    ));
-  }
+	private function mockGetOption(
+		$mock_pixel_id = null,
+		$mock_access_token = null,
+		$mock_fbe_installed = '0'
+	) {
+		\WP_Mock::userFunction(
+			'get_option',
+			array(
+				'return' =>
+				array(
+					FacebookPluginConfig::PIXEL_ID_KEY     =>
+						is_null( $mock_pixel_id ) ?
+						FacebookWordpressOptions::getDefaultPixelID() :
+						$mock_pixel_id,
+					FacebookPluginConfig::ACCESS_TOKEN_KEY =>
+						is_null( $mock_access_token ) ?
+						FacebookWordpressOptions::getDefaultAccessToken() :
+						$mock_access_token,
+					FacebookPluginConfig::IS_FBE_INSTALLED_KEY =>
+						$mock_fbe_installed,
+				),
+			)
+		);
+	}
 
-  private function mockGetTransientAAMSettings(
-    $pixel_id = null,
-    $enable_aam = false,
-    $aam_fields = []
-  ){
-    define( 'MINUTE_IN_SECONDS', 60 );
-    \WP_Mock::userFunction('get_transient', array(
-      'return' => [
-          "pixelId" => $pixel_id,
-          "enableAutomaticMatching" => $enable_aam,
-          "enabledAutomaticMatchingFields" => $aam_fields,
-        ]
-      ));
-  }
+	private function mockGetTransientAAMSettings(
+		$pixel_id = null,
+		$enable_aam = false,
+		$aam_fields = array()
+	) {
+		define( 'MINUTE_IN_SECONDS', 60 );
+		\WP_Mock::userFunction(
+			'get_transient',
+			array(
+				'return' => array(
+					'pixelId'                        => $pixel_id,
+					'enableAutomaticMatching'        => $enable_aam,
+					'enabledAutomaticMatchingFields' => $aam_fields,
+				),
+			)
+		);
+	}
 
-  private function mockEscJs($string = '1234') {
-    \WP_Mock::userFunction('esc_js', array(
-      'args' => $string,
-      'return' => $string,
-    ));
-  }
+	private function mockEscJs( $string = '1234' ) {
+		\WP_Mock::userFunction(
+			'esc_js',
+			array(
+				'args'   => $string,
+				'return' => $string,
+			)
+		);
+	}
 
-  private function mockWpGetCurrentUser($user_id = 0) {
-    \WP_Mock::userFunction('wp_get_current_user', array(
-      'return' => (object) [
-        'ID' => $user_id,
-        'user_email' => 'foo@foo.com',
-        'user_firstname' => 'John',
-        'user_lastname' => 'Doe',
-      ],
-    ));
-  }
+	private function mockWpGetCurrentUser( $user_id = 0 ) {
+		\WP_Mock::userFunction(
+			'wp_get_current_user',
+			array(
+				'return' => (object) array(
+					'ID'             => $user_id,
+					'user_email'     => 'foo@foo.com',
+					'user_firstname' => 'John',
+					'user_lastname'  => 'Doe',
+				),
+			)
+		);
+	}
 }

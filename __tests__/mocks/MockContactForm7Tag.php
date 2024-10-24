@@ -14,11 +14,11 @@
 namespace FacebookPixelPlugin\Tests\Mocks;
 
 final class MockContactForm7Tag {
-  public $basetype;
-  public $name;
+	public $basetype;
+	public $name;
 
-  function __construct($basetype, $name) {
-    $this->basetype = $basetype;
-    $this->name = $name;
-  }
+	function __construct( $basetype, $name ) {
+		$this->basetype = $basetype;
+		$this->name     = $name;
+	}
 }

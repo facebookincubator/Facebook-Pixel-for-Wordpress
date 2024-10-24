@@ -14,25 +14,25 @@
 namespace FacebookPixelPlugin\Tests\Mocks;
 
 final class MockContactForm7 {
-  private $form_tags = [];
-  private $throw = false;
+	private $form_tags = array();
+	private $throw     = false;
 
-  public function set_throw($throw) {
-    $this->throw = $throw;
-  }
+	public function set_throw( $throw ) {
+		$this->throw = $throw;
+	}
 
-  public function add_tag($basetype, $name, $value) {
-    $tag = new MockContactForm7Tag($basetype, $name);
-    $_POST[$name] = $value;
+	public function add_tag( $basetype, $name, $value ) {
+		$tag            = new MockContactForm7Tag( $basetype, $name );
+		$_POST[ $name ] = $value;
 
-    $this->form_tags[] = $tag;
-  }
+		$this->form_tags[] = $tag;
+	}
 
-  public function scan_form_tags() {
-    if ($this->throw) {
-      throw new \Exception("Error scanning form tags!");
-    }
+	public function scan_form_tags() {
+		if ( $this->throw ) {
+			throw new \Exception( 'Error scanning form tags!' );
+		}
 
-    return $this->form_tags;
-  }
+		return $this->form_tags;
+	}
 }

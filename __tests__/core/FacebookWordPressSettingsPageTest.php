@@ -26,55 +26,54 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * Stop preserving global state from the parent process.
  */
 final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase {
-    public function testNotificationWithMissingPixel() {
-        $this->mockFacebookWordpressOptions(
-            array(
-                'pixel_id' => null,
-                'access_token' => null,
-            )
-        );
-        $settings_page =
-            new FacebookWordpressSettingsPage('facebook_for_wordpress');
-        $message = $settings_page->getCustomizedFbeNotInstalledNotice();
-        $expected_prefix = sprintf(
-            '<strong>%s</strong> is almost ready.',
-            FacebookPluginConfig::PLUGIN_NAME
-        );
-        $this->assertStringStartsWith($expected_prefix, $message);
-    }
+	public function testNotificationWithMissingPixel() {
+		$this->mockFacebookWordpressOptions(
+			array(
+				'pixel_id'     => null,
+				'access_token' => null,
+			)
+		);
+		$settings_page   =
+			new FacebookWordpressSettingsPage( 'facebook_for_wordpress' );
+		$message         = $settings_page->getCustomizedFbeNotInstalledNotice();
+		$expected_prefix = sprintf(
+			'<strong>%s</strong> is almost ready.',
+			FacebookPluginConfig::PLUGIN_NAME
+		);
+		$this->assertStringStartsWith( $expected_prefix, $message );
+	}
 
-    public function testNotificationWithValidPixelAndMissingAccessToken(){
-        $this->mockFacebookWordpressOptions(
-            array(
-                'pixel_id' => '1234',
-                'access_token' => null,
-            )
-        );
-        $settings_page =
-            new FacebookWordpressSettingsPage('facebook_for_wordpress');
-        $message = $settings_page->getCustomizedFbeNotInstalledNotice();
-        $expected_prefix = sprintf(
-            '<strong>%s</strong> gives you access to the Conversions API.',
-            FacebookPluginConfig::PLUGIN_NAME
-        );
-        $this->assertStringStartsWith($expected_prefix, $message);
-    }
+	public function testNotificationWithValidPixelAndMissingAccessToken() {
+		$this->mockFacebookWordpressOptions(
+			array(
+				'pixel_id'     => '1234',
+				'access_token' => null,
+			)
+		);
+		$settings_page   =
+			new FacebookWordpressSettingsPage( 'facebook_for_wordpress' );
+		$message         = $settings_page->getCustomizedFbeNotInstalledNotice();
+		$expected_prefix = sprintf(
+			'<strong>%s</strong> gives you access to the Conversions API.',
+			FacebookPluginConfig::PLUGIN_NAME
+		);
+		$this->assertStringStartsWith( $expected_prefix, $message );
+	}
 
-    public function testNotificationWithValidPixelAndValidAccessToken(){
-        $this->mockFacebookWordpressOptions(
-            array(
-                'pixel_id' => '1234',
-                'access_token' => 'abc',
-            )
-        );
-        $settings_page =
-            new FacebookWordpressSettingsPage('facebook_for_wordpress');
-        $message = $settings_page->getCustomizedFbeNotInstalledNotice();
-        $expected_prefix = sprintf(
-            'Easily manage your connection to Meta with <strong>%s</strong>.',
-            FacebookPluginConfig::PLUGIN_NAME
-        );
-        $this->assertStringStartsWith($expected_prefix, $message);
-    }
-
+	public function testNotificationWithValidPixelAndValidAccessToken() {
+		$this->mockFacebookWordpressOptions(
+			array(
+				'pixel_id'     => '1234',
+				'access_token' => 'abc',
+			)
+		);
+		$settings_page   =
+			new FacebookWordpressSettingsPage( 'facebook_for_wordpress' );
+		$message         = $settings_page->getCustomizedFbeNotInstalledNotice();
+		$expected_prefix = sprintf(
+			'Easily manage your connection to Meta with <strong>%s</strong>.',
+			FacebookPluginConfig::PLUGIN_NAME
+		);
+		$this->assertStringStartsWith( $expected_prefix, $message );
+	}
 }

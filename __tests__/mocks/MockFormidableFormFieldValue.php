@@ -14,19 +14,19 @@
 namespace FacebookPixelPlugin\Tests\Mocks;
 
 final class MockFormidableFormFieldValue {
-  private $field;
-  private $saved_value;
+	private $field;
+	private $saved_value;
 
-  public function __construct($field, $saved_value) {
-    $this->field = $field;
-    $this->saved_value = $saved_value;
-  }
+	public function __construct( $field, $saved_value ) {
+		$this->field       = $field;
+		$this->saved_value = $saved_value;
+	}
 
-  public function get_field() {
-    return $this->field;
-  }
+	public function get_field() {
+		return $this->field;
+	}
 
-  public function get_saved_value() {
-    return $this->saved_value;
-  }
+	public function get_saved_value() {
+		return $this->saved_value;
+	}
 }

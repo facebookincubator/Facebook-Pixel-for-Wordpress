@@ -26,56 +26,66 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * Stop preserving global state from the parent process.
  */
 final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
-  public function testTrackEventFiresAction() {
-    self::mockFacebookWordpressOptions();
-    $event = ServerEventFactory::newEvent('Lead');
+	public function testTrackEventFiresAction() {
+		self::mockFacebookWordpressOptions();
+		$event = ServerEventFactory::newEvent( 'Lead' );
 
-    FacebookServerSideEvent::getInstance()->track($event);
+		FacebookServerSideEvent::getInstance()->track( $event );
 
-    $this->assertEquals(1,
-      FacebookServerSideEvent::getInstance()->getNumTrackedEvents());
-  }
+		$this->assertEquals(
+			1,
+			FacebookServerSideEvent::getInstance()->getNumTrackedEvents()
+		);
+	}
 
-  public function testSendInvokesFilter() {
-    $events = array();
-    \WP_Mock::expectFilter('before_conversions_api_event_sent', $events);
+	public function testSendInvokesFilter() {
+		$events = array();
+		\WP_Mock::expectFilter( 'before_conversions_api_event_sent', $events );
 
-    $events = FacebookServerSideEvent::send($events);
-  }
+		$events = FacebookServerSideEvent::send( $events );
+	}
 
-  public function testStoresPendingEvents(){
-    self::mockFacebookWordpressOptions();
+	public function testStoresPendingEvents() {
+		self::mockFacebookWordpressOptions();
 
-    $event1 = ServerEventFactory::newEvent('Lead');
-    $event2 = ServerEventFactory::newEvent('AddToCart');
+		$event1 = ServerEventFactory::newEvent( 'Lead' );
+		$event2 = ServerEventFactory::newEvent( 'AddToCart' );
 
-    FacebookServerSideEvent::getInstance()->track($event1, false);
-    FacebookServerSideEvent::getInstance()->track($event2);
+		FacebookServerSideEvent::getInstance()->track( $event1, false );
+		FacebookServerSideEvent::getInstance()->track( $event2 );
 
-    $pending_events =
-      FacebookServerSideEvent::getInstance()->getPendingEvents();
+		$pending_events =
+		FacebookServerSideEvent::getInstance()->getPendingEvents();
 
-    $this->assertEquals(2,
-      FacebookServerSideEvent::getInstance()->getNumTrackedEvents());
-    $this->assertEquals(1,
-      count($pending_events));
-    $this->assertEquals('Lead',
-      $pending_events[0]->getEventName());
-  }
+		$this->assertEquals(
+			2,
+			FacebookServerSideEvent::getInstance()->getNumTrackedEvents()
+		);
+		$this->assertEquals(
+			1,
+			count( $pending_events )
+		);
+		$this->assertEquals(
+			'Lead',
+			$pending_events[0]->getEventName()
+		);
+	}
 
-  public function testStoresPendingPixelEvents(){
-    self::mockFacebookWordpressOptions();
+	public function testStoresPendingPixelEvents() {
+		self::mockFacebookWordpressOptions();
 
-    $event = ServerEventFactory::newEvent('Lead');
+		$event = ServerEventFactory::newEvent( 'Lead' );
 
-    FacebookServerSideEvent::getInstance()
-      ->setPendingPixelEvent('test_callback', $event);
+		FacebookServerSideEvent::getInstance()
+		->setPendingPixelEvent( 'test_callback', $event );
 
-    $pending_pixel_event =
-      FacebookServerSideEvent::getInstance()
-        ->getPendingPixelEvent('test_callback');
+		$pending_pixel_event =
+		FacebookServerSideEvent::getInstance()
+		->getPendingPixelEvent( 'test_callback' );
 
-    $this->assertEquals('Lead',
-      $pending_pixel_event->getEventName());
-  }
- }
+		$this->assertEquals(
+			'Lead',
+			$pending_pixel_event->getEventName()
+		);
+	}
+}

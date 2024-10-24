@@ -17,14 +17,14 @@
 
 namespace FacebookPixelPlugin\Integration;
 
-defined('ABSPATH') or die('Direct access not allowed');
+defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
 
 class EDDUtils {
-  public static function getCurrency() {
-    return edd_get_currency();
-  }
+	public static function getCurrency() {
+		return edd_get_currency();
+	}
 
-  public static function getCartTotal() {
-    return EDD()->cart->get_total();
-  }
+	public static function getCartTotal() {
+		return EDD()->cart->get_total();
+	}
 }

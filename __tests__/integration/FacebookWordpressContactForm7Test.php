@@ -29,201 +29,194 @@ use FacebookPixelPlugin\Core\ServerEventFactory;
  * Stop preserving global state from the parent process.
  */
 
-final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase
-{
-  public function testInjectLeadEventWithoutInternalUser()
-  {
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
+final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase {
 
-    $mock_response = array(
-      'status' => 'mail_sent',
-      'message' => 'Thank you for your message'
-    );
+	public function testInjectLeadEventWithoutInternalUser() {
+		self::mockIsInternalUser( false );
+		self::mockFacebookWordpressOptions();
 
-    $event = ServerEventFactory::newEvent('Lead');
-    FacebookServerSideEvent::getInstance()->track($event);
+		$mock_response = array(
+			'status'  => 'mail_sent',
+			'message' => 'Thank you for your message',
+		);
 
-    $response =
-      FacebookWordpressContactForm7::injectLeadEvent($mock_response, null);
-    $this->assertMatchesRegularExpression(
-      '/Lead[\s\S]+contact-form-7/',
-      $response['fb_pxl_code']
-    );
-  }
+		$event = ServerEventFactory::newEvent( 'Lead' );
+		FacebookServerSideEvent::getInstance()->track( $event );
 
-  public function testTrackServerEventWithoutInternalUser()
-  {
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
+		$response =
+		FacebookWordpressContactForm7::injectLeadEvent( $mock_response, null );
+		$this->assertMatchesRegularExpression(
+			'/Lead[\s\S]+contact-form-7/',
+			$response['fb_pxl_code']
+		);
+	}
 
-    $mock_result = array(
-      'status' => 'mail_sent',
-      'message' => 'Thank you for your message'
-    );
+	public function testTrackServerEventWithoutInternalUser() {
+		self::mockIsInternalUser( false );
+		self::mockFacebookWordpressOptions();
 
-    $mock_form = $this->createMockForm();
-    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
+		$mock_result = array(
+			'status'  => 'mail_sent',
+			'message' => 'Thank you for your message',
+		);
 
-    \WP_Mock::expectActionAdded(
-      'wpcf7_feedback_response',
-      array(
-        'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
-        'injectLeadEvent'
-      ),
-      20,
-      2
-    );
+		$mock_form               = $this->createMockForm();
+		$_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
-    $result =
-      FacebookWordpressContactForm7::trackServerEvent($mock_form, $mock_result);
+		\WP_Mock::expectActionAdded(
+			'wpcf7_feedback_response',
+			array(
+				'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
+				'injectLeadEvent',
+			),
+			20,
+			2
+		);
 
-    $tracked_events =
-      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		$result =
+		FacebookWordpressContactForm7::trackServerEvent( $mock_form, $mock_result );
 
-    $this->assertCount(1, $tracked_events);
+		$tracked_events =
+		FacebookServerSideEvent::getInstance()->getTrackedEvents();
 
-    $event = $tracked_events[0];
-    $this->assertEquals('Lead', $event->getEventName());
-    $this->assertNotNull($event->getEventTime());
-    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('chu', $event->getUserData()->getLastName());
-    $this->assertEquals('12223334444', $event->getUserData()->getPhone());
-    $this->assertEquals(
-      'contact-form-7',
-      $event->getCustomData()->getCustomProperty('fb_integration_tracking')
-    );
-    $this->assertEquals('TEST_REFERER', $event->getEventSourceUrl());
-  }
+		$this->assertCount( 1, $tracked_events );
 
-  public function testTrackServerEventWithoutFormData()
-  {
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
+		$event = $tracked_events[0];
+		$this->assertEquals( 'Lead', $event->getEventName() );
+		$this->assertNotNull( $event->getEventTime() );
+		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
+		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
+		$this->assertEquals( '12223334444', $event->getUserData()->getPhone() );
+		$this->assertEquals(
+			'contact-form-7',
+			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+		);
+		$this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
+	}
 
-    $mock_result = array(
-      'status' => 'mail_sent',
-      'message' => 'Thank you for your message'
-    );
+	public function testTrackServerEventWithoutFormData() {
+		self::mockIsInternalUser( false );
+		self::mockFacebookWordpressOptions();
 
-    $mock_form = $this->createMockForm();
+		$mock_result = array(
+			'status'  => 'mail_sent',
+			'message' => 'Thank you for your message',
+		);
 
-    \WP_Mock::expectActionAdded(
-      'wpcf7_feedback_response',
-      array(
-        'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
-        'injectLeadEvent'
-      ),
-      20,
-      2
-    );
+		$mock_form = $this->createMockForm();
 
-    $result = FacebookWordpressContactForm7::trackServerEvent(
-      $mock_form,
-      $mock_result
-    );
+		\WP_Mock::expectActionAdded(
+			'wpcf7_feedback_response',
+			array(
+				'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
+				'injectLeadEvent',
+			),
+			20,
+			2
+		);
 
-    $tracked_events =
-      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		$result = FacebookWordpressContactForm7::trackServerEvent(
+			$mock_form,
+			$mock_result
+		);
 
-    $this->assertCount(1, $tracked_events);
+		$tracked_events =
+		FacebookServerSideEvent::getInstance()->getTrackedEvents();
 
-    $event = $tracked_events[0];
-    $this->assertEquals('Lead', $event->getEventName());
-    $this->assertNotNull($event->getEventTime());
-  }
+		$this->assertCount( 1, $tracked_events );
 
-  public function testTrackServerEventErrorReadingData()
-  {
-    $this->markTestSkipped('Skipping test temporarily while we update error handling.');
+		$event = $tracked_events[0];
+		$this->assertEquals( 'Lead', $event->getEventName() );
+		$this->assertNotNull( $event->getEventTime() );
+	}
 
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
+	public function testTrackServerEventErrorReadingData() {
+		$this->markTestSkipped('Skipping test temporarily while we update error handling.');
+		
+		self::mockIsInternalUser( false );
+		self::mockFacebookWordpressOptions();
 
-    $mock_result = array(
-      'status' => 'mail_sent',
-      'message' => 'Thank you for your message'
-    );
+		$mock_result = array(
+			'status'  => 'mail_sent',
+			'message' => 'Thank you for your message',
+		);
 
-    $mock_form = $this->createMockForm();
-    $mock_form->set_throw(true);
+		$mock_form = $this->createMockForm();
+		$mock_form->set_throw( true );
 
-    \WP_Mock::expectActionAdded(
-      'wpcf7_feedback_response',
-      array(
-        'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
-        'injectLeadEvent'
-      ),
-      20,
-      2
-    );
+		\WP_Mock::expectActionAdded(
+			'wpcf7_feedback_response',
+			array(
+				'FacebookPixelPlugin\\Integration\\FacebookWordpressContactForm7',
+				'injectLeadEvent',
+			),
+			20,
+			2
+		);
 
-    $result =
-      FacebookWordpressContactForm7::trackServerEvent($mock_form, $mock_result);
+		$result =
+		FacebookWordpressContactForm7::trackServerEvent( $mock_form, $mock_result );
 
-    $tracked_events =
-      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		$tracked_events =
+		FacebookServerSideEvent::getInstance()->getTrackedEvents();
 
-    $this->assertCount(1, $tracked_events);
+		$this->assertCount( 1, $tracked_events );
 
-    $event = $tracked_events[0];
-    $this->assertEquals('Lead', $event->getEventName());
-    $this->assertNotNull($event->getEventTime());
-  }
+		$event = $tracked_events[0];
+		$this->assertEquals( 'Lead', $event->getEventName() );
+		$this->assertNotNull( $event->getEventTime() );
+	}
 
-  public function testInjectLeadEventWithInternalUser()
-  {
-    self::mockIsInternalUser(true);
+	public function testInjectLeadEventWithInternalUser() {
+		self::mockIsInternalUser( true );
 
-    $mock_response = array(
-      'status' => 'mail_sent',
-      'message' => 'Thank you for your message'
-    );
+		$mock_response = array(
+			'status'  => 'mail_sent',
+			'message' => 'Thank you for your message',
+		);
 
-    $response =
-      FacebookWordpressContactForm7::injectLeadEvent($mock_response, null);
-    $this->assertArrayNotHasKey('fb_pxl_code', $response);
-  }
+		$response =
+		FacebookWordpressContactForm7::injectLeadEvent( $mock_response, null );
+		$this->assertArrayNotHasKey( 'fb_pxl_code', $response );
+	}
 
-  public function testInjectLeadEventWhenMailFails()
-  {
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
+	public function testInjectLeadEventWhenMailFails() {
+		self::mockIsInternalUser( false );
+		self::mockFacebookWordpressOptions();
 
-    $bad_statuses = [
-      'validation_failed',
-      'acceptance_missing',
-      'spam',
-      'aborted',
-      'mail_failed',
-    ];
+		$bad_statuses = array(
+			'validation_failed',
+			'acceptance_missing',
+			'spam',
+			'aborted',
+			'mail_failed',
+		);
 
-    $mock_form = new MockContactForm7();
-    $mock_form->set_throw(true);
+		$mock_form = new MockContactForm7();
+		$mock_form->set_throw( true );
 
-    foreach ($bad_statuses as $status) {
-      $mock_result = array(
-        'status' => $status,
-        'message' => 'Error bad status'
-      );
-      FacebookWordpressContactForm7::trackServerEvent($mock_form, $mock_result);
-    }
+		foreach ( $bad_statuses as $status ) {
+			$mock_result = array(
+				'status'  => $status,
+				'message' => 'Error bad status',
+			);
+			FacebookWordpressContactForm7::trackServerEvent( $mock_form, $mock_result );
+		}
 
-    $tracked_events =
-      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		$tracked_events =
+		FacebookServerSideEvent::getInstance()->getTrackedEvents();
 
-    $this->assertCount(0, $tracked_events);
-  }
+		$this->assertCount( 0, $tracked_events );
+	}
 
-  private function createMockForm()
-  {
-    $mock_form = new MockContactForm7();
+	private function createMockForm() {
+		$mock_form = new MockContactForm7();
 
-    $mock_form->add_tag('email', 'your-email', 'pika.chu@s2s.com');
-    $mock_form->add_tag('text', 'your-name', 'Pika Chu');
-    $mock_form->add_tag('tel', 'your-phone-number', '12223334444');
+		$mock_form->add_tag( 'email', 'your-email', 'pika.chu@s2s.com' );
+		$mock_form->add_tag( 'text', 'your-name', 'Pika Chu' );
+		$mock_form->add_tag( 'tel', 'your-phone-number', '12223334444' );
 
-    return $mock_form;
-  }
+		return $mock_form;
+	}
 }
