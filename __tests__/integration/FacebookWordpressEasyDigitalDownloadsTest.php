@@ -1,15 +1,29 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin FacebookWordpressEasyDigitalDownloadsTest class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordpressEasyDigitalDownloadsTest.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordpressEasyDigitalDownloadsTest class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
@@ -18,24 +32,32 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in seperate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
+ * FacebookWordpressEasyDigitalDownloadsTest class.
  */
 final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressTestBase {
 
+	/**
+	 * Tests that the injectPixelCode method correctly sets up the
+	 * necessary WordPress hooks for the Facebook Pixel events in
+	 * the Easy Digital Downloads integration.
+	 *
+	 * This test verifies that the appropriate hooks are added for
+	 * the 'injectInitiateCheckoutEvent' event with the expected
+	 * hook name 'edd_after_checkout_cart'.
+	 *
+	 * Utilizes the Mockery library to mock the base integration class
+	 * and validate that the addPixelFireForHook method is called with
+	 * the correct parameters.
+	 */
 	public function testInjectPixelCode() {
-		$eventHookMap = array(
+		$event_hook_map = array(
 			'injectInitiateCheckoutEvent' => 'edd_after_checkout_cart',
 		);
 
 		$mocked_base = \Mockery::mock(
 			'alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase'
 		);
-		foreach ( $eventHookMap as $event => $hook ) {
+		foreach ( $event_hook_map as $event => $hook ) {
 			$mocked_base->shouldReceive( 'addPixelFireForHook' )
 			->with(
 				array(
@@ -50,6 +72,14 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		FacebookWordpressEasyDigitalDownloads::injectPixelCode();
 	}
 
+	/**
+	 * Tests that the injectAddToCartListener method injects the correct
+	 * Pixel code when the user is not an internal user.
+	 *
+	 * This test verifies that the Pixel code is correctly injected
+	 * into the HTML output when the user is not an internal user
+	 * and the injectAddToCartListener method is called.
+	 */
 	public function testInjectAddToCartEventListenerWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -63,6 +93,14 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		);
 	}
 
+	/**
+	 * Tests that the injectAddToCartEventId method injects the correct
+	 * hidden input field when the user is not an internal user.
+	 *
+	 * This test verifies that the hidden input field is correctly injected
+	 * into the HTML output when the user is not an internal user
+	 * and the injectAddToCartEventId method is called.
+	 */
 	public function testInjectAddToCartEventIdWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -73,6 +111,16 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		);
 	}
 
+	/**
+	 * Tests that the injectInitiateCheckoutEvent method correctly injects
+	 * the Pixel code for the 'InitiateCheckout' event when the user is
+	 * not an internal user.
+	 *
+	 * This test verifies that the output contains the expected Meta Pixel
+	 * Event Code for Easy Digital Downloads and that the server-side event
+	 * tracking records the 'InitiateCheckout' event with the correct user
+	 * and custom data attributes.
+	 */
 	public function testInitiateCheckoutEventWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -104,6 +152,13 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		);
 	}
 
+	/**
+	 * Tests that the trackPurchaseEvent method correctly injects the Pixel code
+	 * for the 'Purchase' event when the user is not an internal user.
+	 *
+	 * This test verifies that the server-side event tracking records the
+	 * 'Purchase' event with the correct user and custom data attributes.
+	 */
 	public function testPurchaseEventWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -111,6 +166,11 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		$this->setupEDDMocks();
 
 		$payment = new class() {
+			/**
+			 * Unique ID
+			 *
+			 * @var integer
+			 */
 			public $ID = 1;
 		};
 
@@ -146,6 +206,14 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		);
 	}
 
+	/**
+	 * Tests that the injectAddToCartListener method does not inject
+	 * any Pixel code when the user is an internal user.
+	 *
+	 * This test verifies that the output does not contain any Meta Pixel
+	 * Event Code when the injectAddToCartListener method is called by an
+	 * internal user.
+	 */
 	public function testInjectAddToCartEventListenerWithInternalUser() {
 		self::mockIsInternalUser( true );
 
@@ -156,6 +224,14 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		$this->expectOutputString( '' );
 	}
 
+	/**
+	 * Tests that the injectAddToCartEventId method does not inject
+	 * any Pixel code when the user is an internal user.
+	 *
+	 * This test verifies that the output does not contain any Meta Pixel
+	 * Event Code when the injectAddToCartEventId method is called by an
+	 * internal user.
+	 */
 	public function testInjectAddToCartEventIdWithInternalUser() {
 		self::mockIsInternalUser( true );
 
@@ -163,6 +239,14 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		$this->expectOutputString( '' );
 	}
 
+	/**
+	 * Tests that the injectInitiateCheckoutEvent method does not inject
+	 * any Pixel code when the user is an internal user.
+	 *
+	 * This test verifies that the output does not contain any Meta Pixel
+	 * Event Code when the injectInitiateCheckoutEvent method is called by an
+	 * internal user.
+	 */
 	public function testInjectInitiateCheckoutEventWithInternalUser() {
 		self::mockIsInternalUser( true );
 
@@ -170,6 +254,14 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		$this->expectOutputString( '' );
 	}
 
+	/**
+	 * Tests that the trackPurchaseEvent method does not inject any Pixel code
+	 * when the user is an internal user.
+	 *
+	 * This test verifies that the output does not contain any Meta Pixel
+	 * Event Code when the trackPurchaseEvent method is called by an
+	 * internal user.
+	 */
 	public function testInjectPurchaseEventWithInternalUser() {
 		self::mockIsInternalUser( true );
 		$payment = array( 'ID' => '1234' );
@@ -177,6 +269,14 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		$this->expectOutputString( '' );
 	}
 
+	/**
+	 * Tests that the injectViewContentEvent method does not inject
+	 * any Pixel code when the user is an internal user.
+	 *
+	 * This test verifies that the output does not contain any Meta Pixel
+	 * Event Code when the injectViewContentEvent method is called by an
+	 * internal user.
+	 */
 	public function testInjectViewContentEventWithInternalUser() {
 		self::mockIsInternalUser( true );
 
@@ -185,6 +285,16 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		$this->expectOutputString( '' );
 	}
 
+	/**
+	 * Tests that the injectViewContentEvent method correctly injects the Pixel code
+	 * for the 'ViewContent' event when the user is not an internal user.
+	 *
+	 * This test verifies that the output contains the expected Meta Pixel
+	 * Event Code for Easy Digital Downloads and that the server-side event
+	 * tracking records the 'ViewContent' event with the correct user and
+	 * custom data attributes, such as content IDs, content type, currency,
+	 * content name, and value.
+	 */
 	public function testInjectViewContentEventWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -216,6 +326,17 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		$this->assertNotNull( $event->getEventTime() );
 	}
 
+	/**
+	 * Tests that the injectAddToCartEventAjax method correctly injects
+	 * the Pixel code for the 'AddToCart' event when the user is not an
+	 * internal user.
+	 *
+	 * This test verifies that the output contains the expected Meta Pixel
+	 * Event Code for Easy Digital Downloads and that the server-side event
+	 * tracking records the 'AddToCart' event with the correct user and
+	 * custom data attributes, such as content IDs, content type, currency,
+	 * content name, and value.
+	 */
 	public function testInjectAddToCartEventAjax() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -246,6 +367,15 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		$this->assertNotNull( $event->getEventTime() );
 	}
 
+	/**
+	 * Sets up the necessary mocks for Easy Digital Downloads integration tests.
+	 *
+	 * This method mocks various functions and methods related to Easy Digital Downloads
+	 * to simulate the environment for testing purposes. It configures the expected
+	 * return values for functions like currency retrieval, cart total calculation,
+	 * payment metadata, and download object information. It also sets up mock
+	 * POST data and ensures nonce verification functions behave as expected.
+	 */
 	private function setupEDDMocks() {
 		\WP_Mock::userFunction( 'EDD' );
 		$mock_edd_utils = \Mockery::mock(
