@@ -90,7 +90,7 @@ abstract class FacebookWordpressTestBase extends TestCase {
 		$aam_settings = new AdsPixelSettings();
 		$aam_settings->setPixelId( '123' );
 		$aam_settings->setEnableAutomaticMatching( true );
-		$aam_settings->setEnabledAutomaticMatchingFields( AAMSettingsFields::getAllFields() );
+		$aam_settings->setEnabledAutomaticMatchingFields( AAMSettingsFields::get_all_fields() );
 		return $aam_settings;
 	}
 }

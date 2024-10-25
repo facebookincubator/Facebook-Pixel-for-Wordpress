@@ -309,7 +309,7 @@ class FacebookWordpressOptions {
 				array(
 					'enableAutomaticMatching'        => true,
 					'enabledAutomaticMatchingFields' =>
-					AAMSettingsFields::getAllFields(),
+					AAMSettingsFields::get_all_fields(),
 				)
 			);
 		} else {

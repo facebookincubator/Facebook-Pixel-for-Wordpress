@@ -189,7 +189,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	}
 
 	public function testSafeCreateEventWithPII() {
-		$this->mockUseAAM( '1234', true, AAMSettingsFields::getAllFields() );
+		$this->mockUseAAM( '1234', true, AAMSettingsFields::get_all_fields() );
 
 		$server_event = ServerEventFactory::safeCreateEvent(
 			'Lead',

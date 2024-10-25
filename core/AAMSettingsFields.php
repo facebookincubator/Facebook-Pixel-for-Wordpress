@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -9,6 +9,8 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+ *
+ * @package FacebookPixelPlugin
  */
 
 namespace FacebookPixelPlugin\Core;
@@ -28,7 +30,12 @@ abstract class AAMSettingsFields {
 	const DATE_OF_BIRTH = 'db';
 	const COUNTRY       = 'country';
 	const EXTERNAL_ID   = 'external_id';
-	public static function getAllFields() {
+	/**
+	 * Return all the fields which are part of the AAMSettings.
+	 *
+	 * @return string[] An array of all AAMSettings fields.
+	 */
+	public static function get_all_fields() {
 		return array(
 			self::EMAIL,
 			self::FIRST_NAME,
