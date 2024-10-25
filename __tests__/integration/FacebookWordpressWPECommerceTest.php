@@ -1,15 +1,29 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin FacebookWordpressWPECommerceTest class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordpressWPECommerceTest.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordpressWPECommerceTest class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
@@ -18,23 +32,29 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in seperate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
+ * FacebookWordpressWPECommerceTest class.
  */
 final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
+	/**
+	 * Tests that the injectPixelCode method correctly sets up the
+	 * necessary WordPress hooks for the Facebook Pixel events in
+	 * the WP eCommerce integration.
+	 *
+	 * This test verifies that the appropriate hooks are added for
+	 * the 'injectAddToCartEvent', 'injectInitiateCheckoutEvent', and
+	 * 'injectPurchaseEvent' events with the expected hook names.
+	 *
+	 * Utilizes the Mockery library to mock the base integration class
+	 * and validate that the addPixelFireForHook method is called with
+	 * the correct parameters.
+	 */
 	public function testInjectPixelCode() {
-		// AddToCart
 		\WP_Mock::expectActionAdded(
 			'wpsc_add_to_cart_json_response',
 			array( FacebookWordpressWPECommerce::class, 'injectAddToCartEvent' ),
 			11
 		);
 
-		// InitiateCheckout
 		$mocked_base = \Mockery::mock( 'alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase' );
 		$mocked_base->shouldReceive( 'addPixelFireForHook' )
 		->with(
@@ -45,7 +65,6 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 			)
 		)
 		->once();
-		// Purchase
 		\WP_Mock::expectActionAdded(
 			'wpsc_transaction_results_shutdown',
 			array( FacebookWordpressWPECommerce::class, 'injectPurchaseEvent' ),
@@ -58,6 +77,15 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		$this->assertHooksAdded();
 	}
 
+	/**
+	 * Tests that the injectAddToCartEvent method injects the correct
+	 * Pixel code when the user is not an internal user.
+	 *
+	 * This test verifies that the output contains the expected Meta Pixel
+	 * Event Code for WP eCommerce and that the server-side event tracking
+	 * records the 'AddToCart' event with the correct user and custom data
+	 * attributes.
+	 */
 	public function testInjectAddToCartEventWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -99,6 +127,14 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Tests that the injectAddToCartEvent method does not inject any Pixel code
+	 * when the user is an internal user.
+	 *
+	 * This test verifies that the output does not contain any Meta Pixel
+	 * Event Code when the injectAddToCartEvent method is called by an
+	 * internal user.
+	 */
 	public function testInjectAddToCartEventWithInternalUser() {
 		self::mockIsInternalUser( true );
 		$parameter = array(
@@ -113,6 +149,14 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		$this->assertEquals( '', $code );
 	}
 
+	/**
+	 * Tests that the injectInitiateCheckoutEvent method correctly injects the Pixel code
+	 * for the 'InitiateCheckout' event when the user is not an internal user.
+	 *
+	 * This test verifies that the output contains the expected Meta Pixel Event Code for
+	 * WP e-Commerce and that the server-side event tracking records the 'InitiateCheckout'
+	 * event with the correct user and custom data attributes.
+	 */
 	public function testInitiateCheckoutEventWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -143,6 +187,14 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Tests that the injectInitiateCheckoutEvent method does not inject
+	 * any Pixel code when the user is an internal user.
+	 *
+	 * This test verifies that the output does not contain any Meta Pixel
+	 * Event Code when the injectInitiateCheckoutEvent method is called by an
+	 * internal user.
+	 */
 	public function testInitiateCheckoutEventWithInternalUser() {
 		self::mockIsInternalUser( true );
 
@@ -150,6 +202,14 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		$this->expectOutputString( '' );
 	}
 
+	/**
+	 * Tests that the injectPurchaseEvent method correctly injects the Pixel code
+	 * for the 'Purchase' event when the user is not an internal user.
+	 *
+	 * This test verifies that the output contains the expected Meta Pixel Event Code
+	 * for WP e-Commerce and that the server-side event tracking records the 'Purchase'
+	 * event with the correct user and custom data attributes.
+	 */
 	public function testInjectPurchaseEventWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -195,6 +255,14 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Tests that the injectPurchaseEvent method does not inject any Pixel code
+	 * when the user is an internal user.
+	 *
+	 * This test verifies that the output does not contain any Meta Pixel
+	 * Event Code when the injectPurchaseEvent method is called by an
+	 * internal user, even if the display_to_screen flag is true.
+	 */
 	public function testInjectPurchaseEventWithInternalUser() {
 		self::mockIsInternalUser( true );
 
@@ -216,6 +284,18 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		$this->expectOutputString( '' );
 	}
 
+	/**
+	 * Sets up various mock objects and functions for the WP e-Commerce integration tests.
+	 *
+	 * This method uses Mockery to create a mock cart and define the behavior of the
+	 * get_items method to return a predefined set of cart items. It also sets up a global
+	 * variable for the cart and mocks the getLoggedInUserInfo method to return specific
+	 * user details. Additionally, it mocks the wpsc_get_currency_code function to return
+	 * a fixed currency code. These mocks are used to simulate the environment and behavior
+	 * required for testing the Facebook Pixel integration with WP e-Commerce.
+	 *
+	 * @return void
+	 */
 	private function setupMocks() {
 		$mock_cart = \Mockery::mock();
 		$mock_cart->shouldReceive( 'get_items' )
