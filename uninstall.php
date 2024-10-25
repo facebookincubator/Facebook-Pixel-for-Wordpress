@@ -1,4 +1,5 @@
-<?php
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+
 /*
 * Copyright (C) 2017-present, Meta, Inc.
 *
@@ -10,18 +11,12 @@
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 * GNU General Public License for more details.
 */
-
-/**
- * @package FacebookPixelPlugin
- */
-
 namespace FacebookPixelPlugin;
 
 require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
 
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 
-// if uninstall.php is not called by WordPress, die
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	die;
 }
