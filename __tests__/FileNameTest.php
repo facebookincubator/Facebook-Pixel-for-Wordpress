@@ -1,4 +1,18 @@
-<?php
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin FileNameTest class.
+ *
+ * This file contains the main logic for FileNameTest.
+ *
+ * @package FacebookPixelPlugin
+ */
+
+/**
+ * Define FileNameTest class.
+ *
+ * @return void
+ */
+
 /*
 * Copyright (C) 2017-present, Meta, Inc.
 *
@@ -11,6 +25,7 @@
 * GNU General Public License for more details.
 */
 
+
 namespace FacebookPixelPlugin\Tests;
 
 use FacebookPixelPlugin\Core\FacebookPixel;
@@ -22,8 +37,14 @@ use FacebookPixelPlugin\Core\FacebookPixel;
  * up deactivate the plugin.
 **/
 final class FileNameTest extends FacebookWordpressTestBase {
+	/**
+	 * Check that the name of entry point file 'facebook-for-wordpress.php' still
+	 * exist. This is to make sure that the name of entry point file is not changed,
+	 * since changing the file name will break how WordPress find the plugin file
+	 * and will end up deactivate the plugin.
+	 */
 	public function testEntryPointFileNamePersists() {
-		$exist = \file_exists( dirname( __FILE__ ) . '/../facebook-for-wordpress.php' );
+		$exist = \file_exists( __DIR__ . '/../facebook-for-wordpress.php' );
 		$this->assertTrue( $exist );
 	}
 }
