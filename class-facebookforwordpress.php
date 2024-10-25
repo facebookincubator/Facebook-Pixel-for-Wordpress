@@ -112,7 +112,7 @@ class FacebookForWordpress {
 			$request_uri = wp_unslash( $_SERVER['REQUEST_URI'] ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 			if (
-			FacebookPluginUtils::endsWith(
+			FacebookPluginUtils::ends_with(
 				$request_uri,
 				FacebookPluginConfig::OPEN_BRIDGE_PATH
 			) &&

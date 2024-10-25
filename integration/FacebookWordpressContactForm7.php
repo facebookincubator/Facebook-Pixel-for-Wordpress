@@ -104,7 +104,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
 	 * @return array The submission result.
 	 */
 	public static function trackServerEvent( $form, $result ) {
-		$is_internal_user = FacebookPluginUtils::isInternalUser();
+		$is_internal_user = FacebookPluginUtils::is_internal_user();
 		$submit_failed    = 'mail_sent' !== $result['status'];
 		if ( $is_internal_user || $submit_failed ) {
 			return $result;
@@ -143,7 +143,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
 	 * @return array The modified Contact Form 7 response.
 	 */
 	public static function injectLeadEvent( $response, $result ) {
-		if ( FacebookPluginUtils::isInternalUser() ) {
+		if ( FacebookPluginUtils::is_internal_user() ) {
 			return $response;
 		}
 

@@ -149,7 +149,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 	 * @return void
 	 */
 	public static function trackViewContentEvent() {
-		if ( FacebookPluginUtils::isInternalUser() ) {
+		if ( FacebookPluginUtils::is_internal_user() ) {
 			return;
 		}
 
@@ -230,7 +230,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 	 * @since 1.0.0
 	 */
 	public static function trackPurchaseEvent( $order_id ) {
-		if ( FacebookPluginUtils::isInternalUser() ) {
+		if ( FacebookPluginUtils::is_internal_user() ) {
 			return;
 		}
 
@@ -323,7 +323,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 		$quantity,
 		$variation_id
 	) {
-		if ( FacebookPluginUtils::isInternalUser() ) {
+		if ( FacebookPluginUtils::is_internal_user() ) {
 			return;
 		}
 
@@ -425,7 +425,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 	 * @since 1.0.0
 	 */
 	public static function trackInitiateCheckout() {
-		if ( FacebookPluginUtils::isInternalUser() ) {
+		if ( FacebookPluginUtils::is_internal_user() ) {
 			return;
 		}
 
@@ -619,7 +619,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 	 * @since 1.0.0
 	 */
 	private static function getPIIFromSession() {
-		$event_data = FacebookPluginUtils::getLoggedInUserInfo();
+		$event_data = FacebookPluginUtils::get_logged_in_user_info();
 		$user_id    = get_current_user_id();
 		if ( 0 !== $user_id ) {
 			$event_data['city']    = get_user_meta( $user_id, 'billing_city', true );

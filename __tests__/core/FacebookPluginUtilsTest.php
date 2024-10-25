@@ -26,9 +26,9 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class FacebookPluginUtilsTest extends FacebookWordpressTestBase {
 	public function testWhenIsPositiveInteger() {
-		$this->assertTrue( FacebookPluginUtils::isPositiveInteger( '1' ) );
-		$this->assertFalse( FacebookPluginUtils::isPositiveInteger( '0' ) );
-		$this->assertFalse( FacebookPluginUtils::isPositiveInteger( '-1' ) );
+		$this->assertTrue( FacebookPluginUtils::is_positive_integer( '1' ) );
+		$this->assertFalse( FacebookPluginUtils::is_positive_integer( '0' ) );
+		$this->assertFalse( FacebookPluginUtils::is_positive_integer( '-1' ) );
 	}
 
 	public function testIsInternalUser_WhenUserIsExternal() {
@@ -48,7 +48,7 @@ final class FacebookPluginUtilsTest extends FacebookWordpressTestBase {
 				'return' => false,
 			)
 		);
-		$isInternalUser = FacebookPluginUtils::isInternalUser();
+		$isInternalUser = FacebookPluginUtils::is_internal_user();
 
 		$this->assertFalse( $isInternalUser );
 	}
@@ -62,7 +62,7 @@ final class FacebookPluginUtilsTest extends FacebookWordpressTestBase {
 				'return' => true,
 			)
 		);
-		$isInternalUser = FacebookPluginUtils::isInternalUser();
+		$isInternalUser = FacebookPluginUtils::is_internal_user();
 
 		$this->assertTrue( $isInternalUser );
 	}
@@ -84,7 +84,7 @@ final class FacebookPluginUtilsTest extends FacebookWordpressTestBase {
 				'return' => true,
 			)
 		);
-		$isInternalUser = FacebookPluginUtils::isInternalUser();
+		$isInternalUser = FacebookPluginUtils::is_internal_user();
 
 		$this->assertTrue( $isInternalUser );
 	}

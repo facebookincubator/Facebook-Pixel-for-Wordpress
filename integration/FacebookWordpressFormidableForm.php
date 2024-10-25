@@ -78,7 +78,7 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
 	 * @return void
 	 */
 	public static function trackServerEvent( $entry_id, $form_id ) {
-		if ( FacebookPluginUtils::isInternalUser() ) {
+		if ( FacebookPluginUtils::is_internal_user() ) {
 			return;
 		}
 
@@ -110,7 +110,7 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
 	 * @return void
 	 */
 	public static function injectLeadEvent() {
-		if ( FacebookPluginUtils::isInternalUser() ) {
+		if ( FacebookPluginUtils::is_internal_user() ) {
 			return;
 		}
 

@@ -27,7 +27,7 @@ class FacebookWordpressPixelInjection {
 
 	public function inject() {
 		$pixel_id = FacebookWordpressOptions::getPixelId();
-		if ( FacebookPluginUtils::isPositiveInteger( $pixel_id ) ) {
+		if ( FacebookPluginUtils::is_positive_integer( $pixel_id ) ) {
 			add_action(
 				'wp_head',
 				array( $this, 'injectPixelCode' )

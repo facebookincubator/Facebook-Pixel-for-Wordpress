@@ -77,7 +77,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
 	 */
 	public static function injectLeadEvent( $out, $form ) {
 		if (
-		FacebookPluginUtils::isInternalUser() ||
+		FacebookPluginUtils::is_internal_user() ||
 		'complete' !== $out['status']
 		) {
 			return $out;
