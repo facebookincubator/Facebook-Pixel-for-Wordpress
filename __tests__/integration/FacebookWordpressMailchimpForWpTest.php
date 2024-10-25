@@ -1,15 +1,29 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin FacebookWordpressMailchimpForWpTest class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordpressMailchimpForWpTest.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordpressMailchimpForWpTest class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
@@ -18,14 +32,18 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in seperate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
+ * FacebookWordpressMailchimpForWpTest class.
  */
 final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBase {
+	/**
+	 * Tests that the injectPixelCode method correctly sets up the
+	 * necessary WordPress hooks for the Facebook Pixel events in
+	 * the MailChimp for WP integration.
+	 *
+	 * This test verifies that the addPixelFireForHook method is called
+	 * with the correct parameters, ensuring that the 'mc4wp_form_subscribed'
+	 * hook is added to trigger the 'injectLeadEvent' method.
+	 */
 	public function testInjectPixelCode() {
 		$mocked_base = \Mockery::mock(
 			'alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase'
@@ -42,6 +60,16 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 		FacebookWordpressMailchimpForWp::injectPixelCode();
 	}
 
+	/**
+	 * Tests the injectLeadEvent method when the user is not an internal user.
+	 *
+	 * This test verifies that the Pixel code is correctly appended to the HTML output
+	 * and that the server-side event is tracked with the correct parameters.
+	 * It ensures that the 'Lead' event is recorded with the expected user data
+	 * and custom properties when the MailChimp for WP integration is triggered.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -86,6 +114,15 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 		$this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
 	}
 
+	/**
+	 * Tests the injectLeadEvent method when the user is an internal user.
+	 *
+	 * This test verifies that no Pixel code is appended to the HTML output
+	 * when the user is an internal user. It asserts that the output HTML remains
+	 * unchanged and that no events are tracked.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWithInternalUser() {
 		self::mockIsInternalUser( true );
 		FacebookWordpressMailchimpForWp::injectLeadEvent();
