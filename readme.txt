@@ -1,10 +1,10 @@
 === Meta pixel for WordPress ===
 Contributors: facebook
-Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, Conversions API, facebook retargeting, facebook standard events, Meta, Meta pixel, Meta Conversion API,
+Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, Conversions API, facebook retargeting, facebook standard events, Meta, Meta Pixel, Meta Conversion API, CAPI,
 Requires at least: 5.7
-Tested up to: 6.2
-Requires PHP: 7.2
-Stable tag: 3.0.15
+Tested up to: 6.5
+Requires PHP: 8.1
+Stable tag: 4.0.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,6 +16,8 @@ This plugin will install a Meta Pixel for your page so you can capture the actio
 You’ll be able to see when customers took an action after seeing your ad on Facebook and Instagram, which can help you with retargeting. And when you use the Conversions API alongside the Pixel, it creates a more reliable connection that helps the delivery system decrease your costs. [Learn More](https://www.facebook.com/business/learn/facebook-ads-pixel)
 
 The Conversions API is designed to create a direct connection between your marketing data and the Meta systems, which help optimise ad targeting, decrease cost per action and measure results across Meta technologies. [Learn More](https://www.facebook.com/business/help/2041148702652965?id=818859032317965)
+
+You can find more information about our Privacy Policy [here](https://www.facebook.com/privacy/policy/?entry_point=data_policy_redirect&entry=0).
 
 == Installation ==
 __To install from your WordPress site__ <br />
@@ -31,11 +33,6 @@ After plugin installed: <br />
 2. Click Get Started. <br />
 3. Complete the Facebook Business Extension flow. <br />
 4. Agree to share your access token with your site. <br />
-
-__Enable sending events via conversion API__ <br />
-You must complete the Facebook Business Extension flow before enabling sending events via conversions API.
-1. Go to settings page of the plugin. <br />
-2. Under, Meta Advanced Configuration, toggle the checkbox to enable/disable send website events to Meta using Conversions API
 
 == Frequently Asked Questions ==
 = Where can I find more information on Facebook Pixel? =
@@ -54,6 +51,15 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2024-09-24 version 4.0.1 =
+* Updated the readme.txt to point to Meta Privacy Policy
+
+= 2024-09-12 version 4.0.0 =
+* Tested WP up to 6.5.5
+* Updated the supported PHP version to 8.1, and updated the code to conform to the PHP 8.1 standards
+* Added a link to the Meta Platform Terms in readme.txt
+* Updated the Facebook Business SDK to v19.0.0
+
 = 2023-11-14 version 3.0.14 =
 * Introduced PII Caching to improve events quality
 * Removed WPFroms from the integrations. There is no need for the integrations since OpenBridge will send the events automatically.

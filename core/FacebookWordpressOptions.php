@@ -52,10 +52,7 @@ class FacebookWordpressOptions {
   }
 
   public static function getCapiIntegrationStatus() {
-    return is_null(self::$capiIntegrationEnabled) ?
-    (is_null(FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT)
-      ? '0' : FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT ) :
-    self::$capiIntegrationEnabled;
+    return '1'; // enforce enabled for all.
   }
 
   public static function setCapiPiiCachingStatus() {
@@ -123,7 +120,7 @@ class FacebookWordpressOptions {
             self::getDefaultIsFbeInstalled(),
         );
         if(
-          array_key_exists(FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY,$old_options)
+          isset($old_options[FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY])
           && !empty($old_options[FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY])
         ){
           self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY] =
@@ -134,7 +131,7 @@ class FacebookWordpressOptions {
             self::getDefaultAccessToken();
         }
         if(
-          array_key_exists(FacebookPluginConfig::OLD_PIXEL_ID_KEY,$old_options)
+          isset($old_options[FacebookPluginConfig::OLD_PIXEL_ID_KEY])
           && !empty($old_options[FacebookPluginConfig::OLD_PIXEL_ID_KEY])
           && is_numeric($old_options[FacebookPluginConfig::OLD_PIXEL_ID_KEY])
         ){
@@ -165,7 +162,7 @@ class FacebookWordpressOptions {
   }
 
   public static function getPixelId() {
-    if (array_key_exists(FacebookPluginConfig::PIXEL_ID_KEY, self::$options)) {
+    if (isset(self::$options[FacebookPluginConfig::PIXEL_ID_KEY])) {
       return self::$options[FacebookPluginConfig::PIXEL_ID_KEY];
     }
 
@@ -174,8 +171,7 @@ class FacebookWordpressOptions {
 
   public static function getExternalBusinessId() {
     if(
-      array_key_exists(FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY,
-        self::$options)
+      isset(self::$options[FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY])
     ){
       return self::$options[FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY];
     }
@@ -185,8 +181,7 @@ class FacebookWordpressOptions {
 
   public static function getIsFbeInstalled(){
     if(
-      array_key_exists(FacebookPluginConfig::IS_FBE_INSTALLED_KEY,
-        self::$options)
+      isset(self::$options[FacebookPluginConfig::IS_FBE_INSTALLED_KEY])
     ){
       return self::$options[FacebookPluginConfig::IS_FBE_INSTALLED_KEY];
     }
@@ -195,8 +190,7 @@ class FacebookWordpressOptions {
   }
 
   public static function getAccessToken() {
-    if (array_key_exists(
-      FacebookPluginConfig::ACCESS_TOKEN_KEY, self::$options)) {
+    if (isset(self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY])) {
       return self::$options[FacebookPluginConfig::ACCESS_TOKEN_KEY];
     }
 
@@ -301,7 +295,7 @@ class FacebookWordpressOptions {
   private static function setOldAAMSettings(){
     $old_options = \get_option(FacebookPluginConfig::OLD_SETTINGS_KEY);
     if($old_options
-      && array_key_exists(FacebookPluginConfig::OLD_USE_PII, $old_options)
+      && isset($old_options[FacebookPluginConfig::OLD_USE_PII])
       && $old_options[FacebookPluginConfig::OLD_USE_PII]){
         self::$aamSettings = new AdsPixelSettings(
           array(

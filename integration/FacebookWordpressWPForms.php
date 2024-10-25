@@ -114,14 +114,14 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
       return array();
     }
     $address_data = array();
-    if(array_key_exists('city', $address_field_data)){
+    if(isset($address_field_data['city'])){
       $address_data['city'] = $address_field_data['city'];
     }
-    if(array_key_exists('state', $address_field_data)){
+    if(isset($address_field_data['state'])){
       $address_data['state'] = $address_field_data['state'];
     }
     //Country values are sent in ISO format
-    if(array_key_exists('country', $address_field_data)){
+    if(isset($address_field_data['country'])){
       $address_data['country'] = $address_field_data['country'];
     }
     else{
@@ -132,7 +132,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
         $address_data['country'] = 'US';
       }
     }
-    if(array_key_exists('postal', $address_field_data)){
+    if(isset($address_field_data['postal'])){
       $address_data['zip'] = $address_field_data['postal'];
     }
     return $address_data;
@@ -177,7 +177,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
   private static function getAddressScheme($form_data){
     foreach ($form_data['fields'] as $field) {
       if ($field['type'] == 'address') {
-        if(array_key_exists('scheme', $field)){
+        if(isset($field['scheme'])){
           return $field['scheme'];
         }
       }

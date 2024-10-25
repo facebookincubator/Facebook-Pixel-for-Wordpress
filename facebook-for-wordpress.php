@@ -89,6 +89,7 @@ class FacebookForWordpress {
 
   public function handle_events_request(){
     $request_uri = $_SERVER['REQUEST_URI'];
+
     if(
       FacebookPluginUtils::endsWith(
         $request_uri,
@@ -100,6 +101,11 @@ class FacebookForWordpress {
           FacebookWordpressOpenBridge::getInstance()->handleOpenBridgeReq(
             $data
           );
+        }
+        if (isset($_SERVER['HTTP_ORIGIN'])) {
+          header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+          header('Access-Control-Allow-Credentials: true');
+          header('Access-Control-Max-Age: 86400');
         }
         exit();
     }

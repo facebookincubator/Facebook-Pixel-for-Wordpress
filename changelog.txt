@@ -1,4 +1,13 @@
 *** Facebook for WordPress Changelog ***
+2024-09-24 version 4.0.1
+* Updated the readme.txt to point to Meta Privacy Policy
+
+2024-09-12 version 4.0.0
+* Tested WP up to 6.5.5
+* Updated the supported PHP version to 8.1, and updated the code to conform to the PHP 8.1 standards
+* Added a link to the Meta Platform Terms in readme.txt
+* Updated the Facebook Business SDK to v19.0.0
+
 2024-03-08 version 3.0.16
 * Updated OpenBridge session management
 * Fixed failing tests

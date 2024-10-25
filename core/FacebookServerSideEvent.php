@@ -72,7 +72,7 @@ class FacebookServerSideEvent {
   }
 
   public function getPendingPixelEvent($callback_name){
-    if(array_key_exists($callback_name, $this->pendingPixelEvents)){
+    if(isset($this->pendingPixelEvents[$callback_name])){
       return $this->pendingPixelEvents[$callback_name];
     }
     return null;
@@ -89,7 +89,7 @@ class FacebookServerSideEvent {
     $agent = FacebookWordpressOptions::getAgentString();
 
     if(self::isOpenBridgeEvent($events)){
-      $agent .= '_capi';
+      $agent .= '_ob'; //  agent suffix is openbridge
     }
 
     if(empty($pixel_id) || empty($access_token)){
@@ -119,10 +119,12 @@ class FacebookServerSideEvent {
     }
 
     $customProperties = $customData->getCustomProperties();
-    if (!$customProperties || !isset($customProperties['fb_integration_tracking'])) {
+    if (!$customProperties ||
+    !isset($customProperties['fb_integration_tracking'])) {
         return false;
     }
 
-    return $customProperties['fb_integration_tracking'] === 'wp-cloudbridge-plugin';
+    return
+    $customProperties['fb_integration_tracking'] === 'wp-cloudbridge-plugin';
   }
 }

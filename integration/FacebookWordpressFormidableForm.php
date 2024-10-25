@@ -121,21 +121,21 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
     $address_saved_value = self::getFieldValueByType($field_values, 'address');
     $address_data = array();
     if($address_saved_value){
-      if(array_key_exists('city', $address_saved_value)){
+      if(isset($address_saved_value['city'])){
         $address_data['city'] = $address_saved_value['city'];
       }
-      if(array_key_exists('state', $address_saved_value)){
+      if(isset($address_saved_value['state'])){
         $address_data['state'] = $address_saved_value['state'];
       }
       // Validating ISO code
       // In current version, country field saves the full name
       if(
-        array_key_exists('country', $address_saved_value)
+        isset($address_saved_value['country'])
         && strlen($address_saved_value['country']) == 2
       ){
           $address_data['country'] = $address_saved_value['country'];
       }
-      if(array_key_exists('zip', $address_saved_value)){
+      if(isset($address_saved_value['zip'])){
         $address_data['zip'] = $address_saved_value['zip'];
       }
     }

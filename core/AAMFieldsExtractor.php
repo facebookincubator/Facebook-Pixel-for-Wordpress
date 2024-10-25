@@ -40,14 +40,14 @@ final class AAMFieldsExtractor {
     // Normalizing gender and date of birth
     // According to https://developers.facebook.com/docs/facebook-pixel/advanced/advanced-matching
     if(
-      array_key_exists(AAMSettingsFields::GENDER, $user_data_array)
-      && !empty($user_data_array[AAMSettingsFields::GENDER])
+      isset($user_data_array[AAMSettingsFields::GENDER]) &&
+      !empty($user_data_array[AAMSettingsFields::GENDER])
     ){
       $user_data_array[AAMSettingsFields::GENDER] =
-        $user_data_array[AAMSettingsFields::GENDER][0];
+      $user_data_array[AAMSettingsFields::GENDER][0];
     }
     if(
-      array_key_exists(AAMSettingsFields::DATE_OF_BIRTH, $user_data_array)
+      isset($user_data_array[AAMSettingsFields::DATE_OF_BIRTH])
     ){
       // strtotime() and date() return false for invalid parameters
       $unix_timestamp =

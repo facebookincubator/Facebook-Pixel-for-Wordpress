@@ -49,7 +49,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
     $this->assertArrayHasKey('html', $out);
     $code = $out['html'];
-    $this->assertRegexp(
+    $this->assertMatchesRegularExpression(
       '/caldera-forms[\s\S]+End Meta Pixel Event Code/', $code);
   }
 
@@ -99,7 +99,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
     $this->assertArrayHasKey('html', $out);
     $code = $out['html'];
-    $this->assertRegexp(
+    $this->assertMatchesRegularExpression(
       '/caldera-forms[\s\S]+End Meta Pixel Event Code/', $code);
 
     $tracked_events =
