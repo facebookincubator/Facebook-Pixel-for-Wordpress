@@ -207,7 +207,7 @@ class ServerEventFactory {
 			$user_data_array   = $data_split['user_data'];
 			$custom_data_array = $data_split['custom_data'];
 			$user_data_array   =
-			AAMFieldsExtractor::getNormalizedUserData( $user_data_array );
+			AAMFieldsExtractor::get_normalized_user_data( $user_data_array );
 
 			$user_data = $event->getUserData();
 			if (

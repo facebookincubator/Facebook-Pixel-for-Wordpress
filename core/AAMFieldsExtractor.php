@@ -10,35 +10,40 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+ *
+ * @package FacebookPixelPlugin
  */
 
 namespace FacebookPixelPlugin\Core;
 
 use FacebookAds\Object\ServerSide\Normalizer;
 
+/**
+ * AAMFieldsExtractor class.
+ */
 final class AAMFieldsExtractor {
 	/**
 	 * Filters the passed user data using the AAM settings of the pixel
 	 *
-	 * @param string[] $user_data_array
+	 * @param string[] $user_data_array The user data.
 	 * @return string[]
 	 */
-	public static function getNormalizedUserData( $user_data_array ) {
+	public static function get_normalized_user_data( $user_data_array ) {
 		$aam_setttings = FacebookWordpressOptions::getAAMSettings();
 		if ( ! $user_data_array || ! $aam_setttings ||
 		! $aam_setttings->getEnableAutomaticMatching() ) {
 			return array();
 		}
 
-		// Removing fields not enabled in AAM settings
+		// Removing fields not enabled in AAM settings.
 		foreach ( $user_data_array as $key => $value ) {
-			if ( ! in_array( $key, $aam_setttings->getEnabledAutomaticMatchingFields() ) ) {
+			if ( ! in_array( $key, $aam_setttings->getEnabledAutomaticMatchingFields(), true ) ) {
 				unset( $user_data_array[ $key ] );
 			}
 		}
 
 		// Normalizing gender and date of birth
-		// According to https://developers.facebook.com/docs/facebook-pixel/advanced/advanced-matching
+		// According to https://developers.facebook.com/docs/facebook-pixel/advanced/advanced-matching.
 		if (
 		isset( $user_data_array[ AAMSettingsFields::GENDER ] ) &&
 		! empty( $user_data_array[ AAMSettingsFields::GENDER ] )
@@ -49,13 +54,13 @@ final class AAMFieldsExtractor {
 		if (
 		isset( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] )
 		) {
-			// strtotime() and date() return false for invalid parameters
+			// strtotime() and date() return false for invalid parameters.
 			$unix_timestamp =
 			strtotime( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] );
 			if ( ! $unix_timestamp ) {
 				unset( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] );
 			} else {
-				$formatted_date = date( 'Ymd', $unix_timestamp );
+				$formatted_date = gmdate( 'Ymd', $unix_timestamp );
 				if ( ! $formatted_date ) {
 					unset( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] );
 				} else {
@@ -68,7 +73,7 @@ final class AAMFieldsExtractor {
 		// we can use the business sdk for normalization
 		// Compare the documentation:
 		// https://developers.facebook.com/docs/marketing-api/conversions-api/parameters/customer-information-parameters
-		// https://developers.facebook.com/docs/facebook-pixel/advanced/advanced-matching
+		// https://developers.facebook.com/docs/facebook-pixel/advanced/advanced-matching.
 		foreach ( $user_data_array as $field => $data ) {
 			try {
 				if ( is_array( $data ) ) {

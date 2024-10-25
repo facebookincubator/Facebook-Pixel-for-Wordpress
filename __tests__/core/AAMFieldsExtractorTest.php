@@ -33,7 +33,7 @@ final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
 		$this->mockUseAAM( '1234', true, AAMSettingsFields::getAllFields() );
 		$user_data_array      = $this->getSampleUserData();
 		$user_data_normalized =
-		AAMFieldsExtractor::getNormalizedUserData( $user_data_array );
+		AAMFieldsExtractor::get_normalized_user_data( $user_data_array );
 		$this->assertEquals(
 			'abc@mail.com',
 			$user_data_normalized[ AAMSettingsFields::EMAIL ]
@@ -88,7 +88,7 @@ final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
 			$fields_subset = $this->createSubset( $possible_fields );
 			$aam_settings->setEnabledAutomaticMatchingFields( $fields_subset );
 			$user_data_array_normalized =
-			AAMFieldsExtractor::getNormalizedUserData( $user_data_array );
+			AAMFieldsExtractor::get_normalized_user_data( $user_data_array );
 			$this->assertOnlyRequestedFieldsPresentInUserDataArray(
 				$fields_subset,
 				$user_data_array_normalized
@@ -100,14 +100,14 @@ final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
 		$user_data_array = $this->getSampleUserData();
 		$this->mockUseAAM( '1234', false );
 		$user_data_array_normalized =
-		AAMFieldsExtractor::getNormalizedUserData( $user_data_array );
+		AAMFieldsExtractor::get_normalized_user_data( $user_data_array );
 		$this->assertEmpty( $user_data_array_normalized );
 	}
 
 	public function testReturnsEmptyArrayWhenAamNotPresent() {
 		$user_data_array            = $this->getSampleUserData();
 		$user_data_array_normalized =
-		AAMFieldsExtractor::getNormalizedUserData( $user_data_array );
+		AAMFieldsExtractor::get_normalized_user_data( $user_data_array );
 		$this->assertEmpty( $user_data_array_normalized );
 	}
 

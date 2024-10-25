@@ -230,7 +230,7 @@ class FacebookWordpressOptions {
 					return $value !== null && $value !== '';
 				}
 			);
-			self::$userInfo = AAMFieldsExtractor::getNormalizedUserData( $user_info );
+			self::$userInfo = AAMFieldsExtractor::get_normalized_user_data( $user_info );
 		}
 	}
 
