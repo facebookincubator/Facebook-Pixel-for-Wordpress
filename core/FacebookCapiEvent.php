@@ -117,8 +117,8 @@ class FacebookCapiEvent {
 		}
 
 		$api_version  = ApiConfig::APIVersion;
-		$pixel_id     = FacebookWordpressOptions::getPixelId();
-		$access_token = FacebookWordpressOptions::getAccessToken();
+		$pixel_id     = FacebookWordpressOptions::get_pixel_id();
+		$access_token = FacebookWordpressOptions::get_access_token();
 
 		$url = "https://graph.facebook.com/v{$api_version}/{$pixel_id}/events?access_token={$access_token}";
 

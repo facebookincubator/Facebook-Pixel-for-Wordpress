@@ -30,8 +30,8 @@ use FacebookAds\Object\ServerSide\CustomData;
  */
 final class PixelRendererTest extends FacebookWordpressTestBase {
 	public function testPixelRenderForStandardEvent() {
-		FacebookWordpressOptions::setVersionInfo();
-		$agent_string = FacebookWordpressOptions::getAgentString();
+		FacebookWordpressOptions::set_version_info();
+		$agent_string = FacebookWordpressOptions::get_agent_string();
 
 		$event = ( new Event() )
 				->setEventName( 'Lead' )
@@ -54,8 +54,8 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 	}
 
 	public function testPixelRenderForCustomEvent() {
-		FacebookWordpressOptions::setVersionInfo();
-		$agent_string = FacebookWordpressOptions::getAgentString();
+		FacebookWordpressOptions::set_version_info();
+		$agent_string = FacebookWordpressOptions::get_agent_string();
 
 		$event = ( new Event() )
 				->setEventName( 'Custom' )
@@ -79,8 +79,8 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 	}
 
 	public function testPixelRenderForCustomData() {
-		FacebookWordpressOptions::setVersionInfo();
-		$agent_string = FacebookWordpressOptions::getAgentString();
+		FacebookWordpressOptions::set_version_info();
+		$agent_string = FacebookWordpressOptions::get_agent_string();
 
 		$custom_data = ( new CustomData() )
 					->setCurrency( 'USD' )
@@ -111,8 +111,8 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 	}
 
 	public function testPixelRenderForMultipleEvents() {
-		FacebookWordpressOptions::setVersionInfo();
-		$agent_string = FacebookWordpressOptions::getAgentString();
+		FacebookWordpressOptions::set_version_info();
+		$agent_string = FacebookWordpressOptions::get_agent_string();
 
 		$event1 = ( new Event() )
 				->setEventName( 'Lead' )

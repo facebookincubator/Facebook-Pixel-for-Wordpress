@@ -39,14 +39,14 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 			'init',
 			array(
 				'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-				'registerUserInfo',
+				'register_user_info',
 			),
 			0
 		);
 		FacebookWordpressOptions::initialize();
 
-		$pixel_id     = FacebookWordpressOptions::getPixelId();
-		$version_info = FacebookWordpressOptions::getVersionInfo();
+		$pixel_id     = FacebookWordpressOptions::get_pixel_id();
+		$version_info = FacebookWordpressOptions::get_version_info();
 
 		$this->assertEquals( $pixel_id, '1234' );
 		$this->assertEquals(
@@ -73,14 +73,14 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 			'init',
 			array(
 				'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-				'registerUserInfo',
+				'register_user_info',
 			),
 			0
 		);
 		FacebookWordpressOptions::initialize();
 
 		FacebookWordpressOptions::registerUserInfo();
-		$user_info = FacebookWordpressOptions::getUserInfo();
+		$user_info = FacebookWordpressOptions::get_user_info();
 		$this->assertEquals( $user_info['em'], 'foo@foo.com' );
 		$this->assertEquals( $user_info['fn'], 'john' );
 		$this->assertEquals( $user_info['ln'], 'doe' );
@@ -100,14 +100,14 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 			'init',
 			array(
 				'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-				'registerUserInfo',
+				'register_user_info',
 			),
 			0
 		);
 		FacebookWordpressOptions::initialize();
 
 		FacebookWordpressOptions::registerUserInfo();
-		$user_info = FacebookWordpressOptions::getUserInfo();
+		$user_info = FacebookWordpressOptions::get_user_info();
 		$this->assertEquals( \count( $user_info ), 0 );
 	}
 
@@ -125,23 +125,23 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 			'init',
 			array(
 				'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-				'registerUserInfo',
+				'register_user_info',
 			),
 			0
 		);
 		FacebookWordpressOptions::initialize();
 
 		FacebookWordpressOptions::registerUserInfo();
-		$user_info = FacebookWordpressOptions::getUserInfo();
+		$user_info = FacebookWordpressOptions::get_user_info();
 
 		$this->assertEquals( \count( $user_info ), 0 );
 	}
 
 	public function testCanSetVersionInfoAndGetAgentString() {
 		$GLOBALS['wp_version'] = '1.1';
-		FacebookWordpressOptions::setVersionInfo();
+		FacebookWordpressOptions::set_version_info();
 
-		$version_info = FacebookWordpressOptions::getVersionInfo();
+		$version_info = FacebookWordpressOptions::get_version_info();
 		$this->assertEquals(
 			$version_info['pluginVersion'],
 			FacebookPluginConfig::PLUGIN_VERSION
@@ -149,7 +149,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 		$this->assertEquals( $version_info['source'], FacebookPluginConfig::SOURCE );
 		$this->assertEquals( $version_info['version'], '1.1' );
 
-		$agent_string = FacebookWordpressOptions::getAgentString();
+		$agent_string = FacebookWordpressOptions::get_agent_string();
 		$this->assertEquals(
 			$agent_string,
 			FacebookPluginConfig::SOURCE .
@@ -165,17 +165,17 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 			'init',
 			array(
 				'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-				'registerUserInfo',
+				'register_user_info',
 			),
 			0
 		);
 		FacebookWordpressOptions::initialize();
 
-		$pixel_id             = FacebookWordpressOptions::getPixelId();
-		$version_info         = FacebookWordpressOptions::getVersionInfo();
-		$access_token         = FacebookWordpressOptions::getAccessToken();
-		$is_fbe_installed     = FacebookWordpressOptions::getIsFbeInstalled();
-		$external_business_id = FacebookWordpressOptions::getExternalBusinessId();
+		$pixel_id             = FacebookWordpressOptions::get_pixel_id();
+		$version_info         = FacebookWordpressOptions::get_version_info();
+		$access_token         = FacebookWordpressOptions::get_access_token();
+		$is_fbe_installed     = FacebookWordpressOptions::get_is_fbe_installed();
+		$external_business_id = FacebookWordpressOptions::get_external_business_id();
 
 		$this->assertEquals( $pixel_id, '' );
 		$this->assertEquals( $access_token, '' );
@@ -195,11 +195,11 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 				array(
 					FacebookPluginConfig::PIXEL_ID_KEY     =>
 						is_null( $mock_pixel_id ) ?
-						FacebookWordpressOptions::getDefaultPixelID() :
+						FacebookWordpressOptions::get_default_pixel_id() :
 						$mock_pixel_id,
 					FacebookPluginConfig::ACCESS_TOKEN_KEY =>
 						is_null( $mock_access_token ) ?
-						FacebookWordpressOptions::getDefaultAccessToken() :
+						FacebookWordpressOptions::get_default_access_token() :
 						$mock_access_token,
 					FacebookPluginConfig::IS_FBE_INSTALLED_KEY =>
 						$mock_fbe_installed,

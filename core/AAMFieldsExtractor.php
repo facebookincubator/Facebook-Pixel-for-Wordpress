@@ -29,7 +29,7 @@ final class AAMFieldsExtractor {
 	 * @return string[]
 	 */
 	public static function get_normalized_user_data( $user_data_array ) {
-		$aam_setttings = FacebookWordpressOptions::getAAMSettings();
+		$aam_setttings = FacebookWordpressOptions::get_aam_settings();
 		if ( ! $user_data_array || ! $aam_setttings ||
 		! $aam_setttings->getEnableAutomaticMatching() ) {
 			return array();

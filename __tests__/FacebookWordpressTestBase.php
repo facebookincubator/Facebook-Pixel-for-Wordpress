@@ -101,7 +101,7 @@ abstract class FacebookWordpressTestBase extends TestCase {
 	 * @param array            $options An associative array of method names and their
 	 *                                  return values.
 	 * @param AdsPixelSettings $aam_settings The return value for the
-	 *                                       getAAMSettings() method.
+	 *                                       get_aam_settings() method.
 	 */
 	protected function mockFacebookWordpressOptions(
 		$options = array(),
@@ -111,32 +111,32 @@ abstract class FacebookWordpressTestBase extends TestCase {
 			'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
 		);
 		if ( array_key_exists( 'agent_string', $options ) ) {
-			$this->mocked_options->shouldReceive( 'getAgentString' )->andReturn( $options['agent_string'] );
+			$this->mocked_options->shouldReceive( 'get_agent_string' )->andReturn( $options['agent_string'] );
 		} else {
-			$this->mocked_options->shouldReceive( 'getAgentString' )
+			$this->mocked_options->shouldReceive( 'get_agent_string' )
 							->andReturn( 'WordPress' );
 		}
 		if ( array_key_exists( 'pixel_id', $options ) ) {
-			$this->mocked_options->shouldReceive( 'getPixelId' )->andReturn( $options['pixel_id'] );
+			$this->mocked_options->shouldReceive( 'get_pixel_id' )->andReturn( $options['pixel_id'] );
 		} else {
-			$this->mocked_options->shouldReceive( 'getPixelId' )->andReturn( '1234' );
+			$this->mocked_options->shouldReceive( 'get_pixel_id' )->andReturn( '1234' );
 		}
 		if ( array_key_exists( 'access_token', $options ) ) {
-			$this->mocked_options->shouldReceive( 'getAccessToken' )->andReturn( $options['access_token'] );
+			$this->mocked_options->shouldReceive( 'get_access_token' )->andReturn( $options['access_token'] );
 		} else {
-			$this->mocked_options->shouldReceive( 'getAccessToken' )->andReturn( 'abcd' );
+			$this->mocked_options->shouldReceive( 'get_access_token' )->andReturn( 'abcd' );
 		}
 		if ( array_key_exists( 'is_fbe_installed', $options ) ) {
-			$this->mocked_options->shouldReceive( 'getIsFbeInstalled' )->andReturn( $options['is_fbe_installed'] );
+			$this->mocked_options->shouldReceive( 'get_is_fbe_installed' )->andReturn( $options['is_fbe_installed'] );
 		} else {
-			$this->mocked_options->shouldReceive( 'getIsFbeInstalled' )->andReturn( '0' );
+			$this->mocked_options->shouldReceive( 'get_is_fbe_installed' )->andReturn( '0' );
 		}
 		if ( is_null( $aam_settings ) ) {
-			$this->mocked_options->shouldReceive( 'getAAMSettings' )->andReturn( $this->getDefaultAAMSettings() );
+			$this->mocked_options->shouldReceive( 'get_aam_settings' )->andReturn( $this->getDefaultAAMSettings() );
 		} else {
-			$this->mocked_options->shouldReceive( 'getAAMSettings' )->andReturn( $aam_settings );
+			$this->mocked_options->shouldReceive( 'get_aam_settings' )->andReturn( $aam_settings );
 		}
-		$this->mocked_options->shouldReceive( 'getCapiPiiCachingStatus' )
+		$this->mocked_options->shouldReceive( 'get_capi_pii_caching_status' )
 							->andReturn( 0 );
 	}
 

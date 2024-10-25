@@ -26,7 +26,7 @@ class FacebookWordpressPixelInjection {
 	}
 
 	public function inject() {
-		$pixel_id = FacebookWordpressOptions::getPixelId();
+		$pixel_id = FacebookWordpressOptions::get_pixel_id();
 		if ( FacebookPluginUtils::is_positive_integer( $pixel_id ) ) {
 			add_action(
 				'wp_head',
@@ -72,13 +72,13 @@ class FacebookWordpressPixelInjection {
 		self::$renderCache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] = true;
 		echo( FacebookPixel::get_pixel_base_code() );
 		$capiIntegrationStatus =
-		FacebookWordpressOptions::getCapiIntegrationStatus();
+		FacebookWordpressOptions::get_capi_integration_status();
 		if ( $capiIntegrationStatus === '1' ) {
 			echo( FacebookPixel::get_open_bridge_config_code() );
 		}
 		echo( FacebookPixel::get_pixel_init_code(
-			FacebookWordpressOptions::getAgentString(),
-			FacebookWordpressOptions::getUserInfo()
+			FacebookWordpressOptions::get_agent_string(),
+			FacebookWordpressOptions::get_user_info()
 		) );
 		echo( FacebookPixel::get_pixel_page_view_code() );
 	}

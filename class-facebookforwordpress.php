@@ -57,8 +57,8 @@ class FacebookForWordpress {
 			dirname( plugin_basename( __FILE__ ) ) . '/languages/'
 		);
 
-		$options = FacebookWordpressOptions::getOptions();
-		FacebookPixel::initialize( FacebookWordpressOptions::getPixelId() );
+		$options = FacebookWordpressOptions::get_options();
+		FacebookPixel::initialize( FacebookWordpressOptions::get_pixel_id() );
 
 		add_action( 'init', array( $this, 'register_pixel_injection' ), 0 );
 		add_action( 'parse_request', array( $this, 'handle_events_request' ), 0 );
