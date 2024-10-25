@@ -27,9 +27,9 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 final class FacebookPixelTest extends FacebookWordpressTestBase {
 	public function testCanGetAndSetPixelId() {
 		FacebookPixel::initialize( '123' );
-		$this->assertEquals( '123', FacebookPixel::getPIxelId() );
-		FacebookPixel::setPixelId( '1' );
-		$this->assertEquals( '1', FacebookPixel::getPIxelId() );
+		$this->assertEquals( '123', FacebookPixel::get_pixel_id() );
+		FacebookPixel::set_pixel_id( '1' );
+		$this->assertEquals( '1', FacebookPixel::get_pixel_id() );
 	}
 
 	private function assertCodeStartAndEndWithScript( $code ) {
@@ -48,74 +48,74 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	}
 
 	private function assertCodePattern( $function, $keyword ) {
-		FacebookPixel::setPixelId( '' );
+		FacebookPixel::set_pixel_id( '' );
 		$code = FacebookPixel::$function();
 		$this->assertEmpty( $code );
 
-		FacebookPixel::setPixelId( '123' );
+		FacebookPixel::set_pixel_id( '123' );
 		$code = FacebookPixel::$function();
 		$this->assertCodeStartAndEndWithScript( $code );
 		$this->assertCodePatternMatch( $code, array( 'track', $keyword ) );
 	}
 
 	public function testCanGetPixelInitCode() {
-		FacebookPixel::setPixelId( '' );
-		$code = FacebookPixel::getPixelInitCode( 'mockAgent', array( 'key' => 'value' ) );
+		FacebookPixel::set_pixel_id( '' );
+		$code = FacebookPixel::get_pixel_init_code( 'mockAgent', array( 'key' => 'value' ) );
 		$this->assertEmpty( $code );
 
-		FacebookPixel::setPixelId( '123' );
-		$code = FacebookPixel::getPixelInitCode( 'mockAgent', array( 'key' => 'value' ) );
+		FacebookPixel::set_pixel_id( '123' );
+		$code = FacebookPixel::get_pixel_init_code( 'mockAgent', array( 'key' => 'value' ) );
 		$this->assertCodeStartAndEndWithScript( $code );
 		$this->assertCodePatternMatch( $code, array( '123', 'init', '"key": "value"', '"agent": "mockAgent"' ) );
 
-		$code = FacebookPixel::getPixelInitCode( 'mockAgent', '{"key": "value"}', false );
+		$code = FacebookPixel::get_pixel_init_code( 'mockAgent', '{"key": "value"}', false );
 		$this->assertCodeStartAndEndWithNoScript( $code );
 		$this->assertCodePatternMatch( $code, array( '123', 'init', '"key": "value"', '"agent": "mockAgent"' ) );
 	}
 
 	public function testCanGetPixelTrackCode() {
-		FacebookPixel::setPixelId( '' );
-		$code = FacebookPixel::getPixelTrackCode( 'mockEvent', array( 'key' => 'value' ) );
+		FacebookPixel::set_pixel_id( '' );
+		$code = FacebookPixel::get_pixel_track_code( 'mockEvent', array( 'key' => 'value' ) );
 		$this->assertEmpty( $code );
 
-		FacebookPixel::setPixelId( '123' );
-		$code = FacebookPixel::getPixelTrackCode( 'mockEvent', array( 'key' => 'value' ) );
+		FacebookPixel::set_pixel_id( '123' );
+		$code = FacebookPixel::get_pixel_track_code( 'mockEvent', array( 'key' => 'value' ) );
 		$this->assertCodeStartAndEndWithScript( $code );
 		$this->assertCodePatternMatch( $code, array( 'track', '"key": "value"', 'mockEvent' ) );
 
-		$code = FacebookPixel::getPixelTrackCode( 'mockEvent', '{"key": "value"}', '', false );
+		$code = FacebookPixel::get_pixel_track_code( 'mockEvent', '{"key": "value"}', '', false );
 		$this->assertCodeStartAndEndWithNoScript( $code );
 		$this->assertCodePatternMatch( $code, array( 'trackCustom', '"key": "value"', 'mockEvent' ) );
 	}
 
 	public function testCanGetPixelNoScriptCode() {
-		FacebookPixel::setPixelId( '' );
-		$code = FacebookPixel::getPixelNoscriptCode( 'mockEvent', array( 'key' => 'value' ) );
+		FacebookPixel::set_pixel_id( '' );
+		$code = FacebookPixel::get_pixel_noscript_code( 'mockEvent', array( 'key' => 'value' ) );
 		$this->assertEmpty( $code );
 
-		FacebookPixel::setPixelId( '123' );
-		$code = FacebookPixel::getPixelNoscriptCode( 'mockEvent', array( 'key' => 'value' ) );
+		FacebookPixel::set_pixel_id( '123' );
+		$code = FacebookPixel::get_pixel_noscript_code( 'mockEvent', array( 'key' => 'value' ) );
 		$this->assertCodePatternMatch( $code, array( '123', 'mockEvent', '[key]=value' ) );
 	}
 
 	public function testGetPixelAddToCartCode() {
-		$this->assertCodePattern( 'getPixelAddToCartCode', 'AddToCart' );
+		$this->assertCodePattern( 'get_pixel_add_to_cart_code', 'AddToCart' );
 	}
 
 	public function testgGetPixelInitiateCheckoutCode() {
-		$this->assertCodePattern( 'getPixelInitiateCheckoutCode', 'InitiateCheckout' );
+		$this->assertCodePattern( 'get_pixel_initiate_checkout_code', 'InitiateCheckout' );
 	}
 
 	public function testGetPixelLeadCode() {
-		$this->assertCodePattern( 'getPixelLeadCode', 'Lead' );
+		$this->assertCodePattern( 'get_pixel_lead_code', 'Lead' );
 	}
 
 	public function testGetPixelPageViewCode() {
-		$this->assertCodePattern( 'getPixelPageViewCode', 'PageView' );
+		$this->assertCodePattern( 'get_pixel_page_view_code', 'PageView' );
 	}
 
 	public function testGetPixelPurchaseCode() {
-		$this->assertCodePattern( 'getPixelPurchaseCode', 'Purchase' );
+		$this->assertCodePattern( 'get_pixel_purchase_code', 'Purchase' );
 	}
 
 	public function testGetPixelViewContentCode() {
