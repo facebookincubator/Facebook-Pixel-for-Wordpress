@@ -13,7 +13,6 @@
  * @return void
  */
 
-
 /*
 * Copyright (C) 2017-present, Meta, Inc.
 *
