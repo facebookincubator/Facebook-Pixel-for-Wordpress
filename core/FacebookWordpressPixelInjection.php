@@ -60,7 +60,7 @@ class FacebookWordpressPixelInjection {
 	}
 
 	public function injectPixelCode() {
-		$pixel_id = FacebookPixel::getPixelId();
+		$pixel_id = FacebookPixel::get_pixel_id();
 		if (
 		( isset( self::$renderCache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] ) &&
 		self::$renderCache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] === true ) ||
@@ -70,20 +70,20 @@ class FacebookWordpressPixelInjection {
 		}
 
 		self::$renderCache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] = true;
-		echo( FacebookPixel::getPixelBaseCode() );
+		echo( FacebookPixel::get_pixel_base_code() );
 		$capiIntegrationStatus =
 		FacebookWordpressOptions::getCapiIntegrationStatus();
 		if ( $capiIntegrationStatus === '1' ) {
-			echo( FacebookPixel::getOpenBridgeConfigCode() );
+			echo( FacebookPixel::get_open_bridge_config_code() );
 		}
-		echo( FacebookPixel::getPixelInitCode(
+		echo( FacebookPixel::get_pixel_init_code(
 			FacebookWordpressOptions::getAgentString(),
 			FacebookWordpressOptions::getUserInfo()
 		) );
-		echo( FacebookPixel::getPixelPageViewCode() );
+		echo( FacebookPixel::get_pixel_page_view_code() );
 	}
 
 	public function injectPixelNoscriptCode() {
-		echo( FacebookPixel::getPixelNoscriptCode() );
+		echo( FacebookPixel::get_pixel_noscript_code() );
 	}
 }

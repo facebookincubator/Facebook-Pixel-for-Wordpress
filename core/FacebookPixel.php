@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -9,18 +9,19 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- */
-
-/**
+ *
  * @package FacebookPixelPlugin
  */
 
 namespace FacebookPixelPlugin\Core;
 
-defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
+defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use ReflectionClass;
 
+/**
+ * Class FacebookPixel
+ */
 class FacebookPixel {
 	const ADDPAYMENTINFO       = 'AddPaymentInfo';
 	const ADDTOCART            = 'AddToCart';
@@ -43,9 +44,19 @@ class FacebookPixel {
 
 	const FB_INTEGRATION_TRACKING_KEY = 'fb_integration_tracking';
 
-	private static $pixelId = '';
+	/**
+	 * The Facebook Pixel ID.
+	 *
+	 * @var string
+	 */
+	private static $pixel_id = '';
 
-	private static $pixelBaseCode = "
+	/**
+	 * The Facebook Pixel base code.
+	 *
+	 * @var string
+	 */
+	private static $pixel_base_code = "
 <!-- Meta Pixel Code -->
 <script type='text/javascript'>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -57,11 +68,21 @@ document,'script','https://connect.facebook.net/en_US/fbevents.js?v=next');
 <!-- End Meta Pixel Code -->
 ";
 
-	private static $pixelFbqCodeWithoutScript = "
+	/**
+	 * The Facebook Pixel fbq code without script.
+	 *
+	 * @var string
+	 */
+	private static $pixel_fbq_code_without_script = "
     fbq('%s', '%s'%s%s);
   ";
 
-	private static $pixelNoscriptCode = '
+	/**
+	 * The Facebook Pixel noscript code.
+	 *
+	 * @var string
+	 */
+	private static $pixel_noscript_code = '
 <!-- Meta Pixel Code -->
 <noscript>
 <img height="1" width="1" style="display:none" alt="fbpx"
@@ -70,36 +91,43 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 <!-- End Meta Pixel Code -->
 ';
 
+	/**
+	 * Initializes the Facebook Pixel with the given pixel ID.
+	 *
+	 * @param string $pixel_id The Facebook Pixel ID to be set. Defaults to an empty string.
+	 */
 	public static function initialize( $pixel_id = '' ) {
-		self::$pixelId = $pixel_id;
+		self::$pixel_id = $pixel_id;
 	}
 
 	/**
 	 * Gets FB pixel ID
 	 */
-	public static function getPixelId() {
-		return self::$pixelId;
+	public static function get_pixel_id() {
+		return self::$pixel_id;
 	}
 
 	/**
 	 * Sets FB pixel ID
+	 *
+	 * @param string $pixel_id The Facebook Pixel ID to be set.
 	 */
-	public static function setPixelId( $pixel_id ) {
-		self::$pixelId = $pixel_id;
+	public static function set_pixel_id( $pixel_id ) {
+		self::$pixel_id = $pixel_id;
 	}
 
 	/**
 	 * Gets FB pixel base code
 	 */
-	public static function getPixelBaseCode() {
-		return self::$pixelBaseCode;
+	public static function get_pixel_base_code() {
+		return self::$pixel_base_code;
 	}
 
 	/**
 	 * Gets OpenBridge set config code
 	 */
-	public static function getOpenBridgeConfigCode() {
-		if ( empty( self::$pixelId ) ) {
+	public static function get_open_bridge_config_code() {
+		if ( empty( self::$pixel_id ) ) {
 			return;
 		}
 
@@ -109,34 +137,38 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         fbq('set', 'openbridge', '%s', url);
       </script>
     ";
-		return sprintf( $code, self::$pixelId );
+		return sprintf( $code, self::$pixel_id );
 	}
 
 
 	/**
 	 * Gets FB pixel init code
+	 *
+	 * @param string $agent_string The agent string to be used in the pixel init code.
+	 * @param array  $param        The parameters for the pixel event. Defaults to an empty array.
+	 * @param bool   $with_script_tag Whether to include the script tag in the pixel init code. Defaults to true.
 	 */
-	public static function getPixelInitCode( $agent_string, $param = array(), $with_script_tag = true ) {
-		if ( empty( self::$pixelId ) ) {
+	public static function get_pixel_init_code( $agent_string, $param = array(), $with_script_tag = true ) {
+		if ( empty( self::$pixel_id ) ) {
 			return;
 		}
 
-		$pixelFbqCodeWithoutScript = "fbq('%s', '%s'%s%s)";
+		$pixel_fbq_code_without_script = "fbq('%s', '%s'%s%s)";
 
 		$code      = $with_script_tag
-		? "<script type='text/javascript'>" . $pixelFbqCodeWithoutScript . '</script>'
-		: $pixelFbqCodeWithoutScript;
+		? "<script type='text/javascript'>" . $pixel_fbq_code_without_script . '</script>'
+		: $pixel_fbq_code_without_script;
 		$param_str = $param;
 		if ( is_array( $param ) ) {
-			$param_str = json_encode( $param, JSON_PRETTY_PRINT | JSON_FORCE_OBJECT );
+			$param_str = wp_json_encode( $param, JSON_PRETTY_PRINT | JSON_FORCE_OBJECT );
 		}
 		$agent_param = array( 'agent' => $agent_string );
 		return sprintf(
 			$code,
 			'init',
-			self::$pixelId,
+			self::$pixel_id,
 			', ' . $param_str,
-			', ' . json_encode( $agent_param, JSON_PRETTY_PRINT )
+			', ' . wp_json_encode( $agent_param, JSON_PRETTY_PRINT )
 		);
 	}
 
@@ -146,21 +178,27 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 	 *   If it is an array, FB_INTEGRATION_TRACKING_KEY parameter with $tracking_name value will automatically
 	 *   be added into the $param. If it is a string, please append the FB_INTEGRATION_TRACKING_KEY parameter
 	 *   with its tracking name into the JS Parameter block
+	 *
+	 * @param string $event The name of the pixel event.
+	 * @param array  $param The parameters for the pixel event.
+	 * @param string $tracking_name The tracking name for the pixel event.
+	 * @param bool   $with_script_tag Whether to include the script tag in the pixel track code.
+	 * @return string The pixel track code.
 	 */
-	public static function getPixelTrackCode( $event, $param = array(), $tracking_name = '', $with_script_tag = true ) {
-		if ( empty( self::$pixelId ) ) {
+	public static function get_pixel_track_code( $event, $param = array(), $tracking_name = '', $with_script_tag = true ) {
+		if ( empty( self::$pixel_id ) ) {
 			return;
 		}
 
 		$code      = $with_script_tag
-		? "<script type='text/javascript'>" . self::$pixelFbqCodeWithoutScript . '</script>'
-		: self::$pixelFbqCodeWithoutScript;
+		? "<script type='text/javascript'>" . self::$pixel_fbq_code_without_script . '</script>'
+		: self::$pixel_fbq_code_without_script;
 		$param_str = $param;
 		if ( is_array( $param ) ) {
 			if ( ! empty( $tracking_name ) ) {
 				$param[ self::FB_INTEGRATION_TRACKING_KEY ] = $tracking_name;
 			}
-			$param_str = json_encode( $param, JSON_PRETTY_PRINT );
+			$param_str = wp_json_encode( $param, JSON_PRETTY_PRINT );
 		}
 		$class = new ReflectionClass( __CLASS__ );
 		return sprintf(
@@ -174,9 +212,13 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 
 	/**
 	 * Gets FB pixel noscript code
+	 *
+	 * @param string $event The name of the pixel event.
+	 * @param array  $cd The parameters for the pixel event.
+	 * @param string $tracking_name The tracking name for the pixel event.
 	 */
-	public static function getPixelNoscriptCode( $event = 'PageView', $cd = array(), $tracking_name = '' ) {
-		if ( empty( self::$pixelId ) ) {
+	public static function get_pixel_noscript_code( $event = 'PageView', $cd = array(), $tracking_name = '' ) {
+		if ( empty( self::$pixel_id ) ) {
 			return;
 		}
 
@@ -188,8 +230,8 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 			$data .= '&cd[' . self::FB_INTEGRATION_TRACKING_KEY . ']=' . $tracking_name;
 		}
 		return sprintf(
-			self::$pixelNoscriptCode,
-			self::$pixelId,
+			self::$pixel_noscript_code,
+			self::$pixel_id,
 			$event,
 			$data
 		);
@@ -197,9 +239,13 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 
 	/**
 	 * Gets FB pixel AddToCart code
+	 *
+	 * @param array  $param The parameters for the pixel event.
+	 * @param string $tracking_name The tracking name for the pixel event.
+	 * @param bool   $with_script_tag Whether to include the script tag in the pixel track code.
 	 */
-	public static function getPixelAddToCartCode( $param = array(), $tracking_name = '', $with_script_tag = true ) {
-		return self::getPixelTrackCode(
+	public static function get_pixel_add_to_cart_code( $param = array(), $tracking_name = '', $with_script_tag = true ) {
+		return self::get_pixel_track_code(
 			self::ADDTOCART,
 			$param,
 			$tracking_name,
@@ -209,9 +255,13 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 
 	/**
 	 * Gets FB pixel InitiateCheckout code
+	 *
+	 * @param array  $param The parameters for the pixel event.
+	 * @param string $tracking_name The tracking name for the pixel event.
+	 * @param bool   $with_script_tag Whether to include the script tag in the pixel track code.
 	 */
-	public static function getPixelInitiateCheckoutCode( $param = array(), $tracking_name = '', $with_script_tag = true ) {
-		return self::getPixelTrackCode(
+	public static function get_pixel_initiate_checkout_code( $param = array(), $tracking_name = '', $with_script_tag = true ) {
+		return self::get_pixel_track_code(
 			self::INITIATECHECKOUT,
 			$param,
 			$tracking_name,
@@ -221,9 +271,13 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 
 	/**
 	 * Gets FB pixel Lead code
+	 *
+	 * @param array  $param The parameters for the pixel event.
+	 * @param string $tracking_name The tracking name for the pixel event.
+	 * @param bool   $with_script_tag Whether to include the script tag in the pixel track code.
 	 */
-	public static function getPixelLeadCode( $param = array(), $tracking_name = '', $with_script_tag = true ) {
-		return self::getPixelTrackCode(
+	public static function get_pixel_lead_code( $param = array(), $tracking_name = '', $with_script_tag = true ) {
+		return self::get_pixel_track_code(
 			self::LEAD,
 			$param,
 			$tracking_name,
@@ -233,9 +287,13 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 
 	/**
 	 * Gets FB pixel PageView code
+	 *
+	 * @param array  $param The parameters for the pixel event.
+	 * @param string $tracking_name The tracking name for the pixel event.
+	 * @param bool   $with_script_tag Whether to include the script tag in the pixel track code.
 	 */
-	public static function getPixelPageViewCode( $param = array(), $tracking_name = '', $with_script_tag = true ) {
-		return self::getPixelTrackCode(
+	public static function get_pixel_page_view_code( $param = array(), $tracking_name = '', $with_script_tag = true ) {
+		return self::get_pixel_track_code(
 			self::PAGEVIEW,
 			$param,
 			$tracking_name,
@@ -245,9 +303,13 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 
 	/**
 	 * Gets FB pixel Purchase code
+	 *
+	 * @param array  $param The parameters for the pixel event.
+	 * @param string $tracking_name The tracking name for the pixel event.
+	 * @param bool   $with_script_tag Whether to include the script tag in the pixel track code.
 	 */
-	public static function getPixelPurchaseCode( $param = array(), $tracking_name = '', $with_script_tag = true ) {
-		return self::getPixelTrackCode(
+	public static function get_pixel_purchase_code( $param = array(), $tracking_name = '', $with_script_tag = true ) {
+		return self::get_pixel_track_code(
 			self::PURCHASE,
 			$param,
 			$tracking_name,
@@ -257,9 +319,13 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 
 	/**
 	 * Gets FB pixel ViewContent code
+	 *
+	 * @param array  $param The parameters for the pixel event.
+	 * @param string $tracking_name The tracking name for the pixel event.
+	 * @param bool   $with_script_tag Whether to include the script tag in the pixel track code.
 	 */
-	public static function getPixelViewContentCode( $param = array(), $tracking_name = '', $with_script_tag = true ) {
-		return self::getPixelTrackCode(
+	public static function get_pixel_view_content_code( $param = array(), $tracking_name = '', $with_script_tag = true ) {
+		return self::get_pixel_track_code(
 			self::VIEWCONTENT,
 			$param,
 			$tracking_name,
