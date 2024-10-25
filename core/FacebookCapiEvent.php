@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -9,9 +9,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- */
-
-/**
+ *
  * @package FacebookPixelPlugin
  */
 
@@ -20,8 +18,11 @@ namespace FacebookPixelPlugin\Core;
 use FacebookAds\Object\ServerSide\EventRequest;
 use FacebookAds\ApiConfig;
 
-defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
+defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
+/**
+ * Class FacebookCapiEvent
+ */
 class FacebookCapiEvent {
 	const REQUIRED_EVENT_DATA = array(
 		'event_name',
@@ -67,10 +68,19 @@ class FacebookCapiEvent {
 		'custom_properties',
 	);
 
+	/**
+	 * Hook into WordPress's AJAX actions to handle sending a CAPI event.
+	 */
 	public function __construct() {
 		add_action( 'wp_ajax_send_capi_event', array( $this, 'send_capi_event' ) );
 	}
 
+	/**
+	 * Retrieves the event custom data if available.
+	 *
+	 * @param array $custom_data The custom data to retrieve.
+	 * @return array The custom data array if not empty, otherwise an empty array.
+	 */
 	public static function get_event_custom_data( $custom_data ) {
 		if ( empty( $custom_data ) ) {
 			return array();
@@ -79,10 +89,22 @@ class FacebookCapiEvent {
 		}
 	}
 
+	/**
+	 * Sends a CAPI event.
+	 *
+	 * This function is responsible for sending a CAPI event to Facebook's servers.
+	 * It expects the event name and custom data to be provided in the $_POST
+	 * superglobal and will validate the custom data before sending the event.
+	 * If the custom data is invalid, it will return an error message.
+	 *
+	 * If the event is successfully sent, it will return the response from Facebook's
+	 * servers.
+	 */
 	public function send_capi_event() {
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'send_capi_event_nonce' ) ) {
+		$nonce = isset( $_POST['nonce'] ) ? wp_unslash( $_POST['nonce'] ) : null; //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( ! isset( $nonce ) || ! wp_verify_nonce( $nonce, 'send_capi_event_nonce' ) ) {
 			wp_send_json_error(
-				json_encode(
+				wp_json_encode(
 					array(
 						'error' => array(
 							'message'        => 'Invalid nonce',
@@ -100,15 +122,15 @@ class FacebookCapiEvent {
 
 		$url = "https://graph.facebook.com/v{$api_version}/{$pixel_id}/events?access_token={$access_token}";
 
-		$event_name = $_POST['event_name'] ?? null;
+		$event_name = isset( $_POST['event_name'] ) ? wp_unslash( $_POST['event_name'] ) : null; //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		if ( empty( $_POST['payload'] ) && ! empty( $event_name ) ) {
-			$custom_data         = $_POST['custom_data'] ?? array();
+			$custom_data         = isset( $_POST['custom_data'] ) ? wp_unslash( $_POST['custom_data'] ) : array(); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$invalid_custom_data = self::get_invalid_event_custom_data( $custom_data );
 			if ( ! empty( $invalid_custom_data ) ) {
 				$invalid_custom_data_msg = implode( ',', $invalid_custom_data );
 				wp_send_json_error(
-					json_encode(
+					wp_json_encode(
 						array(
 							'error' => array(
 								'message'        => 'Invalid custom_data attribute',
@@ -132,23 +154,23 @@ class FacebookCapiEvent {
 
 				$event_request = ( new EventRequest( $pixel_id ) )
 					->setEvents( $events )
-					->setTestEventCode( $_POST['test_event_code'] );
+					->setTestEventCode( isset( $_POST['test_event_code'] ) ? wp_unslash( $_POST['test_event_code'] ) : null ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 				$normalized_event = $event_request->normalize();
 
 				if ( ! empty( $_POST['user_data'] ) ) {
 					foreach ( $normalized_event['data'] as $key => $value ) {
-						$normalized_event['data'][ $key ]['user_data'] += $_POST['user_data'];
+						$normalized_event['data'][ $key ]['user_data'] += isset( $_POST['user_data'] ) ? wp_unslash( $_POST['user_data'] ) : array(); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					}
 				}
 
-				$payload = json_encode( $normalized_event );
+				$payload = wp_json_encode( $normalized_event );
 			}
 		} else {
-			$validated_payload = self::validate_payload( $_POST['payload'] );
+			$validated_payload = self::validate_payload( isset( $_POST['payload'] ) ? wp_unslash( $_POST['payload'] ) : null ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			if ( ! $validated_payload['valid'] ) {
 				wp_send_json_error(
-					json_encode(
+					wp_json_encode(
 						array(
 							'error' => array(
 								'message'        => $validated_payload['message'],
@@ -159,7 +181,7 @@ class FacebookCapiEvent {
 				);
 				wp_die();
 			} else {
-				$payload = json_encode( $_POST['payload'] );
+				$payload = wp_json_encode( isset( $_POST['payload'] ) ? wp_unslash( $_POST['payload'] ) : null ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			}
 		}
 
@@ -182,6 +204,12 @@ class FacebookCapiEvent {
 		wp_die();
 	}
 
+	/**
+	 * Given a custom data array, returns an array of the custom data keys which are not valid
+	 *
+	 * @param array $custom_data The custom data array to check.
+	 * @return array An array of the invalid custom data keys.
+	 */
 	public function get_invalid_event_custom_data( $custom_data ) {
 		$invalid_custom_data = array();
 		foreach ( $custom_data as $key => $value ) {
@@ -192,6 +220,19 @@ class FacebookCapiEvent {
 		return $invalid_custom_data;
 	}
 
+	/**
+	 * Validates the given payload to ensure it meets the required criteria.
+	 *
+	 * This function checks if the payload is non-empty and contains valid JSON.
+	 * It further verifies that each event within the payload's data includes all
+	 * required attributes, with appropriate data types, and that custom data
+	 * attributes are valid.
+	 *
+	 * @param array $payload The payload to validate.
+	 * @return array An associative array containing a 'valid' key indicating
+	 *               the validity of the payload, and 'message' and 'error_user_msg'
+	 *               keys providing error details if invalid.
+	 */
 	public function validate_payload( $payload ) {
 		$response = array(
 			'valid' => true,
@@ -241,25 +282,38 @@ class FacebookCapiEvent {
 		return $response;
 	}
 
+	/**
+	 * Validates a payload as JSON.
+	 *
+	 * @param array $payload The payload to validate.
+	 * @return bool Whether the payload is valid JSON.
+	 */
 	public function validate_json( $payload ) {
-		$json_string = json_encode( $payload );
+		$json_string = wp_json_encode( $payload );
 		$regex       = '/^(?:\{.*\}|\[.*\])$/s';
 
 		return preg_match( $regex, $json_string );
 	}
 
+	/**
+	 * Validate the type of attributes in an event.
+	 *
+	 * @param array $event An event with its attributes.
+	 *
+	 * @return array An array of invalid attributes.
+	 */
 	public function validate_event_attributes_type( $event ) {
 		if ( is_numeric( $event['event_time'] ) ) {
 			$event['event_time'] = (int) $event['event_time'];
 		}
 		$invalid_attributes = array();
-		$event              = json_decode( json_encode( $event ) );
+		$event              = json_decode( wp_json_encode( $event ) );
 		foreach ( $event as $key => $value ) {
-			if ( self::VALID_EVENT_ATTRIBUTES_TYPE[ $key ] == 'integer' ) {
+			if ( 'integer' === self::VALID_EVENT_ATTRIBUTES_TYPE[ $key ] ) {
 				if ( ! is_numeric( $value ) ) {
 					array_push( $invalid_attributes, $key );
 				}
-			} elseif ( gettype( $value ) != self::VALID_EVENT_ATTRIBUTES_TYPE[ $key ] ) {
+			} elseif ( gettype( $value ) !== self::VALID_EVENT_ATTRIBUTES_TYPE[ $key ] ) {
 					array_push( $invalid_attributes, $key );
 			}
 		}
