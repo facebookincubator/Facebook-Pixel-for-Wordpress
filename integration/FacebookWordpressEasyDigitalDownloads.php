@@ -1,23 +1,33 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
-
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
 /**
+ * Facebook Pixel Plugin FacebookWordpressEasyDigitalDownloads class.
+ *
+ * This file contains the main logic for FacebookWordpressEasyDigitalDownloads.
+ *
  * @package FacebookPixelPlugin
  */
 
+/**
+ * Define FacebookWordpressEasyDigitalDownloads class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
+
 namespace FacebookPixelPlugin\Integration;
 
-defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
+defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
@@ -27,12 +37,27 @@ use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Core\EventIdGenerator;
 
+/**
+ * FacebookWordpressEasyDigitalDownloads class.
+ */
 class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegrationBase {
 	const PLUGIN_FILE   = 'easy-digital-downloads/easy-digital-downloads.php';
 	const TRACKING_NAME = 'easy-digital-downloads';
 
+	/**
+	 * Injects various Facebook Pixel events for Easy Digital Downloads.
+	 *
+	 * This method sets up WordPress actions to inject Facebook Pixel events
+	 * for different stages of the Easy Digital Downloads process:
+	 *
+	 * - AddToCart: Adds JavaScript listeners and hooks for AJAX requests,
+	 *   and injects a hidden field with an event ID.
+	 * - InitiateCheckout: Fires a pixel event after the checkout cart is
+	 *   displayed.
+	 * - Purchase: Tracks purchase events after the payment receipt.
+	 * - ViewContent: Injects view content events after download content.
+	 */
 	public static function injectPixelCode() {
-		// AddToCart JS listener
 		add_action(
 			'edd_after_download_content',
 			array( __CLASS__, 'injectAddToCartListener' )
@@ -42,7 +67,6 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			array( __CLASS__, 'injectAddToCartListener' )
 		);
 
-		// Hooks to AddToCart ajax requests
 		add_action(
 			'wp_ajax_edd_add_to_cart',
 			array( __CLASS__, 'injectAddToCartEventAjax' ),
@@ -55,13 +79,11 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			5
 		);
 
-		// Injects a hidden field with event id to send it in AddToCart ajax request
 		add_action(
 			'edd_purchase_link_top',
 			array( __CLASS__, 'injectAddToCartEventId' )
 		);
 
-		// InitiateCheckout
 		self::addPixelFireForHook(
 			array(
 				'hook_name'       => 'edd_after_checkout_cart',
@@ -70,7 +92,6 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			)
 		);
 
-		// Purchase
 		add_action(
 			'edd_payment_receipt_after',
 			array( __CLASS__, 'trackPurchaseEvent' ),
@@ -78,7 +99,6 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			2
 		);
 
-		// ViewContent
 		add_action(
 			'edd_after_download_content',
 			array( __CLASS__, 'injectViewContentEvent' ),
@@ -87,30 +107,44 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 		);
 	}
 
+	/**
+	 * Injects a hidden field with a unique event ID into the AddToCart form.
+	 *
+	 * The event ID is used to identify the AddToCart event for a given download.
+	 *
+	 * @return void
+	 */
 	public static function injectAddToCartEventId() {
 		if ( FacebookPluginUtils::isInternalUser() ) {
 			return;
 		}
-		$eventId = EventIdGenerator::guidv4();
+		$event_id = EventIdGenerator::guidv4();
 		printf(
 			'<input type="hidden" name="facebook_event_id" value="%s">',
-			$eventId
+			esc_attr( $event_id )
 		);
 	}
 
+	/**
+	 * Triggers the AddToCart event for Easy Digital Downloads.
+	 *
+	 * The `edd-add-to-cart` nonce check is performed to ensure that the request
+	 * comes from a valid EDD form submission. The event ID is verified to ensure that
+	 * it is a valid Event ID.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function injectAddToCartEventAjax() {
 		if ( isset( $_POST['nonce'] ) && isset( $_POST['download_id'] )
 		&& isset( $_POST['post_data'] ) ) {
 			$download_id = absint( $_POST['download_id'] );
-			// Adding form validations
-			$nonce = sanitize_text_field( $_POST['nonce'] );
+			$nonce       = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
 			if ( wp_verify_nonce( $nonce, 'edd-add-to-cart-' . $download_id ) === false ) {
 				return;
 			}
-			// Getting form data
-			parse_str( $_POST['post_data'], $post_data );
+
+			parse_str( wp_unslash( $_POST['post_data'] ), $post_data ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			if ( isset( $post_data['facebook_event_id'] ) ) {
-				// Starting Conversions API event creation
 				$event_id     = $post_data['facebook_event_id'];
 				$server_event = ServerEventFactory::safeCreateEvent(
 					'AddToCart',
@@ -124,6 +158,16 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 		}
 	}
 
+	/**
+	 * Injects a JavaScript listener for the AddToCart event for Easy Digital Downloads.
+	 *
+	 * This method enqueues a JavaScript file that listens for the `edd_add_to_cart`
+	 * event, and sends a server-side event to Facebook for the AddToCart pixel event.
+	 *
+	 * @param int $download_id The ID of the download item.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function injectAddToCartListener( $download_id ) {
 		if ( FacebookPluginUtils::isInternalUser() ) {
 			return;
@@ -151,6 +195,14 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 		wp_enqueue_script( 'facebook-pixel-add-to-cart' );
 	}
 
+	/**
+	 * Injects a Meta Pixel InitiateCheckout event.
+	 *
+	 * This method is a callback for the `edd_purchase_link_top` action hook.
+	 * It injects a Meta Pixel InitiateCheckout event into the page whenever a purchase link is rendered.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function injectInitiateCheckoutEvent() {
 		if ( FacebookPluginUtils::isInternalUser() || ! function_exists( 'EDD' ) ) {
 			return;
@@ -171,10 +223,21 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 %s
 <!-- End Meta Pixel Event Code -->
       ',
-			$code
+			esc_attr( $code )
 		);
 	}
 
+	/**
+	 * Tracks a Meta Pixel Purchase event.
+	 *
+	 * This method is a callback for the `edd_complete_purchase` action hook.
+	 * It tracks a Meta Pixel Purchase event whenever a purchase is completed.
+	 *
+	 * @param object $payment The payment object.
+	 * @param array  $edd_receipt_args The receipt arguments.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function trackPurchaseEvent( $payment, $edd_receipt_args ) {
 		if ( FacebookPluginUtils::isInternalUser() || empty( $payment->ID ) ) {
 			return;
@@ -195,6 +258,14 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 		);
 	}
 
+	/**
+	 * Injects a Meta Pixel Purchase event.
+	 *
+	 * This method is a callback for the `wp_footer` action hook.
+	 * It injects a Meta Pixel Purchase event into the page whenever a purchase is completed.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function injectPurchaseEvent() {
 		$events = FacebookServerSideEvent::getInstance()->getTrackedEvents();
 		$code   = PixelRenderer::render( $events, self::TRACKING_NAME );
@@ -205,10 +276,21 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 %s
 <!-- End Meta Pixel Event Code -->
       ',
-			$code
+			esc_attr( $code )
 		);
 	}
 
+	/**
+	 * Injects a Meta Pixel ViewContent event.
+	 *
+	 * This method is a callback for the `edd_download_before_content` action hook.
+	 * It injects a Meta Pixel ViewContent event into the page whenever a download
+	 * item is viewed.
+	 *
+	 * @param int $download_id The ID of the download item.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function injectViewContentEvent( $download_id ) {
 		if ( FacebookPluginUtils::isInternalUser() || empty( $download_id ) ) {
 			return;
@@ -230,10 +312,21 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 %s
 <!-- End Meta Pixel Event Code -->
       ',
-			$code
+			esc_attr( $code )
 		);
 	}
 
+	/**
+	 * Creates a Meta Pixel InitiateCheckout event data.
+	 *
+	 * The InitiateCheckout event is fired when a customer initiates a checkout.
+	 * It is typically sent when a customer clicks a "checkout" button
+	 * or submits an order.
+	 *
+	 * @return array The event data.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function createInitiateCheckoutEvent() {
 		$event_data             = FacebookPluginUtils::getLoggedInUserInfo();
 		$event_data['currency'] = EDDUtils::get_currency();
@@ -242,6 +335,18 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 		return $event_data;
 	}
 
+	/**
+	 * Creates a Meta Pixel Purchase event data.
+	 *
+	 * The Purchase event is fired when a customer completes a purchase.
+	 * It is typically sent when a customer submits an order.
+	 *
+	 * @param \EDD_Payment $payment The payment object.
+	 *
+	 * @return array The event data.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function createPurchaseEvent( $payment ) {
 		$event_data = array();
 
@@ -269,6 +374,18 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 		return $event_data;
 	}
 
+	/**
+	 * Creates a Meta Pixel ViewContent event data.
+	 *
+	 * The ViewContent event is fired when a customer views a product.
+	 * It is typically sent when a customer views a product page.
+	 *
+	 * @param int $download_id The download ID.
+	 *
+	 * @return array The event data.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function createViewContentEvent( $download_id ) {
 		$event_data = FacebookPluginUtils::getLoggedInUserInfo();
 		$currency   = EDDUtils::get_currency();
@@ -293,6 +410,19 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 		return $event_data;
 	}
 
+	/**
+	 * Creates a Meta Pixel AddToCart event data.
+	 *
+	 * The AddToCart event is fired when a customer adds a product to their
+	 * cart. It is typically sent when a customer adds a product to their
+	 * cart.
+	 *
+	 * @param int $download_id The download ID.
+	 *
+	 * @return array The event data.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function createAddToCartEvent( $download_id ) {
 		$event_data = FacebookPluginUtils::getLoggedInUserInfo();
 		$currency   = EDDUtils::get_currency();
