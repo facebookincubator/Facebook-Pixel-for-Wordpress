@@ -1,15 +1,29 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin PixelRendererTest class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for PixelRendererTest.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define PixelRendererTest class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Core;
 
@@ -21,14 +35,14 @@ use FacebookAds\Object\ServerSide\CustomData;
 
 
 /**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in separate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
+ * PixelRendererTest class.
  */
 final class PixelRendererTest extends FacebookWordpressTestBase {
+	/**
+	 * Test that the PixelRenderer renders the expected code for a standard event.
+	 *
+	 * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+	 */
 	public function testPixelRenderForStandardEvent() {
 		FacebookWordpressOptions::set_version_info();
 		$agent_string = FacebookWordpressOptions::get_agent_string();
@@ -53,6 +67,16 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 		$this->assertEquals( $expected, $code );
 	}
 
+	/**
+	 * Test that the PixelRenderer renders the expected code for a custom event.
+	 *
+	 * This test ensures that the render method correctly generates the Pixel code
+	 * for a custom event. It verifies that the output includes the 'trackCustom'
+	 * keyword and that the event data and custom data are correctly formatted
+	 * and included in the output.
+	 *
+	 * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+	 */
 	public function testPixelRenderForCustomEvent() {
 		FacebookWordpressOptions::set_version_info();
 		$agent_string = FacebookWordpressOptions::get_agent_string();
@@ -78,6 +102,17 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 		$this->assertEquals( $expected, $code );
 	}
 
+	/**
+	 * Test that the PixelRenderer renders the expected code for a custom event
+	 * with custom data.
+	 *
+	 * This test ensures that the render method correctly generates the Pixel
+	 * code for a custom event with custom data. It verifies that the output
+	 * includes the 'track' keyword and that the custom data is correctly
+	 * formatted and included in the output.
+	 *
+	 * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+	 */
 	public function testPixelRenderForCustomData() {
 		FacebookWordpressOptions::set_version_info();
 		$agent_string = FacebookWordpressOptions::get_agent_string();
@@ -110,6 +145,16 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 		$this->assertEquals( $expected, $code );
 	}
 
+	/**
+	 * Test that the PixelRenderer renders the expected code for multiple events.
+	 *
+	 * This test verifies that the render method correctly generates the Pixel
+	 * code when provided with multiple events. It ensures that each event is
+	 * tracked separately and that the output includes the correct event data
+	 * and event IDs for each event.
+	 *
+	 * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+	 */
 	public function testPixelRenderForMultipleEvents() {
 		FacebookWordpressOptions::set_version_info();
 		$agent_string = FacebookWordpressOptions::get_agent_string();
