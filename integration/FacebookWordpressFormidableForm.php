@@ -230,7 +230,7 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
 			}
 			if (
 			isset( $address_saved_value['country'] )
-			&& strlen( $address_saved_value['country'] ) == 2
+			&& strlen( $address_saved_value['country'] ) === 2
 			) {
 				$address_data['country'] = $address_saved_value['country'];
 			}
@@ -255,7 +255,7 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
 	private static function getFieldValueByType( $field_values, $type ) {
 		foreach ( $field_values as $field_value ) {
 			$field = $field_value->get_field();
-			if ( $field->type == $type ) {
+			if ( $field->type === $type ) {
 				return $field_value->get_saved_value();
 			}
 		}
