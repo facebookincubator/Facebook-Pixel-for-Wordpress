@@ -1,17 +1,15 @@
-<?php
-/*
-* Copyright (C) 2017-present, Meta, Inc.
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; version 2 of the License.
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*/
-
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
 /**
+ * Copyright (C) 2017-present, Meta, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
  * @package FacebookPixelPlugin
  */
 
@@ -19,50 +17,91 @@ namespace FacebookPixelPlugin\Core;
 
 use FacebookAds\ApiConfig;
 
-defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
+defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
+/**
+ * Class FacebookWordpressSettingsPage
+ */
 class FacebookWordpressSettingsPage {
-	private $optionsPage = '';
+	/**
+	 * The options page for the plugin.
+	 *
+	 * @var string
+	 */
+	private $options_page = '';
 
+	/**
+	 * Registers the plugin's settings page, and adds the necessary hooks
+	 * for registering the plugin's scripts, notices, and menu items.
+	 *
+	 * @param string $plugin_name the name of the plugin.
+	 */
 	public function __construct( $plugin_name ) {
 		add_filter(
 			'plugin_action_links_' . $plugin_name,
-			array( $this, 'addSettingsLink' )
+			array( $this, 'add_settings_link' )
 		);
-		add_action( 'admin_menu', array( $this, 'addMenuFbe' ) );
-		add_action( 'admin_init', array( $this, 'dismissNotices' ) );
+		add_action( 'admin_menu', array( $this, 'add_menu_fbe' ) );
+		add_action( 'admin_init', array( $this, 'dismiss_notices' ) );
 
-		add_action( 'admin_enqueue_scripts', array( $this, 'registerPluginScripts' ) );
-		add_action( 'current_screen', array( $this, 'registerNotices' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'register_plugin_scripts' ) );
+		add_action( 'current_screen', array( $this, 'register_notices' ) );
 		$capi_event = new FacebookCapiEvent();
 	}
 
-	public function registerPluginScripts() {
+	/**
+	 * Registers the plugin's scripts and styles.
+	 *
+	 * This function registers the 'fbe_allinone_script', 'meta_settings_page_script',
+	 * and 'meta_settings_page_style' scripts and styles, and enqueues the style.
+	 */
+	public function register_plugin_scripts() {
 		wp_register_script(
 			'fbe_allinone_script',
-			plugins_url( '../js/fbe_allinone.js', __FILE__ )
+			plugins_url( '../js/fbe_allinone.js', __FILE__ ),
+			array(),
+			'1.0.0',
+			true
 		);
 		wp_register_script(
 			'meta_settings_page_script',
-			plugins_url( '../js/settings_page.js', __FILE__ )
+			plugins_url( '../js/settings_page.js', __FILE__ ),
+			array(),
+			'1.0.0',
+			true
 		);
 		wp_register_style(
-			FacebookPluginConfig::TEXT_DOMAIN,
-			plugins_url( '../css/admin.css', __FILE__ )
+			'official-facebook-pixel',
+			plugins_url( '../css/admin.css', __FILE__ ),
+			array(),
+			'1.0.0'
 		);
-		wp_enqueue_style( FacebookPluginConfig::TEXT_DOMAIN );
+		wp_enqueue_style( 'official-facebook-pixel' );
 	}
 
-	public function addMenuFbe() {
-		$this->optionsPage = add_options_page(
+	/**
+	 * Adds the Facebook Business Extension options page to the WordPress admin menu.
+	 *
+	 * This function is called by the WordPress 'admin_menu' action hook.
+	 *
+	 * It adds an options page with the title 'Facebook Business Extension' and
+	 * the slug 'facebook_for_wordpress', and sets the 'add_fbe_box' method as the
+	 * callback function for rendering the page.
+	 *
+	 * It also adds two options to the wp_options table: 'facebook_capi_integration_status'
+	 * and 'facebook_capi_integration_events_filter', with default values of '1' and
+	 * 'all_events', respectively.
+	 */
+	public function add_menu_fbe() {
+		$this->options_page = add_options_page(
 			FacebookPluginConfig::ADMIN_PAGE_TITLE,
 			FacebookPluginConfig::ADMIN_MENU_TITLE,
 			FacebookPluginConfig::ADMIN_CAPABILITY,
 			FacebookPluginConfig::ADMIN_MENU_SLUG,
-			array( $this, 'addFbeBox' )
+			array( $this, 'add_fbe_box' )
 		);
 
-		// Adding option to save Capig Integration settings in wp_options
+		// Adding option to save Capig Integration settings in wp_options.
 		\add_option(
 			FacebookPluginConfig::CAPI_INTEGRATION_STATUS,
 			FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT
@@ -73,24 +112,46 @@ class FacebookWordpressSettingsPage {
 		);
 	}
 
-	public function addFbeBox() {
+	/**
+	 * Renders the Facebook Business Extension box on the settings page.
+	 *
+	 * This function checks if the current user has the necessary capabilities
+	 * to access the page. If not, it terminates the script with an error message.
+	 * If the user has the required permissions, it displays any previous pixel
+	 * ID message and the FBE browser settings, and enqueues the necessary script
+	 * for the page.
+	 *
+	 * @return void
+	 */
+	public function add_fbe_box() {
 		if ( ! current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY ) ) {
 			wp_die(
-				__(
+				esc_html__(
 					'You do not have sufficient permissions to access this page',
-					FacebookPluginConfig::TEXT_DOMAIN
+					'official-facebook-pixel'
 				)
 			);
 		}
-		$pixel_id_message = $this->getPreviousPixelIdMessage();
+		$pixel_id_message = $this->get_previous_pixel_id_message();
 		if ( $pixel_id_message ) {
-			echo $pixel_id_message;
+			echo esc_html( $pixel_id_message );
 		}
-		echo $this->getFbeBrowserSettings();
+		echo $this->get_fbe_browser_settings(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		wp_enqueue_script( 'fbe_allinone_script' );
 	}
 
-	private function getPreviousPixelIdMessage() {
+	/**
+	 * Retrieves a message regarding the previous pixel ID setup.
+	 *
+	 * If the Facebook Business Extension is installed, it returns null.
+	 * Otherwise, it checks for the existence of a pixel ID and returns
+	 * a formatted message indicating the reuse of the pixel ID from a
+	 * previous setup. If no pixel ID is found, it returns null.
+	 *
+	 * @return string|null The message with the previous pixel ID or null if
+	 *                     the pixel ID is not found or FBE is installed.
+	 */
+	private function get_previous_pixel_id_message() {
 		if ( FacebookWordpressOptions::get_is_fbe_installed() ) {
 			return null;
 		}
@@ -107,9 +168,24 @@ class FacebookWordpressSettingsPage {
 		return $message;
 	}
 
-	private function getFbeBrowserSettings() {
+	/**
+	 * Generates and returns the browser settings HTML and JavaScript for the Facebook Business Extension.
+	 *
+	 * This function constructs and outputs a set of HTML elements and JavaScript code necessary for configuring
+	 * the Facebook Business Extension in the browser. It includes sections for advanced configuration, ads creation,
+	 * and ads insights, as well as functionality for testing conversion API events.
+	 *
+	 * The function dynamically generates JSON-encoded configuration data and embeds it into the HTML via
+	 * data attributes, allowing for the interactive configuration of various Facebook Business Extension features.
+	 *
+	 * It also enqueues the necessary scripts and styles for rendering the settings page and handles
+	 * inline script parameters for AJAX communication and configuration management.
+	 *
+	 * @return string The HTML and JavaScript code for the Facebook Business Extension browser settings.
+	 */
+	private function get_fbe_browser_settings() {
 		ob_start();
-		$fbe_extras = json_encode(
+		$fbe_extras = wp_json_encode(
 			array(
 				'business_config' => array(
 					'business' => array(
@@ -163,15 +239,15 @@ class FacebookWordpressSettingsPage {
 			<h3>Plugin Connected to Meta Events Manager</h3>
 
 			<p>Meta Events Manager is a tool that enables you to view and manage your event data. In Events Manager, you can set up, monitor and troubleshoot issues with your integrations, such as the Conversions API and Meta pixel.</p>
-			<p class="meta-event-manager">Visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::get_pixel_id(); ?>" target="_blank">Meta Events Manager</a> to view the events being tracked.</p>
+			<p class="meta-event-manager">Visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo esc_html( FacebookWordpressOptions::get_pixel_id() ); ?>" target="_blank">Meta Events Manager</a> to view the events being tracked.</p>
 		</div>
 
 		<div class="pixel-block events-manager-block">
 			<label>Your Pixel ID</label>
-			<input type="text" id="pixel-id" placeholder="<?php echo FacebookWordpressOptions::get_pixel_id(); ?>" disabled />
+			<input type="text" id="pixel-id" placeholder="<?php echo esc_html( FacebookWordpressOptions::get_pixel_id() ); ?>" disabled />
 		</div>
 
-		<?php echo '<img class="test-form-img" src = ' . plugin_dir_url( __DIR__ ) . 'assets/event-log-head.png alt="Test form image">'; ?>
+		<?php echo '<img class="test-form-img" src = ' . esc_html( plugin_dir_url( __DIR__ ) ) . 'assets/event-log-head.png alt="Test form image">'; ?>
 
 		<div class="test-events-block events-manager-block">
 			<form class="test-form" action="javascript:void(0);">
@@ -180,7 +256,7 @@ class FacebookWordpressSettingsPage {
 						<div class="test-hints__wrapper">
 							<span>&#63;</span>
 
-							<p>To obtain the Test Event Code, visit the Test Event section in the <a target="_blank" href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::get_pixel_id(); ?>/test_events"><b>Events Manager</b></a>.</p>
+							<p>To obtain the Test Event Code, visit the Test Event section in the <a target="_blank" href="https://business.facebook.com/events_manager2/list/pixel/<?php echo esc_html( FacebookWordpressOptions::get_pixel_id() ); ?>/test_events"><b>Events Manager</b></a>.</p>
 						</div>
 					</div>
 
@@ -260,7 +336,7 @@ class FacebookWordpressSettingsPage {
 	</div>
 	</div>
 
-	<script async defer src="https://connect.facebook.net/en_US/sdk.js"></script>
+		<?php wp_enqueue_script( 'facebook-sdk', 'https://connect.facebook.net/en_US/sdk.js', array(), '1.0.0', true ); ?>
 	<div id="meta-ads-plugin">
 	<div id="ad-creation-plugin">
 	<h3 class="mt-5">Ads Creation</h3>
@@ -269,7 +345,7 @@ class FacebookWordpressSettingsPage {
 		<div id="ad-creation-plugin-iframe" class="fb-lwi-ads-creation"
 		data-lazy=true
 		data-hide-manage-button=true
-		data-fbe-extras='<?php echo $fbe_extras; ?>'
+		data-fbe-extras='<?php echo esc_html( $fbe_extras ); ?>'
 		data-fbe-scopes=
 			'manage_business_extension,business_management,ads_management'
 		data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler' ></div>
@@ -281,7 +357,7 @@ class FacebookWordpressSettingsPage {
 		class="my-3 p-3 bg-white d-block rounded shadow-sm">
 		<div id="ad-insights-plugin-iframe" class="fb-lwi-ads-insights"
 		data-lazy=true
-		data-fbe-extras='<?php echo $fbe_extras; ?>'
+		data-fbe-extras='<?php echo esc_html( $fbe_extras ); ?>'
 		data-fbe-scopes=
 			'manage_business_extension,business_management,ads_management'
 		data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler' ></div>
@@ -291,7 +367,7 @@ class FacebookWordpressSettingsPage {
 </div>
 
 		<?php
-		$initialScript = ob_get_clean();
+		$initial_script = ob_get_clean();
 		wp_enqueue_script( 'meta_settings_page_script' );
 
 		wp_add_inline_script(
@@ -301,29 +377,38 @@ class FacebookWordpressSettingsPage {
 					'ajax_url'                           => admin_url( 'admin-ajax.php' ),
 					'send_capi_event_nonce'              => wp_create_nonce( 'send_capi_event_nonce' ),
 					'pixelId'                            => FacebookWordpressOptions::get_pixel_id(),
-					'setSaveSettingsRoute'               => $this->getFbeSaveSettingsAjaxRoute(),
+					'setSaveSettingsRoute'               => $this->get_fbe_save_settings_ajax_route(),
 					'externalBusinessId'                 => esc_html( FacebookWordpressOptions::get_external_business_id() ),
-					'deleteConfigKeys'                   => $this->getDeleteFbeSettingsAjaxRoute(),
+					'deleteConfigKeys'                   => $this->get_delete_fbe_settings_ajax_route(),
 					'installed'                          => FacebookWordpressOptions::get_is_fbe_installed(),
 					'systemUserName'                     => esc_html( FacebookWordpressOptions::get_external_business_id() ),
 					'pixelString'                        => esc_html( FacebookWordpressOptions::get_pixel_id() ),
 					'piiCachingStatus'                   => FacebookWordpressOptions::get_capi_pii_caching_status(),
 					'fbAdvConfTop'                       => FacebookPluginConfig::CAPI_INTEGRATION_DIV_TOP,
-					'capiIntegrationPageViewFiltered'    => json_encode( FacebookWordpressOptions::get_capi_integration_page_view_filtered() ),
-					'capiPiiCachingStatusSaveUrl'        => $this->getCapiPiiCachingStatusSaveUrl(),
+					'capiIntegrationPageViewFiltered'    => wp_json_encode( FacebookWordpressOptions::get_capi_integration_page_view_filtered() ),
+					'capiPiiCachingStatusSaveUrl'        => $this->get_capi_pii_caching_status_save_url(),
 					'capiPiiCachingStatusActionName'     => FacebookPluginConfig::SAVE_CAPI_PII_CACHING_STATUS_ACTION_NAME,
 					'capiPiiCachingStatusUpdateError'    => FacebookPluginConfig::CAPI_PII_CACHING_STATUS_UPDATE_ERROR,
-					'capiIntegrationEventsFilterSaveUrl' => $this->getCapiIntegrationEventsFilterSaveUrl(),
+					'capiIntegrationEventsFilterSaveUrl' => $this->get_capi_integration_events_filter_save_url(),
 					'capiIntegrationEventsFilterActionName' => FacebookPluginConfig::SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME,
 					'capiIntegrationEventsFilterUpdateError' => FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_UPDATE_ERROR,
 				)
 			),
 			'before'
 		);
-		return $initialScript;
+		return $initial_script;
 	}
 
-	public function getFbeSaveSettingsAjaxRoute() {
+	/**
+	 * Generates the AJAX route URL for saving FBE settings.
+	 *
+	 * This function creates a nonce for the AJAX action to ensure
+	 * security and constructs a URL for the admin-ajax.php endpoint
+	 * with the required query arguments, including the action name and nonce.
+	 *
+	 * @return string The URL with query arguments for the AJAX action.
+	 */
+	public function get_fbe_save_settings_ajax_route() {
 		$nonce_value = wp_create_nonce(
 			FacebookPluginConfig::SAVE_FBE_SETTINGS_ACTION_NAME
 		);
@@ -335,7 +420,16 @@ class FacebookWordpressSettingsPage {
 		return add_query_arg( $args, $simple_url );
 	}
 
-	public function getCapiIntegrationStatusSaveUrl() {
+	/**
+	 * Generates the AJAX route URL for saving CAPE integration status.
+	 *
+	 * This function creates a nonce for the AJAX action to ensure
+	 * security and constructs a URL for the admin-ajax.php endpoint
+	 * with the required query arguments, including the action name and nonce.
+	 *
+	 * @return string The URL with query arguments for the AJAX action.
+	 */
+	public function get_capi_integration_status_save_url() {
 		$nonce_value = wp_create_nonce(
 			FacebookPluginConfig::SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME
 		);
@@ -348,7 +442,16 @@ class FacebookWordpressSettingsPage {
 		return add_query_arg( $args, $simple_url );
 	}
 
-	public function getCapiIntegrationEventsFilterSaveUrl() {
+	/**
+	 * Generates the AJAX route URL for saving CAPE events filter.
+	 *
+	 * This function creates a nonce for the AJAX action to ensure
+	 * security and constructs a URL for the admin-ajax.php endpoint
+	 * with the required query arguments, including the action name and nonce.
+	 *
+	 * @return string The URL with query arguments for the AJAX action.
+	 */
+	public function get_capi_integration_events_filter_save_url() {
 		$nonce_value = wp_create_nonce(
 			FacebookPluginConfig::SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME
 		);
@@ -361,7 +464,16 @@ class FacebookWordpressSettingsPage {
 		return add_query_arg( $args, $simple_url );
 	}
 
-	public function getCapiPiiCachingStatusSaveUrl() {
+	/**
+	 * Generates the AJAX route URL for saving CAPI PII caching status.
+	 *
+	 * This function creates a nonce for the AJAX action to ensure
+	 * security and constructs a URL for the admin-ajax.php endpoint
+	 * with the required query arguments, including the action name and nonce.
+	 *
+	 * @return string The URL with query arguments for the AJAX action.
+	 */
+	public function get_capi_pii_caching_status_save_url() {
 		$nonce_value = wp_create_nonce(
 			FacebookPluginConfig::SAVE_CAPI_PII_CACHING_STATUS_ACTION_NAME
 		);
@@ -374,7 +486,16 @@ class FacebookWordpressSettingsPage {
 		return add_query_arg( $args, $simple_url );
 	}
 
-	public function getDeleteFbeSettingsAjaxRoute() {
+	/**
+	 * Generates the AJAX route URL for deleting FBE settings.
+	 *
+	 * This function creates a nonce for the AJAX action to ensure
+	 * security and constructs a URL for the admin-ajax.php endpoint
+	 * with the required query arguments, including the action name and nonce.
+	 *
+	 * @return string The URL with query arguments for the AJAX action.
+	 */
+	public function get_delete_fbe_settings_ajax_route() {
 		$nonce_value = wp_create_nonce(
 			FacebookPluginConfig::DELETE_FBE_SETTINGS_ACTION_NAME
 		);
@@ -386,7 +507,16 @@ class FacebookWordpressSettingsPage {
 		return add_query_arg( $args, $simple_url );
 	}
 
-	public function addSettingsLink( $links ) {
+	/**
+	 * Adds a settings link to the plugin action links.
+	 *
+	 * This function appends a "Settings" link to the given array of plugin action links.
+	 * The link directs the user to the Facebook Business Extension settings page.
+	 *
+	 * @param array $links An array of existing plugin action links.
+	 * @return array The modified array of plugin action links with the settings link added.
+	 */
+	public function add_settings_link( $links ) {
 		$settings = array(
 			'settings' => sprintf(
 				'<a href="%s">%s</a>',
@@ -400,30 +530,50 @@ class FacebookWordpressSettingsPage {
 		return array_merge( $settings, $links );
 	}
 
-	public function registerNotices() {
+	/**
+	 * Registers admin notices for the Facebook Business Extension.
+	 *
+	 * This function determines whether the Facebook Business Extension is installed
+	 * and whether the user has dismissed the notice. If the extension is not installed
+	 * and the user has not dismissed the notice, it registers the 'fbe_not_installed_notice'
+	 * function to display the notice. If the extension is installed and the user has not
+	 * dismissed the review notice, it registers the 'plugin_review_notice' function to
+	 * display the review notice.
+	 */
+	public function register_notices() {
 		$is_fbe_installed  = FacebookWordpressOptions::get_is_fbe_installed();
 		$current_screen_id = get_current_screen()->id;
 
 		if ( current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY ) &&
 		in_array( $current_screen_id, array( 'dashboard', 'plugins' ), true ) ) {
-			if ( $is_fbe_installed == '0' && ! get_user_meta(
+			if ( '0' === $is_fbe_installed && ! get_user_meta(
 				get_current_user_id(),
 				FacebookPluginConfig::ADMIN_IGNORE_FBE_NOT_INSTALLED_NOTICE,
 				true
 			) ) {
-				add_action( 'admin_notices', array( $this, 'fbeNotInstalledNotice' ) );
+				add_action( 'admin_notices', array( $this, 'fbe_not_installed_notice' ) );
 			}
-			if ( $is_fbe_installed == '1' && ! get_user_meta(
+			if ( '1' === $is_fbe_installed && ! get_user_meta(
 				get_current_user_id(),
 				FacebookPluginConfig::ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE,
 				true
 			) ) {
-				add_action( 'admin_notices', array( $this, 'pluginReviewNotice' ) );
+				add_action( 'admin_notices', array( $this, 'plugin_review_notice' ) );
 			}
 		}
 	}
 
-	public function getCustomizedFbeNotInstalledNotice() {
+	/**
+	 * Returns a customized message for the Facebook Business Extension not installed notice.
+	 *
+	 * This function determines if a valid pixel ID and access token are set. If both are set, it
+	 * suggests using the plugin to manage the connection to Meta. If only the pixel ID is set, it
+	 * highlights the Conversions API feature. If neither is set, it suggests completing the setup
+	 * steps.
+	 *
+	 * @return string The customized message.
+	 */
+	public function get_customized_fbe_not_installed_notice() {
 		$valid_pixel_id     = ! empty( FacebookWordpressOptions::get_pixel_id() );
 		$valid_access_token = ! empty( FacebookWordPressOptions::get_access_token() );
 		$message            = '';
@@ -450,7 +600,18 @@ class FacebookWordpressSettingsPage {
 		'<a href="%s">follow the setup steps.</a>';
 	}
 
-	public function setNotice( $notice, $dismiss_config, $notice_type ) {
+	/**
+	 * Displays a WordPress admin notice with a dismiss button.
+	 *
+	 * This function generates an HTML notice with the specified content and type,
+	 * which can be dismissed by the user. It constructs a URL for the settings
+	 * page and includes a button to dismiss the notice.
+	 *
+	 * @param string $notice The content of the notice, with a placeholder for the settings URL.
+	 * @param array  $dismiss_config Configuration for the dismissal URL query arguments.
+	 * @param string $notice_type The type of notice to display (e.g., 'warning', 'info').
+	 */
+	public function set_notice( $notice, $dismiss_config, $notice_type ) {
 		$url = admin_url(
 			'options-general.php?page=' .
 			FacebookPluginConfig::ADMIN_MENU_SLUG
@@ -472,49 +633,74 @@ class FacebookWordpressSettingsPage {
   </button>
 </div>
       ',
-			$notice_type,
-			$link,
+			esc_html( $notice_type ),
+			esc_html( $link ),
 			esc_url( add_query_arg( $dismiss_config, '' ) ),
 			esc_html__(
 				'Dismiss this notice.',
-				FacebookPluginConfig::TEXT_DOMAIN
+				'official-facebook-pixel'
 			)
 		);
 	}
 
-	public function pluginReviewNotice() {
+	/**
+	 * Displays a notice asking the user to leave a review for the plugin.
+	 *
+	 * If the user has not dismissed the review notice, this function generates
+	 * an HTML notice with a link to the plugin's review page and a dismiss button.
+	 *
+	 * @since 3.0.0
+	 */
+	public function plugin_review_notice() {
 		$message = sprintf(
 			'Let us know what you think about <strong>%s</strong>. ' .
 			'Leave a review on <a href="%s" target="_blank">this page</a>.',
 			FacebookPluginConfig::PLUGIN_NAME,
 			FacebookPluginConfig::PLUGIN_REVIEW_PAGE
 		);
-		$this->setNotice(
+		$this->set_notice(
 			__(
-				$message,
-				FacebookPluginConfig::TEXT_DOMAIN
+				$message, // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
+				'official-facebook-pixel'
 			),
 			FacebookPluginConfig::ADMIN_DISMISS_PLUGIN_REVIEW_NOTICE,
 			'info'
 		);
 	}
 
-	public function fbeNotInstalledNotice() {
-		$message = $this->getCustomizedFbeNotInstalledNotice();
-		$this->setNotice(
+	/**
+	 * Displays a notice indicating that the Facebook Business Extension is not installed.
+	 *
+	 * This function retrieves a customized message for the Facebook Business Extension not installed notice
+	 * and uses it to generate an HTML admin notice. The notice is dismissible and marked as a warning type.
+	 *
+	 * @since 3.0.0
+	 */
+	public function fbe_not_installed_notice() {
+		$message = $this->get_customized_fbe_not_installed_notice();
+		$this->set_notice(
 			__(
-				$message,
-				FacebookPluginConfig::TEXT_DOMAIN
+				$message, // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
+				'official-facebook-pixel'
 			),
 			FacebookPluginConfig::ADMIN_DISMISS_FBE_NOT_INSTALLED_NOTICE,
 			'warning'
 		);
 	}
 
-	public function dismissNotices() {
+	/**
+	 * Handles dismissals of admin notices.
+	 *
+	 * This function checks for the presence of query arguments that indicate a notice
+	 * should be dismissed. If such an argument is present, it updates the corresponding
+	 * user meta value to true, indicating that the notice should no longer be shown.
+	 *
+	 * @since 3.0.0
+	 */
+	public function dismiss_notices() {
 		$user_id = get_current_user_id();
 		if ( isset(
-			$_GET[ FacebookPluginConfig::ADMIN_DISMISS_FBE_NOT_INSTALLED_NOTICE ]
+			$_GET[ FacebookPluginConfig::ADMIN_DISMISS_FBE_NOT_INSTALLED_NOTICE ] // phpcs:ignore WordPress.Security.NonceVerification
 		) ) {
 			update_user_meta(
 				$user_id,
@@ -523,7 +709,7 @@ class FacebookWordpressSettingsPage {
 			);
 		}
 		if ( isset(
-			$_GET[ FacebookPluginConfig::ADMIN_DISMISS_PLUGIN_REVIEW_NOTICE ]
+			$_GET[ FacebookPluginConfig::ADMIN_DISMISS_PLUGIN_REVIEW_NOTICE ] // phpcs:ignore WordPress.Security.NonceVerification
 		) ) {
 			update_user_meta(
 				$user_id,

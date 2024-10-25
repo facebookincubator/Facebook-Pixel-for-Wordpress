@@ -55,7 +55,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
 		);
 		$settings_page   =
 			new FacebookWordpressSettingsPage( 'facebook_for_wordpress' );
-		$message         = $settings_page->getCustomizedFbeNotInstalledNotice();
+		$message         = $settings_page->get_customized_fbe_not_installed_notice();
 		$expected_prefix = sprintf(
 			'<strong>%s</strong> is almost ready.',
 			FacebookPluginConfig::PLUGIN_NAME
@@ -84,7 +84,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
 		);
 		$settings_page   =
 			new FacebookWordpressSettingsPage( 'facebook_for_wordpress' );
-		$message         = $settings_page->getCustomizedFbeNotInstalledNotice();
+		$message         = $settings_page->get_customized_fbe_not_installed_notice();
 		$expected_prefix = sprintf(
 			'<strong>%s</strong> gives you access to the Conversions API.',
 			FacebookPluginConfig::PLUGIN_NAME
@@ -112,7 +112,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
 		);
 		$settings_page   =
 			new FacebookWordpressSettingsPage( 'facebook_for_wordpress' );
-		$message         = $settings_page->getCustomizedFbeNotInstalledNotice();
+		$message         = $settings_page->get_customized_fbe_not_installed_notice();
 		$expected_prefix = sprintf(
 			'Easily manage your connection to Meta with <strong>%s</strong>.',
 			FacebookPluginConfig::PLUGIN_NAME
