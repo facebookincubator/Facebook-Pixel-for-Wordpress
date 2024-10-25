@@ -36,7 +36,7 @@ class FacebookWordpressPixelInjection {
 				'wp_head',
 				array( $this, 'injectPixelNoscriptCode' )
 			);
-			foreach ( FacebookPluginConfig::integrationConfig() as $key => $value ) {
+			foreach ( FacebookPluginConfig::integration_config() as $key => $value ) {
 					$class_name = 'FacebookPixelPlugin\\Integration\\' . $value;
 					$class_name::injectPixelCode();
 			}
