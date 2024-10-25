@@ -1,23 +1,33 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
-
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
 /**
+ * Facebook Pixel Plugin FacebookWordpressWPECommerce class.
+ *
+ * This file contains the main logic for FacebookWordpressWPECommerce.
+ *
  * @package FacebookPixelPlugin
  */
 
+/**
+ * Define FacebookWordpressWPECommerce class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
+
 namespace FacebookPixelPlugin\Integration;
 
-defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
+defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
@@ -25,19 +35,32 @@ use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\PixelRenderer;
 
+/**
+ * FacebookWordpressWPECommerce class.
+ */
 class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 	const PLUGIN_FILE   = 'wp-e-commerce/wp-e-commerce.php';
 	const TRACKING_NAME = 'wp-e-commerce';
 
+	/**
+	 * Injects Facebook Pixel events for WP eCommerce.
+	 *
+	 * This method sets up WordPress actions to inject Facebook Pixel events
+	 * for different stages of the WP eCommerce process:
+	 *
+	 * - AddToCart: Hooks into the JSON response after an item is added to the cart.
+	 * - InitiateCheckout: Fires a pixel event before the shopping cart page is displayed.
+	 * - Purchase: Triggers a pixel event after the transaction results are processed.
+	 *
+	 * Hooks are added with specific priorities to ensure correct execution order.
+	 */
 	public static function injectPixelCode() {
-		// AddToCart
 		add_action(
 			'wpsc_add_to_cart_json_response',
 			array( __CLASS__, 'injectAddToCartEvent' ),
 			11
 		);
 
-		// InitiateCheckout
 		self::addPixelFireForHook(
 			array(
 				'hook_name'       => 'wpsc_before_shopping_cart_page',
@@ -46,7 +69,6 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 			)
 		);
 
-		// Purchase
 		add_action(
 			'wpsc_transaction_results_shutdown',
 			array( __CLASS__, 'injectPurchaseEvent' ),
@@ -55,7 +77,16 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 		);
 	}
 
-	// Event hook for AddToCart.
+	/**
+	 * Injects Facebook Pixel code for add to cart events.
+	 *
+	 * This method is called from the `wpsc_add_to_cart_json_response` action hook.
+	 * It creates an "AddToCart" event and tracks it using the Facebook server-side
+	 * API. It then injects the Facebook Pixel code into the response.
+	 *
+	 * @param array $response The JSON response after an item is added to the cart.
+	 * @return array The modified response with the Facebook Pixel code added.
+	 */
 	public static function injectAddToCartEvent( $response ) {
 		if ( FacebookPluginUtils::isInternalUser() ) {
 			return $response;
@@ -83,6 +114,14 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 		return $response;
 	}
 
+	/**
+	 * Injects a Meta Pixel InitiateCheckout event.
+	 *
+	 * This method is called from the `wpsc_before_shopping_cart_page` action hook.
+	 * It injects a Meta Pixel InitiateCheckout event into the page whenever a shopping cart is rendered.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function injectInitiateCheckoutEvent() {
 		if ( FacebookPluginUtils::isInternalUser() ) {
 			return;
@@ -103,10 +142,24 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 %s
 <!-- End Meta Pixel Event Code -->
       ',
-			$code
+			esc_attr( $code )
 		);
 	}
 
+	/**
+	 * Injects a Meta Pixel Purchase event.
+	 *
+	 * This method is triggered by the `wpsc_transaction_results_shutdown` action hook.
+	 * It creates and tracks a "Purchase" event using the Facebook server-side API,
+	 * injecting the Facebook Pixel code into the page if the user is not internal and
+	 * the display_to_screen flag is true.
+	 *
+	 * @param object $purchase_log_object The purchase log object containing transaction details.
+	 * @param mixed  $session_id The session ID for the current user session.
+	 * @param bool   $display_to_screen Flag indicating whether to display the Pixel code on screen.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function injectPurchaseEvent(
 		$purchase_log_object,
 		$session_id,
@@ -132,10 +185,27 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 %s
 <!-- End Meta Pixel Event Code -->
      ',
-			$code
+			esc_attr( $code )
 		);
 	}
 
+	/**
+	 * Generates a Meta Pixel Purchase event data.
+	 *
+	 * The Purchase event is fired when a customer completes a purchase.
+	 * It is typically sent when a customer submits an order.
+	 *
+	 * The method loops through the items in the order and creates a
+	 * Meta Pixel Content object for each item. The method then sets the
+	 * content_type, currency, value, content_ids and contents fields in
+	 * the event data.
+	 *
+	 * @param object $purchase_log_object The purchase log object containing transaction details.
+	 *
+	 * @return array The event data.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function createPurchaseEvent( $purchase_log_object ) {
 		$event_data = FacebookPluginUtils::getLoggedInUserInfo();
 
@@ -146,7 +216,6 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 
 		$item_ids = array();
 		foreach ( $cart_items as $item ) {
-			// This is for backwards compatibility
 			$item_array = (array) $item;
 			$item_ids[] = $item_array['prodid'];
 		}
@@ -159,6 +228,24 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 		return $event_data;
 	}
 
+	/**
+	 * Generates a Meta Pixel AddToCart event data.
+	 *
+	 * The AddToCart event is fired when a customer adds a product to their
+	 * cart. It is typically sent when a customer adds a product to their
+	 * cart.
+	 *
+	 * The method loops through the items in the cart and creates a Meta Pixel
+	 * Content object for the product that was added to the cart. The method
+	 * then sets the content_type, currency, value, content_ids and contents
+	 * fields in the event data.
+	 *
+	 * @param int $product_id The product ID.
+	 *
+	 * @return array The event data.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function createAddToCartEvent( $product_id ) {
 		$event_data = FacebookPluginUtils::getLoggedInUserInfo();
 
@@ -181,6 +268,21 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 		return $event_data;
 	}
 
+	/**
+	 * Generates a Meta Pixel InitiateCheckout event data.
+	 *
+	 * The InitiateCheckout event is fired when a customer initiates a checkout.
+	 * It is typically sent when a customer clicks a "checkout" button
+	 * or submits an order.
+	 *
+	 * The method loops through the items in the cart and creates a Meta Pixel
+	 * Content object for each item. The method then sets the content_type,
+	 * currency, value, content_ids and contents fields in the event data.
+	 *
+	 * @return array The event data.
+	 *
+	 * @since 1.0.0
+	 */
 	public static function createInitiateCheckoutEvent() {
 		$event_data  = FacebookPluginUtils::getLoggedInUserInfo();
 		$content_ids = array();
