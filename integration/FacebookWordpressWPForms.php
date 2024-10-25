@@ -288,7 +288,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 		}
 
 		foreach ( $form_data['fields'] as $field ) {
-			if ( $field['type'] == $type ) {
+			if ( $field['type'] === $type ) {
 				return $entry['fields'][ $field['id'] ];
 			}
 		}
