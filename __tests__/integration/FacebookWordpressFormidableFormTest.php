@@ -53,7 +53,7 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
 		self::mockFacebookWordpressOptions();
 
 		$event = ServerEventFactory::newEvent( 'Lead' );
-		FacebookServerSideEvent::getInstance()->track( $event );
+		FacebookServerSideEvent::get_instance()->track( $event );
 
 		FacebookWordpressFormidableForm::injectLeadEvent();
 
@@ -94,7 +94,7 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
 		);
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -133,7 +133,7 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
 		);
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 

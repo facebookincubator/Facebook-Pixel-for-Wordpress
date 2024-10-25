@@ -86,7 +86,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		);
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -126,7 +126,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		FacebookWordpressEasyDigitalDownloads::trackPurchaseEvent( $payment, null );
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -196,7 +196,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 			'/easy-digital-downloads[\s\S]+End Meta Pixel Event Code/'
 		);
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -225,7 +225,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		FacebookWordpressEasyDigitalDownloads::injectAddToCartEventAjax();
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 

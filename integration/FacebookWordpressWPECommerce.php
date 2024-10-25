@@ -99,7 +99,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 			array( $product_id ),
 			self::TRACKING_NAME
 		);
-		FacebookServerSideEvent::getInstance()->track( $server_event );
+		FacebookServerSideEvent::get_instance()->track( $server_event );
 
 		$code                       = PixelRenderer::render( array( $server_event ), self::TRACKING_NAME );
 		$code                       = sprintf(
@@ -133,7 +133,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 			array(),
 			self::TRACKING_NAME
 		);
-		FacebookServerSideEvent::getInstance()->track( $server_event );
+		FacebookServerSideEvent::get_instance()->track( $server_event );
 
 		$code = PixelRenderer::render( array( $server_event ), self::TRACKING_NAME );
 		printf(
@@ -175,7 +175,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 			array( $purchase_log_object ),
 			self::TRACKING_NAME
 		);
-		FacebookServerSideEvent::getInstance()->track( $server_event );
+		FacebookServerSideEvent::get_instance()->track( $server_event );
 
 		$code = PixelRenderer::render( array( $server_event ), self::TRACKING_NAME );
 

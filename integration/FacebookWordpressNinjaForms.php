@@ -103,7 +103,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
 					self::TRACKING_NAME,
 					true
 				);
-				FacebookServerSideEvent::getInstance()->track( $event );
+				FacebookServerSideEvent::get_instance()->track( $event );
 
 				$pixel_code = PixelRenderer::render( array( $event ), self::TRACKING_NAME );
 				$code       = sprintf(

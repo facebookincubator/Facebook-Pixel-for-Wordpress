@@ -70,7 +70,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
 		FacebookWordpressWooCommerce::trackPurchaseEvent( 1 );
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -110,7 +110,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
 		FacebookWordpressWooCommerce::trackInitiateCheckout();
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -159,7 +159,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
 		FacebookWordpressWooCommerce::trackAddToCartEvent( 1, 1, 3, null );
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -210,7 +210,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 		FacebookWordpressWooCommerce::trackAddToCartEvent( 1, 1, 3, null );
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -254,7 +254,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 		FacebookWordpressWooCommerce::trackViewContentEvent();
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -315,7 +315,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 		self::mockFacebookWordpressOptions();
 
 		$server_event = new Event();
-		FacebookServerSideEvent::getInstance()->setPendingPixelEvent(
+		FacebookServerSideEvent::get_instance()->set_pending_pixel_event(
 			'addPixelCodeToAddToCartFragment',
 			$server_event
 		);

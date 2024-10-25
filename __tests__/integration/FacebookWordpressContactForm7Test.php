@@ -41,7 +41,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		);
 
 		$event = ServerEventFactory::newEvent( 'Lead' );
-		FacebookServerSideEvent::getInstance()->track( $event );
+		FacebookServerSideEvent::get_instance()->track( $event );
 
 		$response =
 		FacebookWordpressContactForm7::injectLeadEvent( $mock_response, null );
@@ -77,7 +77,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		FacebookWordpressContactForm7::trackServerEvent( $mock_form, $mock_result );
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -122,7 +122,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		);
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -159,7 +159,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		FacebookWordpressContactForm7::trackServerEvent( $mock_form, $mock_result );
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -205,7 +205,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		}
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 0, $tracked_events );
 	}

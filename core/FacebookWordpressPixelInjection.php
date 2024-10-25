@@ -49,7 +49,7 @@ class FacebookWordpressPixelInjection {
 
 	public function sendPendingEvents() {
 		$pending_events =
-		FacebookServerSideEvent::getInstance()->getPendingEvents();
+		FacebookServerSideEvent::get_instance()->get_pending_events();
 		if ( count( $pending_events ) > 0 ) {
 			do_action(
 				'send_server_events',

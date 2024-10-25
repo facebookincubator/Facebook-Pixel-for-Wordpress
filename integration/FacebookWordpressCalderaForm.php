@@ -90,7 +90,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
 			self::TRACKING_NAME,
 			true
 		);
-		FacebookServerSideEvent::getInstance()->track( $server_event );
+		FacebookServerSideEvent::get_instance()->track( $server_event );
 
 		$code = PixelRenderer::render( array( $server_event ), self::TRACKING_NAME );
 		$code = sprintf(
