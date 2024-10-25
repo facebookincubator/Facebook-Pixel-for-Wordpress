@@ -144,7 +144,7 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
 		}
 
 		$entry_values =
-		IntegrationUtils::getFormidableFormsEntryValues( $entry_id );
+		IntegrationUtils::get_formidable_forms_entry_values( $entry_id );
 
 		$field_values = $entry_values->get_field_values();
 		if ( ! empty( $field_values ) ) {

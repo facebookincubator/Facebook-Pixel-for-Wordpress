@@ -147,7 +147,7 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
 		$mock_utils = \Mockery::mock(
 			'alias:FacebookPixelPlugin\Integration\IntegrationUtils'
 		);
-		$mock_utils->shouldReceive( 'getFormidableFormsEntryValues' )->with( $entry_id )->andReturn( $entry_values );
+		$mock_utils->shouldReceive( 'get_formidable_forms_entry_values' )->with( $entry_id )->andReturn( $entry_values );
 	}
 
 	private static function setupMockFormidableForm( $entry_id ) {
@@ -188,6 +188,6 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
 		$mock_utils = \Mockery::mock(
 			'alias:FacebookPixelPlugin\Integration\IntegrationUtils'
 		);
-		$mock_utils->shouldReceive( 'getFormidableFormsEntryValues' )->with( $entry_id )->andReturn( $entry_values );
+		$mock_utils->shouldReceive( 'get_formidable_forms_entry_values' )->with( $entry_id )->andReturn( $entry_values );
 	}
 }
