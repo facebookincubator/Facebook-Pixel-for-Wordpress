@@ -1,17 +1,29 @@
 <?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
 /**
- * Copyright (C) 2017-present, Meta, Inc.
+ * Facebook Pixel Plugin FacebookWordpressSettingsPage class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordpressSettingsPage.
  *
  * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordpressSettingsPage class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Core;
 
@@ -96,12 +108,11 @@ class FacebookWordpressSettingsPage {
 		$this->options_page = add_options_page(
 			FacebookPluginConfig::ADMIN_PAGE_TITLE,
 			FacebookPluginConfig::ADMIN_MENU_TITLE,
-			FacebookPluginConfig::ADMIN_CAPABILITY,
+			FacebookPluginConfig::ADMIN_CAPABILITY, //phpcs:ignore WordPress.WP.Capabilities.Undetermined
 			FacebookPluginConfig::ADMIN_MENU_SLUG,
 			array( $this, 'add_fbe_box' )
 		);
 
-		// Adding option to save Capig Integration settings in wp_options.
 		\add_option(
 			FacebookPluginConfig::CAPI_INTEGRATION_STATUS,
 			FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT
@@ -124,7 +135,7 @@ class FacebookWordpressSettingsPage {
 	 * @return void
 	 */
 	public function add_fbe_box() {
-		if ( ! current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY ) ) {
+		if ( ! current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY ) ) { //phpcs:ignore WordPress.WP.Capabilities.Undetermined
 			wp_die(
 				esc_html__(
 					'You do not have sufficient permissions to access this page',
@@ -318,7 +329,7 @@ class FacebookWordpressSettingsPage {
 							<td>Event Type</td>
 							<td>Status</td>
 						</tr>
-					</thead>          
+					</thead>
 					<tbody></tbody>
 				</table>
 
@@ -544,7 +555,7 @@ class FacebookWordpressSettingsPage {
 		$is_fbe_installed  = FacebookWordpressOptions::get_is_fbe_installed();
 		$current_screen_id = get_current_screen()->id;
 
-		if ( current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY ) &&
+		if ( current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY ) && //phpcs:ignore WordPress.WP.Capabilities.Undetermined
 		in_array( $current_screen_id, array( 'dashboard', 'plugins' ), true ) ) {
 			if ( '0' === $is_fbe_installed && ! get_user_meta(
 				get_current_user_id(),
