@@ -1,15 +1,29 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin FacebookWordpressWPFormsTest class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordpressWPFormsTest.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordpressWPFormsTest class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
@@ -19,14 +33,17 @@ use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in seperate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
+ * FacebookWordpressWPFormsTest class.
  */
 final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
+	/**
+	 * Tests that the injectPixelCode method adds the correct WordPress hook.
+	 *
+	 * This test verifies that the 'wpforms_process_before' action hook is added
+	 * to trigger the 'trackEvent' method of the FacebookWordpressWPForms class.
+	 *
+	 * @return void
+	 */
 	public function testInjectPixelCode() {
 		\WP_Mock::expectActionAdded(
 			'wpforms_process_before',
@@ -39,6 +56,15 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 		$this->assertHooksAdded();
 	}
 
+	/**
+	 * Tests the injectLeadEvent method when the user is not an internal user.
+	 *
+	 * This test verifies that the Pixel code is correctly appended to the HTML output
+	 * when the user is not an internal user. It ensures that the output matches
+	 * the expected pattern for the "wpforms-lite" event.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWithoutInternalUser() {
 		parent::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -52,6 +78,15 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Tests the injectLeadEvent method when the user is an internal user.
+	 *
+	 * This test verifies that no Pixel code is appended to the HTML output
+	 * when the user is an internal user. It asserts that the output HTML remains
+	 * unchanged and that no events are tracked.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWithInternalUser() {
 		parent::mockIsInternalUser( true );
 		self::mockFacebookWordpressOptions();
@@ -60,6 +95,16 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 		$this->expectOutputString( '' );
 	}
 
+	/**
+	 * Tests the trackEvent method for a non-internal user.
+	 *
+	 * This test verifies that the Pixel code is correctly injected into the HTML
+	 * output and that the server-side event is tracked with the correct parameters
+	 * when the user is not an internal user. It asserts that the output HTML matches
+	 * the expected pattern for the "wpforms-lite" event.
+	 *
+	 * @return void
+	 */
 	public function testTrackEventWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -103,6 +148,17 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Tests the trackEvent method when the user is not an internal user,
+	 * and the form data is provided in the simple format.
+	 *
+	 * This test verifies that the server-side event is tracked with the correct
+	 * parameters when the user is not an internal user and the form data is
+	 * provided in the simple format. It ensures that the output HTML matches the
+	 * expected pattern for the "wpforms-lite" event.
+	 *
+	 * @return void
+	 */
 	public function testTrackEventWithoutInternalUserSimpleFormat() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -144,6 +200,18 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 		$this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
 	}
 
+	/**
+	 * Creates a mock entry with predefined field values.
+	 *
+	 * This method creates a mock entry with sample data including email,
+	 * first name, last name, phone, and address fields. It utilizes the
+	 * simple format or the first-last format for the name field, depending on
+	 * the value of the $simple_format parameter.
+	 *
+	 * @param bool $simple_format Whether to use the simple format for the name field.
+	 *
+	 * @return array The mock entry with predefined field values.
+	 */
 	private function createMockEntry( $simple_format = false ) {
 		return array(
 			'fields' => array(
@@ -165,6 +233,18 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Creates a mock form data object with predefined field values.
+	 *
+	 * This method creates a mock form data object with sample data including email,
+	 * first name, last name, phone, and address fields. It utilizes the
+	 * simple format or the first-last format for the name field, depending on
+	 * the value of the $simple_format parameter.
+	 *
+	 * @param bool $simple_format Whether to use the simple format for the name field.
+	 *
+	 * @return array The mock form data object with predefined field values.
+	 */
 	private function createMockFormData( $simple_format = false ) {
 		return array(
 			'fields' => array(
