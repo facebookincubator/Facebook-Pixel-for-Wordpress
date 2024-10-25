@@ -1,15 +1,29 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin FacebookWordpressNinjaFormsTest class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordpressNinjaFormsTest.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordpressNinjaFormsTest class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
@@ -18,14 +32,14 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in seperate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
+ * FacebookWordpressNinjaFormsTest class.
  */
 final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
+	/**
+	 * Tests that the injectPixelCode method adds the correct hooks to WordPress.
+	 *
+	 * @return void
+	 */
 	public function testInjectPixelCode() {
 		\WP_Mock::expectActionAdded(
 			'ninja_forms_submission_actions',
@@ -38,6 +52,18 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
 		$this->assertHooksAdded();
 	}
 
+	/**
+	 * Tests the injectLeadEvent method when the user is not an internal user.
+	 *
+	 * This test verifies that the Pixel code is appended to the HTML output
+	 * and that the server-side event is tracked with the correct parameters.
+	 * It ensures that the 'Lead' event is recorded with the expected user data,
+	 * including email, first name, last name, phone number, city, state, country,
+	 * zip code, and gender when the Ninja Forms integration is triggered.
+	 * It also checks that the event source URL is correctly set.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWithoutInternalUser() {
 		parent::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -94,6 +120,13 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
 		$this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
 	}
 
+	/**
+	 * Tests the injectLeadEvent method when the user is an internal user.
+	 *
+	 * This test verifies that the output HTML remains unchanged and that no events are tracked.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWithInternalUser() {
 		parent::mockIsInternalUser( true );
 
@@ -106,6 +139,11 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
 		$this->assertEquals( 'mock_actions', $result );
 	}
 
+	/**
+	 * Creates a mock form data object with some sample form tags.
+	 *
+	 * @return array
+	 */
 	private function getMockFormData() {
 		$email   = array(
 			'key'   => 'email',
