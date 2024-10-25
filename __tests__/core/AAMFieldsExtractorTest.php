@@ -143,7 +143,7 @@ final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
 		$this->mocked_options = \Mockery::mock(
 			'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
 		);
-		$this->mocked_options->shouldReceive( 'getAAMSettings' )->andReturn( $aam_settings );
+		$this->mocked_options->shouldReceive( 'get_aam_settings' )->andReturn( $aam_settings );
 		return $aam_settings;
 	}
 

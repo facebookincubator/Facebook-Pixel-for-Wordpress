@@ -88,7 +88,7 @@ class FacebookWordpressSettingsRecorder {
 
 		// Cross origin iframe and local WordPress options are not in sync.
 		// Thus if request is made and pixel is not available show error.
-		if ( empty( FacebookWordPressOptions::getPixelId() ) ) {
+		if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
 			// Reset wp_option value
 			\update_option(
 				FacebookPluginConfig::CAPI_INTEGRATION_STATUS,
@@ -117,7 +117,7 @@ class FacebookWordpressSettingsRecorder {
 
 		// Cross origin iframe and local WordPress options are not in sync.
 		// Thus if request is made and pixel is not available show error.
-		if ( empty( FacebookWordPressOptions::getPixelId() ) ) {
+		if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
 			// Reset wp_option value
 			\update_option(
 				FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
@@ -140,7 +140,7 @@ class FacebookWordpressSettingsRecorder {
 		}
 
 		$pageViewFiltered =
-			FacebookWordpressOptions::getCapiIntegrationPageViewFiltered();
+			FacebookWordpressOptions::get_capi_integration_page_view_filtered();
 
 		// If pageViewFiltered and new val are not in sync update option
 		if ( $val === $constKeepPageView && $pageViewFiltered ) {
@@ -166,7 +166,7 @@ class FacebookWordpressSettingsRecorder {
 
 		// Cross origin iframe and local WordPress options are not in sync.
 		// Thus if request is made and pixel is not available show error.
-		if ( empty( FacebookWordPressOptions::getPixelId() ) ) {
+		if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
 			// Reset wp_option value
 			\update_option(
 				FacebookPluginConfig::CAPI_PII_CACHING_STATUS,

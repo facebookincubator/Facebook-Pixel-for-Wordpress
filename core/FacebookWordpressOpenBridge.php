@@ -190,7 +190,7 @@ class FacebookWordpressOpenBridge {
 			FacebookPluginUtils::get_logged_in_user_info()
 		);
 		$capi_pii_caching_status =
-		FacebookWordpressOptions::getCapiPiiCachingStatus();
+		FacebookWordpressOptions::get_capi_pii_caching_status();
 
 		if ( empty( $current_user ) && '1' === $capi_pii_caching_status ) {
 

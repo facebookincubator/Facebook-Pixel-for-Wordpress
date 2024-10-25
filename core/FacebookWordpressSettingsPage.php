@@ -91,10 +91,10 @@ class FacebookWordpressSettingsPage {
 	}
 
 	private function getPreviousPixelIdMessage() {
-		if ( FacebookWordpressOptions::getIsFbeInstalled() ) {
+		if ( FacebookWordpressOptions::get_is_fbe_installed() ) {
 			return null;
 		}
-		$pixel_id = FacebookWordPressOptions::getPixelId();
+		$pixel_id = FacebookWordpressOptions::get_pixel_id();
 		if ( empty( $pixel_id ) ) {
 			return null;
 		}
@@ -118,7 +118,7 @@ class FacebookWordpressSettingsPage {
 				),
 				'setup'           => array(
 					'external_business_id' =>
-							FacebookWordpressOptions::getExternalBusinessId(),
+							FacebookWordpressOptions::get_external_business_id(),
 					'timezone'             => 'America/Los_Angeles',
 					'currency'             => 'USD',
 					'business_vertical'    => 'ECOMMERCE',
@@ -155,7 +155,7 @@ class FacebookWordpressSettingsPage {
 	</div>
 	</div>
 
-	<div class="events-manager-wrapper <?php echo empty( FacebookWordpressOptions::getPixelId() ) ? 'hidden' : ''; ?>">
+	<div class="events-manager-wrapper <?php echo empty( FacebookWordpressOptions::get_pixel_id() ) ? 'hidden' : ''; ?>">
 	<h3>Conversion API Tests</h3>
 
 	<div class="events-manager-container">
@@ -163,12 +163,12 @@ class FacebookWordpressSettingsPage {
 			<h3>Plugin Connected to Meta Events Manager</h3>
 
 			<p>Meta Events Manager is a tool that enables you to view and manage your event data. In Events Manager, you can set up, monitor and troubleshoot issues with your integrations, such as the Conversions API and Meta pixel.</p>
-			<p class="meta-event-manager">Visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>" target="_blank">Meta Events Manager</a> to view the events being tracked.</p>
+			<p class="meta-event-manager">Visit the <a href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::get_pixel_id(); ?>" target="_blank">Meta Events Manager</a> to view the events being tracked.</p>
 		</div>
 
 		<div class="pixel-block events-manager-block">
 			<label>Your Pixel ID</label>
-			<input type="text" id="pixel-id" placeholder="<?php echo FacebookWordpressOptions::getPixelId(); ?>" disabled />
+			<input type="text" id="pixel-id" placeholder="<?php echo FacebookWordpressOptions::get_pixel_id(); ?>" disabled />
 		</div>
 
 		<?php echo '<img class="test-form-img" src = ' . plugin_dir_url( __DIR__ ) . 'assets/event-log-head.png alt="Test form image">'; ?>
@@ -180,7 +180,7 @@ class FacebookWordpressSettingsPage {
 						<div class="test-hints__wrapper">
 							<span>&#63;</span>
 
-							<p>To obtain the Test Event Code, visit the Test Event section in the <a target="_blank" href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::getPixelId(); ?>/test_events"><b>Events Manager</b></a>.</p>
+							<p>To obtain the Test Event Code, visit the Test Event section in the <a target="_blank" href="https://business.facebook.com/events_manager2/list/pixel/<?php echo FacebookWordpressOptions::get_pixel_id(); ?>/test_events"><b>Events Manager</b></a>.</p>
 						</div>
 					</div>
 
@@ -300,16 +300,16 @@ class FacebookWordpressSettingsPage {
 				array(
 					'ajax_url'                           => admin_url( 'admin-ajax.php' ),
 					'send_capi_event_nonce'              => wp_create_nonce( 'send_capi_event_nonce' ),
-					'pixelId'                            => FacebookWordPressOptions::getPixelId(),
+					'pixelId'                            => FacebookWordpressOptions::get_pixel_id(),
 					'setSaveSettingsRoute'               => $this->getFbeSaveSettingsAjaxRoute(),
-					'externalBusinessId'                 => esc_html( FacebookWordpressOptions::getExternalBusinessId() ),
+					'externalBusinessId'                 => esc_html( FacebookWordpressOptions::get_external_business_id() ),
 					'deleteConfigKeys'                   => $this->getDeleteFbeSettingsAjaxRoute(),
-					'installed'                          => FacebookWordpressOptions::getIsFbeInstalled(),
-					'systemUserName'                     => esc_html( FacebookWordpressOptions::getExternalBusinessId() ),
-					'pixelString'                        => esc_html( FacebookWordpressOptions::getPixelId() ),
-					'piiCachingStatus'                   => FacebookWordpressOptions::getCapiPiiCachingStatus(),
+					'installed'                          => FacebookWordpressOptions::get_is_fbe_installed(),
+					'systemUserName'                     => esc_html( FacebookWordpressOptions::get_external_business_id() ),
+					'pixelString'                        => esc_html( FacebookWordpressOptions::get_pixel_id() ),
+					'piiCachingStatus'                   => FacebookWordpressOptions::get_capi_pii_caching_status(),
 					'fbAdvConfTop'                       => FacebookPluginConfig::CAPI_INTEGRATION_DIV_TOP,
-					'capiIntegrationPageViewFiltered'    => json_encode( FacebookWordpressOptions::getCapiIntegrationPageViewFiltered() ),
+					'capiIntegrationPageViewFiltered'    => json_encode( FacebookWordpressOptions::get_capi_integration_page_view_filtered() ),
 					'capiPiiCachingStatusSaveUrl'        => $this->getCapiPiiCachingStatusSaveUrl(),
 					'capiPiiCachingStatusActionName'     => FacebookPluginConfig::SAVE_CAPI_PII_CACHING_STATUS_ACTION_NAME,
 					'capiPiiCachingStatusUpdateError'    => FacebookPluginConfig::CAPI_PII_CACHING_STATUS_UPDATE_ERROR,
@@ -401,7 +401,7 @@ class FacebookWordpressSettingsPage {
 	}
 
 	public function registerNotices() {
-		$is_fbe_installed  = FacebookWordpressOptions::getIsFbeInstalled();
+		$is_fbe_installed  = FacebookWordpressOptions::get_is_fbe_installed();
 		$current_screen_id = get_current_screen()->id;
 
 		if ( current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY ) &&
@@ -424,8 +424,8 @@ class FacebookWordpressSettingsPage {
 	}
 
 	public function getCustomizedFbeNotInstalledNotice() {
-		$valid_pixel_id     = ! empty( FacebookWordPressOptions::getPixelId() );
-		$valid_access_token = ! empty( FacebookWordPressOptions::getAccessToken() );
+		$valid_pixel_id     = ! empty( FacebookWordpressOptions::get_pixel_id() );
+		$valid_access_token = ! empty( FacebookWordPressOptions::get_access_token() );
 		$message            = '';
 		$plugin_name_tag    = sprintf(
 			'<strong>%s</strong>',
