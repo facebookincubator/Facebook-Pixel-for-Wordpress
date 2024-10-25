@@ -81,7 +81,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
 	 * @return array An array of form submission actions with the injected code.
 	 */
 	public static function injectLeadEvent( $actions, $form_cache, $form_data ) {
-		if ( FacebookPluginUtils::isInternalUser() ) {
+		if ( FacebookPluginUtils::is_internal_user() ) {
 			return $actions;
 		}
 

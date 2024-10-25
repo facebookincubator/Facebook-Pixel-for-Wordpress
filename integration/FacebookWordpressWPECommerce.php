@@ -88,7 +88,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 	 * @return array The modified response with the Facebook Pixel code added.
 	 */
 	public static function injectAddToCartEvent( $response ) {
-		if ( FacebookPluginUtils::isInternalUser() ) {
+		if ( FacebookPluginUtils::is_internal_user() ) {
 			return $response;
 		}
 
@@ -123,7 +123,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 	 * @since 1.0.0
 	 */
 	public static function injectInitiateCheckoutEvent() {
-		if ( FacebookPluginUtils::isInternalUser() ) {
+		if ( FacebookPluginUtils::is_internal_user() ) {
 			return;
 		}
 
@@ -165,7 +165,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 		$session_id,
 		$display_to_screen
 	) {
-		if ( FacebookPluginUtils::isInternalUser() || ! $display_to_screen ) {
+		if ( FacebookPluginUtils::is_internal_user() || ! $display_to_screen ) {
 			return;
 		}
 
@@ -207,7 +207,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 	 * @since 1.0.0
 	 */
 	public static function createPurchaseEvent( $purchase_log_object ) {
-		$event_data = FacebookPluginUtils::getLoggedInUserInfo();
+		$event_data = FacebookPluginUtils::get_logged_in_user_info();
 
 		$cart_items  = $purchase_log_object->get_items();
 		$total_price = $purchase_log_object->get_total();
@@ -247,7 +247,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 	 * @since 1.0.0
 	 */
 	public static function createAddToCartEvent( $product_id ) {
-		$event_data = FacebookPluginUtils::getLoggedInUserInfo();
+		$event_data = FacebookPluginUtils::get_logged_in_user_info();
 
 		global $wpsc_cart;
 		$cart_items = $wpsc_cart->get_items();
@@ -284,7 +284,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 	 * @since 1.0.0
 	 */
 	public static function createInitiateCheckoutEvent() {
-		$event_data  = FacebookPluginUtils::getLoggedInUserInfo();
+		$event_data  = FacebookPluginUtils::get_logged_in_user_info();
 		$content_ids = array();
 
 		$value = 0;

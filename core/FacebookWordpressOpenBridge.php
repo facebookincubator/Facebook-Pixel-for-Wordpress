@@ -70,7 +70,7 @@ class FacebookWordpressOpenBridge {
 		$_SESSION[ self::EXTERNAL_ID_COOKIE ] = isset(
 			$_SESSION[ self::EXTERNAL_ID_COOKIE ]
 		) ? $_SESSION[ self::EXTERNAL_ID_COOKIE ]
-			: FacebookPluginUtils::newGUID();
+			: FacebookPluginUtils::new_guid();
 	}
 
 	public function handleOpenBridgeReq( $data ) {
@@ -124,7 +124,7 @@ class FacebookWordpressOpenBridge {
 
 	private static function getPIIFromSession() {
 		$current_user         = array_filter(
-			FacebookPluginUtils::getLoggedInUserInfo()
+			FacebookPluginUtils::get_logged_in_user_info()
 		);
 		$capiPiiCachingStatus =
 		FacebookWordpressOptions::getCapiPiiCachingStatus();
