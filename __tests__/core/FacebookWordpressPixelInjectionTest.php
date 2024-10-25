@@ -1,15 +1,29 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin FacebookWordpressPixelInjectionTest class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordpressPixelInjectionTest.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordpressPixelInjectionTest class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Core;
 
@@ -20,15 +34,14 @@ use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in separate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
+ * FacebookWordpressPixelInjectionTest class.
  */
 final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBase {
-
+	/**
+	 * List of supported integrations.
+	 *
+	 * @var array
+	 */
 	private static $integrations = array(
 		'FacebookWordpressCalderaForm',
 		'FacebookWordpressContactForm7',
@@ -39,16 +52,28 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 		'FacebookWordpressWPECommerce',
 	);
 
+	/**
+	 * Tests the inject method from the FacebookWordpressPixelInjection class.
+	 *
+	 * Verifies that the correct WordPress actions are added for the
+	 * inject_pixel_code and inject_pixel_noscript_code methods. Also verifies
+	 * that the sendServerEvents method is not added as an action.
+	 *
+	 * Checks that each integration injects the correct Pixel code by verifying
+	 * that the inject_pixel_code method is called on each integration class.
+	 *
+	 * @return void
+	 */
 	public function testPixelInjection() {
 		self::mockGetOption( 1234 );
-		$injectionObj = new FacebookWordpressPixelInjection();
+		$injection_obj = new FacebookWordpressPixelInjection();
 		\WP_Mock::expectActionAdded(
 			'wp_head',
-			array( $injectionObj, 'inject_pixel_code' )
+			array( $injection_obj, 'inject_pixel_code' )
 		);
 		\WP_Mock::expectActionAdded(
 			'wp_head',
-			array( $injectionObj, 'inject_pixel_noscript_code' )
+			array( $injection_obj, 'inject_pixel_noscript_code' )
 		);
 
 		$spies = array();
@@ -60,7 +85,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 
 		\WP_Mock::expectActionNotAdded(
 			'shutdown',
-			array( $injectionObj, 'sendServerEvents' )
+			array( $injection_obj, 'sendServerEvents' )
 		);
 
 		self::mockGetTransientAAMSettings(
@@ -70,13 +95,20 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 		);
 
 		FacebookWordpressOptions::initialize();
-		$injectionObj->inject();
+		$injection_obj->inject();
 
 		foreach ( $spies as $index => $spy ) {
 			$spy->shouldHaveReceived( 'inject_pixel_code' );
 		}
 	}
 
+	/**
+	 * Test that the FacebookWordpressPixelInjection class injects the
+	 * send_pending_events method into the wp_footer action when the
+	 * send_server_events option is set to true.
+	 *
+	 * @return void
+	 */
 	public function testServerEventSendingInjection() {
 		self::mockGetOption( 1234, 'abc' );
 		self::mockGetTransientAAMSettings(
@@ -84,15 +116,26 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 			false,
 			AAMSettingsFields::get_all_fields()
 		);
-		$injectionObj = new FacebookWordpressPixelInjection();
+		$injection_obj = new FacebookWordpressPixelInjection();
 		\WP_Mock::expectActionAdded(
 			'wp_footer',
-			array( $injectionObj, 'send_pending_events' )
+			array( $injection_obj, 'send_pending_events' )
 		);
 		FacebookWordpressOptions::initialize();
-		$injectionObj->inject();
+		$injection_obj->inject();
 	}
 
+	/**
+	 * Mocks the get_option function to return specified mock values.
+	 *
+	 * @param string $mock_pixel_id     The mock pixel ID to return.
+	 * @param string $mock_access_token The mock access token to return.
+	 *
+	 * This method sets up a mock for the get_option function, ensuring
+	 * that it returns the provided mock pixel ID and access token when
+	 * called. Useful for testing scenarios where specific WordPress
+	 * options need to be simulated.
+	 */
 	private function mockGetOption(
 		$mock_pixel_id = '',
 		$mock_access_token = ''
@@ -109,6 +152,19 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 		);
 	}
 
+	/**
+	 * Mocks the return value of get_transient for AAM settings.
+	 *
+	 * This function sets up a mock for the get_transient function to return
+	 * specific AAM settings. It allows testing scenarios that involve AAM
+	 * settings without relying on actual WordPress transients.
+	 *
+	 * @param string|null $pixel_id The mock pixel ID to return.
+	 * @param bool        $enable_aam Whether to mock AAM as enabled.
+	 * @param array       $aam_fields The mock enabled AAM fields.
+	 *
+	 * @return void
+	 */
 	private function mockGetTransientAAMSettings(
 		$pixel_id = null,
 		$enable_aam = false,
