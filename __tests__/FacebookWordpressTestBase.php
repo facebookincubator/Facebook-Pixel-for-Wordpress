@@ -1,15 +1,29 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin FacebookWordpressTestBase class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordpressTestBase.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordpressTestBase class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests;
 
@@ -17,11 +31,23 @@ use WP_Mock\Tools\TestCase;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookAds\Object\ServerSide\AdsPixelSettings;
 
+/**
+ * FacebookWordpressTestBase class.
+ */
 abstract class FacebookWordpressTestBase extends TestCase {
 
+	/**
+	 * Sets up the environment for each test.
+	 *
+	 * Initializes WP_Mock, sets the global WordPress version,
+	 * configures Mockery constants, and sets server variables
+	 * to simulate an HTTPS request to 'www.pikachu.com'.
+	 *
+	 * @return void
+	 */
 	public function setUp(): void {
 		\WP_Mock::setUp();
-		$GLOBALS['wp_version'] = '1.0';
+		$GLOBALS['wp_version'] = '1.0'; //phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 		\Mockery::getConfiguration()->setConstantsMap(
 			array(
 				'FacebookPixelPlugin\Core\FacebookPixel' => array(
@@ -35,6 +61,14 @@ abstract class FacebookWordpressTestBase extends TestCase {
 		$_SERVER['REQUEST_URI'] = '/index.php';
 	}
 
+	/**
+	 * Cleans up the environment after each test.
+	 *
+	 * Asserts that all Mockery expectations have been met, unsets the global
+	 * WordPress version, and calls `tearDown` on WP_Mock.
+	 *
+	 * @return void
+	 */
 	public function tearDown(): void {
 		$this->addToAssertionCount(
 			\Mockery::getContainer()->mockery_getExpectationCount()
@@ -43,12 +77,33 @@ abstract class FacebookWordpressTestBase extends TestCase {
 		\WP_Mock::tearDown();
 	}
 
+	/**
+	 * Mocks the return value of FacebookPluginUtils::isInternalUser().
+	 *
+	 * @param bool $is_internal_user Whether the user is an internal user.
+	 *
+	 * @return void
+	 */
 	protected function mockIsInternalUser( $is_internal_user ) {
 		$this->mocked_fbpixel = \Mockery::mock( 'alias:FacebookPixelPlugin\Core\FacebookPluginUtils' );
 		$this->mocked_fbpixel->shouldReceive( 'isInternalUser' )
 		->andReturn( $is_internal_user );
 	}
 
+	/**
+	 * Mocks the return value of FacebookWordpressOptions methods.
+	 *
+	 * This function mocks the return values of the FacebookWordpressOptions
+	 * class methods. The $options parameter is an associative array
+	 * where the keys are method names and the values are the return values
+	 * for those methods. If a key is not provided, the method will return
+	 * a default value.
+	 *
+	 * @param array            $options An associative array of method names and their
+	 *                                  return values.
+	 * @param AdsPixelSettings $aam_settings The return value for the
+	 *                                       getAAMSettings() method.
+	 */
 	protected function mockFacebookWordpressOptions(
 		$options = array(),
 		$aam_settings = null
@@ -77,7 +132,7 @@ abstract class FacebookWordpressTestBase extends TestCase {
 		} else {
 			$this->mocked_options->shouldReceive( 'getIsFbeInstalled' )->andReturn( '0' );
 		}
-		if ( $aam_settings == null ) {
+		if ( is_null( $aam_settings ) ) {
 			$this->mocked_options->shouldReceive( 'getAAMSettings' )->andReturn( $this->getDefaultAAMSettings() );
 		} else {
 			$this->mocked_options->shouldReceive( 'getAAMSettings' )->andReturn( $aam_settings );
@@ -86,6 +141,16 @@ abstract class FacebookWordpressTestBase extends TestCase {
 							->andReturn( 0 );
 	}
 
+
+	/**
+	 * Returns the default AdsPixelSettings object.
+	 *
+	 * The default AdsPixelSettings object returned by this method has the pixel ID
+	 * set to '123', automatic matching enabled, and all automatic matching fields
+	 * enabled.
+	 *
+	 * @return AdsPixelSettings The default AdsPixelSettings object.
+	 */
 	protected function getDefaultAAMSettings() {
 		$aam_settings = new AdsPixelSettings();
 		$aam_settings->setPixelId( '123' );
