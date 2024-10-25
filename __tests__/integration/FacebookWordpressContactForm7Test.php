@@ -1,15 +1,29 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin FacebookWordpressContactForm7Test class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordpressContactForm7Test.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordpressContactForm7Test class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
@@ -21,16 +35,18 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 
 /**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in separate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
+ * FacebookWordpressContactForm7Test class.
  */
-
 final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase {
 
+	/**
+	 * Tests the injectLeadEvent method when the user is not an internal user.
+	 *
+	 * This test verifies that the Pixel code is appended to the HTML output
+	 * and that the server-side event is tracked with the correct parameters.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -51,6 +67,14 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		);
 	}
 
+	/**
+	 * Tests the trackServerEvent method when the user is not an internal user.
+	 *
+	 * This test verifies that the Pixel code is appended to the HTML output
+	 * and that the server-side event is tracked with the correct parameters.
+	 *
+	 * @return void
+	 */
 	public function testTrackServerEventWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -95,6 +119,13 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		$this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
 	}
 
+	/**
+	 * Tests the trackServerEvent method when the user is not an internal user and
+	 * the form data is not available. This test verifies that the server-side event
+	 * is tracked with the correct parameters.
+	 *
+	 * @return void
+	 */
 	public function testTrackServerEventWithoutFormData() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -131,6 +162,15 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		$this->assertNotNull( $event->getEventTime() );
 	}
 
+	/**
+	 * Tests the trackServerEvent method when an error occurs while reading
+	 * the form data.
+	 *
+	 * This test verifies that the Pixel code is appended to the HTML output
+	 * and that the server-side event is tracked with the correct parameters.
+	 *
+	 * @return void
+	 */
 	public function testTrackServerEventErrorReadingData() {
 		$this->markTestSkipped('Skipping test temporarily while we update error handling.');
 		
@@ -168,6 +208,14 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		$this->assertNotNull( $event->getEventTime() );
 	}
 
+	/**
+	 * Tests the injectLeadEvent method when the user is an internal user.
+	 *
+	 * This test verifies that the output HTML does not contain the Pixel code
+	 * when the user is an internal user.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWithInternalUser() {
 		self::mockIsInternalUser( true );
 
@@ -181,6 +229,15 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		$this->assertArrayNotHasKey( 'fb_pxl_code', $response );
 	}
 
+	/**
+	 * Tests the injectLeadEvent method when the mail fails.
+	 *
+	 * This test verifies that no server-side events are tracked when the mail
+	 * status indicates failure (e.g., validation failed, spam, mail failed, etc.).
+	 * It asserts that the tracked events list is empty when such statuses occur.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWhenMailFails() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -210,6 +267,15 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		$this->assertCount( 0, $tracked_events );
 	}
 
+	/**
+	 * Creates a mock form object with some sample form tags.
+	 *
+	 * The sample form tags include email, text, and tel fields, with some
+	 * fictional sample data. This mock form object is used in the tests to
+	 * simulate a form submission.
+	 *
+	 * @return MockContactForm7 A mock form object with sample form tags.
+	 */
 	private function createMockForm() {
 		$mock_form = new MockContactForm7();
 
