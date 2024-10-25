@@ -1,15 +1,29 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin FacebookWordPressSettingsPageTest class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordPressSettingsPageTest.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordPressSettingsPageTest class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Core;
 
@@ -18,14 +32,20 @@ use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in separate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
+ * FacebookWordPressSettingsPageTest class.
  */
 final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase {
+	/**
+	 * Tests the getCustomizedFbeNotInstalledNotice method when both pixel ID
+	 * and access token are missing.
+	 *
+	 * This test verifies that the notice message returned by the method
+	 * starts with the expected prefix indicating the plugin is almost ready.
+	 * It ensures that the message is correctly formatted when no pixel ID
+	 * and access token are set.
+	 *
+	 * @return void
+	 */
 	public function testNotificationWithMissingPixel() {
 		$this->mockFacebookWordpressOptions(
 			array(
@@ -43,6 +63,18 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
 		$this->assertStringStartsWith( $expected_prefix, $message );
 	}
 
+	/**
+	 * Tests the getCustomizedFbeNotInstalledNotice method when the pixel ID is set
+	 * but the access token is missing.
+	 *
+	 * This test verifies that the notice message returned by the method
+	 * starts with the expected prefix indicating the plugin is almost ready
+	 * and that the Conversions API is available after installing the FBE.
+	 * It ensures that the message is correctly formatted when the pixel ID
+	 * is set but the access token is not set.
+	 *
+	 * @return void
+	 */
 	public function testNotificationWithValidPixelAndMissingAccessToken() {
 		$this->mockFacebookWordpressOptions(
 			array(
@@ -60,6 +92,17 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
 		$this->assertStringStartsWith( $expected_prefix, $message );
 	}
 
+	/**
+	 * Tests the getCustomizedFbeNotInstalledNotice method when both pixel ID
+	 * and access token are set.
+	 *
+	 * This test verifies that the notice message returned by the method
+	 * starts with the expected prefix indicating the plugin is ready to use.
+	 * It ensures that the message is correctly formatted when both pixel ID
+	 * and access token are set.
+	 *
+	 * @return void
+	 */
 	public function testNotificationWithValidPixelAndValidAccessToken() {
 		$this->mockFacebookWordpressOptions(
 			array(
