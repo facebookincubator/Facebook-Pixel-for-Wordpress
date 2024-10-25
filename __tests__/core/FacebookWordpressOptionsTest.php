@@ -310,14 +310,14 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 	 * it returns the given string when called. Useful for testing purposes
 	 * where the actual behavior of esc_js needs to be bypassed.
 	 *
-	 * @param string $string The string to be returned by the mocked esc_js function.
+	 * @param string $value The string to be returned by the mocked esc_js function.
 	 */
-	private function mockEscJs( $string = '1234' ) {
+	private function mockEscJs( $value = '1234' ) {
 		\WP_Mock::userFunction(
 			'esc_js',
 			array(
-				'args'   => $string,
-				'return' => $string,
+				'args'   => $value,
+				'return' => $value,
 			)
 		);
 	}
