@@ -1,25 +1,36 @@
-<?php
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
 /**
- * Copyright (C) 2015-present, Meta, Inc.
+ * Facebook Pixel Plugin AAMFieldsExtractor class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for AAMFieldsExtractor.
  *
  * @package FacebookPixelPlugin
  */
+
+/**
+ * Define AAMFieldsExtractor class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Core;
 
 use FacebookAds\Object\ServerSide\Normalizer;
 
 /**
- * AAMFieldsExtractor class.
+ * Class AAMFieldsExtractor
  */
 final class AAMFieldsExtractor {
 	/**
@@ -35,15 +46,12 @@ final class AAMFieldsExtractor {
 			return array();
 		}
 
-		// Removing fields not enabled in AAM settings.
 		foreach ( $user_data_array as $key => $value ) {
 			if ( ! in_array( $key, $aam_setttings->getEnabledAutomaticMatchingFields(), true ) ) {
 				unset( $user_data_array[ $key ] );
 			}
 		}
 
-		// Normalizing gender and date of birth
-		// According to https://developers.facebook.com/docs/facebook-pixel/advanced/advanced-matching.
 		if (
 		isset( $user_data_array[ AAMSettingsFields::GENDER ] ) &&
 		! empty( $user_data_array[ AAMSettingsFields::GENDER ] )
@@ -68,12 +76,7 @@ final class AAMFieldsExtractor {
 				}
 			}
 		}
-		// Given that the format of advanced matching fields is the same in
-		// the Pixel and the Conversions API,
-		// we can use the business sdk for normalization
-		// Compare the documentation:
-		// https://developers.facebook.com/docs/marketing-api/conversions-api/parameters/customer-information-parameters
-		// https://developers.facebook.com/docs/facebook-pixel/advanced/advanced-matching.
+
 		foreach ( $user_data_array as $field => $data ) {
 			try {
 				if ( is_array( $data ) ) {
