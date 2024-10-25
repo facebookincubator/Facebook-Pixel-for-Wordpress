@@ -44,11 +44,11 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 		$injectionObj = new FacebookWordpressPixelInjection();
 		\WP_Mock::expectActionAdded(
 			'wp_head',
-			array( $injectionObj, 'injectPixelCode' )
+			array( $injectionObj, 'inject_pixel_code' )
 		);
 		\WP_Mock::expectActionAdded(
 			'wp_head',
-			array( $injectionObj, 'injectPixelNoscriptCode' )
+			array( $injectionObj, 'inject_pixel_noscript_code' )
 		);
 
 		$spies = array();
@@ -73,7 +73,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 		$injectionObj->inject();
 
 		foreach ( $spies as $index => $spy ) {
-			$spy->shouldHaveReceived( 'injectPixelCode' );
+			$spy->shouldHaveReceived( 'inject_pixel_code' );
 		}
 	}
 
@@ -87,7 +87,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 		$injectionObj = new FacebookWordpressPixelInjection();
 		\WP_Mock::expectActionAdded(
 			'wp_footer',
-			array( $injectionObj, 'sendPendingEvents' )
+			array( $injectionObj, 'send_pending_events' )
 		);
 		FacebookWordpressOptions::initialize();
 		$injectionObj->inject();
