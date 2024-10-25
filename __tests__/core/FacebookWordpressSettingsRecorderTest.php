@@ -38,7 +38,7 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 	/**
 	 * Verifies that the Ajax actions are added to WordPress.
 	 *
-	 * We're verifying that the saveFbeSettings and deleteFbeSettings methods are
+	 * We're verifying that the save_fbe_settings and delete_fbe_settings methods are
 	 * properly added as Ajax actions in WordPress.
 	 *
 	 * @covers FacebookWordpressSettingsRecorder::init
@@ -47,11 +47,11 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 		$settings_recorder = new FacebookWordpressSettingsRecorder();
 		\WP_Mock::expectActionAdded(
 			'wp_ajax_save_fbe_settings',
-			array( $settings_recorder, 'saveFbeSettings' )
+			array( $settings_recorder, 'save_fbe_settings' )
 		);
 		\WP_Mock::expectActionAdded(
 			'wp_ajax_delete_fbe_settings',
-			array( $settings_recorder, 'deleteFbeSettings' )
+			array( $settings_recorder, 'delete_fbe_settings' )
 		);
 		$settings_recorder->init();
 	}
@@ -98,9 +98,9 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 	 * This test verifies that the FacebookWordpressSettingsRecorder class does not save
 	 * settings when the pixel ID, access token, or external business ID contain invalid
 	 * values. The test case sets up invalid values for the $_POST superglobal and
-	 * verifies that the saveFbeSettings method returns an error.
+	 * verifies that the save_fbe_settings method returns an error.
 	 *
-	 * @covers FacebookWordpressSettingsRecorder::saveFbeSettings
+	 * @covers FacebookWordpressSettingsRecorder::save_fbe_settings
 	 */
 	public function testDoesNotSaveInvalidSettings() {
 		$settings_recorder = new FacebookWordpressSettingsRecorder();
@@ -123,7 +123,7 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 			'success' => false,
 			'msg'     => 'Invalid values',
 		);
-		$result        = $settings_recorder->saveFbeSettings();
+		$result        = $settings_recorder->save_fbe_settings();
 		$this->assertEquals( $expected_json, $result );
 	}
 
@@ -132,11 +132,11 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 	 *
 	 * This test verifies that the FacebookWordpressSettingsRecorder class saves
 	 * settings when the current user is an administrator. It sets up valid values
-	 * for the $_POST superglobal and calls the saveFbeSettings method. The test
+	 * for the $_POST superglobal and calls the save_fbe_settings method. The test
 	 * verifies that the settings are saved correctly by comparing the result
 	 * with the expected output.
 	 *
-	 * @covers FacebookWordpressSettingsRecorder::saveFbeSettings
+	 * @covers FacebookWordpressSettingsRecorder::save_fbe_settings
 	 */
 	public function testSaveSettingsWithAdmin() {
 		$settings_recorder = new FacebookWordpressSettingsRecorder();
@@ -166,7 +166,7 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 					FacebookPluginConfig::IS_FBE_INSTALLED_KEY => '1',
 				),
 			);
-			$result        = $settings_recorder->saveFbeSettings();
+			$result        = $settings_recorder->save_fbe_settings();
 			$this->assertEquals( $expected_json, $result );
 		}
 	}
