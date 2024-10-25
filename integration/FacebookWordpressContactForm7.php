@@ -148,7 +148,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
 		}
 
 		$events = FacebookServerSideEvent::get_instance()->get_tracked_events();
-		if ( count( $events ) == 0 ) {
+		if ( count( $events ) === 0 ) {
 			return $response;
 		}
 		$event_id  = $events[0]->getEventId();
