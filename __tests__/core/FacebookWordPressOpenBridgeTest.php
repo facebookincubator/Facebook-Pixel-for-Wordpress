@@ -37,9 +37,9 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 		$_SESSION['obeid'] = 'GUID';
 
 		$event              = ServerEventFactory::newEvent( 'Lead' );
-		$openBridgeInstance = FacebookWordpressOpenBridge::getInstance();
+		$openBridgeInstance = FacebookWordpressOpenBridge::get_instance();
 
-		$ev = $openBridgeInstance->extractFromDatabag( $event );
+		$ev = $openBridgeInstance->extract_from_databag( $event );
 
 		$this->assertEquals( array( 'GUID' ), $ev['external_id'] );
 	}
@@ -129,9 +129,9 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 		$_SESSION['obeid'] = 'testObeid';
 
 		$event              = ServerEventFactory::newEvent( 'Lead' );
-		$openBridgeInstance = FacebookWordpressOpenBridge::getInstance();
+		$openBridgeInstance = FacebookWordpressOpenBridge::get_instance();
 
-		$ev = $openBridgeInstance->extractFromDatabag( $event );
+		$ev = $openBridgeInstance->extract_from_databag( $event );
 
 		$this->assertEquals( array( 'testObeid' ), $ev['external_id'] );
 	}
@@ -142,9 +142,9 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 		$_SESSION['obeid'] = 'testObeid';
 
 		$event              = ServerEventFactory::newEvent( 'Lead' );
-		$openBridgeInstance = FacebookWordpressOpenBridge::getInstance();
+		$openBridgeInstance = FacebookWordpressOpenBridge::get_instance();
 
-		$ev = $openBridgeInstance->extractFromDatabag( $event );
+		$ev = $openBridgeInstance->extract_from_databag( $event );
 
 		$this->assertEquals( array( '1', 'testObeid' ), $ev['external_id'] );
 	}
@@ -155,14 +155,14 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 		\WP_Mock::userFunction( 'get_current_user_id', array( 'return' => 0 ) );
 		$_SESSION['obeid'] = 'testObeid';
 
-		$openBridgeInstance = FacebookWordpressOpenBridge::getInstance();
+		$openBridgeInstance = FacebookWordpressOpenBridge::get_instance();
 		$event              = array(
 			'fb.advanced_matching' => array(
 				'external_id' => 'testAM',
 			),
 		);
 
-		$ev = $openBridgeInstance->extractFromDatabag( $event );
+		$ev = $openBridgeInstance->extract_from_databag( $event );
 
 		$this->assertEquals( array( 'testAM', 'testObeid' ), $ev['external_id'] );
 	}

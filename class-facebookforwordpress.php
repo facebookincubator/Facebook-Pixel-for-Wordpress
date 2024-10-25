@@ -120,7 +120,7 @@ class FacebookForWordpress {
 			) {
 				$data = json_decode( file_get_contents( 'php://input' ), true );
 				if ( ! is_null( $data ) ) {
-					FacebookWordpressOpenBridge::getInstance()->handleOpenBridgeReq(
+					FacebookWordpressOpenBridge::get_instance()->handle_open_bridge_req(
 						$data
 					);
 				}
