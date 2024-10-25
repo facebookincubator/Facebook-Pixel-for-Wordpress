@@ -33,7 +33,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 		self::mockGetTransientAAMSettings(
 			'1234',
 			true,
-			AAMSettingsFields::getAllFields()
+			AAMSettingsFields::get_all_fields()
 		);
 		\WP_Mock::expectActionAdded(
 			'init',
@@ -67,7 +67,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 		self::mockGetTransientAAMSettings(
 			'1234',
 			true,
-			AAMSettingsFields::getAllFields()
+			AAMSettingsFields::get_all_fields()
 		);
 		\WP_Mock::expectActionAdded(
 			'init',
@@ -94,7 +94,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 		self::mockGetTransientAAMSettings(
 			'1234',
 			true,
-			AAMSettingsFields::getAllFields()
+			AAMSettingsFields::get_all_fields()
 		);
 		\WP_Mock::expectActionAdded(
 			'init',
@@ -119,7 +119,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 		self::mockGetTransientAAMSettings(
 			'1234',
 			false,
-			AAMSettingsFields::getAllFields()
+			AAMSettingsFields::get_all_fields()
 		);
 		\WP_Mock::expectActionAdded(
 			'init',

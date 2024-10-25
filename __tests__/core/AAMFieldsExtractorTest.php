@@ -30,7 +30,7 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
 	public function testReturnsNormalizedDataWhenAAMEnabled() {
-		$this->mockUseAAM( '1234', true, AAMSettingsFields::getAllFields() );
+		$this->mockUseAAM( '1234', true, AAMSettingsFields::get_all_fields() );
 		$user_data_array      = $this->getSampleUserData();
 		$user_data_normalized =
 		AAMFieldsExtractor::get_normalized_user_data( $user_data_array );
@@ -81,7 +81,7 @@ final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
 	}
 
 	public function testReturnsArrayWithRequestedUserDataWhenAamEnabled() {
-		$possible_fields = AAMSettingsFields::getAllFields();
+		$possible_fields = AAMSettingsFields::get_all_fields();
 		$aam_settings    = $this->mockUseAAM( '1234', true );
 		$user_data_array = $this->getSampleUserData();
 		for ( $i = 0; $i < 25; $i += 1 ) {

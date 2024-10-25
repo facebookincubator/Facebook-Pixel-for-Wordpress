@@ -66,7 +66,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 		self::mockGetTransientAAMSettings(
 			1234,
 			false,
-			AAMSettingsFields::getAllFields()
+			AAMSettingsFields::get_all_fields()
 		);
 
 		FacebookWordpressOptions::initialize();
@@ -82,7 +82,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 		self::mockGetTransientAAMSettings(
 			'1234',
 			false,
-			AAMSettingsFields::getAllFields()
+			AAMSettingsFields::get_all_fields()
 		);
 		$injectionObj = new FacebookWordpressPixelInjection();
 		\WP_Mock::expectActionAdded(
