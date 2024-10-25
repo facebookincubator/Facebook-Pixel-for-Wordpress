@@ -26,7 +26,7 @@ Run the command to run tests and create the zip under build directory.
 
 # Enable pre-commit hooks
 
-To enable pre-commit hooks requirec command is
+To enable pre-commit hooks, run this command:
 
 `git config core.hooksPath .githooks`
 
