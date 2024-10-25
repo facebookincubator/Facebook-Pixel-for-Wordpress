@@ -119,6 +119,6 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	}
 
 	public function testGetPixelViewContentCode() {
-		$this->assertCodePattern( 'getPixelViewContentCode', 'ViewContent' );
+		$this->assertCodePattern( 'get_pixel_view_content_code', 'ViewContent' );
 	}
 }
