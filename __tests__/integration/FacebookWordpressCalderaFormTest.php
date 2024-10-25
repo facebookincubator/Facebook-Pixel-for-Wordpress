@@ -1,15 +1,29 @@
-<?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
+ * Facebook Pixel Plugin FacebookWordpressCalderaFormTest class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordpressCalderaFormTest.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordpressCalderaFormTest class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
@@ -20,14 +34,15 @@ use FacebookAds\Object\ServerSide\Event;
 use FacebookAds\Object\ServerSide\UserData;
 
 /**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in separate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
+ * FacebookWordpressCalderaFormTest class.
  */
 final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
+	/**
+	 * Tests that the injectPixelCode method adds the correct hooks to WordPress
+	 * and that no events are tracked after calling the method.
+	 *
+	 * @return void
+	 */
 	public function testInjectPixelCode() {
 		\WP_Mock::expectActionAdded(
 			'caldera_forms_ajax_return',
@@ -45,6 +60,15 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Tests the injectLeadEvent method for a non-internal user when the form submission is complete.
+	 *
+	 * This test checks that the Pixel code is correctly appended to the HTML output
+	 * when the form submission status is 'complete' and the user is not an internal user.
+	 * It verifies that the output HTML contains the expected Pixel code pattern.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWithoutInternalUserAndSubmitted() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -63,6 +87,15 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Tests the injectLeadEvent method for a non-internal user when the form submission is not complete.
+	 *
+	 * This test checks that the Pixel code is not appended to the HTML output
+	 * when the form submission status is not 'complete' and the user is not an internal user.
+	 * It verifies that the output HTML is not modified and the server-side event tracking list is empty.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWithoutInternalUserAndNotSubmitted() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -84,6 +117,15 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Tests the injectLeadEvent method for an internal user when the form submission is complete.
+	 *
+	 * This test verifies that no Pixel code is appended to the HTML output
+	 * when the user is an internal user, even if the form submission status is 'complete'.
+	 * It asserts that the output HTML remains unchanged and that no events are tracked.
+	 *
+	 * @return void
+	 */
 	public function testInjectLeadEventWithInternalUser() {
 		self::mockIsInternalUser( true );
 		self::mockFacebookWordpressOptions();
@@ -105,6 +147,12 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Tests the injectLeadEvent method when the form submission is complete and the user is not an internal user.
+	 *
+	 * This test verifies that the Pixel code is appended to the HTML output
+	 * and that the server-side event is tracked with the correct parameters.
+	 */
 	public function testSendLeadEventViaServerAPISuccessWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -145,6 +193,15 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 		$this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
 	}
 
+	/**
+	 * Tests the injectLeadEvent method when the form submission is not complete and the user is not an internal user.
+	 *
+	 * This test verifies that no Pixel code is appended to the HTML output and
+	 * that no server-side event is tracked when the form submission status is not 'complete'
+	 * and the user is not an internal user.
+	 *
+	 * @return void
+	 */
 	public function testSendLeadEventViaServerAPIFailureWithoutInternalUser() {
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
@@ -166,6 +223,15 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Tests the injectLeadEvent method when the form submission is complete and the user is an internal user.
+	 *
+	 * This test verifies that no Pixel code is appended to the HTML output and
+	 * that no server-side event is tracked when the form submission status is 'complete'
+	 * and the user is an internal user.
+	 *
+	 * @return void
+	 */
 	public function testSendLeadEventViaServerAPIFailureWithInternalUser() {
 		self::mockIsInternalUser( true );
 		self::mockFacebookWordpressOptions();
@@ -189,6 +255,11 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 		);
 	}
 
+	/**
+	 * Creates a mock form data array with email, first name, last name, phone, and state fields populated.
+	 *
+	 * @return array a mock form data array
+	 */
 	private static function createMockForm() {
 		$email_field = array(
 			'ID'   => 'fld_1',
