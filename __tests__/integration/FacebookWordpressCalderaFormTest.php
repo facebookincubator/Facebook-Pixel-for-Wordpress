@@ -41,7 +41,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
 		$this->assertCount(
 			0,
-			FacebookServerSideEvent::getInstance()->getTrackedEvents()
+			FacebookServerSideEvent::get_instance()->get_tracked_events()
 		);
 	}
 
@@ -80,7 +80,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
 		$this->assertCount(
 			0,
-			FacebookServerSideEvent::getInstance()->getTrackedEvents()
+			FacebookServerSideEvent::get_instance()->get_tracked_events()
 		);
 	}
 
@@ -101,7 +101,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
 		$this->assertCount(
 			0,
-			FacebookServerSideEvent::getInstance()->getTrackedEvents()
+			FacebookServerSideEvent::get_instance()->get_tracked_events()
 		);
 	}
 
@@ -126,7 +126,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 		);
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -162,7 +162,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
 		$this->assertCount(
 			0,
-			FacebookServerSideEvent::getInstance()->getTrackedEvents()
+			FacebookServerSideEvent::get_instance()->get_tracked_events()
 		);
 	}
 
@@ -185,7 +185,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 
 		$this->assertCount(
 			0,
-			FacebookServerSideEvent::getInstance()->getTrackedEvents()
+			FacebookServerSideEvent::get_instance()->get_tracked_events()
 		);
 	}
 

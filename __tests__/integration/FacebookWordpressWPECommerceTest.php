@@ -79,7 +79,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		);
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -125,7 +125,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		);
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 
@@ -177,7 +177,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		);
 
 		$tracked_events =
-		FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
 		$this->assertCount( 1, $tracked_events );
 

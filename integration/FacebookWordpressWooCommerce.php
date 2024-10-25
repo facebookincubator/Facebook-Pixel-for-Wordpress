@@ -170,7 +170,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 			self::TRACKING_NAME
 		);
 
-		FacebookServerSideEvent::getInstance()->track( $server_event, false );
+		FacebookServerSideEvent::get_instance()->track( $server_event, false );
 
 		self::enqueuePixelCode( $server_event );
 	}
@@ -241,7 +241,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 			self::TRACKING_NAME
 		);
 
-		FacebookServerSideEvent::getInstance()->track( $server_event );
+		FacebookServerSideEvent::get_instance()->track( $server_event );
 
 		self::enqueuePixelCode( $server_event );
 	}
@@ -336,7 +336,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 
 		$is_ajax_request = wp_doing_ajax();
 
-		FacebookServerSideEvent::getInstance()->track(
+		FacebookServerSideEvent::get_instance()->track(
 			$server_event,
 			$is_ajax_request
 		);
@@ -344,7 +344,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 		if ( ! $is_ajax_request ) {
 			self::enqueuePixelCode( $server_event );
 		} else {
-			FacebookServerSideEvent::getInstance()->setPendingPixelEvent(
+			FacebookServerSideEvent::get_instance()->set_pending_pixel_event(
 				'addPixelCodeToAddToCartFragment',
 				$server_event
 			);
@@ -371,8 +371,8 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 	 */
 	public static function addPixelCodeToAddToCartFragment( $fragments ) {
 		$server_event =
-		FacebookServerSideEvent::getInstance()
-		->getPendingPixelEvent( 'addPixelCodeToAddToCartFragment' );
+		FacebookServerSideEvent::get_instance()
+		->get_pending_pixel_event( 'addPixelCodeToAddToCartFragment' );
 		if ( ! is_null( $server_event ) ) {
 			$pixel_code = self::generatePixelCode( $server_event, true );
 			$fragments[ '#' . self::DIV_ID_FOR_AJAX_PIXEL_EVENTS ] =
@@ -436,7 +436,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 			self::TRACKING_NAME
 		);
 
-		FacebookServerSideEvent::getInstance()->track( $server_event );
+		FacebookServerSideEvent::get_instance()->track( $server_event );
 
 		self::enqueuePixelCode( $server_event );
 	}

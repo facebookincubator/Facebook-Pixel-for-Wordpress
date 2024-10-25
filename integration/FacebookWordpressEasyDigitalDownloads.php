@@ -153,7 +153,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 					self::TRACKING_NAME
 				);
 				$server_event->setEventId( $event_id );
-				FacebookServerSideEvent::getInstance()->track( $server_event );
+				FacebookServerSideEvent::get_instance()->track( $server_event );
 			}
 		}
 	}
@@ -214,7 +214,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			array(),
 			self::TRACKING_NAME
 		);
-		FacebookServerSideEvent::getInstance()->track( $server_event );
+		FacebookServerSideEvent::get_instance()->track( $server_event );
 
 		$code = PixelRenderer::render( array( $server_event ), self::TRACKING_NAME );
 		printf(
@@ -249,7 +249,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			array( $payment ),
 			self::TRACKING_NAME
 		);
-		FacebookServerSideEvent::getInstance()->track( $server_event );
+		FacebookServerSideEvent::get_instance()->track( $server_event );
 
 		add_action(
 			'wp_footer',
@@ -267,7 +267,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 	 * @since 1.0.0
 	 */
 	public static function injectPurchaseEvent() {
-		$events = FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		$events = FacebookServerSideEvent::get_instance()->get_tracked_events();
 		$code   = PixelRenderer::render( $events, self::TRACKING_NAME );
 
 		printf(
@@ -303,7 +303,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			self::TRACKING_NAME
 		);
 
-		FacebookServerSideEvent::getInstance()->track( $server_event );
+		FacebookServerSideEvent::get_instance()->track( $server_event );
 
 		$code = PixelRenderer::render( array( $server_event ), self::TRACKING_NAME );
 		printf(

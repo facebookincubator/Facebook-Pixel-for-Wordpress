@@ -89,7 +89,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 			self::TRACKING_NAME,
 			true
 		);
-		FacebookServerSideEvent::getInstance()->track( $server_event );
+		FacebookServerSideEvent::get_instance()->track( $server_event );
 
 		add_action(
 			'wp_footer',
@@ -114,7 +114,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 			return;
 		}
 
-		$events     = FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		$events     = FacebookServerSideEvent::get_instance()->get_tracked_events();
 		$pixel_code = PixelRenderer::render( $events, self::TRACKING_NAME );
 
 		printf(
