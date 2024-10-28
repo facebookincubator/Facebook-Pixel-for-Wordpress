@@ -147,7 +147,7 @@ class FacebookWordpressSettingsPage {
 		if ( $pixel_id_message ) {
 			echo esc_html( $pixel_id_message );
 		}
-		echo $this->get_fbe_browser_settings(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo wp_kses_post( $this->get_fbe_browser_settings() );
 		wp_enqueue_script( 'fbe_allinone_script' );
 	}
 
