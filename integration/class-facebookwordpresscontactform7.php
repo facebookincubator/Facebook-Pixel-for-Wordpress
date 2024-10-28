@@ -89,7 +89,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
 	<!-- End Meta Pixel Event Code -->
 		<?php
 		$listener_code = ob_get_clean();
-		echo wp_kses_post( $listener_code );
+		echo $listener_code; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
