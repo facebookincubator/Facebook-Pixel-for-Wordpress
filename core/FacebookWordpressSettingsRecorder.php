@@ -103,7 +103,7 @@ class FacebookWordpressSettingsRecorder {
 	 * @return array response data
 	 */
 	public function save_fbe_settings() {
-		if ( ! current_user_can( 'administrator' ) ) { // phpcs:ignore WordPress.WP.Capabilities
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return $this->handle_unauthorized_request();
 		}
 		check_admin_referer(
@@ -146,7 +146,7 @@ class FacebookWordpressSettingsRecorder {
 	 * @return array response data
 	 */
 	public function save_capi_integration_status() {
-		if ( ! current_user_can( 'administrator' ) ) { // phpcs:ignore WordPress.WP.Capabilities
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return $this->handle_unauthorized_request();
 		}
 
@@ -187,7 +187,7 @@ class FacebookWordpressSettingsRecorder {
 	 * @return array response data
 	 */
 	public function save_capi_integration_events_filter() {
-		if ( ! current_user_can( 'administrator' ) ) { // phpcs:ignore WordPress.WP.Capabilities
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return $this->handle_unauthorized_request();
 		}
 
@@ -248,7 +248,7 @@ class FacebookWordpressSettingsRecorder {
 	 * @return array response data
 	 */
 	public function save_capi_pii_caching_status() {
-		if ( ! current_user_can( 'administrator' ) ) { // phpcs:ignore WordPress.WP.Capabilities
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return $this->handle_unauthorized_request();
 		}
 
@@ -287,7 +287,7 @@ class FacebookWordpressSettingsRecorder {
 	 * @return array response data
 	 */
 	public function delete_fbe_settings() {
-		if ( ! current_user_can( 'administrator' ) ) { // phpcs:ignore WordPress.WP.Capabilities
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return $this->handle_unauthorized_request();
 		}
 		check_admin_referer(
