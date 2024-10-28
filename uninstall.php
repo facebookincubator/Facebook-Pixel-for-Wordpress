@@ -1,4 +1,11 @@
-<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+<?php
+/**
+ * Define Uninstall script.
+ *
+ * @package FacebookPixelPlugin
+ *
+ * @return void
+ */
 
 /*
 * Copyright (C) 2017-present, Meta, Inc.
