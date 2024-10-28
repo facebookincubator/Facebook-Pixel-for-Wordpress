@@ -85,7 +85,7 @@ class ServerEventFactory {
 
 		foreach ( $headers_to_scan as $header ) {
 			if ( isset( $_SERVER[ $header ] ) ) {
-				$ip_list = explode( ',', wp_unslash( $_SERVER[ $header ] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+				$ip_list = explode( ',', sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) ) );
 				foreach ( $ip_list as $ip ) {
 					$trimmed_ip = trim( $ip );
 					if ( self::is_valid_ip_address( $trimmed_ip ) ) {
@@ -107,7 +107,7 @@ class ServerEventFactory {
 		$user_agent = null;
 
 		if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) ) {
-			$user_agent = wp_unslash( $_SERVER['HTTP_USER_AGENT'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			$user_agent = sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) );
 		}
 
 		return $user_agent;
@@ -127,7 +127,7 @@ class ServerEventFactory {
 	 */
 	private static function get_request_uri( $prefer_referrer_for_event_src ) {
 		if ( $prefer_referrer_for_event_src && ! empty( $_SERVER['HTTP_REFERER'] ) ) {
-			return wp_unslash( $_SERVER['HTTP_REFERER'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			return sanitize_text_field( wp_unslash( $_SERVER['HTTP_REFERER'] ) );
 		}
 
 		$url = 'http://';
@@ -136,11 +136,11 @@ class ServerEventFactory {
 		}
 
 		if ( ! empty( $_SERVER['HTTP_HOST'] ) ) {
-			$url .= wp_unslash( $_SERVER['HTTP_HOST'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			$url .= sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) );
 		}
 
 		if ( ! empty( $_SERVER['REQUEST_URI'] ) ) {
-			$url .= wp_unslash( $_SERVER['REQUEST_URI'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			$url .= sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 		}
 
 		return $url;
@@ -159,7 +159,7 @@ class ServerEventFactory {
 		$fbp = null;
 
 		if ( ! empty( $_COOKIE['_fbp'] ) ) {
-			$fbp = wp_unslash( $_COOKIE['_fbp'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			$fbp = sanitize_text_field( wp_unslash( $_COOKIE['_fbp'] ) );
 		}
 
 		return $fbp;
@@ -182,18 +182,18 @@ class ServerEventFactory {
 		$fbc = null;
 
 		if ( ! empty( $_COOKIE['_fbc'] ) ) {
-			$fbc              = wp_unslash( $_COOKIE['_fbc'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			$fbc              = sanitize_text_field( wp_unslash( $_COOKIE['_fbc'] ) );
 			$_SESSION['_fbc'] = $fbc;
 		}
 
 		if ( ! $fbc && isset( $_GET['fbclid'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
-			$fbclid   = wp_unslash( $_GET['fbclid'] ); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+			$fbclid   = sanitize_text_field( wp_unslash( $_GET['fbclid'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
 			$cur_time = (int) ( microtime( true ) * 1000 );
 			$fbc      = 'fb.1.' . $cur_time . '.' . rawurldecode( $fbclid );
 		}
 
 		if ( ! $fbc && isset( $_SESSION['_fbc'] ) ) {
-			$fbc = $_SESSION['_fbc']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			$fbc = sanitize_text_field( $_SESSION['_fbc'] );
 		}
 
 		if ( $fbc ) {
