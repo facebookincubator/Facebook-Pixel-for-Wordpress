@@ -1,4 +1,4 @@
-<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+<?php
 /**
  * Copyright (C) 2017-present, Meta, Inc.
  *
