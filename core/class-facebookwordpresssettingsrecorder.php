@@ -150,10 +150,7 @@ class FacebookWordpressSettingsRecorder {
 			return $this->handle_unauthorized_request();
 		}
 
-		// Cross origin iframe and local WordPress options are not in sync.
-		// Thus if request is made and pixel is not available show error.
 		if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
-			// Reset wp_option value.
 			\update_option(
 				FacebookPluginConfig::CAPI_INTEGRATION_STATUS,
 				FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT
@@ -191,10 +188,7 @@ class FacebookWordpressSettingsRecorder {
 			return $this->handle_unauthorized_request();
 		}
 
-		// Cross origin iframe and local WordPress options are not in sync.
-		// Thus if request is made and pixel is not available show error.
 		if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
-			// Reset wp_option value.
 			\update_option(
 				FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
 				FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT
@@ -218,7 +212,6 @@ class FacebookWordpressSettingsRecorder {
 		$page_view_filtered =
 			FacebookWordpressOptions::get_capi_integration_page_view_filtered();
 
-		// If page_view_filtered and new val are not in sync update option.
 		if ( $val === $const_keep_page_view && $page_view_filtered ) {
 			\update_option(
 				FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
@@ -252,10 +245,7 @@ class FacebookWordpressSettingsRecorder {
 			return $this->handle_unauthorized_request();
 		}
 
-		// Cross origin iframe and local WordPress options are not in sync.
-		// Thus if request is made and pixel is not available show error.
 		if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
-			// Reset wp_option value.
 			\update_option(
 				FacebookPluginConfig::CAPI_PII_CACHING_STATUS,
 				FacebookPluginConfig::CAPI_PII_CACHING_STATUS_DEFAULT
@@ -295,8 +285,7 @@ class FacebookWordpressSettingsRecorder {
 		);
 		\delete_option( FacebookPluginConfig::SETTINGS_KEY );
 		\delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
-		// Cross origin iframe and local WordPress options are not in sync.
-		// Thus do not delete Capi option along with Fbe.
+
 		return $this->handle_success_request( 'Done' );
 	}
 }

@@ -45,20 +45,21 @@ class FacebookServerSideEvent {
 	 * @var FacebookServerSideEvent
 	 */
 	private static $instance = null;
+
 	/**
 	 * Contains all the events triggered during the request.
 	 *
 	 * @var FacebookServerSideEvent
 	 */
 	private $tracked_events = array();
+
 	/**
 	 * Contains all Conversions API events that have not been sent.
 	 *
 	 * @var FacebookServerSideEvent
 	 */
 	private $pending_events = array();
-	// Maps a callback name with a Conversions API event
-	// that hasn't been rendered as pixel event.
+
 	/**
 	 * Maps a callback name with a Conversions API event
 	 * that hasn't been rendered as pixel event.
