@@ -664,16 +664,13 @@ class FacebookWordpressSettingsPage {
 	 */
 	public function plugin_review_notice() {
 		$message = sprintf(
-			'Let us know what you think about <strong>%s</strong>. ' .
-			'Leave a review on <a href="%s" target="_blank">this page</a>.',
+			/* translators: %1$s: Plugin name, %2$s: Review page URL */
+			__( 'Let us know what you think about <strong>%1$s</strong>. Leave a review on <a href="%2$s" target="_blank">this page</a>.', 'official-facebook-pixel' ),
 			FacebookPluginConfig::PLUGIN_NAME,
 			FacebookPluginConfig::PLUGIN_REVIEW_PAGE
 		);
 		$this->set_notice(
-			__(
-				$message, // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
-				'official-facebook-pixel'
-			),
+			$message,
 			FacebookPluginConfig::ADMIN_DISMISS_PLUGIN_REVIEW_NOTICE,
 			'info'
 		);
@@ -690,10 +687,7 @@ class FacebookWordpressSettingsPage {
 	public function fbe_not_installed_notice() {
 		$message = $this->get_customized_fbe_not_installed_notice();
 		$this->set_notice(
-			__(
-				$message, // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
-				'official-facebook-pixel'
-			),
+			$message,
 			FacebookPluginConfig::ADMIN_DISMISS_FBE_NOT_INSTALLED_NOTICE,
 			'warning'
 		);
