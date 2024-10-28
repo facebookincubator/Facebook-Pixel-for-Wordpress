@@ -171,11 +171,11 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 	 */
 	protected function run_action() {
 		try {
-			$num_events = isset( $_POST['num_events'] ) ? wp_unslash( $_POST['num_events'] ) : null; //phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$num_events = isset( $_POST['num_events'] ) ? sanitize_text_field( wp_unslash( $_POST['num_events'] ) ) : null; //phpcs:ignore WordPress.Security.NonceVerification.Missing
 			if ( 0 === $num_events ) {
 				return;
 			}
-			$events_as_array = json_decode( base64_decode( isset( $_POST['event_data'] ) ? wp_unslash( $_POST['event_data'] ) : null ), true ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+			$events_as_array = json_decode( base64_decode( isset( $_POST['event_data'] ) ? sanitize_text_field( wp_unslash( $_POST['event_data'] ) ) : null ), true ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 			if ( ! $events_as_array ) {
 				return;
 			}
