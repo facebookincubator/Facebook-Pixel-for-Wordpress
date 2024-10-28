@@ -96,7 +96,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
 			}
 
 			if ( 'successmessage' === $type ) {
-				$event = ServerEventFactory::safeCreateEvent(
+				$event = ServerEventFactory::safe_create_event(
 					'Lead',
 					array( __CLASS__, 'readFormData' ),
 					array( $form_data ),
@@ -187,7 +187,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
 	private static function getName( $form_data ) {
 		$name = self::getField( $form_data, 'name' );
 		if ( $name ) {
-			return ServerEventFactory::splitName( $name );
+			return ServerEventFactory::split_name( $name );
 		}
 		return null;
 	}

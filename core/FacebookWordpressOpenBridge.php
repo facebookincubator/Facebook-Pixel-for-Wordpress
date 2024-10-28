@@ -137,7 +137,7 @@ class FacebookWordpressOpenBridge {
 		if ( in_array( $event_name, self::$blocked_events, true ) ) {
 			return;
 		}
-		$event = ServerEventFactory::safeCreateEvent(
+		$event = ServerEventFactory::safe_create_event(
 			$event_name,
 			array( $this, 'extract_from_databag' ),
 			array( $data ),

@@ -1,5 +1,5 @@
-<?php
-/*
+<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+/**
  * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -9,9 +9,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- */
-
-/**
+ *
  * @package FacebookPixelPlugin
  */
 
@@ -27,25 +25,39 @@ use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\EventIdGenerator;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 
-defined( 'ABSPATH' ) or die( 'Direct access not allowed' );
+defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
+/**
+ * Class ServerEventFactory
+ */
 class ServerEventFactory {
-	public static function newEvent(
+	/**
+	 * Returns a new Event with the given name, populated with the current request's
+	 * user agent, IP address, and Facebook Browser IDs, as well as the current time
+	 * and a unique event ID.
+	 *
+	 * @param string  $event_name The name of the event to create.
+	 * @param boolean $prefer_referrer_for_event_src Whether to prefer the referrer
+	 *                                              URL over the current request URL
+	 *                                              as the event source URL.
+	 * @return Event
+	 */
+	public static function new_event(
 		$event_name,
 		$prefer_referrer_for_event_src = false
 	) {
 		$user_data = ( new UserData() )
-					->setClientIpAddress( self::getIpAddress() )
-					->setClientUserAgent( self::getHttpUserAgent() )
-					->setFbp( self::getFbp() )
-					->setFbc( self::getFbc() );
+					->setClientIpAddress( self::get_ip_address() )
+					->setClientUserAgent( self::get_http_user_agent() )
+					->setFbp( self::get_fbp() )
+					->setFbc( self::get_fbc() );
 
 		$event = ( new Event() )
 				->setEventName( $event_name )
 				->setEventTime( time() )
 				->setEventId( EventIdGenerator::guidv4() )
 				->setEventSourceUrl(
-					self::getRequestUri( $prefer_referrer_for_event_src )
+					self::get_request_uri( $prefer_referrer_for_event_src )
 				)
 				->setActionSource( 'website' )
 				->setUserData( $user_data )
@@ -54,8 +66,14 @@ class ServerEventFactory {
 		return $event;
 	}
 
-	private static function getIpAddress() {
-		$HEADERS_TO_SCAN = array(
+	/**
+	 * Scans the HTTP headers for the first valid IP address it can find.
+	 *
+	 * @return string|null The first valid IP address found, or null if none
+	 *                     were found.
+	 */
+	private static function get_ip_address() {
+		$headers_to_scan = array(
 			'HTTP_CLIENT_IP',
 			'HTTP_X_FORWARDED_FOR',
 			'HTTP_X_FORWARDED',
@@ -65,12 +83,12 @@ class ServerEventFactory {
 			'REMOTE_ADDR',
 		);
 
-		foreach ( $HEADERS_TO_SCAN as $header ) {
+		foreach ( $headers_to_scan as $header ) {
 			if ( isset( $_SERVER[ $header ] ) ) {
-				$ip_list = explode( ',', $_SERVER[ $header ] );
+				$ip_list = explode( ',', wp_unslash( $_SERVER[ $header ] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 				foreach ( $ip_list as $ip ) {
 					$trimmed_ip = trim( $ip );
-					if ( self::isValidIpAddress( $trimmed_ip ) ) {
+					if ( self::is_valid_ip_address( $trimmed_ip ) ) {
 						return $trimmed_ip;
 					}
 				}
@@ -80,63 +98,102 @@ class ServerEventFactory {
 		return null;
 	}
 
-	private static function getHttpUserAgent() {
+	/**
+	 * Retrieves the User-Agent string from the HTTP request headers.
+	 *
+	 * @return string|null The User-Agent string, or null if it was not found.
+	 */
+	private static function get_http_user_agent() {
 		$user_agent = null;
 
 		if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) ) {
-			$user_agent = $_SERVER['HTTP_USER_AGENT'];
+			$user_agent = wp_unslash( $_SERVER['HTTP_USER_AGENT'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		}
 
 		return $user_agent;
 	}
 
-	private static function getRequestUri( $prefer_referrer_for_event_src ) {
+	/**
+	 * Retrieves the request URI for the current HTTP request.
+	 *
+	 * This function constructs the full request URI by considering the protocol,
+	 * host, and request path. If the $prefer_referrer_for_event_src parameter is
+	 * true and a referrer URL is present in the HTTP headers, it returns the
+	 * referrer URL instead.
+	 *
+	 * @param boolean $prefer_referrer_for_event_src Whether to prefer the referrer URL
+	 *                                               over the current request URL.
+	 * @return string The constructed request URI or the referrer URL if preferred.
+	 */
+	private static function get_request_uri( $prefer_referrer_for_event_src ) {
 		if ( $prefer_referrer_for_event_src && ! empty( $_SERVER['HTTP_REFERER'] ) ) {
-			return $_SERVER['HTTP_REFERER'];
+			return wp_unslash( $_SERVER['HTTP_REFERER'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		}
 
 		$url = 'http://';
-		if ( ! empty( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] !== 'off' ) {
+		if ( ! empty( $_SERVER['HTTPS'] ) && 'off' !== $_SERVER['HTTPS'] ) {
 			$url = 'https://';
 		}
 
 		if ( ! empty( $_SERVER['HTTP_HOST'] ) ) {
-			$url .= $_SERVER['HTTP_HOST'];
+			$url .= wp_unslash( $_SERVER['HTTP_HOST'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		}
 
 		if ( ! empty( $_SERVER['REQUEST_URI'] ) ) {
-			$url .= $_SERVER['REQUEST_URI'];
+			$url .= wp_unslash( $_SERVER['REQUEST_URI'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		}
 
 		return $url;
 	}
 
-	private static function getFbp() {
+	/**
+	 * Retrieves the Facebook Browser ID (FBP) cookie.
+	 *
+	 * This function returns the value of the FBP cookie, which is a unique identifier
+	 * assigned to a user by Facebook. The FBP cookie is used by the Facebook pixel to
+	 * track user behavior across multiple sites and sessions.
+	 *
+	 * @return string|null The value of the FBP cookie, or null if the cookie is not present.
+	 */
+	private static function get_fbp() {
 		$fbp = null;
 
 		if ( ! empty( $_COOKIE['_fbp'] ) ) {
-			$fbp = $_COOKIE['_fbp'];
+			$fbp = wp_unslash( $_COOKIE['_fbp'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		}
 
 		return $fbp;
 	}
 
-	private static function getFbc() {
+	/**
+	 * Retrieves the Facebook Click ID (FBC) cookie or session variable.
+	 *
+	 * This function returns the value of the FBC cookie or session variable,
+	 * which is a unique identifier assigned to a user by Facebook. The FBC
+	 * cookie is used by the Facebook pixel to track user behavior across
+	 * multiple sites and sessions. If the FBC cookie is not present, the
+	 * function will attempt to generate an FBC value from the fbclid query
+	 * parameter, if present.
+	 *
+	 * @return string|null The value of the FBC cookie or session variable, or
+	 *                     null if neither is present.
+	 */
+	private static function get_fbc() {
 		$fbc = null;
 
 		if ( ! empty( $_COOKIE['_fbc'] ) ) {
-			$fbc              = $_COOKIE['_fbc'];
+			$fbc              = wp_unslash( $_COOKIE['_fbc'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 			$_SESSION['_fbc'] = $fbc;
 		}
 
-		if ( ! $fbc && isset( $_GET['fbclid'] ) ) {
-			$fbclid   = $_GET['fbclid'];
+		if ( ! $fbc && isset( $_GET['fbclid'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+			$fbclid   = wp_unslash( $_GET['fbclid'] ); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 			$cur_time = (int) ( microtime( true ) * 1000 );
 			$fbc      = 'fb.1.' . $cur_time . '.' . rawurldecode( $fbclid );
 		}
 
 		if ( ! $fbc && isset( $_SESSION['_fbc'] ) ) {
-			$fbc = $_SESSION['_fbc'];
+			$fbc = $_SESSION['_fbc']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		}
 
 		if ( $fbc ) {
@@ -146,7 +203,17 @@ class ServerEventFactory {
 		return $fbc;
 	}
 
-	private static function isValidIpAddress( $ip_address ) {
+	/**
+	 * Validates an IP address.
+	 *
+	 * This function takes an IP address and returns true if it is valid,
+	 * false otherwise. The function uses the filter_var function to validate
+	 * the IP address, and it filters out private and reserved IP addresses.
+	 *
+	 * @param string $ip_address The IP address to validate.
+	 * @return bool True if the IP address is valid, false otherwise.
+	 */
+	private static function is_valid_ip_address( $ip_address ) {
 		return filter_var(
 			$ip_address,
 			FILTER_VALIDATE_IP,
@@ -157,13 +224,16 @@ class ServerEventFactory {
 		);
 	}
 
-	/*
-	Given that the data extracted by the integration classes is a mix of
-	user data and custom data,
-	this function splits these fields in two arrays
-	and user data is formatted with the AAM field setting
-	*/
-	private static function splitUserDataAndCustomData( $data ) {
+	/**
+	 * Given that the data extracted by the integration classes is a mix of
+	 * user data and custom data,
+	 * this function splits these fields in two arrays
+	 * and user data is formatted with the AAM field setting
+	 *
+	 * @param array $data Data extracted by the integration.
+	 * @return array
+	 */
+	private static function split_user_data_and_custom_data( $data ) {
 		$user_data        = array();
 		$custom_data      = array();
 		$key_to_aam_field = array(
@@ -192,18 +262,36 @@ class ServerEventFactory {
 		);
 	}
 
-	public static function safeCreateEvent(
+	/**
+	 * Given a callback and its arguments, it calls the callback with the arguments
+	 * and extracts the user data and custom data from the result.
+	 *
+	 * It uses the AAM setting to normalize the user data and the custom data
+	 * is used as is.
+	 *
+	 * If an exception is thrown in the callback, it's caught and logged,
+	 * and the function returns an empty Event object.
+	 *
+	 * @param string   $event_name The name of the event.
+	 * @param callable $callback The callback to call.
+	 * @param array    $arguments The arguments to pass to the callback.
+	 * @param string   $integration The integration name.
+	 * @param boolean  $prefer_referrer_for_event_src Whether to prefer the referrer URL over the current request URL as the event source URL.
+	 *
+	 * @return Event The event object.
+	 */
+	public static function safe_create_event(
 		$event_name,
 		$callback,
 		$arguments,
 		$integration,
 		$prefer_referrer_for_event_src = false
 	) {
-		$event = self::newEvent( $event_name, $prefer_referrer_for_event_src );
+		$event = self::new_event( $event_name, $prefer_referrer_for_event_src );
 
 		try {
 			$data              = call_user_func_array( $callback, $arguments );
-			$data_split        = self::splitUserDataAndCustomData( $data );
+			$data_split        = self::split_user_data_and_custom_data( $data );
 			$user_data_array   = $data_split['user_data'];
 			$custom_data_array = $data_split['custom_data'];
 			$user_data_array   =
@@ -335,17 +423,29 @@ class ServerEventFactory {
 				);
 			}
 		} catch ( \Exception $e ) {
-			error_log( json_encode( $e ) );
+			$logger = new Logger();
+			$logger->error( $e->getMessage(), array( 'exception' => wp_json_encode( $e ) ) );
 		}
 
 		return $event;
 	}
 
-	public static function splitName( $name ) {
+	/**
+	 * Split a full name string into an array containing the first name
+	 * and last name.
+	 *
+	 * If the name contains a space, it will be split into a first name and
+	 * last name. Otherwise, the entire name will be considered the first
+	 * name and the last name will be null.
+	 *
+	 * @param string $name The full name to split.
+	 * @return array An array containing the first name and last name.
+	 */
+	public static function split_name( $name ) {
 		$first_name = $name;
 		$last_name  = null;
 		$index      = strpos( $name, ' ' );
-		if ( $index !== false ) {
+		if ( false !== $index ) {
 			$first_name = substr( $name, 0, $index );
 			$last_name  = substr( $name, $index + 1 );
 		}

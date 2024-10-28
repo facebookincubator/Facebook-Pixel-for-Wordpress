@@ -82,7 +82,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 			return;
 		}
 
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'Lead',
 			array( __CLASS__, 'readFormData' ),
 			array( $entry, $form_data ),
@@ -256,7 +256,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 		foreach ( $form_data['fields'] as $field ) {
 			if ( 'name' === $field['type'] ) {
 				if ( 'simple' === $field['format'] ) {
-					return ServerEventFactory::splitName( $entries[ $field['id'] ] );
+					return ServerEventFactory::split_name( $entries[ $field['id'] ] );
 				} elseif ( 'first-last' === $field['format'] ) {
 					return array(
 						$entries[ $field['id'] ]['first'],

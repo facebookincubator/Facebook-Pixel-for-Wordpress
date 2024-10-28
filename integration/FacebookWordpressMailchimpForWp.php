@@ -73,7 +73,7 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
 			return;
 		}
 
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'Lead',
 			array( __CLASS__, 'readFormData' ),
 			array(),

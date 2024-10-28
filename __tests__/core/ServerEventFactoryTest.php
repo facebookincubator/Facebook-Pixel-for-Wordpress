@@ -47,7 +47,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testNewEventHasEventId() {
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertNotNull( $event->getEventId() );
 		$this->assertEquals( 36, strlen( $event->getEventId() ) );
@@ -63,7 +63,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testNewEventHasEventTime() {
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertNotNull( $event->getEventTime() );
 		$this->assertLessThan( 1, time() - $event->getEventTime() );
@@ -73,12 +73,12 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 * Tests that a new event has the correct event name.
 	 *
 	 * This test verifies that the event name generated for a new event
-	 * matches the event name passed to the newEvent method.
+	 * matches the event name passed to the new_event method.
 	 *
 	 * @return void
 	 */
 	public function testNewEventHasEventName() {
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertEquals( 'Lead', $event->getEventName() );
 	}
@@ -92,7 +92,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testNewEventHasActionSource() {
-		$event = ServerEventFactory::newEvent( 'ViewContent' );
+		$event = ServerEventFactory::new_event( 'ViewContent' );
 		$this->assertEquals( 'website', $event->getActionSource() );
 	}
 
@@ -108,7 +108,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	public function testNewEventWorksWithIpV4() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '24.17.77.101';
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 		$this->assertEquals(
 			'24.17.77.101',
 			$event->getUserData()->getClientIpAddress()
@@ -127,7 +127,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	public function testNewEventWorksWithIpV6() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '2120:10a:c191:401::5:7170';
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 		$this->assertEquals(
 			'2120:10a:c191:401::5:7170',
 			$event->getUserData()->getClientIpAddress()
@@ -147,7 +147,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['HTTP_X_FORWARDED_FOR']
 		= '2120:10a:c191:401::5:7170, 24.17.77.101';
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 		$this->assertEquals(
 			'2120:10a:c191:401::5:7170',
 			$event->getUserData()->getClientIpAddress()
@@ -167,7 +167,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '24.17.77.101';
 		$_SERVER['REMOTE_ADDR']          = '24.17.77.100';
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 		$this->assertEquals(
 			'24.17.77.101',
 			$event->getUserData()->getClientIpAddress()
@@ -187,7 +187,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	public function testNewEventWithInvalidIpAddress() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = 'INVALID';
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 		$this->assertNull( $event->getUserData()->getClientIpAddress() );
 	}
 
@@ -201,7 +201,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 */
 	public function testNewEventHasUserAgent() {
 		$_SERVER['HTTP_USER_AGENT'] = 'HTTP_USER_AGENT_VALUE';
-		$event                      = ServerEventFactory::newEvent( 'Lead' );
+		$event                      = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertEquals(
 			'HTTP_USER_AGENT_VALUE',
@@ -222,7 +222,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['HTTP_HOST']   = 'www.pikachu.com';
 		$_SERVER['REQUEST_URI'] = '/index.php';
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertEquals( 'https://www.pikachu.com/index.php', $event->getEventSourceUrl() );
 	}
@@ -240,7 +240,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['HTTP_HOST']   = 'www.pikachu.com';
 		$_SERVER['REQUEST_URI'] = '/index.php';
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertEquals( 'http://www.pikachu.com/index.php', $event->getEventSourceUrl() );
 	}
@@ -258,7 +258,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['HTTP_HOST']   = 'www.pikachu.com';
 		$_SERVER['REQUEST_URI'] = '/index.php';
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertEquals( 'http://www.pikachu.com/index.php', $event->getEventSourceUrl() );
 	}
@@ -279,7 +279,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['REQUEST_URI']  = '/index.php';
 		$_SERVER['HTTP_REFERER'] = 'http://referrer/';
 
-		$event = ServerEventFactory::newEvent( 'Lead', true );
+		$event = ServerEventFactory::new_event( 'Lead', true );
 
 		$this->assertEquals( 'http://referrer/', $event->getEventSourceUrl() );
 	}
@@ -300,7 +300,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['HTTP_HOST']   = 'www.pikachu.com';
 		$_SERVER['REQUEST_URI'] = '/index.php';
 
-		$event = ServerEventFactory::newEvent( 'Lead', true );
+		$event = ServerEventFactory::new_event( 'Lead', true );
 
 		$this->assertEquals( 'http://www.pikachu.com/index.php', $event->getEventSourceUrl() );
 	}
@@ -316,9 +316,9 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	public function testFBClidExtractedFromUrlIfFbcNotFound() {
 		$_GET['fbclid'] = 'fbclid_str';
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 
-		$event_fbc = $event->getUserData()->getFbc();
+		$event_fbc = $event->getUserData()->get_fbc();
 
 		$this->assertEquals( true, str_starts_with( $event_fbc, 'fb.1.' ) );
 		$this->assertEquals( true, str_ends_with( $event_fbc, '.fbclid_str' ) );
@@ -334,9 +334,9 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 */
 	public function testNewEventHasFbc() {
 		$_COOKIE['_fbc'] = '_fbc_value';
-		$event           = ServerEventFactory::newEvent( 'Lead' );
+		$event           = ServerEventFactory::new_event( 'Lead' );
 
-		$this->assertEquals( '_fbc_value', $event->getUserData()->getFbc() );
+		$this->assertEquals( '_fbc_value', $event->getUserData()->get_fbc() );
 	}
 
 	/**
@@ -349,16 +349,16 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 */
 	public function testNewEventHasFbp() {
 		$_COOKIE['_fbp'] = '_fbp_value';
-		$event           = ServerEventFactory::newEvent( 'Lead' );
+		$event           = ServerEventFactory::new_event( 'Lead' );
 
-		$this->assertEquals( '_fbp_value', $event->getUserData()->getFbp() );
+		$this->assertEquals( '_fbp_value', $event->getUserData()->get_fbp() );
 	}
 
 	/**
-	 * Tests the safeCreateEvent method with Personally Identifiable Information (PII).
+	 * Tests the safe_create_event method with Personally Identifiable Information (PII).
 	 *
 	 * This test verifies that when PII extraction is enabled and all AAM fields
-	 * are available, the safeCreateEvent method correctly creates a server event
+	 * are available, the safe_create_event method correctly creates a server event
 	 * with the expected user data attributes, including email, phone, first name,
 	 * last name, state, city, country code, zip code, and gender.
 	 *
@@ -367,7 +367,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	public function testSafeCreateEventWithPII() {
 		$this->mockUseAAM( '1234', true, AAMSettingsFields::get_all_fields() );
 
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'Lead',
 			array( $this, 'getEventData' ),
 			array(),
@@ -388,16 +388,16 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	}
 
 	/**
-	 * Tests the safeCreateEvent method with Personally Identifiable Information (PII) extraction disabled.
+	 * Tests the safe_create_event method with Personally Identifiable Information (PII) extraction disabled.
 	 *
-	 * This test verifies that when PII extraction is disabled, the safeCreateEvent method correctly creates a server event
+	 * This test verifies that when PII extraction is disabled, the safe_create_event method correctly creates a server event
 	 * with all user data attributes set to null.
 	 *
 	 * @return void
 	 */
 	public function testSafeCreateEventWithPIIDisabled() {
 
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'Lead',
 			array( $this, 'getEventData' ),
 			array(),
