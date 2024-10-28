@@ -89,7 +89,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
 	<!-- End Meta Pixel Event Code -->
 		<?php
 		$listener_code = ob_get_clean();
-		echo $listener_code; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo $listener_code; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
@@ -206,8 +206,8 @@ if( typeof window.pixelLastGeneratedLeadEvent === 'undefined'
 		}
 
 		foreach ( $form_tags as $tag ) {
-			if ( 'email' === $tag->basetype && isset( $_POST[ $tag->name ] ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Missing
-				return sanitize_text_field( wp_unslash( $_POST[ $tag->name ] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing
+			if ( 'email' === $tag->basetype && isset( $_POST[ $tag->name ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				return sanitize_text_field( wp_unslash( $_POST[ $tag->name ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			}
 		}
 
@@ -229,7 +229,7 @@ if( typeof window.pixelLastGeneratedLeadEvent === 'undefined'
 		foreach ( $form_tags as $tag ) {
 			if ( 'text' === $tag->basetype
 			&& strpos( strtolower( $tag->name ), 'name' ) !== false ) {
-				return ServerEventFactory::split_name( sanitize_text_field( wp_unslash( $_POST[ $tag->name ] ?? null ) ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing
+				return ServerEventFactory::split_name( sanitize_text_field( wp_unslash( $_POST[ $tag->name ] ?? null ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			}
 		}
 
@@ -250,7 +250,7 @@ if( typeof window.pixelLastGeneratedLeadEvent === 'undefined'
 
 		foreach ( $form_tags as $tag ) {
 			if ( 'tel' === $tag->basetype ) {
-				return isset( $_POST[ $tag->name ] ) ? sanitize_text_field( wp_unslash( $_POST[ $tag->name ] ) ) : null; //phpcs:ignore WordPress.Security.NonceVerification.Missing
+				return isset( $_POST[ $tag->name ] ) ? sanitize_text_field( wp_unslash( $_POST[ $tag->name ] ) ) : null; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			}
 		}
 

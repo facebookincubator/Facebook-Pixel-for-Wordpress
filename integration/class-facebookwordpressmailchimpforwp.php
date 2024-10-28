@@ -112,24 +112,24 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
 	 */
 	public static function readFormData() {
 		$event_data = array();
-		if ( ! empty( $_POST['EMAIL'] ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$event_data['email'] = sanitize_email( wp_unslash( $_POST['EMAIL'] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! empty( $_POST['EMAIL'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$event_data['email'] = sanitize_email( wp_unslash( $_POST['EMAIL'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		}
 
-		if ( ! empty( $_POST['FNAME'] ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$event_data['first_name'] = sanitize_text_field( wp_unslash( $_POST['FNAME'] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! empty( $_POST['FNAME'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$event_data['first_name'] = sanitize_text_field( wp_unslash( $_POST['FNAME'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		}
 
-		if ( ! empty( $_POST['LNAME'] ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$event_data['last_name'] = sanitize_text_field( wp_unslash( $_POST['LNAME'] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! empty( $_POST['LNAME'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$event_data['last_name'] = sanitize_text_field( wp_unslash( $_POST['LNAME'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		}
 
-		if ( ! empty( $_POST['PHONE'] ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$event_data['phone'] = sanitize_text_field( wp_unslash( $_POST['PHONE'] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! empty( $_POST['PHONE'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$event_data['phone'] = sanitize_text_field( wp_unslash( $_POST['PHONE'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		}
 
-		if ( ! empty( $_POST['ADDRESS'] ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$address_data = sanitize_text_field( wp_unslash( $_POST['ADDRESS'] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! empty( $_POST['ADDRESS'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$address_data = sanitize_text_field( wp_unslash( $_POST['ADDRESS'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 			if ( ! empty( $address_data['city'] ) ) {
 				$event_data['city'] = sanitize_text_field( $address_data['city'] );

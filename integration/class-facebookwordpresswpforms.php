@@ -123,7 +123,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 %s
 <!-- End Meta Pixel Event Code -->
       ',
-			$pixel_code //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			$pixel_code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		);
 	}
 
