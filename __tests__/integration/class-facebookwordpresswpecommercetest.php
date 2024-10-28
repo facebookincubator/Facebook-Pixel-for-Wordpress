@@ -36,7 +36,7 @@ use FacebookPixelPlugin\Core\FacebookServerSideEvent;
  */
 final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 	/**
-	 * Tests that the injectPixelCode method correctly sets up the
+	 * Tests that the inject_pixel_code method correctly sets up the
 	 * necessary WordPress hooks for the Facebook Pixel events in
 	 * the WP eCommerce integration.
 	 *
@@ -45,7 +45,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 	 * 'injectPurchaseEvent' events with the expected hook names.
 	 *
 	 * Utilizes the Mockery library to mock the base integration class
-	 * and validate that the addPixelFireForHook method is called with
+	 * and validate that the add_pixel_fire_for_hook method is called with
 	 * the correct parameters.
 	 */
 	public function testInjectPixelCode() {
@@ -56,7 +56,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		);
 
 		$mocked_base = \Mockery::mock( 'alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase' );
-		$mocked_base->shouldReceive( 'addPixelFireForHook' )
+		$mocked_base->shouldReceive( 'add_pixel_fire_for_hook' )
 		->with(
 			array(
 				'hook_name'       => 'wpsc_before_shopping_cart_page',
@@ -72,7 +72,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 			3
 		);
 
-		FacebookWordpressWPECommerce::injectPixelCode();
+		FacebookWordpressWPECommerce::inject_pixel_code();
 
 		$this->assertHooksAdded();
 	}

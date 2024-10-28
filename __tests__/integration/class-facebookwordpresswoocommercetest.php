@@ -42,7 +42,7 @@ use FacebookAds\Object\ServerSide\Event;
 final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
 	/**
-	 * Tests the injectPixelCode method when the Facebook for WooCommerce plugin is not active.
+	 * Tests the inject_pixel_code method when the Facebook for WooCommerce plugin is not active.
 	 *
 	 * This test verifies that the appropriate WordPress action hooks are added,
 	 * specifically checking that the 'woocommerce_after_checkout_form' hook is
@@ -63,11 +63,11 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 			40
 		);
 
-		FacebookWordpressWooCommerce::injectPixelCode();
+		FacebookWordpressWooCommerce::inject_pixel_code();
 	}
 
 	/**
-	 * Tests the injectPixelCode method when the Facebook for WooCommerce plugin is active.
+	 * Tests the inject_pixel_code method when the Facebook for WooCommerce plugin is active.
 	 *
 	 * This test verifies that the 'woocommerce_after_checkout_form' action hook
 	 * is not added when the plugin is active, ensuring that the 'trackInitiateCheckout'
@@ -87,7 +87,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 			40
 		);
 
-		FacebookWordpressWooCommerce::injectPixelCode();
+		FacebookWordpressWooCommerce::inject_pixel_code();
 	}
 
 	/**

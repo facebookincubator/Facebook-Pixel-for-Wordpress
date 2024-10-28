@@ -51,7 +51,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
 	 *  - wpcf7_submit: Triggers a server-side event when the form is submitted.
 	 *  - wp_footer: Injects the mail sent listener.
 	 */
-	public static function injectPixelCode() {
+	public static function inject_pixel_code() {
 		add_action(
 			'wpcf7_submit',
 			array( __CLASS__, 'trackServerEvent' ),

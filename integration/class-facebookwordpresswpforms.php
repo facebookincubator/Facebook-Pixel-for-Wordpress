@@ -52,7 +52,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	 * which will trigger the 'trackEvent' method. It ensures that
 	 * the Pixel code is injected during the form processing stage.
 	 */
-	public static function injectPixelCode() {
+	public static function inject_pixel_code() {
 		add_action(
 			'wpforms_process_before',
 			array( __CLASS__, 'trackEvent' ),

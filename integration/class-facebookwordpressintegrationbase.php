@@ -44,7 +44,7 @@ abstract class FacebookWordpressIntegrationBase {
 	 *
 	 * @return void
 	 */
-	public static function injectPixelCode() { //phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid
+	public static function inject_pixel_code() {
 	}
 
 
@@ -67,7 +67,7 @@ abstract class FacebookWordpressIntegrationBase {
 	 *     @type int    $priority        The priority of the hook. Optional and defaults to 11.
 	 * }
 	 */
-	public static function addPixelFireForHook( $pixel_fire_for_hook_params ) { //phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid
+	public static function add_pixel_fire_for_hook( $pixel_fire_for_hook_params ) {
 		$hook_name       = $pixel_fire_for_hook_params['hook_name'];
 		$classname       = $pixel_fire_for_hook_params['classname'];
 		$inject_function = $pixel_fire_for_hook_params['inject_function'];

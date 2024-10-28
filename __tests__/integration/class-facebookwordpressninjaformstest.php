@@ -36,7 +36,7 @@ use FacebookPixelPlugin\Core\FacebookServerSideEvent;
  */
 final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
 	/**
-	 * Tests that the injectPixelCode method adds the correct hooks to WordPress.
+	 * Tests that the inject_pixel_code method adds the correct hooks to WordPress.
 	 *
 	 * @return void
 	 */
@@ -48,7 +48,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
 			3
 		);
 
-		FacebookWordpressNinjaForms::injectPixelCode();
+		FacebookWordpressNinjaForms::inject_pixel_code();
 		$this->assertHooksAdded();
 	}
 

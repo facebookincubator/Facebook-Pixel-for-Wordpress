@@ -38,7 +38,7 @@ use FacebookAds\Object\ServerSide\UserData;
  */
 final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 	/**
-	 * Tests that the injectPixelCode method adds the correct hooks to WordPress
+	 * Tests that the inject_pixel_code method adds the correct hooks to WordPress
 	 * and that no events are tracked after calling the method.
 	 *
 	 * @return void
@@ -51,7 +51,7 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 			2
 		);
 
-		FacebookWordpressCalderaForm::injectPixelCode();
+		FacebookWordpressCalderaForm::inject_pixel_code();
 		$this->assertHooksAdded();
 
 		$this->assertCount(

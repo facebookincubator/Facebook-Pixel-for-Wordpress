@@ -54,14 +54,14 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 	 *
 	 * Hooks are added with specific priorities to ensure correct execution order.
 	 */
-	public static function injectPixelCode() {
+	public static function inject_pixel_code() {
 		add_action(
 			'wpsc_add_to_cart_json_response',
 			array( __CLASS__, 'injectAddToCartEvent' ),
 			11
 		);
 
-		self::addPixelFireForHook(
+		self::add_pixel_fire_for_hook(
 			array(
 				'hook_name'       => 'wpsc_before_shopping_cart_page',
 				'classname'       => __CLASS__,

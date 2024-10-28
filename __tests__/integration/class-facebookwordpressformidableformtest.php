@@ -41,7 +41,7 @@ use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormEntryValues;
 final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBase {
 
 	/**
-	 * Test injectPixelCode method.
+	 * Test inject_pixel_code method.
 	 *
 	 * This test verifies that the "frm_after_create_entry" action hook is added.
 	 *
@@ -61,7 +61,7 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
 			2
 		);
 
-		FacebookWordpressFormidableForm::injectPixelCode();
+		FacebookWordpressFormidableForm::inject_pixel_code();
 	}
 
 	/**
