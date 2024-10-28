@@ -108,7 +108,7 @@ class FacebookWordpressSettingsPage {
 		$this->options_page = add_options_page(
 			FacebookPluginConfig::ADMIN_PAGE_TITLE,
 			FacebookPluginConfig::ADMIN_MENU_TITLE,
-			FacebookPluginConfig::ADMIN_CAPABILITY, //phpcs:ignore WordPress.WP.Capabilities.Undetermined
+			'manage_options',
 			FacebookPluginConfig::ADMIN_MENU_SLUG,
 			array( $this, 'add_fbe_box' )
 		);
@@ -135,7 +135,7 @@ class FacebookWordpressSettingsPage {
 	 * @return void
 	 */
 	public function add_fbe_box() {
-		if ( ! current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY ) ) { //phpcs:ignore WordPress.WP.Capabilities.Undetermined
+		if ( ! current_user_can( 'manage_options' ) ) { //phpcs:ignore WordPress.WP.Capabilities.Undetermined
 			wp_die(
 				esc_html__(
 					'You do not have sufficient permissions to access this page',
@@ -555,7 +555,7 @@ class FacebookWordpressSettingsPage {
 		$is_fbe_installed  = FacebookWordpressOptions::get_is_fbe_installed();
 		$current_screen_id = get_current_screen()->id;
 
-		if ( current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY ) && //phpcs:ignore WordPress.WP.Capabilities.Undetermined
+		if ( current_user_can( 'manage_options' ) &&
 		in_array( $current_screen_id, array( 'dashboard', 'plugins' ), true ) ) {
 			if ( '0' === $is_fbe_installed && ! get_user_meta(
 				get_current_user_id(),
