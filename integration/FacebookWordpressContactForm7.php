@@ -110,7 +110,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
 			return $result;
 		}
 
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'Lead',
 			array( __CLASS__, 'readFormData' ),
 			array( $form ),
@@ -229,7 +229,7 @@ if( typeof window.pixelLastGeneratedLeadEvent === 'undefined'
 		foreach ( $form_tags as $tag ) {
 			if ( 'text' === $tag->basetype
 			&& strpos( strtolower( $tag->name ), 'name' ) !== false ) {
-				return ServerEventFactory::splitName( wp_unslash( $_POST[ $tag->name ] ?? null ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				return ServerEventFactory::split_name( wp_unslash( $_POST[ $tag->name ] ?? null ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			}
 		}
 

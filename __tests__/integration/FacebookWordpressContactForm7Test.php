@@ -56,7 +56,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 			'message' => 'Thank you for your message',
 		);
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 		FacebookServerSideEvent::get_instance()->track( $event );
 
 		$response =

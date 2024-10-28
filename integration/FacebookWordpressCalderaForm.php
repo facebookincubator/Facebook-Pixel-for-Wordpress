@@ -83,7 +83,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
 			return $out;
 		}
 
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'Lead',
 			array( __CLASS__, 'readFormData' ),
 			array( $form ),

@@ -153,7 +153,7 @@ class FacebookCapiEvent {
 				);
 				wp_die();
 			} else {
-				$event = ServerEventFactory::safeCreateEvent(
+				$event = ServerEventFactory::safe_create_event(
 					$event_name,
 					array( $this, 'get_event_custom_data' ),
 					array( $custom_data ),

@@ -69,7 +69,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 		parent::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 		FacebookServerSideEvent::get_instance()->track( $event );
 
 		FacebookWordpressWPForms::injectLeadEvent();

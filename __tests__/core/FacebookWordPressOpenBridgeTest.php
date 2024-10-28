@@ -52,7 +52,7 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 		\WP_Mock::userFunction( 'com_create_guid', array( 'return' => 'GUID' ) );
 		$_SESSION['obeid'] = 'GUID';
 
-		$event                = ServerEventFactory::newEvent( 'Lead' );
+		$event                = ServerEventFactory::new_event( 'Lead' );
 		$open_bridge_instance = FacebookWordpressOpenBridge::get_instance();
 
 		$ev = $open_bridge_instance->extract_from_databag( $event );
@@ -160,7 +160,7 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 		\WP_Mock::userFunction( 'get_current_user_id', array( 'return' => 0 ) );
 		$_SESSION['obeid'] = 'testObeid';
 
-		$event                = ServerEventFactory::newEvent( 'Lead' );
+		$event                = ServerEventFactory::new_event( 'Lead' );
 		$open_bridge_instance = FacebookWordpressOpenBridge::get_instance();
 
 		$ev = $open_bridge_instance->extract_from_databag( $event );
@@ -181,7 +181,7 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 		$this->setupCustomerBillingAddress();
 		$_SESSION['obeid'] = 'testObeid';
 
-		$event                = ServerEventFactory::newEvent( 'Lead' );
+		$event                = ServerEventFactory::new_event( 'Lead' );
 		$open_bridge_instance = FacebookWordpressOpenBridge::get_instance();
 
 		$ev = $open_bridge_instance->extract_from_databag( $event );

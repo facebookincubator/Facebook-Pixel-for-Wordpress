@@ -77,7 +77,7 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
 
-		$event = ServerEventFactory::newEvent( 'Lead' );
+		$event = ServerEventFactory::new_event( 'Lead' );
 		FacebookServerSideEvent::get_instance()->track( $event );
 
 		FacebookWordpressFormidableForm::injectLeadEvent();

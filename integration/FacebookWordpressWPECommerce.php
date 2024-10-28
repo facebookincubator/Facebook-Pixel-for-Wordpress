@@ -93,7 +93,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 		}
 
 		$product_id   = $response['product_id'];
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'AddToCart',
 			array( __CLASS__, 'createAddToCartEvent' ),
 			array( $product_id ),
@@ -127,7 +127,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 			return;
 		}
 
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'InitiateCheckout',
 			array( __CLASS__, 'createInitiateCheckoutEvent' ),
 			array(),
@@ -169,7 +169,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 			return;
 		}
 
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'Purchase',
 			array( __CLASS__, 'createPurchaseEvent' ),
 			array( $purchase_log_object ),

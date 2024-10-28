@@ -146,7 +146,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			parse_str( wp_unslash( $_POST['post_data'] ), $post_data ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			if ( isset( $post_data['facebook_event_id'] ) ) {
 				$event_id     = $post_data['facebook_event_id'];
-				$server_event = ServerEventFactory::safeCreateEvent(
+				$server_event = ServerEventFactory::safe_create_event(
 					'AddToCart',
 					array( __CLASS__, 'createAddToCartEvent' ),
 					array( $download_id ),
@@ -208,7 +208,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			return;
 		}
 
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'InitiateCheckout',
 			array( __CLASS__, 'createInitiateCheckoutEvent' ),
 			array(),
@@ -243,7 +243,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			return;
 		}
 
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'Purchase',
 			array( __CLASS__, 'createPurchaseEvent' ),
 			array( $payment ),
@@ -296,7 +296,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			return;
 		}
 
-		$server_event = ServerEventFactory::safeCreateEvent(
+		$server_event = ServerEventFactory::safe_create_event(
 			'ViewContent',
 			array( __CLASS__, 'createViewContentEvent' ),
 			array( $download_id ),
