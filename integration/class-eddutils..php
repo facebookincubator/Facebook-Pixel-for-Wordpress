@@ -1,4 +1,4 @@
-<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+<?php
 /**
  * Facebook Pixel Plugin EDDUtils class.
  *
