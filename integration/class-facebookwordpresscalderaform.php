@@ -206,7 +206,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
 
 		foreach ( $form['fields'] as $field ) {
 			if ( isset( $field[ $attr ] ) && $field[ $attr ] === $attr_value ) {
-				return sanitize_text_field( wp_unslash( $_POST[ $field['ID'] ] ?? '' ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing
+				return sanitize_text_field( wp_unslash( $_POST[ $field['ID'] ] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			}
 		}
 

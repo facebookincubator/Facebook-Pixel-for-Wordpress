@@ -171,7 +171,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 	 */
 	protected function run_action() {
 		try {
-			$num_events = isset( $_POST['num_events'] ) ? sanitize_text_field( wp_unslash( $_POST['num_events'] ) ) : null; //phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$num_events = isset( $_POST['num_events'] ) ? sanitize_text_field( wp_unslash( $_POST['num_events'] ) ) : null; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			if ( 0 === $num_events ) {
 				return;
 			}
