@@ -94,13 +94,13 @@ class FacebookWordpressOpenBridge {
 		$samesite    = 'lax';
 		$maxlifetime = 7776000;
 		if ( PHP_VERSION_ID < 70300 ) {
-			session_set_cookie_params( $maxlifetime, '/; samesite=' . $samesite, isset( $_SERVER['HTTP_HOST'] ) ? wp_unslash( $_SERVER['HTTP_HOST'] ) : '', $secure, $httponly ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			session_set_cookie_params( $maxlifetime, '/; samesite=' . $samesite, isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '', $secure, $httponly );
 		} else {
 			session_set_cookie_params(
 				array(
 					'lifetime' => $maxlifetime,
 					'path'     => '/',
-					'domain'   => isset( $_SERVER['HTTP_HOST'] ) ? wp_unslash( $_SERVER['HTTP_HOST'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					'domain'   => isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '',
 					'secure'   => $secure,
 					'httponly' => $httponly,
 					'samesite' => $samesite,
@@ -112,7 +112,7 @@ class FacebookWordpressOpenBridge {
 
 		$_SESSION[ self::EXTERNAL_ID_COOKIE ] = isset(
 			$_SESSION[ self::EXTERNAL_ID_COOKIE ]
-		) ? $_SESSION[ self::EXTERNAL_ID_COOKIE ] // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		) ? sanitize_text_field( $_SESSION[ self::EXTERNAL_ID_COOKIE ] )
 			: FacebookPluginUtils::new_guid();
 	}
 
@@ -204,22 +204,22 @@ class FacebookWordpressOpenBridge {
 		if ( empty( $current_user ) && '1' === $capi_pii_caching_status ) {
 
 			if ( isset( $_SESSION[ AAMSettingsFields::EMAIL ] ) ) {
-				$current_user['email'] = $_SESSION[ AAMSettingsFields::EMAIL ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				$current_user['email'] = sanitize_text_field( $_SESSION[ AAMSettingsFields::EMAIL ] );
 			}
 
 			if ( isset( $_SESSION[ AAMSettingsFields::FIRST_NAME ] ) ) {
 				$current_user['first_name'] =
-				$_SESSION[ AAMSettingsFields::FIRST_NAME ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				sanitize_text_field( $_SESSION[ AAMSettingsFields::FIRST_NAME ] );
 			}
 
 			if ( isset( $_SESSION[ AAMSettingsFields::LAST_NAME ] ) ) {
 				$current_user['last_name'] =
-				$_SESSION[ AAMSettingsFields::LAST_NAME ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				sanitize_text_field( $_SESSION[ AAMSettingsFields::LAST_NAME ] );
 			}
 
 			if ( isset( $_SESSION[ AAMSettingsFields::PHONE ] ) ) {
 				$current_user['phone'] =
-				$_SESSION[ AAMSettingsFields::PHONE ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				sanitize_text_field( $_SESSION[ AAMSettingsFields::PHONE ] );
 			}
 
 			return array_filter( $current_user );
@@ -335,7 +335,7 @@ class FacebookWordpressOpenBridge {
 		}
 
 		if ( isset( $_SESSION[ self::EXTERNAL_ID_COOKIE ] ) ) {
-			$external_ids[] = $_SESSION[ self::EXTERNAL_ID_COOKIE ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$external_ids[] = sanitize_text_field( $_SESSION[ self::EXTERNAL_ID_COOKIE ] );
 		}
 		return $external_ids;
 	}
