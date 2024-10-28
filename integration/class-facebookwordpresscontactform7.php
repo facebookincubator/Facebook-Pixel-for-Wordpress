@@ -207,7 +207,7 @@ if( typeof window.pixelLastGeneratedLeadEvent === 'undefined'
 
 		foreach ( $form_tags as $tag ) {
 			if ( 'email' === $tag->basetype && isset( $_POST[ $tag->name ] ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Missing
-				return wp_unslash( $_POST[ $tag->name ] ); //phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				return sanitize_text_field( wp_unslash( $_POST[ $tag->name ] ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing
 			}
 		}
 
@@ -229,7 +229,7 @@ if( typeof window.pixelLastGeneratedLeadEvent === 'undefined'
 		foreach ( $form_tags as $tag ) {
 			if ( 'text' === $tag->basetype
 			&& strpos( strtolower( $tag->name ), 'name' ) !== false ) {
-				return ServerEventFactory::split_name( wp_unslash( $_POST[ $tag->name ] ?? null ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				return ServerEventFactory::split_name( sanitize_text_field( wp_unslash( $_POST[ $tag->name ] ?? null ) ) ); //phpcs:ignore WordPress.Security.NonceVerification.Missing
 			}
 		}
 
@@ -250,7 +250,7 @@ if( typeof window.pixelLastGeneratedLeadEvent === 'undefined'
 
 		foreach ( $form_tags as $tag ) {
 			if ( 'tel' === $tag->basetype ) {
-				return isset( $_POST[ $tag->name ] ) ? wp_unslash( $_POST[ $tag->name ] ) : null; //phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				return isset( $_POST[ $tag->name ] ) ? sanitize_text_field( wp_unslash( $_POST[ $tag->name ] ) ) : null; //phpcs:ignore WordPress.Security.NonceVerification.Missing
 			}
 		}
 
