@@ -87,11 +87,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 	 */
 	private function convert_array_to_event( $event_as_array ) {
 		$event = new Event( $event_as_array );
-		// If user_data exists, an UserData object is created
-		// and set.
 		if ( isset( $event_as_array['user_data'] ) ) {
-			// The method convert_user_data converts the keys used in the
-			// normalized array to the keys used in the constructor of UserData.
 			$user_data = new UserData(
 				$this->convert_user_data(
 					$event_as_array['user_data']
@@ -99,18 +95,13 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 			);
 			$event->setUserData( $user_data );
 		}
-		// If custom_data exists, a CustomData object is created and set.
 		if ( isset( $event_as_array['custom_data'] ) ) {
 			$custom_data = new CustomData( $event_as_array['custom_data'] );
-			// If contents exists in custom_data, an array of Content is created
-			// and set.
 			if ( isset( $event_as_array['custom_data']['contents'] ) ) {
 				$contents = array();
 				foreach (
 				$event_as_array['custom_data']['contents'] as $contents_as_array
 				) {
-					// The normalized contents array encodes product id as id
-					// but the constructor of Content requires product_id.
 					if ( isset( $contents_as_array['id'] ) ) {
 						$contents_as_array['product_id'] = $contents_as_array['id'];
 					}
@@ -150,18 +141,13 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 			if ( ! empty( $data ) ) {
 				$num_events = $data[1];
 				$events     = $data[0];
-				// $data[0] can be a single event or an array
-				// We want to receive it as an array
 				if ( 1 === $num_events ) {
 					$events = array( $events );
 				}
-				// Each event is casted to a php array with normalize().
 				$events_as_array = array();
 				foreach ( $events as $event ) {
 					$events_as_array[] = $event->normalize();
 				}
-				// The array of events is converted to a JSON string
-				// and encoded in base 64.
 				return array(
 					'event_data' => base64_encode( wp_json_encode( $events_as_array ) ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 					'num_events' => $data[1],
@@ -189,15 +175,11 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 			if ( 0 === $num_events ) {
 				return;
 			}
-			// $_POST['event_data'] is decoded from base 64, returning a JSON string
-			// and decoded as a php array
 			$events_as_array = json_decode( base64_decode( isset( $_POST['event_data'] ) ? wp_unslash( $_POST['event_data'] ) : null ), true ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-			// If the passed json string is invalid, no processing is done.
 			if ( ! $events_as_array ) {
 				return;
 			}
 			$events = array();
-			// Every event is a php array and casted to an Event object.
 			foreach ( $events_as_array as $event_as_array ) {
 				$event    = $this->convert_array_to_event( $event_as_array );
 				$events[] = $event;

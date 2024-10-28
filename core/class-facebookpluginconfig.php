@@ -70,7 +70,6 @@ class FacebookPluginConfig {
 	const DELETE_FBE_SETTINGS_ACTION_NAME = 'delete_fbe_settings';
 	const SAVE_FBE_SETTINGS_ACTION_NAME   = 'save_fbe_settings';
 
-	// Keys used in the old settings.
 	const OLD_SETTINGS_KEY     = 'facebook_config';
 	const OLD_PIXEL_ID_KEY     = 'pixel_id';
 	const OLD_ACCESS_TOKEN_KEY = 'access_token';
@@ -87,7 +86,7 @@ class FacebookPluginConfig {
 	const OPEN_BRIDGE_PATH         = 'open-bridge/events';
 	const CAPI_INTEGRATION_DIV_TOP = 500;
 	const CAPI_INTEGRATION_STATUS  = 'facebook_capi_integration_status';
-	// Default CAPI integration status: Enabled.
+
 	const CAPI_INTEGRATION_STATUS_DEFAULT                 = '1';
 	const CAPI_INTEGRATION_EVENTS_FILTER                  =
 	'facebook_capi_integration_events_filter';

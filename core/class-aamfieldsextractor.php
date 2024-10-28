@@ -62,7 +62,6 @@ final class AAMFieldsExtractor {
 		if (
 		isset( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] )
 		) {
-			// strtotime() and date() return false for invalid parameters.
 			$unix_timestamp =
 			strtotime( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] );
 			if ( ! $unix_timestamp ) {

@@ -159,7 +159,6 @@ class FacebookWordpressOpenBridge {
 		$current_user = self::get_pii_from_session();
 
 		$event_data = array(
-			// user data.
 			'email'            => self::get_email( $current_user, $databag ),
 			'first_name'       => self::get_first_name( $current_user, $databag ),
 			'last_name'        => self::get_last_name( $current_user, $databag ),
@@ -172,8 +171,6 @@ class FacebookWordpressOpenBridge {
 			'gender'           => self::get_aam_field( AAMSettingsFields::GENDER, $databag ),
 			'date_of_birth'    =>
 				self::get_aam_field( AAMSettingsFields::DATE_OF_BIRTH, $databag ),
-
-			// custom data.
 			'currency'         => self::get_custom_data( 'currency', $databag ),
 			'value'            => self::get_custom_data( 'value', $databag ),
 			'content_type'     => self::get_custom_data( 'content_type', $databag ),

@@ -125,7 +125,7 @@ class FacebookWordpressOptions {
 	 * @return string The CAPI integration status option.
 	 */
 	public static function get_capi_integration_status() {
-		return '1'; // enforce enabled for all.
+		return '1';
 	}
 
 	/**
@@ -254,12 +254,9 @@ class FacebookWordpressOptions {
 	private static function init_options() {
 		$old_options = \get_option( FacebookPluginConfig::OLD_SETTINGS_KEY );
 		$new_options = \get_option( FacebookPluginConfig::SETTINGS_KEY );
-		// If the new options are saved in WP database, they are used.
 		if ( $new_options ) {
 			self::$options = $new_options;
 		} elseif ( $old_options ) {
-			// Otherwise, the old options can be used.
-			// The pixel id and access token will be exported.
 			self::$options = array(
 				FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
 					self::get_default_external_business_id(),
@@ -288,7 +285,6 @@ class FacebookWordpressOptions {
 				self::get_default_pixel_id();
 			}
 		} else {
-			// If no options are present, the default values are used.
 			self::$options = \get_option(
 				FacebookPluginConfig::SETTINGS_KEY,
 				array(
@@ -416,13 +412,10 @@ class FacebookWordpressOptions {
 	public static function register_user_info() {
 		$current_user = wp_get_current_user();
 		if ( 0 === $current_user->ID ) {
-			// User not logged in.
 			self::$user_info = array();
 		} else {
 			$user_info       = array_filter(
 				array(
-					// Keys documented in
-					// https://developers.facebook.com/docs/facebook-pixel/pixel-with-ads/conversion-tracking#advanced_match.
 					AAMSettingsFields::EMAIL      => $current_user->user_email,
 					AAMSettingsFields::FIRST_NAME => $current_user->user_firstname,
 					AAMSettingsFields::LAST_NAME  => $current_user->user_lastname,
@@ -508,8 +501,6 @@ class FacebookWordpressOptions {
 	private static function set_fbe_based_aam_settings() {
 		$installed_pixel   = self::get_pixel_id();
 		$settings_as_array = get_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
-		// If AAM_SETTINGS_KEY is present in the DB and corresponds to the installed
-		// pixel, it is converted into an AdsPixelSettings object.
 		if ( false !== $settings_as_array ) {
 			$aam_settings = new AdsPixelSettings();
 			$aam_settings->setPixelId( $settings_as_array['pixelId'] );
@@ -519,9 +510,6 @@ class FacebookWordpressOptions {
 				self::$aam_settings = $aam_settings;
 			}
 		}
-		// If the settings are not present
-		// they are fetched from Meta domain
-		// and cached in WP database if they are not null.
 		if ( ! self::$aam_settings ) {
 			$refresh_interval =
 			self::AAM_SETTINGS_REFRESH_IN_MINUTES * MINUTE_IN_SECONDS;
