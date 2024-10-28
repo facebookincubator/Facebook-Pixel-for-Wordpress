@@ -113,7 +113,7 @@ class FacebookCapiEvent {
 	 * servers.
 	 */
 	public function send_capi_event() {
-		$nonce = isset( $_POST['nonce'] ) ? wp_unslash( $_POST['nonce'] ) : null; //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : null;
 		if ( ! isset( $nonce ) || ! wp_verify_nonce( $nonce, 'send_capi_event_nonce' ) ) {
 			wp_send_json_error(
 				wp_json_encode(
@@ -134,10 +134,10 @@ class FacebookCapiEvent {
 
 		$url = "https://graph.facebook.com/v{$api_version}/{$pixel_id}/events?access_token={$access_token}";
 
-		$event_name = isset( $_POST['event_name'] ) ? wp_unslash( $_POST['event_name'] ) : null; //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$event_name = isset( $_POST['event_name'] ) ? sanitize_text_field( wp_unslash( $_POST['event_name'] ) ) : null;
 
 		if ( empty( $_POST['payload'] ) && ! empty( $event_name ) ) {
-			$custom_data         = isset( $_POST['custom_data'] ) ? wp_unslash( $_POST['custom_data'] ) : array(); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$custom_data         = isset( $_POST['custom_data'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_data'] ) ) : array();
 			$invalid_custom_data = self::get_invalid_event_custom_data( $custom_data );
 			if ( ! empty( $invalid_custom_data ) ) {
 				$invalid_custom_data_msg = implode( ',', $invalid_custom_data );
@@ -166,20 +166,20 @@ class FacebookCapiEvent {
 
 				$event_request = ( new EventRequest( $pixel_id ) )
 					->setEvents( $events )
-					->setTestEventCode( isset( $_POST['test_event_code'] ) ? wp_unslash( $_POST['test_event_code'] ) : null ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					->setTestEventCode( isset( $_POST['test_event_code'] ) ? sanitize_text_field( wp_unslash( $_POST['test_event_code'] ) ) : null );
 
 				$normalized_event = $event_request->normalize();
 
 				if ( ! empty( $_POST['user_data'] ) ) {
 					foreach ( $normalized_event['data'] as $key => $value ) {
-						$normalized_event['data'][ $key ]['user_data'] += isset( $_POST['user_data'] ) ? wp_unslash( $_POST['user_data'] ) : array(); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+						$normalized_event['data'][ $key ]['user_data'] += isset( $_POST['user_data'] ) ? sanitize_text_field( wp_unslash( $_POST['user_data'] ) ) : array();
 					}
 				}
 
 				$payload = wp_json_encode( $normalized_event );
 			}
 		} else {
-			$validated_payload = self::validate_payload( isset( $_POST['payload'] ) ? wp_unslash( $_POST['payload'] ) : null ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$validated_payload = self::validate_payload( isset( $_POST['payload'] ) ? sanitize_text_field( wp_unslash( $_POST['payload'] ) ) : null );
 			if ( ! $validated_payload['valid'] ) {
 				wp_send_json_error(
 					wp_json_encode(
@@ -193,7 +193,7 @@ class FacebookCapiEvent {
 				);
 				wp_die();
 			} else {
-				$payload = wp_json_encode( isset( $_POST['payload'] ) ? wp_unslash( $_POST['payload'] ) : null ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				$payload = wp_json_encode( isset( $_POST['payload'] ) ? sanitize_text_field( wp_unslash( $_POST['payload'] ) ) : null );
 			}
 		}
 
