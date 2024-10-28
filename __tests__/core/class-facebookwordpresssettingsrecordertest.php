@@ -105,7 +105,7 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 	public function testDoesNotSaveInvalidSettings() {
 		$settings_recorder = new FacebookWordpressSettingsRecorder();
 		self::mockWordPressFunctions();
-		global $_POST; //phpcs:ignore WordPress.Security.NonceVerification.Missing
+		global $_POST;
 		$_POST['pixelId']            = '</script><script>alert(1)</script>';
 		$_POST['accessToken']        = '</script><script>alert(2)</script>';
 		$_POST['externalBusinessId'] = '</script><script>alert(3)</script>';
@@ -141,28 +141,27 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 	public function testSaveSettingsWithAdmin() {
 		$settings_recorder = new FacebookWordpressSettingsRecorder();
 		self::mockWordPressFunctions();
-		global $_POST; //phpcs:ignore WordPress.Security.NonceVerification.Missing
+		global $_POST;
 		$_POST['pixelId']            = '123';
 		$_POST['accessToken']        = 'ABC123XYZ';
 		$_POST['externalBusinessId'] = 'fbe_wordpress_123_abc';
-		if ( isset( $_POST['pixelId'] ) && isset( $_POST['accessToken'] ) && isset( $_POST['externalBusinessId'] ) ) { //phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( isset( $_POST['pixelId'] ) && isset( $_POST['accessToken'] ) && isset( $_POST['externalBusinessId'] ) ) {
 			\WP_Mock::userFunction(
 				'sanitize_text_field',
 				array(
 					'return_in_order' => array(
-						sanitize_text_field( wp_unslash( $_POST['pixelId'] ) ), //phpcs:ignore WordPress.Security.NonceVerification.Missing
-						sanitize_text_field( wp_unslash( $_POST['accessToken'] ) ), //phpcs:ignore WordPress.Security.NonceVerification.Missing
-						sanitize_text_field( wp_unslash( $_POST['externalBusinessId'] ) ), //phpcs:ignore WordPress.Security.NonceVerification.Missing
+						$_POST['pixelId'],
+						$_POST['accessToken'],
+						$_POST['externalBusinessId'],
 					),
 				)
 			);
 			$expected_json = array(
 				'success' => true,
 				'msg'     => array(
-					FacebookPluginConfig::PIXEL_ID_KEY     => sanitize_text_field( wp_unslash( $_POST['pixelId'] ) ), //phpcs:ignore WordPress.Security.NonceVerification.Missing
-					FacebookPluginConfig::ACCESS_TOKEN_KEY => sanitize_text_field( wp_unslash( $_POST['accessToken'] ) ), //phpcs:ignore WordPress.Security.NonceVerification.Missing
-					FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
-					sanitize_text_field( wp_unslash( $_POST['externalBusinessId'] ) ), //phpcs:ignore WordPress.Security.NonceVerification.Missing
+					FacebookPluginConfig::PIXEL_ID_KEY     => $_POST['pixelId'],
+					FacebookPluginConfig::ACCESS_TOKEN_KEY => $_POST['accessToken'],
+					FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY => $_POST['externalBusinessId'],
 					FacebookPluginConfig::IS_FBE_INSTALLED_KEY => '1',
 				),
 			);
