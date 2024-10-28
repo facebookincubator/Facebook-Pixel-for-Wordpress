@@ -55,7 +55,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
 	 *
 	 * @return void
 	 */
-	public static function injectPixelCode() {
+	public static function inject_pixel_code() {
 		add_action(
 			'ninja_forms_submission_actions',
 			array( __CLASS__, 'injectLeadEvent' ),

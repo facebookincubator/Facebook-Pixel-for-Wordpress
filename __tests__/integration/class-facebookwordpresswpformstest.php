@@ -37,7 +37,7 @@ use FacebookPixelPlugin\Core\FacebookServerSideEvent;
  */
 final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 	/**
-	 * Tests that the injectPixelCode method adds the correct WordPress hook.
+	 * Tests that the inject_pixel_code method adds the correct WordPress hook.
 	 *
 	 * This test verifies that the 'wpforms_process_before' action hook is added
 	 * to trigger the 'trackEvent' method of the FacebookWordpressWPForms class.
@@ -52,7 +52,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 			2
 		);
 
-		FacebookWordpressWPForms::injectPixelCode();
+		FacebookWordpressWPForms::inject_pixel_code();
 		$this->assertHooksAdded();
 	}
 

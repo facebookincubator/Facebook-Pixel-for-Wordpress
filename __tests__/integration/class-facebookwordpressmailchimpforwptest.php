@@ -36,11 +36,11 @@ use FacebookPixelPlugin\Core\FacebookServerSideEvent;
  */
 final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBase {
 	/**
-	 * Tests that the injectPixelCode method correctly sets up the
+	 * Tests that the inject_pixel_code method correctly sets up the
 	 * necessary WordPress hooks for the Facebook Pixel events in
 	 * the MailChimp for WP integration.
 	 *
-	 * This test verifies that the addPixelFireForHook method is called
+	 * This test verifies that the add_pixel_fire_for_hook method is called
 	 * with the correct parameters, ensuring that the 'mc4wp_form_subscribed'
 	 * hook is added to trigger the 'injectLeadEvent' method.
 	 */
@@ -48,7 +48,7 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 		$mocked_base = \Mockery::mock(
 			'alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase'
 		);
-		$mocked_base->shouldReceive( 'addPixelFireForHook' )
+		$mocked_base->shouldReceive( 'add_pixel_fire_for_hook' )
 		->with(
 			array(
 				'hook_name'       => 'mc4wp_form_subscribed',
@@ -57,7 +57,7 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 			)
 		)
 		->once();
-		FacebookWordpressMailchimpForWp::injectPixelCode();
+		FacebookWordpressMailchimpForWp::inject_pixel_code();
 	}
 
 	/**

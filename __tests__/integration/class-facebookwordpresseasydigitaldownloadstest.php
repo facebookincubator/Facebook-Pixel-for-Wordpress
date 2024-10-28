@@ -37,7 +37,7 @@ use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressTestBase {
 
 	/**
-	 * Tests that the injectPixelCode method correctly sets up the
+	 * Tests that the inject_pixel_code method correctly sets up the
 	 * necessary WordPress hooks for the Facebook Pixel events in
 	 * the Easy Digital Downloads integration.
 	 *
@@ -46,7 +46,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 	 * hook name 'edd_after_checkout_cart'.
 	 *
 	 * Utilizes the Mockery library to mock the base integration class
-	 * and validate that the addPixelFireForHook method is called with
+	 * and validate that the add_pixel_fire_for_hook method is called with
 	 * the correct parameters.
 	 */
 	public function testInjectPixelCode() {
@@ -58,7 +58,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 			'alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase'
 		);
 		foreach ( $event_hook_map as $event => $hook ) {
-			$mocked_base->shouldReceive( 'addPixelFireForHook' )
+			$mocked_base->shouldReceive( 'add_pixel_fire_for_hook' )
 			->with(
 				array(
 					'hook_name'       => $hook,
@@ -69,7 +69,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 			->once();
 		}
 
-		FacebookWordpressEasyDigitalDownloads::injectPixelCode();
+		FacebookWordpressEasyDigitalDownloads::inject_pixel_code();
 	}
 
 	/**

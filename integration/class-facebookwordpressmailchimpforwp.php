@@ -50,8 +50,8 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
 	 *
 	 * @return void
 	 */
-	public static function injectPixelCode() {
-		self::addPixelFireForHook(
+	public static function inject_pixel_code() {
+		self::add_pixel_fire_for_hook(
 			array(
 				'hook_name'       => 'mc4wp_form_subscribed',
 				'classname'       => __CLASS__,

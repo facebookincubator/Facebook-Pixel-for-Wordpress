@@ -51,7 +51,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
 	 *
 	 * @since 0.9.0
 	 */
-	public static function injectPixelCode() {
+	public static function inject_pixel_code() {
 		add_action(
 			'caldera_forms_ajax_return',
 			array( __CLASS__, 'injectLeadEvent' ),

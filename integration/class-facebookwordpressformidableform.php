@@ -55,7 +55,7 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
 	 *
 	 * @return void
 	 */
-	public static function injectPixelCode() {
+	public static function inject_pixel_code() {
 		add_action(
 			'frm_after_create_entry',
 			array( __CLASS__, 'trackServerEvent' ),

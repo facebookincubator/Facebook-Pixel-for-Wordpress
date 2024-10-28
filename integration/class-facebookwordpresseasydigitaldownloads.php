@@ -57,7 +57,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 	 * - Purchase: Tracks purchase events after the payment receipt.
 	 * - ViewContent: Injects view content events after download content.
 	 */
-	public static function injectPixelCode() {
+	public static function inject_pixel_code() {
 		add_action(
 			'edd_after_download_content',
 			array( __CLASS__, 'injectAddToCartListener' )
@@ -84,7 +84,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 			array( __CLASS__, 'injectAddToCartEventId' )
 		);
 
-		self::addPixelFireForHook(
+		self::add_pixel_fire_for_hook(
 			array(
 				'hook_name'       => 'edd_after_checkout_cart',
 				'classname'       => __CLASS__,

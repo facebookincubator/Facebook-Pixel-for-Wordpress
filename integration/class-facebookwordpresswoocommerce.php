@@ -65,7 +65,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 	 *
 	 * @return void
 	 */
-	public static function injectPixelCode() {
+	public static function inject_pixel_code() {
 		if ( ! self::isFacebookForWooCommerceActive() ) {
 			add_action(
 				'woocommerce_after_checkout_form',
