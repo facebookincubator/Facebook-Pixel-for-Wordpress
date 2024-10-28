@@ -109,7 +109,7 @@ class FacebookForWordpress {
 	 */
 	public function handle_events_request() {
 		if ( isset( $_SERVER['REQUEST_URI'] ) ) {
-			$request_uri = wp_unslash( $_SERVER['REQUEST_URI'] ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$request_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 
 			if (
 			FacebookPluginUtils::ends_with(
@@ -125,7 +125,8 @@ class FacebookForWordpress {
 					);
 				}
 				if ( isset( $_SERVER['HTTP_ORIGIN'] ) ) {
-					header( "Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}" ); //phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidatedNotSanitized
+					$origin = wp_kses( wp_unslash( $_SERVER['HTTP_ORIGIN'] ), array() );
+					header( "Access-Control-Allow-Origin: $origin" );
 					header( 'Access-Control-Allow-Credentials: true' );
 					header( 'Access-Control-Max-Age: 86400' );
 				}
