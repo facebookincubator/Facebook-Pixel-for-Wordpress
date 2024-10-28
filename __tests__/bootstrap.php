@@ -1,6 +1,8 @@
-<?php //phpcs:ignore WordPress.Files.FileName.NotHyphenatedLowercase WordPress.Files.FileName.InvalidClassFileName
+<?php
 /**
  * Define bootstrap.
+ *
+ * @package FacebookPixelPlugin
  *
  * @return void
  */
