@@ -44,7 +44,7 @@ final class FileNameTest extends FacebookWordpressTestBase {
 	 * and will end up deactivate the plugin.
 	 */
 	public function testEntryPointFileNamePersists() {
-		$exist = \file_exists( __DIR__ . '/../facebook-for-wordpress.php' );
+		$exist = \file_exists( __DIR__ . '/../class-facebookforwordpress.php' );
 		$this->assertTrue( $exist );
 	}
 }
