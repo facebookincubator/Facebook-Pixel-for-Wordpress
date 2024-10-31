@@ -89,7 +89,7 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
   %s
 <!-- End Meta Pixel Event Code -->
     ',
-			esc_attr( $code )
+			$code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		);
 	}
 
