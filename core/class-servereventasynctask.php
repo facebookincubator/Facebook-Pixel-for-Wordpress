@@ -175,7 +175,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 			if ( 0 === $num_events ) {
 				return;
 			}
-			$events_as_array = json_decode( base64_decode( isset( $_POST['event_data'] ) ? sanitize_text_field( wp_unslash( $_POST['event_data'] ) ) : null ), true ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+			$events_as_array = json_decode( base64_decode( isset( $_POST['event_data'] ) ? $_POST['event_data'] : null ), true ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			if ( ! $events_as_array ) {
 				return;
 			}

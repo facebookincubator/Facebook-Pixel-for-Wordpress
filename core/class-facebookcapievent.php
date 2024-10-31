@@ -137,7 +137,7 @@ class FacebookCapiEvent {
 		$event_name = isset( $_POST['event_name'] ) ? sanitize_text_field( wp_unslash( $_POST['event_name'] ) ) : null;
 
 		if ( empty( $_POST['payload'] ) && ! empty( $event_name ) ) {
-			$custom_data         = isset( $_POST['custom_data'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_data'] ) ) : array();
+			$custom_data         = isset( $_POST['custom_data'] ) ? $_POST['custom_data'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 			$invalid_custom_data = self::get_invalid_event_custom_data( $custom_data );
 			if ( ! empty( $invalid_custom_data ) ) {
 				$invalid_custom_data_msg = implode( ',', $invalid_custom_data );
@@ -172,14 +172,14 @@ class FacebookCapiEvent {
 
 				if ( ! empty( $_POST['user_data'] ) ) {
 					foreach ( $normalized_event['data'] as $key => $value ) {
-						$normalized_event['data'][ $key ]['user_data'] += isset( $_POST['user_data'] ) ? sanitize_text_field( wp_unslash( $_POST['user_data'] ) ) : array();
+						$normalized_event['data'][ $key ]['user_data'] += isset( $_POST['user_data'] ) ? $_POST['user_data'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 					}
 				}
 
 				$payload = wp_json_encode( $normalized_event );
 			}
 		} else {
-			$validated_payload = self::validate_payload( isset( $_POST['payload'] ) ? sanitize_text_field( wp_unslash( $_POST['payload'] ) ) : null );
+			$validated_payload = self::validate_payload( isset( $_POST['payload'] ) ? $_POST['payload'] : null ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 			if ( ! $validated_payload['valid'] ) {
 				wp_send_json_error(
 					wp_json_encode(
@@ -193,7 +193,7 @@ class FacebookCapiEvent {
 				);
 				wp_die();
 			} else {
-				$payload = wp_json_encode( isset( $_POST['payload'] ) ? sanitize_text_field( wp_unslash( $_POST['payload'] ) ) : null );
+				$payload = wp_json_encode( isset( $_POST['payload'] ) ? $_POST['payload'] : null ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 			}
 		}
 
