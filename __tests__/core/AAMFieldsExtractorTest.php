@@ -173,7 +173,7 @@ final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
 	 */
 	private function createSubset( $fields ) {
 		shuffle( $fields );
-		$rand_num = wp_rand() % count( $fields );
+		$rand_num = rand() % count( $fields );
 		$subset   = array();
 		for ( $i = 0; $i < $rand_num; ++$i ) {
 			$subset[] = $fields[ $i ];
