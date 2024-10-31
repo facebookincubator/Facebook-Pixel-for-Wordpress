@@ -645,7 +645,7 @@ class FacebookWordpressSettingsPage {
 </div>
       ',
 			esc_html( $notice_type ),
-			esc_html( $link ),
+			wp_kses_post( $link ),
 			esc_url( add_query_arg( $dismiss_config, '' ) ),
 			esc_html__(
 				'Dismiss this notice.',

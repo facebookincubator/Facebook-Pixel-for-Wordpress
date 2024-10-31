@@ -118,19 +118,17 @@ class FacebookWordpressPixelInjection {
 		}
 
 		self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] = true;
-		esc_html( FacebookPixel::get_pixel_base_code() );
+		FacebookPixel::get_pixel_base_code();
 		$capi_integration_status =
 		FacebookWordpressOptions::get_capi_integration_status();
 		if ( '1' === $capi_integration_status ) {
-			esc_html( FacebookPixel::get_open_bridge_config_code() );
+			FacebookPixel::get_open_bridge_config_code();
 		}
-		esc_html(
-			FacebookPixel::get_pixel_init_code(
-				FacebookWordpressOptions::get_agent_string(),
-				FacebookWordpressOptions::get_user_info()
-			)
+		echo FacebookPixel::get_pixel_init_code( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			FacebookWordpressOptions::get_agent_string(),
+			FacebookWordpressOptions::get_user_info() // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		);
-		esc_html( FacebookPixel::get_pixel_page_view_code() );
+		echo FacebookPixel::get_pixel_page_view_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
@@ -143,6 +141,6 @@ class FacebookWordpressPixelInjection {
 	 * @return void
 	 */
 	public function inject_pixel_noscript_code() {
-		esc_html( FacebookPixel::get_pixel_noscript_code() );
+		echo FacebookPixel::get_pixel_noscript_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }
