@@ -195,6 +195,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 	 *  - The agent string is correctly constructed with the version information.
 	 */
 	public function testCanSetVersionInfoAndGetAgentString() {
+		$GLOBALS['wp_version'] = '1.1';
 		FacebookWordpressOptions::set_version_info();
 
 		$version_info = FacebookWordpressOptions::get_version_info();
