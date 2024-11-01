@@ -47,6 +47,7 @@ abstract class FacebookWordpressTestBase extends TestCase {
 	 */
 	public function setUp(): void {
 		\WP_Mock::setUp();
+		$GLOBALS['wp_version'] = '1.0';
 		\Mockery::getConfiguration()->setConstantsMap(
 			array(
 				'FacebookPixelPlugin\Core\FacebookPixel' => array(
