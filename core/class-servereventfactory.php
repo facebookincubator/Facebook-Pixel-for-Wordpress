@@ -85,7 +85,7 @@ class ServerEventFactory {
 
 		foreach ( $headers_to_scan as $header ) {
 			if ( isset( $_SERVER[ $header ] ) ) {
-				$ip_list = explode( ',', sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) ) );
+				$ip_list = explode( ',', $_SERVER[ $header ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 				foreach ( $ip_list as $ip ) {
 					$trimmed_ip = trim( $ip );
 					if ( self::is_valid_ip_address( $trimmed_ip ) ) {
