@@ -327,6 +327,11 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 		$this->setupMocks();
 		$this->setupCustomerBillingAddress();
 
+		$raw_post     = new \stdClass();
+		$raw_post->ID = 1;
+		global $post;
+		$post = $raw_post;
+
 		FacebookWordpressWooCommerce::trackViewContentEvent();
 
 		$tracked_events =
