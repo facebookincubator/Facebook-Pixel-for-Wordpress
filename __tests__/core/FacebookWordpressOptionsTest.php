@@ -87,7 +87,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 	}
 
 	/**
-	 * Tests that the registerUserInfo method correctly registers the user information.
+	 * Tests that the register_user_info method correctly registers the user information.
 	 *
 	 * Asserts that:
 	 *  - The user information is correctly registered.
@@ -114,7 +114,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 		);
 		FacebookWordpressOptions::initialize();
 
-		FacebookWordpressOptions::registerUserInfo();
+		FacebookWordpressOptions::register_user_info();
 		$user_info = FacebookWordpressOptions::get_user_info();
 		$this->assertEquals( $user_info['em'], 'foo@foo.com' );
 		$this->assertEquals( $user_info['fn'], 'john' );
@@ -122,7 +122,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 	}
 
 	/**
-	 * Tests that the registerUserInfo method returns an empty array when the user ID is not available.
+	 * Tests that the register_user_info method returns an empty array when the user ID is not available.
 	 *
 	 * Asserts that:
 	 *  - The user information is an empty array.
@@ -147,13 +147,13 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 		);
 		FacebookWordpressOptions::initialize();
 
-		FacebookWordpressOptions::registerUserInfo();
+		FacebookWordpressOptions::register_user_info();
 		$user_info = FacebookWordpressOptions::get_user_info();
 		$this->assertEquals( \count( $user_info ), 0 );
 	}
 
 	/**
-	 * Tests that the registerUserInfo method does not register the user information
+	 * Tests that the register_user_info method does not register the user information
 	 * when the 'Use Personal Identifiable Information (PII)' setting is disabled.
 	 *
 	 * Asserts that:
@@ -179,7 +179,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 		);
 		FacebookWordpressOptions::initialize();
 
-		FacebookWordpressOptions::registerUserInfo();
+		FacebookWordpressOptions::register_user_info();
 		$user_info = FacebookWordpressOptions::get_user_info();
 
 		$this->assertEquals( \count( $user_info ), 0 );

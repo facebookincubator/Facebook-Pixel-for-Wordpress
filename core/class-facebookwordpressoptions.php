@@ -383,7 +383,7 @@ class FacebookWordpressOptions {
 	/**
 	 * Registers an action hook to set the user information.
 	 *
-	 * The 'registerUserInfo' method is called when the 'init' action is triggered.
+	 * The 'register_user_info' method is called when the 'init' action is triggered.
 	 * The method sets the user information stored in the class.
 	 *
 	 * @return void
