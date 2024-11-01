@@ -85,7 +85,7 @@ abstract class FacebookWordpressTestBase extends TestCase {
 	 */
 	protected function mockIsInternalUser( $is_internal_user ) {
 		$this->mocked_fbpixel = \Mockery::mock( 'alias:FacebookPixelPlugin\Core\FacebookPluginUtils' );
-		$this->mocked_fbpixel->shouldReceive( 'isInternalUser' )
+		$this->mocked_fbpixel->shouldReceive( 'is_internal_user' )
 		->andReturn( $is_internal_user );
 	}
 
