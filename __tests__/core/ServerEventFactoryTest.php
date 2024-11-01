@@ -325,7 +325,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 
 		$event = ServerEventFactory::new_event( 'Lead' );
 
-		$event_fbc = $event->getUserData()->get_fbc();
+		$event_fbc = $event->getUserData()->getFbc();
 
 		$this->assertEquals( true, str_starts_with( $event_fbc, 'fb.1.' ) );
 		$this->assertEquals( true, str_ends_with( $event_fbc, '.fbclid_str' ) );
@@ -343,7 +343,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_COOKIE['_fbc'] = '_fbc_value';
 		$event           = ServerEventFactory::new_event( 'Lead' );
 
-		$this->assertEquals( '_fbc_value', $event->getUserData()->get_fbc() );
+		$this->assertEquals( '_fbc_value', $event->getUserData()->getFbc() );
 	}
 
 	/**
@@ -358,7 +358,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_COOKIE['_fbp'] = '_fbp_value';
 		$event           = ServerEventFactory::new_event( 'Lead' );
 
-		$this->assertEquals( '_fbp_value', $event->getUserData()->get_fbp() );
+		$this->assertEquals( '_fbp_value', $event->getUserData()->getFbp() );
 	}
 
 	/**
