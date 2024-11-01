@@ -38,6 +38,13 @@ use FacebookAds\Object\ServerSide\Event;
 
 /**
  * FacebookWordpressWooCommerceTest class.
+ *
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ *
+ * All tests in this test class should be run in separate PHP process to
+ * make sure tests are isolated.
+ * Stop preserving global state from the parent process.
  */
 final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
