@@ -76,8 +76,22 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 		parent::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead' );
 		FacebookServerSideEvent::get_instance()->track( $event );
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
 		FacebookWordpressWPForms::injectLeadEvent();
 		$this->expectOutputRegex(
@@ -118,6 +132,13 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 
 		$mock_entry     = $this->createMockEntry();
 		$mock_form_data = $this->createMockFormData();
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		\WP_Mock::expectActionAdded(
 			'wp_footer',
@@ -182,6 +203,13 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
 			),
 			20
 		);
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		FacebookWordpressWPForms::trackEvent(
 			$mock_entry,
