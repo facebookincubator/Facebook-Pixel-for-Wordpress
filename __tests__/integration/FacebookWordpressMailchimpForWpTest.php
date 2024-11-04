@@ -93,6 +93,34 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 		);
 		$_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('sanitize_email', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_unslash', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		FacebookWordpressMailchimpForWp::injectLeadEvent();
 		$this->expectOutputRegex(
 			'/mailchimp-for-wp[\s\S]+End Meta Pixel Event Code/'
