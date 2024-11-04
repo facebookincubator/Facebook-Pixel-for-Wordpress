@@ -54,6 +54,14 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
 	 */
 	public function testTrackEventFiresAction() {
 		self::mockFacebookWordpressOptions();
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead' );
 
 		FacebookServerSideEvent::get_instance()->track( $event );
@@ -93,6 +101,13 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
 	public function testStoresPendingEvents() {
 		self::mockFacebookWordpressOptions();
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event1 = ServerEventFactory::new_event( 'Lead' );
 		$event2 = ServerEventFactory::new_event( 'AddToCart' );
 
@@ -126,6 +141,13 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
 	 */
 	public function testStoresPendingPixelEvents() {
 		self::mockFacebookWordpressOptions();
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$event = ServerEventFactory::new_event( 'Lead' );
 
