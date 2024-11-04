@@ -57,17 +57,24 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 		$event = ( new Event() )
 				->setEventName( 'Lead' )
 				->setEventId( 'TestEventId' );
+
+        \WP_Mock::userFunction('wp_unslash', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		$code  = PixelRenderer::render( array( $event ), 'Test' );
 
-		$expected = sprintf(
-			"<script type='text/javascript'>
-  fbq('set', 'agent', '%s', '');
-    fbq('track', 'Lead', {
-    \"fb_integration_tracking\": \"Test\"
-}, {
-    \"eventID\": \"TestEventId\"
-});
-  </script>",
+		$expected = sprintf("<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
 			$agent_string
 		);
 
@@ -85,6 +92,13 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 	 * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
 	 */
 	public function testPixelRenderForCustomEvent() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		FacebookWordpressOptions::set_version_info();
 		$agent_string = FacebookWordpressOptions::get_agent_string();
 
@@ -94,15 +108,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 
 		$code = PixelRenderer::render( array( $event ), 'Test' );
 
-		$expected = sprintf(
-			"<script type='text/javascript'>
-  fbq('set', 'agent', '%s', '');
-    fbq('trackCustom', 'Custom', {
-    \"fb_integration_tracking\": \"Test\"
-}, {
-    \"eventID\": \"TestEventId\"
-});
-  </script>",
+		$expected = sprintf("<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('trackCustom', 'Custom', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
 			$agent_string
 		);
 
@@ -121,6 +127,13 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 	 * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
 	 */
 	public function testPixelRenderForCustomData() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		FacebookWordpressOptions::set_version_info();
 		$agent_string = FacebookWordpressOptions::get_agent_string();
 
@@ -135,17 +148,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 
 		$code = PixelRenderer::render( array( $event ), 'Test' );
 
-		$expected = sprintf(
-			"<script type='text/javascript'>
-  fbq('set', 'agent', '%s', '');
-    fbq('track', 'Purchase', {
-    \"value\": \"30.00\",
-    \"currency\": \"usd\",
-    \"fb_integration_tracking\": \"Test\"
-}, {
-    \"eventID\": \"TestEventId\"
-});
-  </script>",
+		$expected = sprintf("<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Purchase', {\"value\":\"30.00\",\"currency\":\"usd\",\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
 			$agent_string
 		);
 
@@ -163,6 +166,13 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 	 * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
 	 */
 	public function testPixelRenderForMultipleEvents() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		FacebookWordpressOptions::set_version_info();
 		$agent_string = FacebookWordpressOptions::get_agent_string();
 
@@ -175,19 +185,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
 
 		$code = PixelRenderer::render( array( $event1, $event2 ), 'Test' );
 
-		$expected = sprintf(
-			"<script type='text/javascript'>
-  fbq('set', 'agent', '%s', '');
-    fbq('track', 'Lead', {
-    \"fb_integration_tracking\": \"Test\"
-}, {
-    \"eventID\": \"TestEventId1\"
-});\n  \n    fbq('track', 'Lead', {
-    \"fb_integration_tracking\": \"Test\"
-}, {
-    \"eventID\": \"TestEventId2\"
-});
-  </script>",
+		$expected = sprintf("<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId1\"});fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId2\"});</script>",
 			$agent_string
 		);
 
