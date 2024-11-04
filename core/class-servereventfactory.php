@@ -107,7 +107,7 @@ class ServerEventFactory {
 		$user_agent = null;
 
 		if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) ) {
-			$user_agent = sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) );
+			$user_agent = sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		}
 
 		return $user_agent;
@@ -127,7 +127,7 @@ class ServerEventFactory {
 	 */
 	private static function get_request_uri( $prefer_referrer_for_event_src ) {
 		if ( $prefer_referrer_for_event_src && ! empty( $_SERVER['HTTP_REFERER'] ) ) {
-			return sanitize_text_field( wp_unslash( $_SERVER['HTTP_REFERER'] ) );
+			return sanitize_text_field( $_SERVER['HTTP_REFERER'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		}
 
 		$url = 'http://';
@@ -136,11 +136,11 @@ class ServerEventFactory {
 		}
 
 		if ( ! empty( $_SERVER['HTTP_HOST'] ) ) {
-			$url .= sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) );
+			$url .= sanitize_text_field( $_SERVER['HTTP_HOST'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		}
 
 		if ( ! empty( $_SERVER['REQUEST_URI'] ) ) {
-			$url .= sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+			$url .= sanitize_text_field( $_SERVER['REQUEST_URI'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		}
 
 		return $url;
@@ -159,7 +159,7 @@ class ServerEventFactory {
 		$fbp = null;
 
 		if ( ! empty( $_COOKIE['_fbp'] ) ) {
-			$fbp = sanitize_text_field( wp_unslash( $_COOKIE['_fbp'] ) );
+			$fbp = sanitize_text_field( $_COOKIE['_fbp'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 		}
 
 		return $fbp;
