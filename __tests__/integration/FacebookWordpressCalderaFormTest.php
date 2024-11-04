@@ -84,6 +84,20 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 			'html'   => 'successful submitted',
 		);
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		$out = FacebookWordpressCalderaForm::injectLeadEvent( $mock_out, null );
 
 		$this->assertArrayHasKey( 'html', $out );
@@ -170,6 +184,27 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
 		);
 		$mock_form               = self::createMockForm();
 		$_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_unslash', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
 		$out = FacebookWordpressCalderaForm::injectLeadEvent( $mock_out, $mock_form );
 
