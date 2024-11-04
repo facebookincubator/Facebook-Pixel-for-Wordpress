@@ -112,6 +112,20 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
 		$this->setupMocks();
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		FacebookWordpressWooCommerce::trackPurchaseEvent( 1 );
 		$tracked_events =
 		FacebookServerSideEvent::get_instance()->get_tracked_events();
@@ -161,6 +175,20 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
 		$this->setupMocks();
 		$this->setupCustomerBillingAddress();
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		FacebookWordpressWooCommerce::trackInitiateCheckout();
 		$tracked_events =
@@ -214,6 +242,21 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 			'wp_doing_ajax',
 			array( 'return' => false )
 		);
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
 
@@ -264,6 +307,14 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 			'wp_doing_ajax',
 			array( 'return' => true )
 		);
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
 
@@ -321,6 +372,13 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testViewContentWithoutAdmin() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
 
@@ -331,6 +389,20 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 		$raw_post->ID = 1;
 		global $post;
 		$post = $raw_post;
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
 		FacebookWordpressWooCommerce::trackViewContentEvent();
 
@@ -389,6 +461,13 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 	 * records the event with the correct user and custom data attributes.
 	 */
 	public function testEnqueuePixelEvent() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
 
@@ -421,6 +500,13 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 			'addPixelCodeToAddToCartFragment',
 			$server_event
 		);
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
 		$fragments =
 		FacebookWordpressWooCommerce::addPixelCodeToAddToCartFragment( array() );
