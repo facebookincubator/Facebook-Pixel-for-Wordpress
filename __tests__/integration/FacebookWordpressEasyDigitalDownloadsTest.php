@@ -388,10 +388,10 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		$mock_edd_utils = \Mockery::mock(
 			'alias:FacebookPixelPlugin\Integration\EDDUtils'
 		);
-		$mock_edd_utils->shouldReceive( 'getCurrency' )->andReturn( 'USD' );
-		$mock_edd_utils->shouldReceive( 'getCartTotal' )->andReturn( 300 );
+		$mock_edd_utils->shouldReceive( 'get_currency' )->andReturn( 'USD' );
+		$mock_edd_utils->shouldReceive( 'get_cart_total' )->andReturn( 300 );
 
-		$this->mocked_fbpixel->shouldReceive( 'getLoggedInUserInfo' )
+		$this->mocked_fbpixel->shouldReceive( 'get_logged_in_user_info' )
 		->andReturn(
 			array(
 				'email'      => 'pika.chu@s2s.com',

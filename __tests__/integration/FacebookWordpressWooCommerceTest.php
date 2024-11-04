@@ -541,7 +541,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	private function setupMocks() {
-		$this->mocked_fbpixel->shouldReceive( 'getLoggedInUserInfo' )
+		$this->mocked_fbpixel->shouldReceive( 'get_logged_in_user_info' )
 		->andReturn(
 			array(
 				'email'      => 'pika.chu@s2s.com',
