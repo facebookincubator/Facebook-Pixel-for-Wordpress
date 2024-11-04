@@ -88,6 +88,20 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
 		$mock_form_data          = $this->getMockFormData();
 		$_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		$result = FacebookWordpressNinjaForms::injectLeadEvent(
 			$mock_actions,
 			null,
