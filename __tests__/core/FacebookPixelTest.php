@@ -132,20 +132,30 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	 *
 	 * @return void
 	 */
-	public function testCanGetPixelInitCode() {
-		FacebookPixel::set_pixel_id( '' );
-		$code = FacebookPixel::get_pixel_init_code( 'mockAgent', array( 'key' => 'value' ) );
-		$this->assertEmpty( $code );
+    public function testCanGetPixelInitCode() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [['key' => 'value'], \Mockery::type('int')],
+            'return' => '{"key":"value"}'
+        ]);
 
-		FacebookPixel::set_pixel_id( '123' );
-		$code = FacebookPixel::get_pixel_init_code( 'mockAgent', array( 'key' => 'value' ) );
-		$this->assertCodeStartAndEndWithScript( $code );
-		$this->assertCodePatternMatch( $code, array( '123', 'init', '"key": "value"', '"agent": "mockAgent"' ) );
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [['agent' => 'mockAgent'], \Mockery::type('int')],
+            'return' => '{"agent":"mockAgent"}'
+        ]);
 
-		$code = FacebookPixel::get_pixel_init_code( 'mockAgent', '{"key": "value"}', false );
-		$this->assertCodeStartAndEndWithNoScript( $code );
-		$this->assertCodePatternMatch( $code, array( '123', 'init', '"key": "value"', '"agent": "mockAgent"' ) );
-	}
+        FacebookPixel::set_pixel_id('');
+        $code = FacebookPixel::get_pixel_init_code('mockAgent', ['key' => 'value']);
+        $this->assertEmpty($code);
+
+        FacebookPixel::set_pixel_id('123');
+        $code = FacebookPixel::get_pixel_init_code('mockAgent', ['key' => 'value']);
+        $this->assertCodeStartAndEndWithScript($code);
+        $this->assertCodePatternMatch($code, ['123', 'init', '"key": "value"', '"agent": "mockAgent"']);
+
+        $code = FacebookPixel::get_pixel_init_code('mockAgent', '{"key": "value"}', false);
+        $this->assertCodeStartAndEndWithNoScript($code);
+        $this->assertCodePatternMatch($code, ['123', 'init', '"key": "value"', '"agent": "mockAgent"']);
+    }
 
 	/**
 	 * Tests that the get_pixel_track_code function behaves correctly.
@@ -160,20 +170,30 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	 *
 	 * @return void
 	 */
-	public function testCanGetPixelTrackCode() {
-		FacebookPixel::set_pixel_id( '' );
-		$code = FacebookPixel::get_pixel_track_code( 'mockEvent', array( 'key' => 'value' ) );
-		$this->assertEmpty( $code );
+    public function testCanGetPixelTrackCode() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [['key' => 'value'], \Mockery::type('int')],
+            'return' => '{"key":"value"}'
+        ]);
 
-		FacebookPixel::set_pixel_id( '123' );
-		$code = FacebookPixel::get_pixel_track_code( 'mockEvent', array( 'key' => 'value' ) );
-		$this->assertCodeStartAndEndWithScript( $code );
-		$this->assertCodePatternMatch( $code, array( 'track', '"key": "value"', 'mockEvent' ) );
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [['event' => 'mockEvent'], \Mockery::type('int')],
+            'return' => '{"event":"mockEvent"}'
+        ]);
 
-		$code = FacebookPixel::get_pixel_track_code( 'mockEvent', '{"key": "value"}', '', false );
-		$this->assertCodeStartAndEndWithNoScript( $code );
-		$this->assertCodePatternMatch( $code, array( 'trackCustom', '"key": "value"', 'mockEvent' ) );
-	}
+        FacebookPixel::set_pixel_id('');
+        $code = FacebookPixel::get_pixel_track_code('mockEvent', ['key' => 'value']);
+        $this->assertEmpty($code);
+
+        FacebookPixel::set_pixel_id('123');
+        $code = FacebookPixel::get_pixel_track_code('mockEvent', ['key' => 'value']);
+        $this->assertCodeStartAndEndWithScript($code);
+        $this->assertCodePatternMatch($code, ['track', '"key": "value"', 'mockEvent']);
+
+        $code = FacebookPixel::get_pixel_track_code('mockEvent', '{"key": "value"}', '', false);
+        $this->assertCodeStartAndEndWithNoScript($code);
+        $this->assertCodePatternMatch($code, ['trackCustom', '"key": "value"', 'mockEvent']);
+    }
 
 	/**
 	 * Tests that the get_pixel_noscript_code function behaves correctly.
