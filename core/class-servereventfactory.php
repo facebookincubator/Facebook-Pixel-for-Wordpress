@@ -279,6 +279,8 @@ class ServerEventFactory {
 	 * @param boolean  $prefer_referrer_for_event_src Whether to prefer the referrer URL over the current request URL as the event source URL.
 	 *
 	 * @return Event The event object.
+	 *
+	 * @throws \Exception If there was an preprocessing error.
 	 */
 	public static function safe_create_event(
 		$event_name,
@@ -423,8 +425,7 @@ class ServerEventFactory {
 				);
 			}
 		} catch ( \Exception $e ) {
-			$logger = new Logger();
-			$logger->error( $e->getMessage(), array( 'exception' => wp_json_encode( $e ) ) );
+			throw $e;
 		}
 
 		return $event;

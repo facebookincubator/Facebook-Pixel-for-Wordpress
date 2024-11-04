@@ -135,6 +135,8 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 	 * @return array An associative array containing 'event_data', a base64
 	 *               encoded JSON string of the events, and 'num_events',
 	 *               the number of events processed.
+	 *
+	 * @throws \Exception If there was an preprocessing error.
 	 */
 	protected function prepare_data( $data ) {
 		try {
@@ -154,8 +156,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 				);
 			}
 		} catch ( \Exception $ex ) {
-			$logger = new Logger();
-			$logger->error( $ex->getMessage(), array( 'exception' => $ex ) );
+			throw $ex;
 		}
 
 		return array();
@@ -168,6 +169,8 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 	 * and processes the events as an array of Event objects.
 	 *
 	 * @see FacebookServerSideEvent::send()
+	 *
+	 * @throws \Exception If there was an preprocessing error.
 	 */
 	protected function run_action() {
 		try {
@@ -186,8 +189,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
 			}
 			FacebookServerSideEvent::send( $events );
 		} catch ( \Exception $ex ) {
-			$logger = new Logger();
-			$logger->error( $ex->getMessage(), array( 'exception' => $ex ) );
+			throw $ex;
 		}
 	}
 }
