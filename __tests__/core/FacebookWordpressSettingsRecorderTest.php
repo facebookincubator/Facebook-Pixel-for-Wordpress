@@ -116,7 +116,15 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 		$_POST['pixelId']            = '</script><script>alert(1)</script>';
 		$_POST['accessToken']        = '</script><script>alert(2)</script>';
 		$_POST['externalBusinessId'] = '</script><script>alert(3)</script>';
-		\WP_Mock::userFunction(
+
+        \WP_Mock::userFunction('wp_unslash', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction(
 			'sanitize_text_field',
 			array(
 				'return_in_order' => array(
@@ -126,6 +134,7 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 				),
 			)
 		);
+
 		$expected_json = array(
 			'success' => false,
 			'msg'     => 'Invalid values',
@@ -172,6 +181,14 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 					FacebookPluginConfig::IS_FBE_INSTALLED_KEY => '1',
 				),
 			);
+
+            \WP_Mock::userFunction('wp_unslash', [
+                'args' => [\Mockery::any()],
+                'return' => function ($input) {
+                    return $input;
+                }
+            ]);
+
 			$result        = $settings_recorder->save_fbe_settings();
 			$this->assertEquals( $expected_json, $result );
 		}
