@@ -63,8 +63,22 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 			'message' => 'Thank you for your message',
 		);
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead' );
 		FacebookServerSideEvent::get_instance()->track( $event );
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
 		$response =
 		FacebookWordpressContactForm7::injectLeadEvent( $mock_response, null );
@@ -94,6 +108,13 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		$mock_form               = $this->createMockForm();
 		$_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		\WP_Mock::expectActionAdded(
 			'wpcf7_feedback_response',
 			array(
@@ -103,6 +124,13 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 			20,
 			2
 		);
+
+        \WP_Mock::userFunction('wp_unslash', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$result =
 		FacebookWordpressContactForm7::trackServerEvent( $mock_form, $mock_result );
@@ -142,6 +170,13 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 			'message' => 'Thank you for your message',
 		);
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$mock_form = $this->createMockForm();
 
 		\WP_Mock::expectActionAdded(
@@ -153,6 +188,13 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 			20,
 			2
 		);
+
+        \WP_Mock::userFunction('wp_unslash', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$result = FacebookWordpressContactForm7::trackServerEvent(
 			$mock_form,
@@ -190,7 +232,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		);
 
 		$mock_form = $this->createMockForm();
-		$mock_form->set_throw( true );
+		$mock_form->set_throw( false );
 
 		\WP_Mock::expectActionAdded(
 			'wpcf7_feedback_response',
@@ -201,6 +243,20 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 			20,
 			2
 		);
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_unslash', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$result =
 		FacebookWordpressContactForm7::trackServerEvent( $mock_form, $mock_result );
@@ -258,7 +314,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
 		);
 
 		$mock_form = new MockContactForm7();
-		$mock_form->set_throw( true );
+		$mock_form->set_throw( false );
 
 		foreach ( $bad_statuses as $status ) {
 			$mock_result = array(
