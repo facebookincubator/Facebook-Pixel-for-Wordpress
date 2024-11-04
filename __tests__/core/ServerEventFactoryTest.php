@@ -54,6 +54,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testNewEventHasEventId() {
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertNotNull( $event->getEventId() );
@@ -70,6 +77,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testNewEventHasEventTime() {
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertNotNull( $event->getEventTime() );
@@ -85,6 +99,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testNewEventHasEventName() {
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertEquals( 'Lead', $event->getEventName() );
@@ -99,6 +120,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testNewEventHasActionSource() {
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'ViewContent' );
 		$this->assertEquals( 'website', $event->getActionSource() );
 	}
@@ -114,6 +142,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 */
 	public function testNewEventWorksWithIpV4() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '24.17.77.101';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$event = ServerEventFactory::new_event( 'Lead' );
 		$this->assertEquals(
@@ -133,6 +168,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 */
 	public function testNewEventWorksWithIpV6() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '2120:10a:c191:401::5:7170';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$event = ServerEventFactory::new_event( 'Lead' );
 		$this->assertEquals(
@@ -154,6 +196,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['HTTP_X_FORWARDED_FOR']
 		= '2120:10a:c191:401::5:7170, 24.17.77.101';
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead' );
 		$this->assertEquals(
 			'2120:10a:c191:401::5:7170',
@@ -173,6 +222,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	public function testNewEventHonorsPrecedenceForIpAddress() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '24.17.77.101';
 		$_SERVER['REMOTE_ADDR']          = '24.17.77.100';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$event = ServerEventFactory::new_event( 'Lead' );
 		$this->assertEquals(
@@ -194,6 +250,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	public function testNewEventWithInvalidIpAddress() {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = 'INVALID';
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead' );
 		$this->assertNull( $event->getUserData()->getClientIpAddress() );
 	}
@@ -208,6 +271,14 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 */
 	public function testNewEventHasUserAgent() {
 		$_SERVER['HTTP_USER_AGENT'] = 'HTTP_USER_AGENT_VALUE';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event                      = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertEquals(
@@ -229,6 +300,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['HTTP_HOST']   = 'www.pikachu.com';
 		$_SERVER['REQUEST_URI'] = '/index.php';
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertEquals( 'https://www.pikachu.com/index.php', $event->getEventSourceUrl() );
@@ -247,6 +325,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['HTTP_HOST']   = 'www.pikachu.com';
 		$_SERVER['REQUEST_URI'] = '/index.php';
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertEquals( 'http://www.pikachu.com/index.php', $event->getEventSourceUrl() );
@@ -264,6 +349,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['HTTPS']       = 'off';
 		$_SERVER['HTTP_HOST']   = 'www.pikachu.com';
 		$_SERVER['REQUEST_URI'] = '/index.php';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$event = ServerEventFactory::new_event( 'Lead' );
 
@@ -286,6 +378,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['REQUEST_URI']  = '/index.php';
 		$_SERVER['HTTP_REFERER'] = 'http://referrer/';
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead', true );
 
 		$this->assertEquals( 'http://referrer/', $event->getEventSourceUrl() );
@@ -307,6 +406,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 		$_SERVER['HTTP_HOST']   = 'www.pikachu.com';
 		$_SERVER['REQUEST_URI'] = '/index.php';
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead', true );
 
 		$this->assertEquals( 'http://www.pikachu.com/index.php', $event->getEventSourceUrl() );
@@ -322,6 +428,20 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 */
 	public function testFBClidExtractedFromUrlIfFbcNotFound() {
 		$_GET['fbclid'] = 'fbclid_str';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_unslash', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$event = ServerEventFactory::new_event( 'Lead' );
 
@@ -341,6 +461,22 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 */
 	public function testNewEventHasFbc() {
 		$_COOKIE['_fbc'] = '_fbc_value';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_unslash', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+
 		$event           = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertEquals( '_fbc_value', $event->getUserData()->getFbc() );
@@ -356,6 +492,14 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 */
 	public function testNewEventHasFbp() {
 		$_COOKIE['_fbp'] = '_fbp_value';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event           = ServerEventFactory::new_event( 'Lead' );
 
 		$this->assertEquals( '_fbp_value', $event->getUserData()->getFbp() );
@@ -373,6 +517,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 */
 	public function testSafeCreateEventWithPII() {
 		$this->mockUseAAM( '1234', true, AAMSettingsFields::get_all_fields() );
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$server_event = ServerEventFactory::safe_create_event(
 			'Lead',
@@ -403,6 +554,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testSafeCreateEventWithPIIDisabled() {
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$server_event = ServerEventFactory::safe_create_event(
 			'Lead',
