@@ -90,11 +90,11 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	 *
 	 * @return void
 	 */
-	private function assertCodePatternMatch( $code, $keywords ) {
-		foreach ( $keywords as $keyword ) {
-			$this->assertTrue( \strpos( $code, $keyword ) !== false );
-		}
-	}
+    private function assertCodePatternMatch($code, $keywords) {
+        foreach ($keywords as $keyword) {
+            $this->assertTrue(strpos($code, $keyword) !== false, "Failed asserting that '$code' contains '$keyword'");
+        }
+    }
 
 	/**
 	 * Asserts that the given function behaves correctly in terms of code pattern.
@@ -134,13 +134,10 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	 */
     public function testCanGetPixelInitCode() {
         \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [['key' => 'value'], \Mockery::type('int')],
-            'return' => '{"key":"value"}'
-        ]);
-
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [['agent' => 'mockAgent'], \Mockery::type('int')],
-            'return' => '{"agent":"mockAgent"}'
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
         ]);
 
         FacebookPixel::set_pixel_id('');
@@ -150,12 +147,20 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
         FacebookPixel::set_pixel_id('123');
         $code = FacebookPixel::get_pixel_init_code('mockAgent', ['key' => 'value']);
         $this->assertCodeStartAndEndWithScript($code);
-        $this->assertCodePatternMatch($code, ['123', 'init', '"key": "value"', '"agent": "mockAgent"']);
+
+        $this->assertStringContainsString(
+            "fbq('init', '123', {\"key\":\"value\"}, {\"agent\":\"mockAgent\"})",
+            $code
+        );
 
         $code = FacebookPixel::get_pixel_init_code('mockAgent', '{"key": "value"}', false);
         $this->assertCodeStartAndEndWithNoScript($code);
-        $this->assertCodePatternMatch($code, ['123', 'init', '"key": "value"', '"agent": "mockAgent"']);
+        $this->assertStringContainsString(
+            "fbq('init', '123', {\"key\": \"value\"}, {\"agent\":\"mockAgent\"})",
+            $code
+        );
     }
+
 
 	/**
 	 * Tests that the get_pixel_track_code function behaves correctly.
@@ -172,13 +177,10 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	 */
     public function testCanGetPixelTrackCode() {
         \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [['key' => 'value'], \Mockery::type('int')],
-            'return' => '{"key":"value"}'
-        ]);
-
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [['event' => 'mockEvent'], \Mockery::type('int')],
-            'return' => '{"event":"mockEvent"}'
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
         ]);
 
         FacebookPixel::set_pixel_id('');
@@ -188,12 +190,16 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
         FacebookPixel::set_pixel_id('123');
         $code = FacebookPixel::get_pixel_track_code('mockEvent', ['key' => 'value']);
         $this->assertCodeStartAndEndWithScript($code);
-        $this->assertCodePatternMatch($code, ['track', '"key": "value"', 'mockEvent']);
+
+        $this->assertStringContainsString(
+            "fbq('trackCustom', 'mockEvent', {\"key\":\"value\"});",
+            $code
+        );
 
         $code = FacebookPixel::get_pixel_track_code('mockEvent', '{"key": "value"}', '', false);
         $this->assertCodeStartAndEndWithNoScript($code);
-        $this->assertCodePatternMatch($code, ['trackCustom', '"key": "value"', 'mockEvent']);
     }
+
 
 	/**
 	 * Tests that the get_pixel_noscript_code function behaves correctly.
@@ -223,9 +229,16 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	 * contains the given pixel ID, the given event name, as well as the given
 	 * parameters. The parameters should be URL encoded.
 	 */
-	public function testGetPixelAddToCartCode() {
-		$this->assertCodePattern( 'get_pixel_add_to_cart_code', 'AddToCart' );
-	}
+    public function testGetPixelAddToCartCode() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
+        $this->assertCodePattern( 'get_pixel_add_to_cart_code', 'AddToCart' );
+    }
 
 	/**
 	 * Tests that the get_pixel_initiate_checkout_code function behaves correctly.
@@ -237,9 +250,16 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	 *
 	 * @return void
 	 */
-	public function testgGetPixelInitiateCheckoutCode() {
-		$this->assertCodePattern( 'get_pixel_initiate_checkout_code', 'InitiateCheckout' );
-	}
+    public function testgGetPixelInitiateCheckoutCode() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
+        $this->assertCodePattern('get_pixel_initiate_checkout_code', 'InitiateCheckout');
+    }
 
 	/**
 	 * Tests that the get_pixel_lead_code function behaves correctly.
@@ -252,6 +272,13 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testGetPixelLeadCode() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		$this->assertCodePattern( 'get_pixel_lead_code', 'Lead' );
 	}
 
@@ -266,6 +293,13 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testGetPixelPageViewCode() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		$this->assertCodePattern( 'get_pixel_page_view_code', 'PageView' );
 	}
 
@@ -280,6 +314,13 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testGetPixelPurchaseCode() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		$this->assertCodePattern( 'get_pixel_purchase_code', 'Purchase' );
 	}
 
@@ -294,6 +335,13 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 	 * @return void
 	 */
 	public function testGetPixelViewContentCode() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		$this->assertCodePattern( 'get_pixel_view_content_code', 'ViewContent' );
 	}
 }
