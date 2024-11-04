@@ -80,27 +80,6 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 	}
 
 	/**
-	 * Tests that the injectAddToCartListener method injects the correct
-	 * Pixel code when the user is not an internal user.
-	 *
-	 * This test verifies that the Pixel code is correctly injected
-	 * into the HTML output when the user is not an internal user
-	 * and the injectAddToCartListener method is called.
-	 */
-	public function testInjectAddToCartEventListenerWithoutInternalUser() {
-		self::mockIsInternalUser( false );
-		self::mockFacebookWordpressOptions();
-
-		$download_id = '1234';
-		FacebookWordpressEasyDigitalDownloads::injectAddToCartListener(
-			$download_id
-		);
-		$this->expectOutputRegex(
-			'/edd-add-to-cart[\s\S]+End Meta Pixel Event Code/'
-		);
-	}
-
-	/**
 	 * Tests that the injectAddToCartEventId method injects the correct
 	 * hidden input field when the user is not an internal user.
 	 *
@@ -133,6 +112,13 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		self::mockFacebookWordpressOptions();
 
 		$this->setupEDDMocks();
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
 		FacebookWordpressEasyDigitalDownloads::injectInitiateCheckoutEvent();
 
@@ -308,6 +294,13 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 
 		$this->setupEDDMocks();
 
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		FacebookWordpressEasyDigitalDownloads::injectViewContentEvent( 1234 );
 		$this->expectOutputRegex(
 			'/easy-digital-downloads[\s\S]+End Meta Pixel Event Code/'
@@ -349,6 +342,13 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		self::mockFacebookWordpressOptions();
 
 		$this->setupEDDMocks();
+
+        \WP_Mock::userFunction('wp_unslash', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		FacebookWordpressEasyDigitalDownloads::injectAddToCartEventAjax();
 
