@@ -161,7 +161,7 @@ class FacebookServerSideEvent {
 	 *
 	 * @param ServerEvent[] $events The events to send to the Conversions API.
 	 *
-	 * @throws Exception If there was an error sending the events to the Conversions API.
+	 * @throws \Exception If there was an error sending the events to the Conversions API.
 	 */
 	public static function send( $events ) {
 		$events = apply_filters( 'before_conversions_api_event_sent', $events );
@@ -188,9 +188,8 @@ class FacebookServerSideEvent {
 					->setPartnerAgent( $agent );
 
 			$response = $request->execute();
-		} catch ( Exception $e ) {
-			$logger = new Logger();
-			$logger->error( 'Error sending events to Conversions API', array( 'exception' => $e ) );
+		} catch ( \Exception $e ) {
+			throw $e;
 		}
 	}
 
