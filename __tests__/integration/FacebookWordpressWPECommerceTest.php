@@ -104,6 +104,20 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
 		$this->setupMocks();
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
 		$response = FacebookWordpressWPECommerce::injectAddToCartEvent( $parameter );
 
 		$this->assertArrayHasKey( 'widget_output', $response );
@@ -170,6 +184,20 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
 		$this->setupMocks();
 
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		FacebookWordpressWPECommerce::injectInitiateCheckoutEvent();
 		$this->expectOutputRegex(
 			'/wp-e-commerce[\s\S]+End Meta Pixel Event Code/'
@@ -227,6 +255,20 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		$purchase_log_object      = $mock_purchase_log_object;
 		$session_id               = null;
 		$display_to_screen        = true;
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$mock_purchase_log_object->shouldReceive( 'get_items' )
 		->andReturn( array( 0 => (object) array( 'prodid' => '1' ) ) );
