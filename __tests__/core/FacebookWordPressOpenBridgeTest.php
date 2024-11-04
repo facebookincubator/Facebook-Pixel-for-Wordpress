@@ -59,6 +59,13 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 		\WP_Mock::userFunction( 'com_create_guid', array( 'return' => 'GUID' ) );
 		$_SESSION['obeid'] = 'GUID';
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event                = ServerEventFactory::new_event( 'Lead' );
 		$open_bridge_instance = FacebookWordpressOpenBridge::get_instance();
 
@@ -167,6 +174,13 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 		\WP_Mock::userFunction( 'get_current_user_id', array( 'return' => 0 ) );
 		$_SESSION['obeid'] = 'testObeid';
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event                = ServerEventFactory::new_event( 'Lead' );
 		$open_bridge_instance = FacebookWordpressOpenBridge::get_instance();
 
@@ -187,6 +201,13 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 		self::mockFacebookWordpressOptions();
 		$this->setupCustomerBillingAddress();
 		$_SESSION['obeid'] = 'testObeid';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$event                = ServerEventFactory::new_event( 'Lead' );
 		$open_bridge_instance = FacebookWordpressOpenBridge::get_instance();
@@ -211,6 +232,13 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
 		\WP_Mock::userFunction( 'wp_get_current_user', array( 'return' => array() ) );
 		\WP_Mock::userFunction( 'get_current_user_id', array( 'return' => 0 ) );
 		$_SESSION['obeid'] = 'testObeid';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		$open_bridge_instance = FacebookWordpressOpenBridge::get_instance();
 		$event                = array(
