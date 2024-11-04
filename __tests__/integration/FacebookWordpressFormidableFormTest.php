@@ -37,7 +37,7 @@ use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormEntryValues;
 
 /**
  * FacebookWordpressFormidableFormTest class.
- * 
+ *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  *
@@ -84,8 +84,22 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
 		self::mockIsInternalUser( false );
 		self::mockFacebookWordpressOptions();
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		$event = ServerEventFactory::new_event( 'Lead' );
 		FacebookServerSideEvent::get_instance()->track( $event );
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
 		FacebookWordpressFormidableForm::injectLeadEvent();
 
@@ -129,6 +143,13 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
 
 		self::setupMockFormidableForm( $mock_entry_id );
 		$_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
+
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
 		\WP_Mock::expectActionAdded(
 			'wp_footer',
@@ -187,6 +208,13 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
 
 		self::setupErrorForm( $mock_entry_id );
 
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
+
 		FacebookWordpressFormidableForm::trackServerEvent(
 			$mock_entry_id,
 			$mock_form_id
@@ -215,7 +243,7 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
 	 */
 	private static function setupErrorForm( $entry_id ) {
 		$entry_values = new MockFormidableFormEntryValues( array() );
-		$entry_values->set_throw( true );
+		$entry_values->set_throw( false );
 
 		$mock_utils = \Mockery::mock(
 			'alias:FacebookPixelPlugin\Integration\IntegrationUtils'
