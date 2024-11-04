@@ -317,7 +317,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
 		$GLOBALS['wpsc_cart'] = $mock_cart;
 
-		$this->mocked_fbpixel->shouldReceive( 'getLoggedInUserInfo' )
+		$this->mocked_fbpixel->shouldReceive( 'get_logged_in_user_info' )
 		->andReturn(
 			array(
 				'email'      => 'pika.chu@s2s.com',
