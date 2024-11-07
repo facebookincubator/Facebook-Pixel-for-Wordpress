@@ -118,7 +118,7 @@ class FacebookWordpressPixelInjection {
 		}
 
 		self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] = true;
-		FacebookPixel::get_pixel_base_code();
+		echo FacebookPixel::get_pixel_base_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		$capi_integration_status =
 		FacebookWordpressOptions::get_capi_integration_status();
 		if ( '1' === $capi_integration_status ) {
