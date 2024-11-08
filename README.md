@@ -24,6 +24,12 @@ Run the command to run tests and create the zip under build directory.
 
 `$ vendor/bin/phing`
 
+# Enable pre-commit hooks
+
+To enable pre-commit hooks, run this command:
+
+`git config core.hooksPath .githooks`
+
 # Full Documentation
 
 https://www.facebook.com/business/help/881403525362441

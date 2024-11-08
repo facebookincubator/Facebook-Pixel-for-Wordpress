@@ -1,3 +1,4 @@
 /vendor
 /build
 /js/lib/node_modules
+/node_modules
