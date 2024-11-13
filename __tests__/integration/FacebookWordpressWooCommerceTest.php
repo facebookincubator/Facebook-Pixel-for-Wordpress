@@ -1,15 +1,29 @@
 <?php
-/*
- * Copyright (C) 2017-present, Meta, Inc.
+/**
+ * Facebook Pixel Plugin FacebookWordpressWooCommerceTest class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This file contains the main logic for FacebookWordpressWooCommerceTest.
+ *
+ * @package FacebookPixelPlugin
  */
+
+/**
+ * Define FacebookWordpressWooCommerceTest class.
+ *
+ * @return void
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
@@ -23,6 +37,8 @@ use FacebookPixelPlugin\Tests\Mocks\MockWCProduct;
 use FacebookAds\Object\ServerSide\Event;
 
 /**
+ * FacebookWordpressWooCommerceTest class.
+ *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  *
@@ -30,455 +46,654 @@ use FacebookAds\Object\ServerSide\Event;
  * make sure tests are isolated.
  * Stop preserving global state from the parent process.
  */
-final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase
-{
-  public function testInjectPixelCodeWithWooNotActive()
-  {
-    $this->mockFacebookForWooCommerce(false);
+final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
-    \WP_Mock::expectActionAdded(
-      'woocommerce_after_checkout_form',
-      array(
-        FacebookWordpressWooCommerce::class,
-        'trackInitiateCheckout'
-      ),
-      40
-    );
+	/**
+	 * Tests the inject_pixel_code method when the Facebook for WooCommerce plugin is not active.
+	 *
+	 * This test verifies that the appropriate WordPress action hooks are added,
+	 * specifically checking that the 'woocommerce_after_checkout_form' hook is
+	 * registered with the 'trackInitiateCheckout' method from the
+	 * FacebookWordpressWooCommerce class.
+	 *
+	 * @return void
+	 */
+	public function testInjectPixelCodeWithWooNotActive() {
+		$this->mockFacebookForWooCommerce( false );
 
-    FacebookWordpressWooCommerce::injectPixelCode();
-  }
+		\WP_Mock::expectActionAdded(
+			'woocommerce_after_checkout_form',
+			array(
+				FacebookWordpressWooCommerce::class,
+				'trackInitiateCheckout',
+			),
+			40
+		);
 
-  public function testInjectPixelCodeWithWooActive()
-  {
-    $this->mockFacebookForWooCommerce(true);
+		FacebookWordpressWooCommerce::inject_pixel_code();
+	}
 
-    \WP_Mock::expectActionNotAdded(
-      'woocommerce_after_checkout_form',
-      array(
-        FacebookWordpressWooCommerce::class,
-        'trackInitiateCheckout'
-      ),
-      40
-    );
+	/**
+	 * Tests the inject_pixel_code method when the Facebook for WooCommerce plugin is active.
+	 *
+	 * This test verifies that the 'woocommerce_after_checkout_form' action hook
+	 * is not added when the plugin is active, ensuring that the 'trackInitiateCheckout'
+	 * method from the FacebookWordpressWooCommerce class is not registered.
+	 *
+	 * @return void
+	 */
+	public function testInjectPixelCodeWithWooActive() {
+		$this->mockFacebookForWooCommerce( true );
 
-    FacebookWordpressWooCommerce::injectPixelCode();
-  }
+		\WP_Mock::expectActionNotAdded(
+			'woocommerce_after_checkout_form',
+			array(
+				FacebookWordpressWooCommerce::class,
+				'trackInitiateCheckout',
+			),
+			40
+		);
 
-  public function testPurchaseEventWithoutInternalUser()
-  {
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
+		FacebookWordpressWooCommerce::inject_pixel_code();
+	}
 
-    $this->setupMocks();
+	/**
+	 * Tests that the trackPurchaseEvent method correctly records a 'Purchase' event
+	 * when the user is not an internal user.
+	 *
+	 * This test verifies that the server-side event tracking records the
+	 * 'Purchase' event with the correct user and custom data attributes.
+	 *
+	 * @return void
+	 */
+	public function testPurchaseEventWithoutInternalUser() {
+		self::mockIsInternalUser( false );
+		self::mockFacebookWordpressOptions();
 
-    FacebookWordpressWooCommerce::trackPurchaseEvent(1);
-    $tracked_events =
-      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		$this->setupMocks();
 
-    $this->assertCount(1, $tracked_events);
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
-    $event = $tracked_events[0];
-    $this->assertEquals('Purchase', $event->getEventName());
-    $this->assertNotNull($event->getEventTime());
-    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('chu', $event->getUserData()->getLastName());
-    $this->assertEquals('2062062006', $event->getUserData()->getPhone());
-    $this->assertEquals('springfield', $event->getUserData()->getCity());
-    $this->assertEquals('ohio', $event->getUserData()->getState());
-    $this->assertEquals('us', $event->getUserData()->getCountryCode());
-    $this->assertEquals('12345', $event->getUserData()->getZipCode());
-    $this->assertEquals('USD', $event->getCustomData()->getCurrency());
-    $this->assertEquals(900, $event->getCustomData()->getValue());
-    $this->assertEquals('wc_post_id_1',$event->getCustomData()->getContentIds()[0]);
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
-    $contents = $event->getCustomData()->getContents();
-    $this->assertCount(1, $contents);
-    $this->assertEquals('wc_post_id_1', $contents[0]->getProductId());
-    $this->assertEquals(3, $contents[0]->getQuantity());
-    $this->assertEquals(300, $contents[0]->getItemPrice());
+		FacebookWordpressWooCommerce::trackPurchaseEvent( 1 );
+		$tracked_events =
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
-    $this->assertEquals(
-      'woocommerce',
-      $event->getCustomData()->getCustomProperty('fb_integration_tracking')
-    );
-  }
+		$this->assertCount( 1, $tracked_events );
 
-  public function testInitiateCheckoutEventWithoutInternalUser()
-  {
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
+		$event = $tracked_events[0];
+		$this->assertEquals( 'Purchase', $event->getEventName() );
+		$this->assertNotNull( $event->getEventTime() );
+		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
+		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
+		$this->assertEquals( '2062062006', $event->getUserData()->getPhone() );
+		$this->assertEquals( 'springfield', $event->getUserData()->getCity() );
+		$this->assertEquals( 'ohio', $event->getUserData()->getState() );
+		$this->assertEquals( 'us', $event->getUserData()->getCountryCode() );
+		$this->assertEquals( '12345', $event->getUserData()->getZipCode() );
+		$this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
+		$this->assertEquals( 900, $event->getCustomData()->getValue() );
+		$this->assertEquals( 'wc_post_id_1', $event->getCustomData()->getContentIds()[0] );
 
-    $this->setupMocks();
-    $this->setupCustomerBillingAddress();
+		$contents = $event->getCustomData()->getContents();
+		$this->assertCount( 1, $contents );
+		$this->assertEquals( 'wc_post_id_1', $contents[0]->getProductId() );
+		$this->assertEquals( 3, $contents[0]->getQuantity() );
+		$this->assertEquals( 300, $contents[0]->getItemPrice() );
 
-    FacebookWordpressWooCommerce::trackInitiateCheckout();
-    $tracked_events =
-      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		$this->assertEquals(
+			'woocommerce',
+			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+		);
+	}
 
-    $this->assertCount(1, $tracked_events);
+	/**
+	 * Tests that the trackInitiateCheckout method correctly records an
+	 * 'InitiateCheckout' event when the user is not an internal user.
+	 *
+	 * This test verifies that the server-side event tracking records the
+	 * 'InitiateCheckout' event with the correct user and custom data
+	 * attributes.
+	 *
+	 * @return void
+	 */
+	public function testInitiateCheckoutEventWithoutInternalUser() {
+		self::mockIsInternalUser( false );
+		self::mockFacebookWordpressOptions();
 
-    $event = $tracked_events[0];
+		$this->setupMocks();
+		$this->setupCustomerBillingAddress();
 
-    $this->assertEquals('InitiateCheckout', $event->getEventName());
-    $this->assertNotNull($event->getEventTime());
-    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('chu', $event->getUserData()->getLastName());
-    $this->assertEquals('2062062006', $event->getUserData()->getPhone());
-    $this->assertEquals('springfield', $event->getUserData()->getCity());
-    $this->assertEquals('ohio', $event->getUserData()->getState());
-    $this->assertEquals('us', $event->getUserData()->getCountryCode());
-    $this->assertEquals('12345', $event->getUserData()->getZipCode());
-    $this->assertEquals('USD', $event->getCustomData()->getCurrency());
-    $this->assertEquals(900, $event->getCustomData()->getValue());
-    $this->assertEquals(3, $event->getCustomData()->getNumItems());
-    $this->assertEquals(
-      'wc_post_id_1',
-      $event->getCustomData()->getContentIds()[0]
-    );
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
-    $contents = $event->getCustomData()->getContents();
-    $this->assertCount(1, $contents);
-    $this->assertEquals('wc_post_id_1', $contents[0]->getProductId());
-    $this->assertEquals(3, $contents[0]->getQuantity());
-    $this->assertEquals(300, $contents[0]->getItemPrice());
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
-    $this->assertEquals(
-      'woocommerce',
-      $event->getCustomData()->getCustomProperty('fb_integration_tracking')
-    );
-  }
+		FacebookWordpressWooCommerce::trackInitiateCheckout();
+		$tracked_events =
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
-  public function testAddToCartEventWithoutInternalUser()
-  {
-    \WP_Mock::userFunction(
-      'wp_doing_ajax',
-      array('return' => false)
-    );
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
+		$this->assertCount( 1, $tracked_events );
 
-    $this->setupMocks();
-    $this->setupCustomerBillingAddress();
+		$event = $tracked_events[0];
 
-    FacebookWordpressWooCommerce::trackAddToCartEvent(1, 1, 3, null);
-    $tracked_events =
-      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		$this->assertEquals( 'InitiateCheckout', $event->getEventName() );
+		$this->assertNotNull( $event->getEventTime() );
+		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
+		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
+		$this->assertEquals( '2062062006', $event->getUserData()->getPhone() );
+		$this->assertEquals( 'springfield', $event->getUserData()->getCity() );
+		$this->assertEquals( 'ohio', $event->getUserData()->getState() );
+		$this->assertEquals( 'us', $event->getUserData()->getCountryCode() );
+		$this->assertEquals( '12345', $event->getUserData()->getZipCode() );
+		$this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
+		$this->assertEquals( 900, $event->getCustomData()->getValue() );
+		$this->assertEquals( 3, $event->getCustomData()->getNumItems() );
+		$this->assertEquals(
+			'wc_post_id_1',
+			$event->getCustomData()->getContentIds()[0]
+		);
 
-    $this->assertCount(1, $tracked_events);
+		$contents = $event->getCustomData()->getContents();
+		$this->assertCount( 1, $contents );
+		$this->assertEquals( 'wc_post_id_1', $contents[0]->getProductId() );
+		$this->assertEquals( 3, $contents[0]->getQuantity() );
+		$this->assertEquals( 300, $contents[0]->getItemPrice() );
 
-    $event = $tracked_events[0];
+		$this->assertEquals(
+			'woocommerce',
+			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+		);
+	}
 
-    $this->assertEquals('AddToCart', $event->getEventName());
-    $this->assertNotNull($event->getEventTime());
-    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('chu', $event->getUserData()->getLastName());
-    $this->assertEquals('2062062006', $event->getUserData()->getPhone());
-    $this->assertEquals('springfield', $event->getUserData()->getCity());
-    $this->assertEquals('ohio', $event->getUserData()->getState());
-    $this->assertEquals('us', $event->getUserData()->getCountryCode());
-    $this->assertEquals('12345', $event->getUserData()->getZipCode());
-    $this->assertEquals('USD', $event->getCustomData()->getCurrency());
-    $this->assertEquals(900, $event->getCustomData()->getValue());
-    $this->assertEquals(
-      'wc_post_id_1',
-      $event->getCustomData()->getContentIds()[0]
-    );
+	/**
+	 * Tests that the trackAddToCartEvent method correctly records an
+	 * 'AddToCart' event when the user is not an internal user.
+	 *
+	 * This test verifies that the server-side event tracking records the
+	 * 'AddToCart' event with the correct user and custom data attributes.
+	 *
+	 * @return void
+	 */
+	public function testAddToCartEventWithoutInternalUser() {
+		\WP_Mock::userFunction(
+			'wp_doing_ajax',
+			array( 'return' => false )
+		);
 
-    $this->assertEquals(
-      'woocommerce',
-      $event->getCustomData()->getCustomProperty('fb_integration_tracking')
-    );
-  }
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
-  public function testAddToCartEventAjaxWithoutInternalUser()
-  {
-    \WP_Mock::userFunction(
-      'wp_doing_ajax',
-      array('return' => true)
-    );
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
-    $this->setupMocks();
-    $this->setupCustomerBillingAddress();
+		self::mockIsInternalUser( false );
+		self::mockFacebookWordpressOptions();
 
-    \WP_Mock::expectFilterAdded(
-      'woocommerce_add_to_cart_fragments',
-      array(
-        FacebookWordpressWooCommerce::class,
-        'addPixelCodeToAddToCartFragment'
-      )
-    );
+		$this->setupMocks();
+		$this->setupCustomerBillingAddress();
 
-    FacebookWordpressWooCommerce::trackAddToCartEvent(1, 1, 3, null);
+		FacebookWordpressWooCommerce::trackAddToCartEvent( 1, 1, 3, null );
+		$tracked_events =
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
-    $tracked_events =
-      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		$this->assertCount( 1, $tracked_events );
 
-    $this->assertCount(1, $tracked_events);
+		$event = $tracked_events[0];
 
-    $event = $tracked_events[0];
+		$this->assertEquals( 'AddToCart', $event->getEventName() );
+		$this->assertNotNull( $event->getEventTime() );
+		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
+		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
+		$this->assertEquals( '2062062006', $event->getUserData()->getPhone() );
+		$this->assertEquals( 'springfield', $event->getUserData()->getCity() );
+		$this->assertEquals( 'ohio', $event->getUserData()->getState() );
+		$this->assertEquals( 'us', $event->getUserData()->getCountryCode() );
+		$this->assertEquals( '12345', $event->getUserData()->getZipCode() );
+		$this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
+		$this->assertEquals( 900, $event->getCustomData()->getValue() );
+		$this->assertEquals(
+			'wc_post_id_1',
+			$event->getCustomData()->getContentIds()[0]
+		);
 
-    $this->assertEquals('AddToCart', $event->getEventName());
-    $this->assertNotNull($event->getEventTime());
-    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('chu', $event->getUserData()->getLastName());
-    $this->assertEquals('2062062006', $event->getUserData()->getPhone());
-    $this->assertEquals('springfield', $event->getUserData()->getCity());
-    $this->assertEquals('ohio', $event->getUserData()->getState());
-    $this->assertEquals('us', $event->getUserData()->getCountryCode());
-    $this->assertEquals('12345', $event->getUserData()->getZipCode());
-    $this->assertEquals('USD', $event->getCustomData()->getCurrency());
-    $this->assertEquals(900, $event->getCustomData()->getValue());
-    $this->assertEquals(
-      'wc_post_id_1',
-      $event->getCustomData()->getContentIds()[0]
-    );
+		$this->assertEquals(
+			'woocommerce',
+			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+		);
+	}
 
-    $this->assertEquals(
-      'woocommerce',
-      $event->getCustomData()->getCustomProperty('fb_integration_tracking')
-    );
-  }
+	/**
+	 * Tests the trackAddToCartEvent method when the user is not an internal user
+	 * and the request is an AJAX request.
+	 *
+	 * This test verifies that the "woocommerce_add_to_cart_fragments" filter is
+	 * added and that the server-side event is tracked with the correct parameters
+	 * when the user is not an internal user and the request is an AJAX request.
+	 */
+	public function testAddToCartEventAjaxWithoutInternalUser() {
+		\WP_Mock::userFunction(
+			'wp_doing_ajax',
+			array( 'return' => true )
+		);
 
-  public function testViewContentWithoutAdmin()
-  {
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
-    $this->setupMocks();
-    $this->setupCustomerBillingAddress();
+		self::mockIsInternalUser( false );
+		self::mockFacebookWordpressOptions();
 
-    $raw_post = new \stdClass();
-    $raw_post->ID = 1;
-    global $post;
-    $post = $raw_post;
+		$this->setupMocks();
+		$this->setupCustomerBillingAddress();
 
-    FacebookWordpressWooCommerce::trackViewContentEvent();
+		\WP_Mock::expectFilterAdded(
+			'woocommerce_add_to_cart_fragments',
+			array(
+				FacebookWordpressWooCommerce::class,
+				'addPixelCodeToAddToCartFragment',
+			)
+		);
 
-    $tracked_events =
-      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+		FacebookWordpressWooCommerce::trackAddToCartEvent( 1, 1, 3, null );
 
-    $this->assertCount(1, $tracked_events);
+		$tracked_events =
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
-    $event = $tracked_events[0];
+		$this->assertCount( 1, $tracked_events );
 
-    $this->assertNotNull($event->getEventTime());
-    $this->assertEquals('pika.chu@s2s.com', $event->getUserData()->getEmail());
-    $this->assertEquals('pika', $event->getUserData()->getFirstName());
-    $this->assertEquals('chu', $event->getUserData()->getLastName());
-    $this->assertEquals('2062062006', $event->getUserData()->getPhone());
-    $this->assertEquals('springfield', $event->getUserData()->getCity());
-    $this->assertEquals('ohio', $event->getUserData()->getState());
-    $this->assertEquals('us', $event->getUserData()->getCountryCode());
-    $this->assertEquals('12345', $event->getUserData()->getZipCode());
+		$event = $tracked_events[0];
 
-    $this->assertEquals(10, $event->getCustomData()->getValue());
-    $this->assertEquals(
-      'wc_post_id_1',
-      $event->getCustomData()->getContentIds()[0]
-    );
-    $this->assertEquals(
-      'Stegosaurus',
-      $event->getCustomData()->getContentName()
-    );
-    $this->assertEquals(
-      'product',
-      $event->getCustomData()->getContentType()
-    );
-    $this->assertEquals(
-      'USD',
-      $event->getCustomData()->getCurrency()
-    );
-    $this->assertEquals(
-      'Dinosaurs',
-      $event->getCustomData()->getContentCategory()
-    );
+		$this->assertEquals( 'AddToCart', $event->getEventName() );
+		$this->assertNotNull( $event->getEventTime() );
+		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
+		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
+		$this->assertEquals( '2062062006', $event->getUserData()->getPhone() );
+		$this->assertEquals( 'springfield', $event->getUserData()->getCity() );
+		$this->assertEquals( 'ohio', $event->getUserData()->getState() );
+		$this->assertEquals( 'us', $event->getUserData()->getCountryCode() );
+		$this->assertEquals( '12345', $event->getUserData()->getZipCode() );
+		$this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
+		$this->assertEquals( 900, $event->getCustomData()->getValue() );
+		$this->assertEquals(
+			'wc_post_id_1',
+			$event->getCustomData()->getContentIds()[0]
+		);
 
-    $this->assertEquals(
-      'woocommerce',
-      $event->getCustomData()->getCustomProperty('fb_integration_tracking')
-    );
-  }
+		$this->assertEquals(
+			'woocommerce',
+			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+		);
+	}
 
-  public function testEnqueuePixelEvent()
-  {
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
+	/**
+	 * Tests the trackViewContentEvent method when the user is not an internal user.
+	 *
+	 * This test verifies that the Pixel code is correctly injected into the HTML
+	 * output and that the server-side event is tracked with the correct parameters
+	 * when the user is not an internal user. It asserts that the output HTML matches
+	 * the expected pattern for the "ViewContent" event.
+	 *
+	 * @return void
+	 */
+	public function testViewContentWithoutAdmin() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
-    $this->setupMocks();
-    $server_event = new Event();
-    $pixel_code = FacebookWordpressWooCommerce::enqueuePixelCode($server_event);
-    $this->assertMatchesRegularExpression(
-      '/woocommerce[\s\S]+End Meta Pixel Event Code/',
-      $pixel_code
-    );
-  }
+		self::mockIsInternalUser( false );
+		self::mockFacebookWordpressOptions();
 
-  public function testAddPixelCodeToAddToCartFragment()
-  {
-    self::mockFacebookWordpressOptions();
+		$this->setupMocks();
+		$this->setupCustomerBillingAddress();
 
-    $server_event = new Event();
-    FacebookServerSideEvent::getInstance()->setPendingPixelEvent(
-      'addPixelCodeToAddToCartFragment',
-      $server_event
-    );
+		$raw_post     = new \stdClass();
+		$raw_post->ID = 1;
+		global $post;
+		$post = $raw_post;
 
-    $fragments =
-      FacebookWordpressWooCommerce::addPixelCodeToAddToCartFragment(array());
+        \WP_Mock::userFunction('sanitize_text_field', [
+            'args' => [\Mockery::any()],
+            'return' => function ($input) {
+                return $input;
+            }
+        ]);
 
-    $this->assertArrayHasKey(
-      '#' . FacebookWordpressWooCommerce::DIV_ID_FOR_AJAX_PIXEL_EVENTS,
-      $fragments
-    );
-    $pxl_div_code =
-      $fragments[
-        '#' . FacebookWordpressWooCommerce::DIV_ID_FOR_AJAX_PIXEL_EVENTS
-      ];
-    $this->assertMatchesRegularExpression(
-      '/id=\'fb-pxl-ajax-code\'[\s\S]+woocommerce/',
-      $pxl_div_code
-    );
-  }
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
-  private function mockFacebookForWooCommerce($active)
-  {
-    \WP_Mock::userFunction(
-      'get_option',
-      array(
-        'return' => $active ?
-          array('facebook-for-woocommerce/facebook-for-woocommerce.php')
-          : array()
-      )
-    );
-  }
+		FacebookWordpressWooCommerce::trackViewContentEvent();
 
-  private function setupCustomerBillingAddress()
-  {
-    \WP_Mock::userFunction(
-      'get_user_meta',
-      array(
-        'times' => 1,
-        'args' => array(\WP_Mock\Functions::type('int'), 'billing_city', true),
-        'return' => 'Springfield'
-      )
-    );
-    \WP_Mock::userFunction(
-      'get_user_meta',
-      array(
-        'times' => 1,
-        'args' => array(\WP_Mock\Functions::type('int'), 'billing_state', true),
-        'return' => 'Ohio'
-      )
-    );
-    \WP_Mock::userFunction(
-      'get_user_meta',
-      array(
-        'times' => 1,
-        'args' => array(
-          \WP_Mock\Functions::type('int'),
-          'billing_postcode',
-          true
-        ),
-        'return' => '12345'
-      )
-    );
-    \WP_Mock::userFunction(
-      'get_user_meta',
-      array(
-        'times' => 1,
-        'args' => array(
-          \WP_Mock\Functions::type('int'),
-          'billing_country',
-          true
-        ),
-        'return' => 'US'
-      )
-    );
-    \WP_Mock::userFunction(
-      'get_user_meta',
-      array(
-        'times' => 1,
-        'args' => array(\WP_Mock\Functions::type('int'), 'billing_phone', true),
-        'return' => '2062062006'
-      )
-    );
-  }
+		$tracked_events =
+		FacebookServerSideEvent::get_instance()->get_tracked_events();
 
-  private function setupMocks()
-  {
-    $this->mocked_fbpixel->shouldReceive('getLoggedInUserInfo')
-      ->andReturn(
-        array(
-          'email' => 'pika.chu@s2s.com',
-          'first_name' => 'Pika',
-          'last_name' => 'Chu'
-        )
-      );
+		$this->assertCount( 1, $tracked_events );
 
-    \WP_Mock::userFunction(
-      'get_woocommerce_currency',
-      array(
-        'return' => 'USD'
-      )
-    );
+		$event = $tracked_events[0];
 
-    $cart = new MockWCCart();
-    $cart->add_item(1, 1, 3, 300);
+		$this->assertNotNull( $event->getEventTime() );
+		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
+		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
+		$this->assertEquals( '2062062006', $event->getUserData()->getPhone() );
+		$this->assertEquals( 'springfield', $event->getUserData()->getCity() );
+		$this->assertEquals( 'ohio', $event->getUserData()->getState() );
+		$this->assertEquals( 'us', $event->getUserData()->getCountryCode() );
+		$this->assertEquals( '12345', $event->getUserData()->getZipCode() );
 
-    \WP_Mock::userFunction(
-      'WC',
-      array(
-        'return' => new MockWC($cart)
-      )
-    );
+		$this->assertEquals( 10, $event->getCustomData()->getValue() );
+		$this->assertEquals(
+			'wc_post_id_1',
+			$event->getCustomData()->getContentIds()[0]
+		);
+		$this->assertEquals(
+			'Stegosaurus',
+			$event->getCustomData()->getContentName()
+		);
+		$this->assertEquals(
+			'product',
+			$event->getCustomData()->getContentType()
+		);
+		$this->assertEquals(
+			'USD',
+			$event->getCustomData()->getCurrency()
+		);
+		$this->assertEquals(
+			'Dinosaurs',
+			$event->getCustomData()->getContentCategory()
+		);
 
-    $order = new MockWCOrder(
-      'Pika',
-      'Chu',
-      'pika.chu@s2s.com',
-      '2062062006',
-      'Springfield',
-      '12345',
-      'Ohio',
-      'US'
-    );
-    $order->add_item(1, 3, 900);
+		$this->assertEquals(
+			'woocommerce',
+			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+		);
+	}
 
-    \WP_Mock::userFunction(
-      'wc_get_order',
-      array(
-        'return' => $order
-      )
-    );
+	/**
+	 * Test that the enqueuePixelCode method correctly enqueues the
+	 * appropriate Pixel code for WooCommerce events when the user
+	 * is not an internal user.
+	 *
+	 * This test verifies that the output contains the expected Meta Pixel
+	 * Event Code for WooCommerce and that the server-side event tracking
+	 * records the event with the correct user and custom data attributes.
+	 */
+	public function testEnqueuePixelEvent() {
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
 
-    \WP_Mock::userFunction(
-      'wc_get_product',
-      array(
-        'return' => new MockWCProduct(1, 'single_product', 'Stegosaurus', 10)
-      )
-    );
+		self::mockIsInternalUser( false );
+		self::mockFacebookWordpressOptions();
 
-    \WP_Mock::userFunction(
-      'get_current_user_id',
-      array(
-        'return' => 1
-      )
-    );
-    $term = new \stdClass();
-    $term->name = 'Dinosaurs';
-    \WP_Mock::userFunction(
-      'get_the_terms',
-      array(
-        'return' => array($term)
-      )
-    );
+		$this->setupMocks();
+		$server_event = new Event();
+		$pixel_code   = FacebookWordpressWooCommerce::enqueuePixelCode( $server_event );
+		$this->assertMatchesRegularExpression(
+			'/woocommerce[\s\S]+End Meta Pixel Event Code/',
+			$pixel_code
+		);
+	}
 
-    \WP_Mock::userFunction('wc_enqueue_js', array());
-  }
+	/**
+	 * Tests that the addPixelCodeToAddToCartFragment method correctly adds
+	 * the Pixel code to the AJAX response fragments.
+	 *
+	 * This test verifies that the Pixel code is included in the AJAX fragments
+	 * returned by the addPixelCodeToAddToCartFragment method when the
+	 * Facebook for WooCommerce integration is triggered. It ensures that the
+	 * appropriate HTML element ID is present in the fragments array and that
+	 * the Pixel code matches the expected pattern for WooCommerce.
+	 *
+	 * @return void
+	 */
+	public function testAddPixelCodeToAddToCartFragment() {
+		self::mockFacebookWordpressOptions();
+
+		$server_event = new Event();
+		FacebookServerSideEvent::get_instance()->set_pending_pixel_event(
+			'addPixelCodeToAddToCartFragment',
+			$server_event
+		);
+
+        \WP_Mock::userFunction('wp_json_encode', [
+            'args' => [\Mockery::type('array'), \Mockery::type('int')],
+            'return' => function($data, $options) {
+                return json_encode($data);
+            }
+        ]);
+
+		$fragments =
+		FacebookWordpressWooCommerce::addPixelCodeToAddToCartFragment( array() );
+
+		$this->assertArrayHasKey(
+			'#' . FacebookWordpressWooCommerce::DIV_ID_FOR_AJAX_PIXEL_EVENTS,
+			$fragments
+		);
+		$pxl_div_code =
+		$fragments[ '#' . FacebookWordpressWooCommerce::DIV_ID_FOR_AJAX_PIXEL_EVENTS ];
+		$this->assertMatchesRegularExpression(
+			'/id=\'fb-pxl-ajax-code\'[\s\S]+woocommerce/',
+			$pxl_div_code
+		);
+	}
+
+	/**
+	 * Mocks the presence of the Facebook for WooCommerce plugin.
+	 *
+	 * This function simulates the activation status of the Facebook for WooCommerce
+	 * plugin by mocking the 'get_option' function. It returns a specific plugin
+	 * identifier if the plugin is active, otherwise returns an empty array.
+	 *
+	 * @param bool $active Determines if the plugin is considered active.
+	 *                     If true, the plugin is mocked as active.
+	 *                     If false, the plugin is mocked as inactive.
+	 *
+	 * @return void
+	 */
+	private function mockFacebookForWooCommerce( $active ) {
+		\WP_Mock::userFunction(
+			'get_option',
+			array(
+				'return' => $active ?
+				array( 'facebook-for-woocommerce/facebook-for-woocommerce.php' )
+				: array(),
+			)
+		);
+	}
+
+	/**
+	 * Sets up customer billing address mocks.
+	 *
+	 * This method is used to simulate the presence of customer billing address
+	 * data. It uses WP_Mock to define the results of the get_user_meta function
+	 * when requesting the billing city, state, postcode, country, and phone.
+	 *
+	 * @return void
+	 */
+	private function setupCustomerBillingAddress() {
+		\WP_Mock::userFunction(
+			'get_user_meta',
+			array(
+				'times'  => 1,
+				'args'   => array( \WP_Mock\Functions::type( 'int' ), 'billing_city', true ),
+				'return' => 'Springfield',
+			)
+		);
+		\WP_Mock::userFunction(
+			'get_user_meta',
+			array(
+				'times'  => 1,
+				'args'   => array( \WP_Mock\Functions::type( 'int' ), 'billing_state', true ),
+				'return' => 'Ohio',
+			)
+		);
+		\WP_Mock::userFunction(
+			'get_user_meta',
+			array(
+				'times'  => 1,
+				'args'   => array(
+					\WP_Mock\Functions::type( 'int' ),
+					'billing_postcode',
+					true,
+				),
+				'return' => '12345',
+			)
+		);
+		\WP_Mock::userFunction(
+			'get_user_meta',
+			array(
+				'times'  => 1,
+				'args'   => array(
+					\WP_Mock\Functions::type( 'int' ),
+					'billing_country',
+					true,
+				),
+				'return' => 'US',
+			)
+		);
+		\WP_Mock::userFunction(
+			'get_user_meta',
+			array(
+				'times'  => 1,
+				'args'   => array( \WP_Mock\Functions::type( 'int' ), 'billing_phone', true ),
+				'return' => '2062062006',
+			)
+		);
+	}
+
+	/**
+	 * Sets up various mocks for the WooCommerce integration tests.
+	 *
+	 * This method uses WP_Mock to define the results of various functions that are
+	 * used in the WooCommerce integration code. It sets up the following mocks:
+	 *
+	 * - WC(): Returns a MockWC object.
+	 * - wc_get_order(): Returns a MockWCOrder object.
+	 * - wc_get_product(): Returns a MockWCProduct object.
+	 * - get_current_user_id(): Returns 1.
+	 * - get_the_terms(): Returns an array containing a stdClass object with a name
+	 *                    property set to 'Dinosaurs'.
+	 * - wc_enqueue_js(): Does nothing.
+	 *
+	 * Additionally, it sets up the MockWC object to return a MockWCCart object when
+	 * calling WC()->cart.
+	 *
+	 * @return void
+	 */
+	private function setupMocks() {
+		$this->mocked_fbpixel->shouldReceive( 'get_logged_in_user_info' )
+		->andReturn(
+			array(
+				'email'      => 'pika.chu@s2s.com',
+				'first_name' => 'Pika',
+				'last_name'  => 'Chu',
+			)
+		);
+
+		\WP_Mock::userFunction(
+			'get_woocommerce_currency',
+			array(
+				'return' => 'USD',
+			)
+		);
+
+		$cart = new MockWCCart();
+		$cart->add_item( 1, 1, 3, 300 );
+
+		\WP_Mock::userFunction(
+			'WC',
+			array(
+				'return' => new MockWC( $cart ),
+			)
+		);
+
+		$order = new MockWCOrder(
+			'Pika',
+			'Chu',
+			'pika.chu@s2s.com',
+			'2062062006',
+			'Springfield',
+			'12345',
+			'Ohio',
+			'US'
+		);
+		$order->add_item( 1, 3, 900 );
+
+		\WP_Mock::userFunction(
+			'wc_get_order',
+			array(
+				'return' => $order,
+			)
+		);
+
+		\WP_Mock::userFunction(
+			'wc_get_product',
+			array(
+				'return' => new MockWCProduct( 1, 'single_product', 'Stegosaurus', 10 ),
+			)
+		);
+
+		\WP_Mock::userFunction(
+			'get_current_user_id',
+			array(
+				'return' => 1,
+			)
+		);
+		$term       = new \stdClass();
+		$term->name = 'Dinosaurs';
+		\WP_Mock::userFunction(
+			'get_the_terms',
+			array(
+				'return' => array( $term ),
+			)
+		);
+
+		\WP_Mock::userFunction( 'wc_enqueue_js', array() );
+	}
 }

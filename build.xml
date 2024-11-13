@@ -8,6 +8,7 @@
 
     <!-- Fileset for all files -->
     <fileset dir="${basedir}" id="sourcedir">
+        <exclude name=".editorconfig" />
         <exclude name=".gitignore" />
         <exclude name="build.properties" />
         <exclude name="build.xml" />
