@@ -123,7 +123,13 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         $product_id,
         'product_cat'
       );
-    return count($categories) > 0 ? $categories[0]->name : null;
+    if (is_countable($categories)){
+      $cat_count = count($categories);
+    }
+    else{
+      $cat_count = 0;
+    }
+    return $cat_count > 0 ? $categories[0]->name : null;
   }
 
   public static function trackPurchaseEvent($order_id) {
