@@ -10,9 +10,7 @@
     <exclude-pattern>node_modules/*</exclude-pattern>
 
     <!-- Include WordPress coding standards -->
-    <rule ref="WordPress-Core"/>
-    <rule ref="WordPress-Extra"/>
-    <rule ref="WordPress-Docs"/>
+    <rule ref="WordPress"/>
 
     <!-- Set severity and error levels -->
     <arg name="warning-severity" value="6"/>
