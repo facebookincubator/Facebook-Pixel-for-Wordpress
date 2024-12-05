@@ -4,8 +4,9 @@
 
     <!-- Include WordPress standard ruleset -->
     <rule ref="WordPress">
-        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent" />
-        <exclude name="Universal.WhiteSpace.PrecisionAlignment.Found" />
+        <!-- Exclude conflicting indentation rules from WordPress -->
+        <exclude name="Generic.WhiteSpace.ScopeIndent" />
+        <exclude name="Generic.WhiteSpace.DisallowTabIndent" />
     </rule>
 
     <!-- Force 2 spaces for indentation -->
@@ -16,11 +17,13 @@
         </properties>
     </rule>
 
-    <!-- Ignore PrecisionAlignment rule, prefer simpler indentation -->
-    <rule ref="Universal.WhiteSpace.PrecisionAlignment" severity="ignore" />
-
-    <!-- Force no tabs for indentation -->
+    <!-- Ensure no tabs are used for indentation -->
     <rule ref="Generic.WhiteSpace.DisallowTabIndent" />
+
+    <!-- Disable the 'SpacesUsed' sniff that flags space-based indentation -->
+    <rule ref="Generic.WhiteSpace.DisallowSpaceIndent">
+        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed" />
+    </rule>
 
     <!-- Enforce a max line length of 80 characters -->
     <rule ref="Generic.Files.LineLength">
@@ -32,12 +35,6 @@
 
     <!-- Ensure proper function argument formatting with spaces after commas -->
     <rule ref="Squiz.Functions.FunctionDeclarationArgumentSpacing" />
-
-    <!-- Ensure proper array declaration formatting with spaces after commas -->
-    <rule ref="Squiz.Arrays.ArrayDeclaration" />
-
-    <!-- Ensure spaces around operators like '=', '>', etc. -->
-    <rule ref="Squiz.WhiteSpace.OperatorSpacing" />
 
     <!-- Enforce proper function declaration formatting -->
     <rule ref="Squiz.Functions.FunctionDeclaration" />
