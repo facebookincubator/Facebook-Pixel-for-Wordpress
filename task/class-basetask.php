@@ -35,19 +35,19 @@ use Phing\Task;
  */
 abstract class BaseTask extends Task {
 
-	/**
-	 * Sets the ABSPATH constant if it is not already defined.
-	 *
-	 * WordPress needs this constant to be set in order to load. We can't
-	 * assume that the constant is set in the context of our tasks, since
-	 * they are being run from the command line instead of through a
-	 * web request.
-	 *
-	 * @return void
-	 */
-	public function setABSPATH() {
-		if ( ! defined( 'ABSPATH' ) ) {
-			define( 'ABSPATH', __DIR__ . '/../' );
-		}
-	}
+    /**
+     * Sets the ABSPATH constant if it is not already defined.
+     *
+     * WordPress needs this constant to be set in order to load. We can't
+     * assume that the constant is set in the context of our tasks, since
+     * they are being run from the command line instead of through a
+     * web request.
+     *
+     * @return void
+     */
+    public function setABSPATH() {
+    if ( ! defined( 'ABSPATH' ) ) {
+        define( 'ABSPATH', __DIR__ . '/../' );
+    }
+    }
 }

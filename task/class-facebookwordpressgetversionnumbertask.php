@@ -32,32 +32,35 @@ use FacebookPixelPlugin\Core\FacebookPluginConfig;
  */
 class FacebookWordpressGetVersionNumberTask extends BaseTask {
 
-	/**
-	 * Versionprop variable.
-	 *
-	 * @var [string]
-	 */
-	private $versionprop;
+    /**
+     * Versionprop variable.
+     *
+     * @var [string]
+     */
+    private $versionprop;
 
 
-	/**
-	 * Set the property in the project that should contain the version number of the plugin.
-	 *
-	 * @param string $versionprop The name of the property in the project that should contain the version number.
-	 *
-	 * @return void
-	 */
-	public function setVersionProp( $versionprop ) {
-		$this->versionprop = $versionprop;
-	}
+    /**
+     * Set the property in the project that should
+     * contain the version number of the plugin.
+     *
+     * @param string $versionprop The name of the property
+     * in the project that should contain the version number.
+     *
+     * @return void
+     */
+    public function setVersionProp( $versionprop ) {
+        $this->versionprop = $versionprop;
+    }
 
-	/**
-	 * Sets the project property specified in $versionprop to the current version of the plugin.
-	 *
-	 * @return void
-	 */
-	public function main() {
-		$version = FacebookPluginConfig::PLUGIN_VERSION;
-		$this->project->setProperty( $this->versionprop, $version );
-	}
+    /**
+     * Sets the project property specified in
+     * $versionprop to the current version of the plugin.
+     *
+     * @return void
+     */
+    public function main() {
+        $version = FacebookPluginConfig::PLUGIN_VERSION;
+        $this->project->setProperty( $this->versionprop, $version );
+    }
 }
