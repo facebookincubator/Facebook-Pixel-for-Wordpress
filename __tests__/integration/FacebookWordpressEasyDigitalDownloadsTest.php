@@ -2,7 +2,8 @@
 /**
  * Facebook Pixel Plugin FacebookWordpressEasyDigitalDownloadsTest class.
  *
- * This file contains the main logic for FacebookWordpressEasyDigitalDownloadsTest.
+ * This file contains the main logic
+ * for FacebookWordpressEasyDigitalDownloadsTest.
  *
  * @package FacebookPixelPlugin
  */
@@ -69,7 +70,8 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 			->with(
 				array(
 					'hook_name'       => $hook,
-					'classname'       => FacebookWordpressEasyDigitalDownloads::class,
+					'classname'       =>
+                    FacebookWordpressEasyDigitalDownloads::class,
 					'inject_function' => $event,
 				)
 			)
@@ -113,12 +115,18 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 
 		$this->setupEDDMocks();
 
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [\Mockery::type('array'), \Mockery::type('int')],
-            'return' => function($data, $options) {
-                return json_encode($data);
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'wp_json_encode',
+            array(
+				'args'   => array(
+                    \Mockery::type( 'array' ),
+					\Mockery::type( 'int' ),
+				),
+				'return' => function ( $data, $options ) {
+					return json_encode( $data );
+				},
+            )
+        );
 
 		FacebookWordpressEasyDigitalDownloads::injectInitiateCheckoutEvent();
 
@@ -134,14 +142,19 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		$event = $tracked_events[0];
 		$this->assertEquals( 'InitiateCheckout', $event->getEventName() );
 		$this->assertNotNull( $event->getEventTime() );
-		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals(
+            'pika.chu@s2s.com',
+            $event->getUserData()->getEmail()
+        );
 		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
 		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
 		$this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
 		$this->assertEquals( '300', $event->getCustomData()->getValue() );
 		$this->assertEquals(
 			'easy-digital-downloads',
-			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+			$event->getCustomData()->getCustomProperty(
+                'fb_integration_tracking'
+            )
 		);
 	}
 
@@ -176,7 +189,10 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 			20
 		);
 
-		FacebookWordpressEasyDigitalDownloads::trackPurchaseEvent( $payment, null );
+		FacebookWordpressEasyDigitalDownloads::trackPurchaseEvent(
+            $payment,
+            null
+        );
 
 		$tracked_events =
 		FacebookServerSideEvent::get_instance()->get_tracked_events();
@@ -186,16 +202,27 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		$event = $tracked_events[0];
 		$this->assertEquals( 'Purchase', $event->getEventName() );
 		$this->assertNotNull( $event->getEventTime() );
-		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals(
+            'pika.chu@s2s.com',
+            $event->getUserData()->getEmail()
+        );
 		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
 		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
 		$this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
 		$this->assertEquals( 700, $event->getCustomData()->getValue() );
-		$this->assertEquals( 'product', $event->getCustomData()->getContentType() );
-		$this->assertEquals( array( 99, 999 ), $event->getCustomData()->getContentIds() );
+		$this->assertEquals(
+            'product',
+            $event->getCustomData()->getContentType()
+        );
+		$this->assertEquals(
+            array( 99, 999 ),
+            $event->getCustomData()->getContentIds()
+        );
 		$this->assertEquals(
 			'easy-digital-downloads',
-			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+			$event->getCustomData()->getCustomProperty(
+                'fb_integration_tracking'
+            )
 		);
 	}
 
@@ -258,7 +285,10 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 	public function testInjectPurchaseEventWithInternalUser() {
 		self::mockIsInternalUser( true );
 		$payment = array( 'ID' => '1234' );
-		FacebookWordpressEasyDigitalDownloads::trackPurchaseEvent( $payment, null );
+		FacebookWordpressEasyDigitalDownloads::trackPurchaseEvent(
+            $payment,
+            null
+        );
 		$this->expectOutputString( '' );
 	}
 
@@ -274,12 +304,15 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 		self::mockIsInternalUser( true );
 
 		$download_id = 1234;
-		FacebookWordpressEasyDigitalDownloads::injectViewContentEvent( $download_id );
+		FacebookWordpressEasyDigitalDownloads::injectViewContentEvent(
+            $download_id
+        );
 		$this->expectOutputString( '' );
 	}
 
 	/**
-	 * Tests that the injectViewContentEvent method correctly injects the Pixel code
+	 * Tests that the injectViewContentEvent method
+     * correctly injects the Pixel code
 	 * for the 'ViewContent' event when the user is not an internal user.
 	 *
 	 * This test verifies that the output contains the expected Meta Pixel
@@ -294,12 +327,18 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 
 		$this->setupEDDMocks();
 
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [\Mockery::type('array'), \Mockery::type('int')],
-            'return' => function($data, $options) {
-                return json_encode($data);
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'wp_json_encode',
+            array(
+				'args'   => array(
+                    \Mockery::type( 'array' ),
+					\Mockery::type( 'int' ),
+				),
+				'return' => function ( $data, $options ) {
+					return json_encode( $data );
+				},
+            )
+        );
 
 		FacebookWordpressEasyDigitalDownloads::injectViewContentEvent( 1234 );
 		$this->expectOutputRegex(
@@ -343,12 +382,15 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 
 		$this->setupEDDMocks();
 
-        \WP_Mock::userFunction('wp_unslash', [
-            'args' => [\Mockery::any()],
-            'return' => function ($input) {
-                return $input;
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'wp_unslash',
+            array(
+				'args'   => array( \Mockery::any() ),
+				'return' => function ( $input ) {
+					return $input;
+				},
+            )
+        );
 
 		FacebookWordpressEasyDigitalDownloads::injectAddToCartEventAjax();
 
@@ -377,9 +419,12 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 	/**
 	 * Sets up the necessary mocks for Easy Digital Downloads integration tests.
 	 *
-	 * This method mocks various functions and methods related to Easy Digital Downloads
-	 * to simulate the environment for testing purposes. It configures the expected
-	 * return values for functions like currency retrieval, cart total calculation,
+	 * This method mocks various functions and methods
+     * related to Easy Digital Downloads
+	 * to simulate the environment for testing purposes.
+     * It configures the expected
+	 * return values for functions like currency retrieval,
+     * cart total calculation,
 	 * payment metadata, and download object information. It also sets up mock
 	 * POST data and ensures nonce verification functions behave as expected.
 	 */

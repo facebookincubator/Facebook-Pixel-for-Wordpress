@@ -31,56 +31,56 @@ namespace FacebookPixelPlugin\Tests\Mocks;
  * MockContactForm7 class.
  */
 final class MockContactForm7 {
-	/**
-	 * An array of form tags.
-	 *
-	 * @var array
-	 */
-	private $form_tags = array();
-	/**
-	 * Whether to throw an exception when get_current() is called.
-	 *
-	 * @var bool
-	 */
-	private $throw = false;
+    /**
+     * An array of form tags.
+     *
+     * @var array
+     */
+    private $form_tags = array();
+    /**
+     * Whether to throw an exception when get_current() is called.
+     *
+     * @var bool
+     */
+    private $throw = false;
 
-	/**
-	 * Sets whether to throw an exception when get_current() is called.
-	 *
-	 * @param bool $status Whether to throw an exception.
-	 */
-	public function set_throw( $status ) {
-		$this->throw = $status;
-	}
+    /**
+     * Sets whether to throw an exception when get_current() is called.
+     *
+     * @param bool $status Whether to throw an exception.
+     */
+    public function set_throw( $status ) {
+        $this->throw = $status;
+    }
 
-	/**
-	 * Adds a form tag to the mock plugin.
-	 *
-	 * @param string $basetype The base type of the tag.
-	 * @param string $name     The name of the tag.
-	 * @param mixed  $value    The value of the tag.
-	 */
-	public function add_tag( $basetype, $name, $value ) {
-		$tag            = new MockContactForm7Tag( $basetype, $name );
-		$_POST[ $name ] = $value;
+    /**
+     * Adds a form tag to the mock plugin.
+     *
+     * @param string $basetype The base type of the tag.
+     * @param string $name     The name of the tag.
+     * @param mixed  $value    The value of the tag.
+     */
+    public function add_tag( $basetype, $name, $value ) {
+        $tag            = new MockContactForm7Tag( $basetype, $name );
+        $_POST[ $name ] = $value;
 
-		$this->form_tags[] = $tag;
-	}
+        $this->form_tags[] = $tag;
+    }
 
-	/**
-	 * Scans and retrieves the form tags.
-	 *
-	 * If the 'throw' property is set to true, an exception is thrown.
-	 *
-	 * @throws \Exception If an error occurs during form tag scanning.
-	 *
-	 * @return array The array of form tags.
-	 */
-	public function scan_form_tags() {
-		if ( $this->throw ) {
-			throw new \Exception( 'Error scanning form tags!' );
-		}
+    /**
+     * Scans and retrieves the form tags.
+     *
+     * If the 'throw' property is set to true, an exception is thrown.
+     *
+     * @throws \Exception If an error occurs during form tag scanning.
+     *
+     * @return array The array of form tags.
+     */
+    public function scan_form_tags() {
+    if ( $this->throw ) {
+        throw new \Exception( 'Error scanning form tags!' );
+    }
 
-		return $this->form_tags;
-	}
+        return $this->form_tags;
+    }
 }

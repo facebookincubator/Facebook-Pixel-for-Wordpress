@@ -31,49 +31,49 @@ namespace FacebookPixelPlugin\Tests\Mocks;
  * MockGravityFormField class.
  */
 final class MockGravityFormField {
-	/**
-	 * The type of the form field.
-	 *
-	 * @var string
-	 */
-	public $type;
+    /**
+     * The type of the form field.
+     *
+     * @var string
+     */
+    public $type;
 
-	/**
-	 * The identifier of the form field.
-	 *
-	 * @var string
-	 */
-	public $id;
+    /**
+     * The identifier of the form field.
+     *
+     * @var string
+     */
+    public $id;
 
-	/**
-	 * An array of input fields for the form field.
-	 *
-	 * @var array
-	 */
-	public $inputs = array();
+    /**
+     * An array of input fields for the form field.
+     *
+     * @var array
+     */
+    public $inputs = array();
 
-	/**
-	 * Constructs a new instance of the MockGravityFormField class.
-	 *
-	 * @param string $type The type of the form field.
-	 * @param string $id   The identifier of the form field.
-	 */
-	public function __construct( $type, $id ) {
-		$this->type = $type;
-		$this->id   = $id;
-	}
+    /**
+     * Constructs a new instance of the MockGravityFormField class.
+     *
+     * @param string $type The type of the form field.
+     * @param string $id   The identifier of the form field.
+     */
+    public function __construct( $type, $id ) {
+        $this->type = $type;
+        $this->id   = $id;
+    }
 
-	/**
-	 * Adds a label to the form field.
-	 *
-	 * @param string $label The text of the label.
-	 * @param string $id    The identifier of the label.
-	 */
-	public function add_label( $label, $id ) {
-		$input          = array(
-			'label' => $label,
-			'id'    => $id,
-		);
-		$this->inputs[] = $input;
-	}
+    /**
+     * Adds a label to the form field.
+     *
+     * @param string $label The text of the label.
+     * @param string $id    The identifier of the label.
+     */
+    public function add_label( $label, $id ) {
+        $input          = array(
+            'label' => $label,
+            'id'    => $id,
+        );
+        $this->inputs[] = $input;
+    }
 }

@@ -45,150 +45,185 @@ use FacebookAds\Object\ServerSide\CustomData;
  * Stop preserving global state from the parent process.
  */
 final class PixelRendererTest extends FacebookWordpressTestBase {
-	/**
-	 * Test that the PixelRenderer renders the expected code for a standard event.
-	 *
-	 * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
-	 */
-	public function testPixelRenderForStandardEvent() {
-		FacebookWordpressOptions::set_version_info();
-		$agent_string = FacebookWordpressOptions::get_agent_string();
+    /**
+     * Test that the PixelRenderer renders
+     * the expected code for a standard event.
+     *
+     * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+     */
+    public function testPixelRenderForStandardEvent() {
+        FacebookWordpressOptions::set_version_info();
+        $agent_string = FacebookWordpressOptions::get_agent_string();
 
-		$event = ( new Event() )
-				->setEventName( 'Lead' )
-				->setEventId( 'TestEventId' );
+        $event = ( new Event() )
+                ->setEventName( 'Lead' )
+                ->setEventId( 'TestEventId' );
 
-        \WP_Mock::userFunction('wp_unslash', [
-            'args' => [\Mockery::any()],
-            'return' => function ($input) {
+    \WP_Mock::userFunction(
+        'wp_unslash',
+        array(
+            'args'   => array( \Mockery::any() ),
+            'return' => function ( $input ) {
                 return $input;
-            }
-        ]);
+            },
+        )
+    );
 
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [\Mockery::type('array'), \Mockery::type('int')],
-            'return' => function($data, $options) {
-                return json_encode($data);
-            }
-        ]);
+    \WP_Mock::userFunction(
+        'wp_json_encode',
+        array(
+            'args'   => array(
+				\Mockery::type( 'array' ),
+				\Mockery::type( 'int' ),
+			),
+            'return' => function ( $data, $options ) {
+                return json_encode( $data );
+            },
+        )
+    );
 
-		$code  = PixelRenderer::render( array( $event ), 'Test' );
+        $code = PixelRenderer::render( array( $event ), 'Test' );
 
-		$expected = sprintf("<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
-			$agent_string
-		);
+    $expected = sprintf(
+        "<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
+        $agent_string
+    );
 
-		$this->assertEquals( $expected, $code );
-	}
+        $this->assertEquals( $expected, $code );
+    }
 
-	/**
-	 * Test that the PixelRenderer renders the expected code for a custom event.
-	 *
-	 * This test ensures that the render method correctly generates the Pixel code
-	 * for a custom event. It verifies that the output includes the 'trackCustom'
-	 * keyword and that the event data and custom data are correctly formatted
-	 * and included in the output.
-	 *
-	 * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
-	 */
-	public function testPixelRenderForCustomEvent() {
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [\Mockery::type('array'), \Mockery::type('int')],
-            'return' => function($data, $options) {
-                return json_encode($data);
-            }
-        ]);
+    /**
+     * Test that the PixelRenderer renders the expected code for a custom event.
+     *
+     * This test ensures that the render method
+     * correctly generates the Pixel code
+     * for a custom event. It verifies that the
+     * output includes the 'trackCustom'
+     * keyword and that the event data and custom data are correctly formatted
+     * and included in the output.
+     *
+     * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+     */
+    public function testPixelRenderForCustomEvent() {
+    \WP_Mock::userFunction(
+        'wp_json_encode',
+        array(
+            'args'   => array(
+				\Mockery::type( 'array' ),
+				\Mockery::type( 'int' ),
+			),
+            'return' => function ( $data, $options ) {
+                return json_encode( $data );
+            },
+        )
+    );
 
-		FacebookWordpressOptions::set_version_info();
-		$agent_string = FacebookWordpressOptions::get_agent_string();
+        FacebookWordpressOptions::set_version_info();
+        $agent_string = FacebookWordpressOptions::get_agent_string();
 
-		$event = ( new Event() )
-				->setEventName( 'Custom' )
-				->setEventId( 'TestEventId' );
+        $event = ( new Event() )
+                ->setEventName( 'Custom' )
+                ->setEventId( 'TestEventId' );
 
-		$code = PixelRenderer::render( array( $event ), 'Test' );
+        $code = PixelRenderer::render( array( $event ), 'Test' );
 
-		$expected = sprintf("<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('trackCustom', 'Custom', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
-			$agent_string
-		);
+    $expected = sprintf(
+        "<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('trackCustom', 'Custom', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
+        $agent_string
+    );
 
-		$this->assertEquals( $expected, $code );
-	}
+        $this->assertEquals( $expected, $code );
+    }
 
-	/**
-	 * Test that the PixelRenderer renders the expected code for a custom event
-	 * with custom data.
-	 *
-	 * This test ensures that the render method correctly generates the Pixel
-	 * code for a custom event with custom data. It verifies that the output
-	 * includes the 'track' keyword and that the custom data is correctly
-	 * formatted and included in the output.
-	 *
-	 * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
-	 */
-	public function testPixelRenderForCustomData() {
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [\Mockery::type('array'), \Mockery::type('int')],
-            'return' => function($data, $options) {
-                return json_encode($data);
-            }
-        ]);
+    /**
+     * Test that the PixelRenderer renders the expected code for a custom event
+     * with custom data.
+     *
+     * This test ensures that the render method correctly generates the Pixel
+     * code for a custom event with custom data. It verifies that the output
+     * includes the 'track' keyword and that the custom data is correctly
+     * formatted and included in the output.
+     *
+     * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+     */
+    public function testPixelRenderForCustomData() {
+    \WP_Mock::userFunction(
+        'wp_json_encode',
+        array(
+            'args'   => array(
+				\Mockery::type( 'array' ),
+				\Mockery::type( 'int' ),
+			),
+            'return' => function ( $data, $options ) {
+                    return json_encode( $data );
+            },
+        )
+    );
 
-		FacebookWordpressOptions::set_version_info();
-		$agent_string = FacebookWordpressOptions::get_agent_string();
+        FacebookWordpressOptions::set_version_info();
+        $agent_string = FacebookWordpressOptions::get_agent_string();
 
-		$custom_data = ( new CustomData() )
-					->setCurrency( 'USD' )
-					->setValue( '30.00' );
+        $custom_data = ( new CustomData() )
+                    ->setCurrency( 'USD' )
+                    ->setValue( '30.00' );
 
-		$event = ( new Event() )
-				->setEventName( 'Purchase' )
-				->setEventId( 'TestEventId' )
-				->setCustomData( $custom_data );
+        $event = ( new Event() )
+                ->setEventName( 'Purchase' )
+                ->setEventId( 'TestEventId' )
+                ->setCustomData( $custom_data );
 
-		$code = PixelRenderer::render( array( $event ), 'Test' );
+        $code = PixelRenderer::render( array( $event ), 'Test' );
 
-		$expected = sprintf("<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Purchase', {\"value\":\"30.00\",\"currency\":\"usd\",\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
-			$agent_string
-		);
+    $expected = sprintf(
+        "<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Purchase', {\"value\":\"30.00\",\"currency\":\"usd\",\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
+        $agent_string
+    );
 
-		$this->assertEquals( $expected, $code );
-	}
+        $this->assertEquals( $expected, $code );
+    }
 
-	/**
-	 * Test that the PixelRenderer renders the expected code for multiple events.
-	 *
-	 * This test verifies that the render method correctly generates the Pixel
-	 * code when provided with multiple events. It ensures that each event is
-	 * tracked separately and that the output includes the correct event data
-	 * and event IDs for each event.
-	 *
-	 * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
-	 */
-	public function testPixelRenderForMultipleEvents() {
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [\Mockery::type('array'), \Mockery::type('int')],
-            'return' => function($data, $options) {
-                return json_encode($data);
-            }
-        ]);
+    /**
+     * Test that the PixelRenderer renders the
+     * expected code for multiple events.
+     *
+     * This test verifies that the render method correctly generates the Pixel
+     * code when provided with multiple events. It ensures that each event is
+     * tracked separately and that the output includes the correct event data
+     * and event IDs for each event.
+     *
+     * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+     */
+    public function testPixelRenderForMultipleEvents() {
+    \WP_Mock::userFunction(
+        'wp_json_encode',
+        array(
+            'args'   => array(
+				\Mockery::type( 'array' ),
+				\Mockery::type( 'int' ),
+			),
+            'return' => function ( $data, $options ) {
+                return json_encode( $data );
+            },
+        )
+    );
 
-		FacebookWordpressOptions::set_version_info();
-		$agent_string = FacebookWordpressOptions::get_agent_string();
+        FacebookWordpressOptions::set_version_info();
+        $agent_string = FacebookWordpressOptions::get_agent_string();
 
-		$event1 = ( new Event() )
-				->setEventName( 'Lead' )
-				->setEventId( 'TestEventId1' );
-		$event2 = ( new Event() )
-				->setEventName( 'Lead' )
-				->setEventId( 'TestEventId2' );
+        $event1 = ( new Event() )
+                ->setEventName( 'Lead' )
+                ->setEventId( 'TestEventId1' );
+        $event2 = ( new Event() )
+                ->setEventName( 'Lead' )
+                ->setEventId( 'TestEventId2' );
 
-		$code = PixelRenderer::render( array( $event1, $event2 ), 'Test' );
+        $code = PixelRenderer::render( array( $event1, $event2 ), 'Test' );
 
-		$expected = sprintf("<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId1\"});fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId2\"});</script>",
-			$agent_string
-		);
+    $expected = sprintf(
+        "<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId1\"});fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId2\"});</script>",
+        $agent_string
+    );
 
-		$this->assertEquals( $expected, $code );
-	}
+        $this->assertEquals( $expected, $code );
+    }
 }

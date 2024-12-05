@@ -32,74 +32,74 @@ namespace FacebookPixelPlugin\Tests\Mocks;
  */
 final class MockWCCart {
 
-	/**
-	 * The total value of the cart.
-	 *
-	 * @var int
-	 */
-	public $total = 0;
+    /**
+     * The total value of the cart.
+     *
+     * @var int
+     */
+    public $total = 0;
 
-	/**
-	 * Array of cart items.
-	 *
-	 * @var array
-	 */
-	private $cart = array();
+    /**
+     * Array of cart items.
+     *
+     * @var array
+     */
+    private $cart = array();
 
-	/**
-	 * The number of items in the cart.
-	 *
-	 * @var int
-	 */
-	private $num_items = 0;
+    /**
+     * The number of items in the cart.
+     *
+     * @var int
+     */
+    private $num_items = 0;
 
-	/**
-	 * Adds an item to the cart.
-	 *
-	 * This method creates a new cart item with the specified key, product ID,
-	 * quantity, and price. It updates the cart array, total cart value, and
-	 * the number of items in the cart.
-	 *
-	 * @param string $key      The unique key for the cart item.
-	 * @param int    $id       The product ID.
-	 * @param int    $quantity The quantity of the product.
-	 * @param float  $price    The price of the product.
-	 *
-	 * @return void
-	 */
-	public function add_item( $key, $id, $quantity, $price ) {
-		$item = array(
-			'key'        => $key,
-			'data'       => new MockWCProduct( $id ),
-			'quantity'   => $quantity,
-			'line_total' => $quantity * $price,
-		);
+    /**
+     * Adds an item to the cart.
+     *
+     * This method creates a new cart item with the specified key, product ID,
+     * quantity, and price. It updates the cart array, total cart value, and
+     * the number of items in the cart.
+     *
+     * @param string $key      The unique key for the cart item.
+     * @param int    $id       The product ID.
+     * @param int    $quantity The quantity of the product.
+     * @param float  $price    The price of the product.
+     *
+     * @return void
+     */
+    public function add_item( $key, $id, $quantity, $price ) {
+        $item = array(
+            'key'        => $key,
+            'data'       => new MockWCProduct( $id ),
+            'quantity'   => $quantity,
+            'line_total' => $quantity * $price,
+        );
 
-		$this->cart[ $key ] = $item;
-		$this->total       += ( $quantity * $price );
-		$this->num_items   += $quantity;
-	}
+        $this->cart[ $key ] = $item;
+        $this->total       += ( $quantity * $price );
+        $this->num_items   += $quantity;
+    }
 
-	/**
-	 * Returns the cart items.
-	 *
-	 * @return array The cart items. Each item is an associative array with the
-	 *               following keys:
-	 *               - key: The unique key for the item.
-	 *               - data: The product object.
-	 *               - quantity: The quantity of the product.
-	 *               - line_total: The total value of the product line.
-	 */
-	public function get_cart() {
-		return $this->cart;
-	}
+    /**
+     * Returns the cart items.
+     *
+     * @return array The cart items. Each item is an associative array with the
+     *               following keys:
+     *               - key: The unique key for the item.
+     *               - data: The product object.
+     *               - quantity: The quantity of the product.
+     *               - line_total: The total value of the product line.
+     */
+    public function get_cart() {
+        return $this->cart;
+    }
 
-	/**
-	 * Retrieves the number of items in the cart.
-	 *
-	 * @return int The number of items in the cart.
-	 */
-	public function get_cart_contents_count() {
-		return $this->num_items;
-	}
+    /**
+     * Retrieves the number of items in the cart.
+     *
+     * @return int The number of items in the cart.
+     */
+    public function get_cart_contents_count() {
+        return $this->num_items;
+    }
 }

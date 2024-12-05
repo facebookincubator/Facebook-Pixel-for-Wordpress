@@ -32,64 +32,64 @@ namespace FacebookPixelPlugin\Tests\Mocks;
  */
 final class MockWCOrderItem {
 
-	/**
-	 * The product ID.
-	 *
-	 * @var int
-	 */
-	private $id;
+    /**
+     * The product ID.
+     *
+     * @var int
+     */
+    private $id;
 
-	/**
-	 * The quantity of the product.
-	 *
-	 * @var int
-	 */
-	private $quantity;
+    /**
+     * The quantity of the product.
+     *
+     * @var int
+     */
+    private $quantity;
 
-	/**
-	 * The total value of the product.
-	 *
-	 * @var int
-	 */
-	private $total;
+    /**
+     * The total value of the product.
+     *
+     * @var int
+     */
+    private $total;
 
-	/**
-	 * Initializes the MockWCOrderItem object.
-	 *
-	 * @param int $id       The product ID.
-	 * @param int $quantity The quantity of the product.
-	 * @param int $total    The total value of the product.
-	 */
-	public function __construct( $id, $quantity, $total ) {
-		$this->id       = $id;
-		$this->quantity = $quantity;
-		$this->total    = $total;
-	}
+    /**
+     * Initializes the MockWCOrderItem object.
+     *
+     * @param int $id       The product ID.
+     * @param int $quantity The quantity of the product.
+     * @param int $total    The total value of the product.
+     */
+    public function __construct( $id, $quantity, $total ) {
+        $this->id       = $id;
+        $this->quantity = $quantity;
+        $this->total    = $total;
+    }
 
-	/**
-	 * Retrieves the product ID of the order item.
-	 *
-	 * @return int The product ID.
-	 */
-	public function get_product_id() {
-		return $this->id;
-	}
+    /**
+     * Retrieves the product ID of the order item.
+     *
+     * @return int The product ID.
+     */
+    public function get_product_id() {
+        return $this->id;
+    }
 
-	/**
-	 * Retrieves the quantity of the order item.
-	 *
-	 * @return int The quantity of the order item.
-	 */
-	public function get_quantity() {
-		return $this->quantity;
-	}
+    /**
+     * Retrieves the quantity of the order item.
+     *
+     * @return int The quantity of the order item.
+     */
+    public function get_quantity() {
+        return $this->quantity;
+    }
 
-	/**
-	 * Retrieves the total value of the order item.
-	 *
-	 * @return int The total value of the order item.
-	 */
-	public function get_total() {
-		return $this->total;
-	}
+    /**
+     * Retrieves the total value of the order item.
+     *
+     * @return int The total value of the order item.
+     */
+    public function get_total() {
+        return $this->total;
+    }
 }

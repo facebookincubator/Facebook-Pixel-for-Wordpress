@@ -70,7 +70,8 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 	/**
 	 * Tests the injectLeadEvent method when the user is not an internal user.
 	 *
-	 * This test verifies that the Pixel code is correctly appended to the HTML output
+	 * This test verifies that the Pixel code is correctly
+     * appended to the HTML output
 	 * and that the server-side event is tracked with the correct parameters.
 	 * It ensures that the 'Lead' event is recorded with the expected user data
 	 * and custom properties when the MailChimp for WP integration is triggered.
@@ -93,33 +94,48 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 		);
 		$_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
-        \WP_Mock::userFunction('sanitize_text_field', [
-            'args' => [\Mockery::any()],
-            'return' => function ($input) {
-                return $input;
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'sanitize_text_field',
+            array(
+				'args'   => array( \Mockery::any() ),
+				'return' => function ( $input ) {
+					return $input;
+				},
+            )
+        );
 
-        \WP_Mock::userFunction('sanitize_email', [
-            'args' => [\Mockery::any()],
-            'return' => function ($input) {
-                return $input;
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'sanitize_email',
+            array(
+				'args'   => array( \Mockery::any() ),
+				'return' => function ( $input ) {
+					return $input;
+				},
+            )
+        );
 
-        \WP_Mock::userFunction('wp_unslash', [
-            'args' => [\Mockery::any()],
-            'return' => function ($input) {
-                return $input;
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'wp_unslash',
+            array(
+				'args'   => array( \Mockery::any() ),
+				'return' => function ( $input ) {
+					return $input;
+				},
+            )
+        );
 
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [\Mockery::type('array'), \Mockery::type('int')],
-            'return' => function($data, $options) {
-                return json_encode($data);
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'wp_json_encode',
+            array(
+				'args'   => array(
+                    \Mockery::type( 'array' ),
+					\Mockery::type( 'int' ),
+				),
+				'return' => function ( $data, $options ) {
+					return json_encode( $data );
+				},
+            )
+        );
 
 		FacebookWordpressMailchimpForWp::injectLeadEvent();
 		$this->expectOutputRegex(
@@ -134,7 +150,10 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 		$event = $tracked_events[0];
 		$this->assertEquals( 'Lead', $event->getEventName() );
 		$this->assertNotNull( $event->getEventTime() );
-		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals(
+            'pika.chu@s2s.com',
+            $event->getUserData()->getEmail()
+        );
 		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
 		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
 		$this->assertEquals( '123456', $event->getUserData()->getPhone() );
@@ -144,7 +163,8 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 		$this->assertEquals( 'us', $event->getUserData()->getCountryCode() );
 		$this->assertEquals(
 			'mailchimp-for-wp',
-			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+			$event->getCustomData()
+            ->getCustomProperty( 'fb_integration_tracking' )
 		);
 		$this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
 	}
@@ -153,7 +173,8 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
 	 * Tests the injectLeadEvent method when the user is an internal user.
 	 *
 	 * This test verifies that no Pixel code is appended to the HTML output
-	 * when the user is an internal user. It asserts that the output HTML remains
+	 * when the user is an internal user. It
+     * asserts that the output HTML remains
 	 * unchanged and that no events are tracked.
 	 *
 	 * @return void

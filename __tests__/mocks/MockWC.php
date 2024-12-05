@@ -31,19 +31,19 @@ namespace FacebookPixelPlugin\Tests\Mocks;
  * MockWC class.
  */
 final class MockWC {
-	/**
-	 * The cart object.
-	 *
-	 * @var object
-	 */
-	public $cart = null;
+    /**
+     * The cart object.
+     *
+     * @var object
+     */
+    public $cart = null;
 
-	/**
-	 * Initializes the MockWC object.
-	 *
-	 * @param object $cart The cart object to use.
-	 */
-	public function __construct( $cart ) {
-		$this->cart = $cart;
-	}
+    /**
+     * Initializes the MockWC object.
+     *
+     * @param object $cart The cart object to use.
+     */
+    public function __construct( $cart ) {
+        $this->cart = $cart;
+    }
 }

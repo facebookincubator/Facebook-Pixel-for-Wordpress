@@ -58,11 +58,17 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 	public function testInjectPixelCode() {
 		\WP_Mock::expectActionAdded(
 			'wpsc_add_to_cart_json_response',
-			array( FacebookWordpressWPECommerce::class, 'injectAddToCartEvent' ),
+			array(
+                FacebookWordpressWPECommerce::class,
+				'injectAddToCartEvent',
+            ),
 			11
 		);
 
-		$mocked_base = \Mockery::mock( 'alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase' );
+		$mocked_base =
+        \Mockery::mock(
+            'alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase'
+        );
 		$mocked_base->shouldReceive( 'add_pixel_fire_for_hook' )
 		->with(
 			array(
@@ -104,21 +110,31 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
 		$this->setupMocks();
 
-        \WP_Mock::userFunction('sanitize_text_field', [
-            'args' => [\Mockery::any()],
-            'return' => function ($input) {
-                return $input;
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'sanitize_text_field',
+            array(
+				'args'   => array( \Mockery::any() ),
+				'return' => function ( $input ) {
+					return $input;
+				},
+            )
+        );
 
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [\Mockery::type('array'), \Mockery::type('int')],
-            'return' => function($data, $options) {
-                return json_encode($data);
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'wp_json_encode',
+            array(
+				'args'   => array(
+                    \Mockery::type( 'array' ),
+					\Mockery::type( 'int' ),
+				),
+				'return' => function ( $data, $options ) {
+					return json_encode( $data );
+				},
+            )
+        );
 
-		$response = FacebookWordpressWPECommerce::injectAddToCartEvent( $parameter );
+		$response =
+        FacebookWordpressWPECommerce::injectAddToCartEvent( $parameter );
 
 		$this->assertArrayHasKey( 'widget_output', $response );
 		$code = $response['widget_output'];
@@ -135,16 +151,26 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		$event = $tracked_events[0];
 		$this->assertEquals( 'AddToCart', $event->getEventName() );
 		$this->assertNotNull( $event->getEventTime() );
-		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals(
+            'pika.chu@s2s.com',
+            $event->getUserData()->getEmail()
+        );
 		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
 		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
 		$this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
 		$this->assertEquals( 999, $event->getCustomData()->getValue() );
-		$this->assertEquals( 'product', $event->getCustomData()->getContentType() );
-		$this->assertEquals( array( 1 ), $event->getCustomData()->getContentIds() );
+		$this->assertEquals(
+            'product',
+            $event->getCustomData()->getContentType()
+        );
+		$this->assertEquals(
+            array( 1 ),
+            $event->getCustomData()->getContentIds()
+        );
 		$this->assertEquals(
 			'wp-e-commerce',
-			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+			$event->getCustomData()
+            ->getCustomProperty( 'fb_integration_tracking' )
 		);
 	}
 
@@ -163,7 +189,8 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 			'widget_output' => '',
 		);
 
-		$response = FacebookWordpressWPECommerce::injectAddToCartEvent( $parameter );
+		$response =
+        FacebookWordpressWPECommerce::injectAddToCartEvent( $parameter );
 
 		$this->assertArrayHasKey( 'widget_output', $response );
 		$code = $response['widget_output'];
@@ -171,11 +198,14 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 	}
 
 	/**
-	 * Tests that the injectInitiateCheckoutEvent method correctly injects the Pixel code
+	 * Tests that the injectInitiateCheckoutEvent
+     * method correctly injects the Pixel code
 	 * for the 'InitiateCheckout' event when the user is not an internal user.
 	 *
-	 * This test verifies that the output contains the expected Meta Pixel Event Code for
-	 * WP e-Commerce and that the server-side event tracking records the 'InitiateCheckout'
+	 * This test verifies that the output contains
+     * the expected Meta Pixel Event Code for
+	 * WP e-Commerce and that the server-side event
+     * tracking records the 'InitiateCheckout'
 	 * event with the correct user and custom data attributes.
 	 */
 	public function testInitiateCheckoutEventWithoutInternalUser() {
@@ -184,19 +214,28 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
 		$this->setupMocks();
 
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [\Mockery::type('array'), \Mockery::type('int')],
-            'return' => function($data, $options) {
-                return json_encode($data);
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'wp_json_encode',
+            array(
+				'args'   => array(
+                    \Mockery::type( 'array' ),
+					\Mockery::type( 'int' ),
+				),
+				'return' => function ( $data, $options ) {
+					return json_encode( $data );
+				},
+            )
+        );
 
-        \WP_Mock::userFunction('sanitize_text_field', [
-            'args' => [\Mockery::any()],
-            'return' => function ($input) {
-                return $input;
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'sanitize_text_field',
+            array(
+				'args'   => array( \Mockery::any() ),
+				'return' => function ( $input ) {
+					return $input;
+				},
+            )
+        );
 
 		FacebookWordpressWPECommerce::injectInitiateCheckoutEvent();
 		$this->expectOutputRegex(
@@ -211,14 +250,18 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		$event = $tracked_events[0];
 		$this->assertEquals( 'InitiateCheckout', $event->getEventName() );
 		$this->assertNotNull( $event->getEventTime() );
-		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals(
+            'pika.chu@s2s.com',
+            $event->getUserData()->getEmail()
+        );
 		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
 		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
 		$this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
 		$this->assertEquals( 999, $event->getCustomData()->getValue() );
 		$this->assertEquals(
 			'wp-e-commerce',
-			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+			$event->getCustomData()
+            ->getCustomProperty( 'fb_integration_tracking' )
 		);
 	}
 
@@ -238,11 +281,14 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 	}
 
 	/**
-	 * Tests that the injectPurchaseEvent method correctly injects the Pixel code
+	 * Tests that the injectPurchaseEvent method
+     * correctly injects the Pixel code
 	 * for the 'Purchase' event when the user is not an internal user.
 	 *
-	 * This test verifies that the output contains the expected Meta Pixel Event Code
-	 * for WP e-Commerce and that the server-side event tracking records the 'Purchase'
+	 * This test verifies that the output contains
+     * the expected Meta Pixel Event Code
+	 * for WP e-Commerce and that the server-side
+     * event tracking records the 'Purchase'
 	 * event with the correct user and custom data attributes.
 	 */
 	public function testInjectPurchaseEventWithoutInternalUser() {
@@ -256,19 +302,28 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		$session_id               = null;
 		$display_to_screen        = true;
 
-        \WP_Mock::userFunction('wp_json_encode', [
-            'args' => [\Mockery::type('array'), \Mockery::type('int')],
-            'return' => function($data, $options) {
-                return json_encode($data);
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'wp_json_encode',
+            array(
+				'args'   => array(
+                    \Mockery::type( 'array' ),
+					\Mockery::type( 'int' ),
+				),
+				'return' => function ( $data, $options ) {
+					return json_encode( $data );
+				},
+            )
+        );
 
-        \WP_Mock::userFunction('sanitize_text_field', [
-            'args' => [\Mockery::any()],
-            'return' => function ($input) {
-                return $input;
-            }
-        ]);
+        \WP_Mock::userFunction(
+            'sanitize_text_field',
+            array(
+				'args'   => array( \Mockery::any() ),
+				'return' => function ( $input ) {
+					return $input;
+				},
+            )
+        );
 
 		$mock_purchase_log_object->shouldReceive( 'get_items' )
 		->andReturn( array( 0 => (object) array( 'prodid' => '1' ) ) );
@@ -293,14 +348,18 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 		$event = $tracked_events[0];
 		$this->assertEquals( 'Purchase', $event->getEventName() );
 		$this->assertNotNull( $event->getEventTime() );
-		$this->assertEquals( 'pika.chu@s2s.com', $event->getUserData()->getEmail() );
+		$this->assertEquals(
+            'pika.chu@s2s.com',
+            $event->getUserData()->getEmail()
+        );
 		$this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
 		$this->assertEquals( 'chu', $event->getUserData()->getLastName() );
 		$this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
 		$this->assertEquals( 999, $event->getCustomData()->getValue() );
 		$this->assertEquals(
 			'wp-e-commerce',
-			$event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+			$event->getCustomData()
+            ->getCustomProperty( 'fb_integration_tracking' )
 		);
 	}
 
@@ -334,13 +393,19 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 	}
 
 	/**
-	 * Sets up various mock objects and functions for the WP e-Commerce integration tests.
+	 * Sets up various mock objects and functions for
+     * the WP e-Commerce integration tests.
 	 *
-	 * This method uses Mockery to create a mock cart and define the behavior of the
-	 * get_items method to return a predefined set of cart items. It also sets up a global
-	 * variable for the cart and mocks the getLoggedInUserInfo method to return specific
-	 * user details. Additionally, it mocks the wpsc_get_currency_code function to return
-	 * a fixed currency code. These mocks are used to simulate the environment and behavior
+	 * This method uses Mockery to create a mock cart and
+     * define the behavior of the
+	 * get_items method to return a predefined set of cart
+     * items. It also sets up a global
+	 * variable for the cart and mocks the getLoggedInUserInfo
+     * method to return specific
+	 * user details. Additionally, it mocks the
+     * wpsc_get_currency_code function to return
+	 * a fixed currency code. These mocks are used to
+     * simulate the environment and behavior
 	 * required for testing the Facebook Pixel integration with WP e-Commerce.
 	 *
 	 * @return void

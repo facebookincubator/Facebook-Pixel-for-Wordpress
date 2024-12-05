@@ -37,14 +37,17 @@ use FacebookPixelPlugin\Core\FacebookPixel;
  * up deactivate the plugin.
 **/
 final class FileNameTest extends FacebookWordpressTestBase {
-	/**
-	 * Check that the name of entry point file 'facebook-for-wordpress.php' still
-	 * exist. This is to make sure that the name of entry point file is not changed,
-	 * since changing the file name will break how WordPress find the plugin file
-	 * and will end up deactivate the plugin.
-	 */
-	public function testEntryPointFileNamePersists() {
-		$exist = \file_exists( __DIR__ . '/../class-facebookforwordpress.php' );
-		$this->assertTrue( $exist );
-	}
+    /**
+     * Check that the name of entry point file
+     * 'facebook-for-wordpress.php' still
+     * exist. This is to make sure that the name of
+     * entry point file is not changed,
+     * since changing the file name will break how
+     * WordPress find the plugin file
+     * and will end up deactivate the plugin.
+     */
+    public function testEntryPointFileNamePersists() {
+        $exist = \file_exists( __DIR__ . '/../class-facebookforwordpress.php' );
+        $this->assertTrue( $exist );
+    }
 }

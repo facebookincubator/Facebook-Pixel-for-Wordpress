@@ -31,37 +31,37 @@ namespace FacebookPixelPlugin\Tests\Mocks;
  * MockFormidableFormField class.
  */
 final class MockFormidableFormField {
-	/**
-	 * The type of the form field.
-	 *
-	 * @var string
-	 */
-	public $type;
+    /**
+     * The type of the form field.
+     *
+     * @var string
+     */
+    public $type;
 
-	/**
-	 * The name of the form field.
-	 *
-	 * @var string
-	 */
-	public $name;
+    /**
+     * The name of the form field.
+     *
+     * @var string
+     */
+    public $name;
 
-	/**
-	 * The description of the form field.
-	 *
-	 * @var string
-	 */
-	public $description;
+    /**
+     * The description of the form field.
+     *
+     * @var string
+     */
+    public $description;
 
-	/**
-	 * Constructs a new instance of the MockFormidableFormField class.
-	 *
-	 * @param string $type The type of the form field.
-	 * @param string $name The name of the form field.
-	 * @param string $description The description of the form field.
-	 */
-	public function __construct( $type, $name, $description ) {
-		$this->type        = $type;
-		$this->name        = $name;
-		$this->description = $description;
-	}
+    /**
+     * Constructs a new instance of the MockFormidableFormField class.
+     *
+     * @param string $type The type of the form field.
+     * @param string $name The name of the form field.
+     * @param string $description The description of the form field.
+     */
+    public function __construct( $type, $name, $description ) {
+        $this->type        = $type;
+        $this->name        = $name;
+        $this->description = $description;
+    }
 }

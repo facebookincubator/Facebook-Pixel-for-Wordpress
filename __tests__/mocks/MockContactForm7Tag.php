@@ -31,27 +31,27 @@ namespace FacebookPixelPlugin\Tests\Mocks;
  * MockContactForm7Tag class.
  */
 final class MockContactForm7Tag {
-	/**
-	 * The base type of the contact form 7 tag.
-	 *
-	 * @var string
-	 */
-	public $basetype;
-		/**
-		 * The name of the contact form 7 tag.
-		 *
-		 * @var string
-		 */
-	public $name;
+    /**
+     * The base type of the contact form 7 tag.
+     *
+     * @var string
+     */
+    public $basetype;
+        /**
+         * The name of the contact form 7 tag.
+         *
+         * @var string
+         */
+    public $name;
 
-	/**
-	 * Initializes the MockContactForm7Tag object.
-	 *
-	 * @param string $basetype The base type of the contact form 7 tag.
-	 * @param string $name     The name of the contact form 7 tag.
-	 */
-	public function __construct( $basetype, $name ) {
-		$this->basetype = $basetype;
-		$this->name     = $name;
-	}
+    /**
+     * Initializes the MockContactForm7Tag object.
+     *
+     * @param string $basetype The base type of the contact form 7 tag.
+     * @param string $name     The name of the contact form 7 tag.
+     */
+    public function __construct( $basetype, $name ) {
+        $this->basetype = $basetype;
+        $this->name     = $name;
+    }
 }
