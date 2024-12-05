@@ -33,16 +33,17 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * IntegrationUtils class.
  */
 class IntegrationUtils {
-	/**
-	 * Retrieves entry values from Formidable Forms for a given entry ID.
-	 *
-	 * This method returns an instance of FrmEntryValues, which contains
-	 * the field values associated with the specified entry ID.
-	 *
-	 * @param int $entry_id The ID of the form entry to retrieve values for.
-	 * @return \FrmEntryValues The entry values object for the specified entry ID.
-	 */
-	public static function get_formidable_forms_entry_values( $entry_id ) {
-		return new \FrmEntryValues( $entry_id );
-	}
+    /**
+     * Retrieves entry values from Formidable Forms for a given entry ID.
+     *
+     * This method returns an instance of FrmEntryValues, which contains
+     * the field values associated with the specified entry ID.
+     *
+     * @param int $entry_id The ID of the form entry to retrieve values for.
+     * @return \FrmEntryValues The entry values object
+     *                         for the specified entry ID.
+     */
+    public static function get_formidable_forms_entry_values( $entry_id ) {
+        return new \FrmEntryValues( $entry_id );
+    }
 }

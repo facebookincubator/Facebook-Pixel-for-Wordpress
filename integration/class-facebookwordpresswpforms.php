@@ -65,7 +65,8 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	 * Tracks a server-side event for a form submission in WPForms.
 	 *
 	 * This method is hooked into the 'wpforms_process_before' action, which is
-	 * fired by WPForms before a form is processed. It then calls the track method
+	 * fired by WPForms before a form is processed.
+     * It then calls the track method
 	 * on the FacebookServerSideEvent instance, which generates a lead event for
 	 * the form submission.
 	 *
@@ -114,7 +115,8 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 			return;
 		}
 
-		$events     = FacebookServerSideEvent::get_instance()->get_tracked_events();
+		$events     =
+        FacebookServerSideEvent::get_instance()->get_tracked_events();
 		$pixel_code = PixelRenderer::render( $events, self::TRACKING_NAME );
 
 		printf(
@@ -130,16 +132,21 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	/**
 	 * Reads the form submission data and extracts user information.
 	 *
-	 * This method processes the form entry and form data to extract user-related
-	 * information such as email, first name, last name, and phone number. It also
-	 * retrieves the address data, including city, state, country, and postal code.
+	 * This method processes the form entry and form
+     * data to extract user-related
+	 * information such as email, first name, last name,
+     * and phone number. It also
+	 * retrieves the address data, including city,
+     * state, country, and postal code.
 	 *
-	 * If either the form entry or form data is empty, an empty array is returned.
+	 * If either the form entry or form data is
+     * empty, an empty array is returned.
 	 *
 	 * @param array $entry The form entry data.
 	 * @param array $form_data The form schema data.
 	 *
-	 * @return array An associative array containing user and address information
+	 * @return array An associative array
+     *               containing user and address information
 	 *               extracted from the form entry.
 	 */
 	public static function readFormData( $entry, $form_data ) {
@@ -188,7 +195,8 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	 * @param array $entry The form entry data.
 	 * @param array $form_data The form schema data.
 	 *
-	 * @return string|null The email address, or null if no email field is found.
+	 * @return string|null The email address, or null
+     *                     if no email field is found.
 	 */
 	private static function getEmail( $entry, $form_data ) {
 		return self::getField( $entry, $form_data, 'email' );
@@ -197,10 +205,12 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	/**
 	 * Retrieves the address data from the form data.
 	 *
-	 * This method extracts the address data (city, state, country, and zip) from the provided form entry
+	 * This method extracts the address data (city, state, country, and zip)
+     * from the provided form entry
 	 * and form data. The country is sent in ISO format.
 	 *
-	 * Note that if the address scheme is 'us' and country is not present, 'US' is used as the country.
+	 * Note that if the address scheme is 'us' and country
+     * is not present, 'US' is used as the country.
 	 *
 	 * @param array $entry The form entry data.
 	 * @param array $form_data The form schema data.
@@ -239,13 +249,16 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	 *
 	 * This method extracts the name field from the provided form entry
 	 * and form data. It supports two formats:
-	 * - 'simple': where the name is a single string, split into first and last name.
-	 * - 'first-last': where the name is provided as separate 'first' and 'last' fields.
+	 * - 'simple': where the name is a single string,
+     * split into first and last name.
+	 * - 'first-last': where the name is provided as separate
+     * 'first' and 'last' fields.
 	 *
 	 * @param array $entry The form entry data.
 	 * @param array $form_data The form schema data.
 	 *
-	 * @return array|null An array containing the first and last name, or null if no name field is found.
+	 * @return array|null An array containing the first and
+     *                    last name, or null if no name field is found.
 	 */
 	private static function getName( $entry, $form_data ) {
 		if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
@@ -256,7 +269,9 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 		foreach ( $form_data['fields'] as $field ) {
 			if ( 'name' === $field['type'] ) {
 				if ( 'simple' === $field['format'] ) {
-					return ServerEventFactory::split_name( $entries[ $field['id'] ] );
+					return ServerEventFactory::split_name(
+                        $entries[ $field['id'] ]
+                    );
 				} elseif ( 'first-last' === $field['format'] ) {
 					return array(
 						$entries[ $field['id'] ]['first'],
@@ -280,7 +295,8 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	 * @param array  $form_data The form schema data.
 	 * @param string $type The type of the field to retrieve.
 	 *
-	 * @return mixed|null The value of the field, or null if no field of the specified type is found.
+	 * @return mixed|null The value of the field, or null if no
+     *                    field of the specified type is found.
 	 */
 	private static function getField( $entry, $form_data, $type ) {
 		if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
@@ -306,7 +322,8 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	 *
 	 * @param array $form_data The form schema data.
 	 *
-	 * @return string|null The address scheme, or null if no address field is found.
+	 * @return string|null The address scheme, or
+     *                     null if no address field is found.
 	 */
 	private static function getAddressScheme( $form_data ) {
 		foreach ( $form_data['fields'] as $field ) {
