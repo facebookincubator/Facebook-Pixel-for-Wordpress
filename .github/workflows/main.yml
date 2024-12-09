@@ -20,4 +20,4 @@ jobs:
         run: vendor/bin/phpunit --bootstrap __tests__/bootstrap.php __tests__
 
       - name: Run PHPCS
-        run: vendor/bin/phpcs --standard=WordPress --extensions=php --ignore=vendor/ .
+        run: vendor/bin/phpcs --standard=phpcs.xml --extensions=php --ignore=vendor/ .
