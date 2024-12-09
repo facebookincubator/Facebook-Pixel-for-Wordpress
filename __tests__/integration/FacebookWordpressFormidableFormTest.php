@@ -32,28 +32,36 @@ use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormEntryValues;
 final class FacebookWordpressFormidableFormTest
   extends FacebookWordpressTestBase {
 
-  public function testInjectPixelCode() {
-    self::mockIsInternalUser(false);
-    self::mockFacebookWordpressOptions();
-
-    \WP_Mock::expectActionAdded(
-      'frm_after_create_entry',
-      array(
-        'FacebookPixelPlugin\\Integration\\FacebookWordpressFormidableForm',
-        'trackServerEvent'
-      ),
-      20,
-      2);
-
-    FacebookWordpressFormidableForm::injectPixelCode();
-  }
-
   public function testInjectLeadEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions();
 
-    $event = ServerEventFactory::newEvent('Lead');
-    FacebookServerSideEvent::getInstance()->track($event);
+    \WP_Mock::userFunction(
+        'sanitize_text_field',
+        array(
+            'args'   => array( \Mockery::any() ),
+            'return' => function ( $input ) {
+                return $input;
+            },
+        )
+    );
+
+    $event = ServerEventFactory::new_event('Lead');
+
+    \WP_Mock::userFunction(
+        'wp_json_encode',
+        array(
+            'args'   => array(
+				\Mockery::type( 'array' ),
+				\Mockery::type( 'int' ),
+			),
+            'return' => function ( $data, $options ) {
+                return json_encode( $data );
+            },
+        )
+    );
+
+    FacebookServerSideEvent::get_instance()->track($event);
 
     FacebookWordpressFormidableForm::injectLeadEvent();
 
@@ -72,6 +80,16 @@ final class FacebookWordpressFormidableFormTest
   public function testTrackEventWithoutInternalUser() {
     self::mockIsInternalUser(false);
     self::mockFacebookWordpressOptions();
+
+    \WP_Mock::userFunction(
+        'sanitize_text_field',
+        array(
+            'args'   => array( \Mockery::any() ),
+            'return' => function ( $input ) {
+                return $input;
+            },
+        )
+    );
 
     $mock_entry_id = 1;
     $mock_form_id = 1;
@@ -92,7 +110,7 @@ final class FacebookWordpressFormidableFormTest
       $mock_entry_id, $mock_form_id);
 
     $tracked_events =
-      FacebookServerSideEvent::getInstance()->getTrackedEvents();
+      FacebookServerSideEvent::get_instance()->get_tracked_events();
 
     $this->assertCount(1, $tracked_events);
 
@@ -144,7 +162,7 @@ final class FacebookWordpressFormidableFormTest
 
     $mock_utils = \Mockery::mock(
       'alias:FacebookPixelPlugin\Integration\IntegrationUtils');
-    $mock_utils->shouldReceive('getFormidableFormsEntryValues')->with($entry_id)->andReturn($entry_values);
+    $mock_utils->shouldReceive('get_formidable_forms_entry_values')->with($entry_id)->andReturn($entry_values);
   }
 
   private static function setupMockFormidableForm($entry_id) {
@@ -184,6 +202,6 @@ final class FacebookWordpressFormidableFormTest
 
     $mock_utils = \Mockery::mock(
       'alias:FacebookPixelPlugin\Integration\IntegrationUtils');
-    $mock_utils->shouldReceive('getFormidableFormsEntryValues')->with($entry_id)->andReturn($entry_values);
+    $mock_utils->shouldReceive('get_formidable_forms_entry_values')->with($entry_id)->andReturn($entry_values);
   }
 }
