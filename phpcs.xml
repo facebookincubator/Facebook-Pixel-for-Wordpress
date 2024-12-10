@@ -31,6 +31,8 @@
             <property name="lineLimit" value="80"/>
             <property name="absoluteLineLimit" value="80"/>
         </properties>
+        <type>warning</type>
+        <severity>4</severity>
     </rule>
 
     <!-- Ensure proper function argument formatting with spaces after commas -->
