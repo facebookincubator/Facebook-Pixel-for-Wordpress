@@ -160,7 +160,7 @@ class FacebookCapiEvent {
                             'message'        => 'Invalid custom_data attribute',
                             'error_user_msg' =>
                             'Invalid custom_data attributes: '
-							. $invalid_custom_data_msg,
+                            . $invalid_custom_data_msg,
 
                         ),
                     )

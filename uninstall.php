@@ -25,7 +25,7 @@ require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-	die;
+    die;
 }
 
 delete_option( FacebookPluginConfig::SETTINGS_KEY );

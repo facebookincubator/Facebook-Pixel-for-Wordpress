@@ -33,27 +33,27 @@ use FacebookAds\Object\ServerSide\Normalizer;
  * Class AAMFieldsExtractor
  */
 final class AAMFieldsExtractor {
-    /**
-     * Filters the passed user data using the AAM settings of the pixel
-     *
-     * @param string[] $user_data_array The user data.
-     * @return string[]
-     */
-    public static function get_normalized_user_data( $user_data_array ) {
-        $aam_setttings = FacebookWordpressOptions::get_aam_settings();
+  /**
+   * Filters the passed user data using the AAM settings of the pixel
+   *
+   * @param string[] $user_data_array The user data.
+   * @return string[]
+   */
+  public static function get_normalized_user_data( $user_data_array ) {
+    $aam_setttings = FacebookWordpressOptions::get_aam_settings();
     if ( ! $user_data_array || ! $aam_setttings ||
-        ! $aam_setttings->getEnableAutomaticMatching() ) {
-        return array();
+      ! $aam_setttings->getEnableAutomaticMatching() ) {
+      return array();
     }
 
     foreach ( $user_data_array as $key => $value ) {
-        if ( ! in_array(
-            $key,
-            $aam_setttings->getEnabledAutomaticMatchingFields(),
-            true
-        ) ) {
-            unset( $user_data_array[ $key ] );
-        }
+    if ( ! in_array(
+        $key,
+        $aam_setttings->getEnabledAutomaticMatchingFields(),
+        true
+    ) ) {
+        unset( $user_data_array[ $key ] );
+      }
     }
 
     if (
