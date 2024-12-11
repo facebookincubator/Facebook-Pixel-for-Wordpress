@@ -119,13 +119,11 @@ class FacebookPluginConfig {
      */
     public static function integration_config() {
         return array(
-            'CALDERA_FORM'          => 'FacebookWordpressCalderaForm',
             'CONTACT_FORM_7'        => 'FacebookWordpressContactForm7',
             'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
             'FORMIDABLE_FORM'       => 'FacebookWordpressFormidableForm',
             'MAILCHIMP_FOR_WP'      => 'FacebookWordpressMailchimpForWp',
             'NINJA_FORMS'           => 'FacebookWordpressNinjaForms',
-            'WP_E_COMMERCE'         => 'FacebookWordpressWPECommerce',
             'WOOCOMMERCE'           => 'FacebookWordpressWooCommerce',
         );
     }
