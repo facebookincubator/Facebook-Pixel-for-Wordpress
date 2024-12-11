@@ -5,7 +5,7 @@ on:
 
 jobs:
   test-and-code-style:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         php: [8.1]
