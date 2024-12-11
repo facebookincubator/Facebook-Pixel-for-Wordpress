@@ -50,13 +50,11 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
      * @var array
      */
     private static $integrations = array(
-        'FacebookWordpressCalderaForm',
         'FacebookWordpressContactForm7',
         'FacebookWordpressEasyDigitalDownloads',
         'FacebookWordpressFormidableForm',
         'FacebookWordpressMailchimpForWp',
         'FacebookWordpressNinjaForms',
-        'FacebookWordpressWPECommerce',
     );
 
     /**
