@@ -423,10 +423,10 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         $cart_item = self::getCartItem( $cart_item_key );
     if ( ! empty( $cart_item_key ) ) {
         $event_data['content_ids'] = array(
-			self::getProductId(
+            self::getProductId(
                 $cart_item['data']
             ),
-		);
+        );
         $event_data['value']       = self::getAddToCartValue(
             $cart_item,
             $quantity

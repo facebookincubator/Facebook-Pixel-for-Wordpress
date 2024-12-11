@@ -42,8 +42,8 @@ use FacebookAds\Object\ServerSide\UserData;
  * FacebookWordpressFormidableForm class.
  */
 class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
-    const PLUGIN_FILE   = 'formidable/formidable.php';
-    const TRACKING_NAME = 'formidable-lite';
+  const PLUGIN_FILE   = 'formidable/formidable.php';
+  const TRACKING_NAME = 'formidable-lite';
 
     /**
      * Injects pixel code for the Formidable Form plugin.

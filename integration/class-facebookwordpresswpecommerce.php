@@ -149,7 +149,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 
         $code = PixelRenderer::render(
             array(
-				$server_event,
+                $server_event,
             ),
             self::TRACKING_NAME
         );
@@ -202,7 +202,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
 
         $code = PixelRenderer::render(
             array(
-				$server_event,
+                $server_event,
             ),
             self::TRACKING_NAME
         );
