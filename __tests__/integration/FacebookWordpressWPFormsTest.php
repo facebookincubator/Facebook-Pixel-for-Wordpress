@@ -95,8 +95,8 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
         array(
             'args'   => array(
                 \Mockery::type( 'array' ),
-				\Mockery::type( 'int' ),
-			),
+        \Mockery::type( 'int' ),
+      ),
             'return' => function ( $data, $options ) {
                 return json_encode( $data );
             },

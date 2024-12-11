@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Copyright (C) 2017-present, Meta, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -37,13 +37,13 @@ final class FacebookWordpressFormidableFormTest
     self::mockFacebookWordpressOptions();
 
     \WP_Mock::userFunction(
-        'sanitize_text_field',
-        array(
-            'args'   => array( \Mockery::any() ),
-            'return' => function ( $input ) {
-                return $input;
-            },
-        )
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
     );
 
     $event = ServerEventFactory::new_event('Lead');
@@ -52,9 +52,9 @@ final class FacebookWordpressFormidableFormTest
         'wp_json_encode',
         array(
             'args'   => array(
-				\Mockery::type( 'array' ),
-				\Mockery::type( 'int' ),
-			),
+        \Mockery::type( 'array' ),
+        \Mockery::type( 'int' ),
+      ),
             'return' => function ( $data, $options ) {
                 return json_encode( $data );
             },

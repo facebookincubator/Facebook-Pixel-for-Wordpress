@@ -131,8 +131,8 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         array(
             'args'   => array(
                 \Mockery::type( 'array' ),
-				\Mockery::type( 'int' ),
-			),
+        \Mockery::type( 'int' ),
+      ),
             'return' => function ( $data, $options ) {
                 return json_encode( $data );
             },
@@ -200,8 +200,8 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         array(
             'args'   => array(
                 \Mockery::type( 'array' ),
-				\Mockery::type( 'int' ),
-			),
+        \Mockery::type( 'int' ),
+      ),
             'return' => function ( $data, $options ) {
                 return json_encode( $data );
             },
@@ -279,8 +279,8 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         array(
             'args'   => array(
                 \Mockery::type( 'array' ),
-				\Mockery::type( 'int' ),
-			),
+        \Mockery::type( 'int' ),
+      ),
             'return' => function ( $data, $options ) {
                 return json_encode( $data );
             },
@@ -432,8 +432,8 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         array(
             'args'   => array(
                 \Mockery::type( 'array' ),
-				\Mockery::type( 'int' ),
-			),
+        \Mockery::type( 'int' ),
+      ),
             'return' => function ( $data, $options ) {
                 return json_encode( $data );
             },
@@ -466,8 +466,8 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         array(
             'args'   => array(
                 \Mockery::type( 'array' ),
-				\Mockery::type( 'int' ),
-			),
+        \Mockery::type( 'int' ),
+      ),
             'return' => function ( $data, $options ) {
                 return json_encode( $data );
             },
@@ -539,8 +539,8 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         array(
             'args'   => array(
                 \Mockery::type( 'array' ),
-				\Mockery::type( 'int' ),
-			),
+        \Mockery::type( 'int' ),
+      ),
             'return' => function ( $data, $options ) {
                 return json_encode( $data );
             },
@@ -586,8 +586,8 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         array(
             'args'   => array(
                 \Mockery::type( 'array' ),
-				\Mockery::type( 'int' ),
-			),
+        \Mockery::type( 'int' ),
+      ),
             'return' => function ( $data, $options ) {
                 return json_encode( $data );
             },
@@ -631,7 +631,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         array(
             'return' => $active ? array(
                 'facebook-for-woocommerce/facebook-for-woocommerce.php',
-			) : array(),
+      ) : array(),
         )
     );
     }
@@ -651,10 +651,10 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         array(
             'times'  => 1,
             'args'   => array(
-				\WP_Mock\Functions::type( 'int' ),
-				'billing_city',
-				true,
-			),
+        \WP_Mock\Functions::type( 'int' ),
+        'billing_city',
+        true,
+      ),
             'return' => 'Springfield',
         )
     );
@@ -664,9 +664,9 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
             'times'  => 1,
             'args'   => array(
                 \WP_Mock\Functions::type( 'int' ),
-				'billing_state',
-				true,
-			),
+        'billing_state',
+        true,
+      ),
             'return' => 'Ohio',
         )
     );
@@ -700,9 +700,9 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
             'times'  => 1,
             'args'   => array(
                 \WP_Mock\Functions::type( 'int' ),
-				'billing_phone',
-				true,
-			),
+        'billing_phone',
+        true,
+      ),
             'return' => '2062062006',
         )
     );
