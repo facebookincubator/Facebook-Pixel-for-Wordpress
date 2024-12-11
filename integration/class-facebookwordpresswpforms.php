@@ -59,6 +59,13 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 			20,
 			2
 		);
+
+        add_action(
+			'wpforms_frontend_confirmation_message',
+			array( __CLASS__, 'injectLeadEvent' ),
+			30,
+            4
+		);
 	}
 
 	/**
@@ -80,7 +87,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	 */
 	public static function trackEvent( $entry, $form_data ) {
 		if ( FacebookPluginUtils::is_internal_user() ) {
-			return;
+            return;
 		}
 
 		$server_event = ServerEventFactory::safe_create_event(
@@ -90,13 +97,8 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 			self::TRACKING_NAME,
 			true
 		);
-		FacebookServerSideEvent::get_instance()->track( $server_event );
 
-		add_action(
-			'wp_footer',
-			array( __CLASS__, 'injectLeadEvent' ),
-			20
-		);
+		FacebookServerSideEvent::get_instance()->track( $server_event );
 	}
 
 	/**
@@ -154,185 +156,25 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 			return array();
 		}
 
-		$name = self::getName( $entry, $form_data );
+        $named_index = array();
+
+        foreach ( $form_data['fields'] as $field_name ) {
+            $named_index[ strtolower( $field_name['label'] ) ]
+            = $entry['fields'][ $field_name['id'] ];
+        }
 
 		$event_data = array(
-			'email'      => self::getEmail( $entry, $form_data ),
-			'first_name' => ! empty( $name ) ? $name[0] : null,
-			'last_name'  => ! empty( $name ) ? $name[1] : null,
-			'phone'      => self::getPhone( $entry, $form_data ),
-		);
-
-		$event_data = array_merge(
-			$event_data,
-			self::getAddress( $entry, $form_data )
+			'email'      => $named_index['email'] ?? null,
+			'first_name' => $named_index['name']['first'] ?? null,
+			'last_name'  => $named_index['name']['last'] ?? null,
+			'phone'      => $named_index['phone'] ?? null,
+            'city'       => $named_index['city'] ?? null,
+            'state'      => $named_index['state'] ?? null,
+            'country'    => $named_index['country'] ?? null,
+            'zip'        => $named_index['zip'] ?? null,
+            'gender'     => $named_index['gender'] ?? null,
 		);
 
 		return $event_data;
-	}
-
-	/**
-	 * Retrieves the phone number from the form data.
-	 *
-	 * This method extracts the phone number field from the provided form entry
-	 * and form data.
-	 *
-	 * @param array $entry The form entry data.
-	 * @param array $form_data The form schema data.
-	 *
-	 * @return string|null The phone number, or null if no phone field is found.
-	 */
-	private static function getPhone( $entry, $form_data ) {
-		return self::getField( $entry, $form_data, 'phone' );
-	}
-
-	/**
-	 * Retrieves the email address from the form data.
-	 *
-	 * This method extracts the email address field from the provided form entry
-	 * and form data.
-	 *
-	 * @param array $entry The form entry data.
-	 * @param array $form_data The form schema data.
-	 *
-	 * @return string|null The email address, or null
-     *                     if no email field is found.
-	 */
-	private static function getEmail( $entry, $form_data ) {
-		return self::getField( $entry, $form_data, 'email' );
-	}
-
-	/**
-	 * Retrieves the address data from the form data.
-	 *
-	 * This method extracts the address data (city, state, country, and zip)
-     * from the provided form entry
-	 * and form data. The country is sent in ISO format.
-	 *
-	 * Note that if the address scheme is 'us' and country
-     * is not present, 'US' is used as the country.
-	 *
-	 * @param array $entry The form entry data.
-	 * @param array $form_data The form schema data.
-	 *
-	 * @return array The address data.
-	 */
-	private static function getAddress( $entry, $form_data ) {
-		$address_field_data = self::getField( $entry, $form_data, 'address' );
-		if ( is_null( $address_field_data ) ) {
-			return array();
-		}
-		$address_data = array();
-		if ( isset( $address_field_data['city'] ) ) {
-			$address_data['city'] = $address_field_data['city'];
-		}
-		if ( isset( $address_field_data['state'] ) ) {
-			$address_data['state'] = $address_field_data['state'];
-		}
-
-		if ( isset( $address_field_data['country'] ) ) {
-			$address_data['country'] = $address_field_data['country'];
-		} else {
-			$address_scheme = self::getAddressScheme( $form_data );
-			if ( 'us' === $address_scheme ) {
-				$address_data['country'] = 'US';
-			}
-		}
-		if ( isset( $address_field_data['postal'] ) ) {
-			$address_data['zip'] = $address_field_data['postal'];
-		}
-		return $address_data;
-	}
-
-	/**
-	 * Retrieves the user's name from the form data.
-	 *
-	 * This method extracts the name field from the provided form entry
-	 * and form data. It supports two formats:
-	 * - 'simple': where the name is a single string,
-     * split into first and last name.
-	 * - 'first-last': where the name is provided as separate
-     * 'first' and 'last' fields.
-	 *
-	 * @param array $entry The form entry data.
-	 * @param array $form_data The form schema data.
-	 *
-	 * @return array|null An array containing the first and
-     *                    last name, or null if no name field is found.
-	 */
-	private static function getName( $entry, $form_data ) {
-		if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
-			return null;
-		}
-
-		$entries = $entry['fields'];
-		foreach ( $form_data['fields'] as $field ) {
-			if ( 'name' === $field['type'] ) {
-				if ( 'simple' === $field['format'] ) {
-					return ServerEventFactory::split_name(
-                        $entries[ $field['id'] ]
-                    );
-				} elseif ( 'first-last' === $field['format'] ) {
-					return array(
-						$entries[ $field['id'] ]['first'],
-						$entries[ $field['id'] ]['last'],
-					);
-				}
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Retrieves the value of a specific field type from the form entry data.
-	 *
-	 * This method searches through the form schema data to find a field of
-	 * the specified type and returns the corresponding value from the form
-	 * entry data.
-	 *
-	 * @param array  $entry The form entry data.
-	 * @param array  $form_data The form schema data.
-	 * @param string $type The type of the field to retrieve.
-	 *
-	 * @return mixed|null The value of the field, or null if no
-     *                    field of the specified type is found.
-	 */
-	private static function getField( $entry, $form_data, $type ) {
-		if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
-			return null;
-		}
-
-		foreach ( $form_data['fields'] as $field ) {
-			if ( $field['type'] === $type ) {
-				return $entry['fields'][ $field['id'] ];
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Retrieves the address scheme from the form data.
-	 *
-	 * This method searches through the form schema data to find the first
-	 * 'address' field and returns its 'scheme' value, which is either 'us' or
-	 * 'international'. If no address field is found, or if the address field
-	 * does not have a scheme, this method returns null.
-	 *
-	 * @param array $form_data The form schema data.
-	 *
-	 * @return string|null The address scheme, or
-     *                     null if no address field is found.
-	 */
-	private static function getAddressScheme( $form_data ) {
-		foreach ( $form_data['fields'] as $field ) {
-			if ( 'address' === $field['type'] ) {
-				if ( isset( $field['scheme'] ) ) {
-					return $field['scheme'];
-				}
-			}
-		}
-		return null;
 	}
 }

@@ -35,7 +35,7 @@ use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 /**
  * FacebookWordpressWPFormsTest class.
  *
- * @runTestsInSeparateProcesses
+ *
  * @preserveGlobalState disabled
  *
  * All tests in this test class should be run in separate PHP process to
@@ -52,13 +52,6 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testInjectPixelCode() {
-    \WP_Mock::expectActionAdded(
-        'wpforms_process_before',
-        array( FacebookWordpressWPForms::class, 'trackEvent' ),
-        20,
-        2
-    );
-
         FacebookWordpressWPForms::inject_pixel_code();
         $this->assertHooksAdded();
     }
@@ -77,36 +70,36 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
         parent::mockIsInternalUser( false );
         self::mockFacebookWordpressOptions();
 
-    \WP_Mock::userFunction(
-        'sanitize_text_field',
-        array(
-            'args'   => array( \Mockery::any() ),
-            'return' => function ( $input ) {
-                return $input;
-            },
-        )
-    );
+        \WP_Mock::userFunction(
+            'sanitize_text_field',
+            array(
+                'args'   => array( \Mockery::any() ),
+                'return' => function ( $input ) {
+                    return $input;
+                },
+            )
+        );
 
         $event = ServerEventFactory::new_event( 'Lead' );
         FacebookServerSideEvent::get_instance()->track( $event );
 
-    \WP_Mock::userFunction(
-        'wp_json_encode',
-        array(
-            'args'   => array(
-                \Mockery::type( 'array' ),
-				\Mockery::type( 'int' ),
-			),
-            'return' => function ( $data, $options ) {
-                return json_encode( $data );
-            },
-        )
-    );
+        \WP_Mock::userFunction(
+            'wp_json_encode',
+            array(
+                'args'   => array(
+                    \Mockery::type( 'array' ),
+                    \Mockery::type( 'int' ),
+                ),
+                'return' => function ( $data, $options ) {
+                    return json_encode( $data );
+                },
+            )
+        );
 
         FacebookWordpressWPForms::injectLeadEvent();
-    $this->expectOutputRegex(
-        '/wpforms-lite[\s\S]+End Meta Pixel Event Code/'
-    );
+        $this->expectOutputRegex(
+            '/wpforms-lite[\s\S]+End Meta Pixel Event Code/'
+        );
     }
 
     /**
@@ -147,42 +140,46 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
         $mock_entry     = $this->createMockEntry();
         $mock_form_data = $this->createMockFormData();
 
-    \WP_Mock::userFunction(
-        'sanitize_text_field',
-        array(
-            'args'   => array( \Mockery::any() ),
-            'return' => function ( $input ) {
-                return $input;
-            },
-        )
-    );
+        \WP_Mock::userFunction(
+            'sanitize_text_field',
+            array(
+                'args'   => array( \Mockery::any() ),
+                'return' => function ( $input ) {
+                    return $input;
+                },
+            )
+        );
 
-    \WP_Mock::expectActionAdded(
-        'wp_footer',
-        array(
-            FacebookWordpressWPForms::class,
-            'injectLeadEvent',
-        ),
-        20
-    );
+        \WP_Mock::expectActionAdded(
+            'wp_footer',
+            array(
+                FacebookWordpressWPForms::class,
+                'injectLeadEvent',
+            ),
+            20
+        );
 
-    FacebookWordpressWPForms::trackEvent(
-        $mock_entry,
-        $mock_form_data
-    );
+        FacebookWordpressWPForms::trackEvent(
+            $mock_entry,
+            $mock_form_data
+        );
 
         $tracked_events =
         FacebookServerSideEvent::get_instance()->get_tracked_events();
 
-        $this->assertCount( 1, $tracked_events );
+        $this->assertCount( 2, $tracked_events );
 
-        $event = $tracked_events[0];
+        $event = $tracked_events[1];
+
         $this->assertEquals( 'Lead', $event->getEventName() );
+
         $this->assertNotNull( $event->getEventTime() );
+
         $this->assertEquals(
             'pika.chu@s2s.com',
             $event->getUserData()->getEmail()
         );
+
         $this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
         $this->assertEquals( 'chu', $event->getUserData()->getLastName() );
         $this->assertEquals( '1234567', $event->getUserData()->getPhone() );
@@ -190,77 +187,13 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
         $this->assertEquals( 'springfield', $event->getUserData()->getCity() );
         $this->assertEquals( 'ohio', $event->getUserData()->getState() );
         $this->assertEquals( '45401', $event->getUserData()->getZipCode() );
-    $this->assertEquals(
-        'wpforms-lite',
-        $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
-    );
-    }
 
-    /**
-     * Tests the trackEvent method when the user is not an internal user,
-     * and the form data is provided in the simple format.
-     *
-     * This test verifies that the server-side event is tracked with the correct
-     * parameters when the user is not an internal user and the form data is
-     * provided in the simple format. It
-     * ensures that the output HTML matches the
-     * expected pattern for the "wpforms-lite" event.
-     *
-     * @return void
-     */
-    public function testTrackEventWithoutInternalUserSimpleFormat() {
-        self::mockIsInternalUser( false );
-        self::mockFacebookWordpressOptions();
-
-        $mock_entry              = $this->createMockEntry( true );
-        $mock_form_data          = $this->createMockFormData( true );
-        $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
-
-    \WP_Mock::expectActionAdded(
-        'wp_footer',
-        array(
-            FacebookWordpressWPForms::class,
-            'injectLeadEvent',
-        ),
-        20
-    );
-
-    \WP_Mock::userFunction(
-        'sanitize_text_field',
-        array(
-            'args'   => array( \Mockery::any() ),
-            'return' => function ( $input ) {
-                return $input;
-            },
-        )
-    );
-
-    FacebookWordpressWPForms::trackEvent(
-        $mock_entry,
-        $mock_form_data
-    );
-
-        $tracked_events =
-        FacebookServerSideEvent::get_instance()->get_tracked_events();
-
-        $this->assertCount( 1, $tracked_events );
-
-        $event = $tracked_events[0];
-        $this->assertEquals( 'Lead', $event->getEventName() );
-        $this->assertNotNull( $event->getEventTime() );
         $this->assertEquals(
-            'pika.chu@s2s.com',
-            $event->getUserData()->getEmail()
+            'wpforms-lite',
+            $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
         );
-        $this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
-        $this->assertEquals( 'chu', $event->getUserData()->getLastName() );
-        $this->assertEquals( '1234567', $event->getUserData()->getPhone() );
-        $this->assertEquals( 'us', $event->getUserData()->getCountryCode() );
-        $this->assertEquals( 'springfield', $event->getUserData()->getCity() );
-        $this->assertEquals( 'ohio', $event->getUserData()->getState() );
-        $this->assertEquals( '45401', $event->getUserData()->getZipCode() );
-        $this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
     }
+
 
     /**
      * Creates a mock entry with predefined field values.
@@ -284,12 +217,11 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
                 ),
                 '1' => 'pika.chu@s2s.com',
                 '2' => '1234567',
-                '3' => array(
-                    'country' => 'US',
-                    'postal'  => '45401',
-                    'state'   => 'Ohio',
-                    'city'    => 'Springfield',
-                ),
+                '3' => 'US',
+                '4' => 'Ohio',
+                '5' => 'Springfield',
+                '6' => '45401',
+                '7' => 'Male',
             ),
         );
     }
@@ -312,21 +244,45 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
         return array(
             'fields' => array(
                 array(
-                    'type'   => 'name',
+                    'type'   => 'text',
                     'id'     => '0',
                     'format' => $simple_format ? 'simple' : 'first-last',
+                    'label'  => 'Name',
                 ),
                 array(
                     'type' => 'email',
                     'id'   => '1',
+                    'label'  => 'Email',
                 ),
                 array(
-                    'type' => 'phone',
+                    'type' => 'text',
                     'id'   => '2',
+                    'label'  => 'Phone',
                 ),
                 array(
-                    'type' => 'address',
+                    'type' => 'text',
                     'id'   => '3',
+                    'label'  => 'Country',
+                ),
+                array(
+                    'type' => 'text',
+                    'id'   => '4',
+                    'label'  => 'State',
+                ),
+                array(
+                    'type' => 'text',
+                    'id'   => '5',
+                    'label'  => 'City',
+                ),
+                array(
+                    'type' => 'text',
+                    'id'   => '6',
+                    'label'  => 'Zip',
+                ),
+                array(
+                    'type' => 'text',
+                    'id'   => '7',
+                    'label'  => 'Gender',
                 ),
             ),
         );

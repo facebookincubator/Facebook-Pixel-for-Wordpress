@@ -125,6 +125,7 @@ class FacebookPluginConfig {
             'MAILCHIMP_FOR_WP'      => 'FacebookWordpressMailchimpForWp',
             'NINJA_FORMS'           => 'FacebookWordpressNinjaForms',
             'WOOCOMMERCE'           => 'FacebookWordpressWooCommerce',
+            'WPFORM'                => 'FacebookWordpressWPForms',
         );
     }
 }
