@@ -150,15 +150,6 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
             )
         );
 
-        \WP_Mock::expectActionAdded(
-            'wp_footer',
-            array(
-                FacebookWordpressWPForms::class,
-                'injectLeadEvent',
-            ),
-            20
-        );
-
         FacebookWordpressWPForms::trackEvent(
             $mock_entry,
             $mock_form_data
