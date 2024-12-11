@@ -33,7 +33,7 @@ Run the command to run tests and create the zip under build directory.
 2. Extend the class from `FacebookWordpressIntegrationBase`
 3. Define class variable `PLUGIN_FILE` to be your plugin PHP file
 4. Define class variable `TRACKING_NAME` for tracking purpose, put this value under 'fb_wp_tracking' as a parameter in the pixel event
-5. Define a public static function `injectPixelCode()` to inject pixel at your page
+5. Define a public static function `inject_pixel_code()` to inject pixel at your page
 6. Add your unit test class under `tests/` folder
 7. Extend the test class from `FacebookWordpressTestBase`
 8. After the classes development, run tests by `$ vendor/bin/phing`

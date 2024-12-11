@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<ruleset name="WordPress Plugin Coding Standards">
+    <description>PHP CodeSniffer ruleset for WordPress plugin development with additional style guide rules</description>
+
+    <!-- Include WordPress standard ruleset -->
+    <rule ref="WordPress">
+        <!-- Exclude conflicting indentation rules from WordPress -->
+        <exclude name="Generic.WhiteSpace.ScopeIndent" />
+        <exclude name="Generic.WhiteSpace.DisallowTabIndent" />
+        <exclude name="Universal.WhiteSpace.PrecisionAlignment" />
+        <exclude name="WordPress.Arrays.ArrayIndentation" />
+    </rule>
+
+    <!-- Force 2 spaces for indentation -->
+    <rule ref="Generic.WhiteSpace.ScopeIndent">
+        <properties>
+            <property name="indent" value="2"/>
+            <property name="tabIndent" value="false"/>
+            <property name="exact" value="true"/>
+            <property name="ignoreIndentationTokens" type="array">
+                <element value="T_COMMENT"/>
+                <element value="T_DOC_COMMENT_OPEN_TAG"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Ensure no tabs are used for indentation -->
+    <rule ref="Generic.WhiteSpace.DisallowTabIndent" />
+
+    <!-- Explicitly allow spaces for indentation -->
+    <rule ref="Generic.WhiteSpace.DisallowSpaceIndent">
+        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed" />
+    </rule>
+
+    <!-- Enforce a max line length of 80 characters -->
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="80"/>
+            <property name="absoluteLineLimit" value="80"/>
+        </properties>
+        <type>warning</type>
+        <severity>4</severity>
+    </rule>
+
+    <!-- Ensure proper function argument formatting with spaces after commas -->
+    <rule ref="Squiz.Functions.FunctionDeclarationArgumentSpacing" />
+
+    <!-- Enforce proper function declaration formatting -->
+    <rule ref="Squiz.Functions.FunctionDeclaration" />
+
+    <!-- Check all PHP files by default -->
+    <file>.</file>
+
+    <!-- Only check .php files -->
+    <arg name="extensions" value="php"/>
+
+    <!-- Show progress and sniff codes in all reports -->
+    <arg value="p"/>
+
+    <!-- Exclude specific directories -->
+    <exclude-pattern>vendor/*</exclude-pattern>
+    <exclude-pattern>node_modules/*</exclude-pattern>
+    <exclude-pattern>task/*</exclude-pattern>
+    <exclude-pattern>__tests__/*</exclude-pattern>
+</ruleset>
