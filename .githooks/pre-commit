@@ -6,7 +6,7 @@ if [ -n "$php_files" ]; then
   echo "Running PHP CodeSniffer on the following files:"
   echo "$php_files"
 
-  echo "$php_files" | xargs vendor/bin/phpcs -d memory_limit=512M --standard=phpcs.xml.dist
+  echo "$php_files" | xargs vendor/bin/phpcs -d memory_limit=512M --standard=phpcs.xml
   if [ $? -ne 0 ]; then
     echo "PHP CodeSniffer failed. Please fix the errors."
     exit 1
