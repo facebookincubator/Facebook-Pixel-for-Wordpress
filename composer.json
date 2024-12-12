@@ -20,7 +20,10 @@
       "FacebookPixelPlugin\\": "./",
       "FacebookPixelPlugin\\Core\\": "core/",
       "FacebookPixelPlugin\\Integration\\": "integration/"
-    }
+    },
+    "classmap": [
+      "./"
+    ]
   },
   "autoload-dev": {
     "classmap": [
