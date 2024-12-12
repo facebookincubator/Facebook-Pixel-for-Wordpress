@@ -10,6 +10,10 @@
     <fileset dir="${basedir}" id="sourcedir">
         <exclude name=".editorconfig" />
         <exclude name=".gitignore" />
+        <exclude name=".prettierrc" />
+        <exclude name="package.json" />
+        <exclude name="package-lock.json" />
+        <exclude name="phpcs.xml" />
         <exclude name="build.properties" />
         <exclude name="build.xml" />
         <exclude name="README.md" />
@@ -17,6 +21,8 @@
         <exclude name="task/**" />
         <exclude name="__tests__/**" />
         <exclude name="js/lib/**" />
+        <exclude name=".githooks/**" />
+        <exclude name=".github/**" />
     </fileset>
 
     <!-- Fileset for files using GuzzleHttp-->
