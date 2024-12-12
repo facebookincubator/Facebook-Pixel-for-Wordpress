@@ -101,21 +101,30 @@ class PixelRenderer {
         $event->getCustomData() : new CustomData();
 
         $normalized_custom_data = $custom_data->normalize();
-    if ( ! is_null( $fb_integration_tracking ) ) {
-        $normalized_custom_data[ self::FB_INTEGRATION_TRACKING ] =
-        $fb_integration_tracking;
-    }
+        if ( ! is_null( $fb_integration_tracking ) ) {
+            $normalized_custom_data[ self::FB_INTEGRATION_TRACKING ] =
+            $fb_integration_tracking;
+        }
+
+        $user_data            = $event->getUserData();
+        $normalized_user_data = $user_data->normalize();
+        $normalized_data      = array_merge(
+            $normalized_custom_data,
+            $normalized_user_data
+        );
 
         $class = new ReflectionClass(
             'FacebookPixelPlugin\Core\FacebookPixel'
         );
-    return sprintf(
-        self::FBQ_EVENT_CODE,
-        $class->getConstant( strtoupper( $event->getEventName() ) ) !== false ?
-        self::TRACK : self::TRACK_CUSTOM,
-        $event->getEventName(),
-        wp_json_encode( $normalized_custom_data, JSON_PRETTY_PRINT ),
-        wp_json_encode( $event_data, JSON_PRETTY_PRINT )
-    );
+
+        return sprintf(
+            self::FBQ_EVENT_CODE,
+            $class->getConstant( strtoupper( $event->getEventName() ) ) !==
+            false ?
+            self::TRACK : self::TRACK_CUSTOM,
+            $event->getEventName(),
+            wp_json_encode( $normalized_data, JSON_PRETTY_PRINT ),
+            wp_json_encode( $event_data, JSON_PRETTY_PRINT )
+        );
     }
 }
