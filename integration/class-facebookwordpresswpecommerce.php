@@ -108,11 +108,11 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
         );
             FacebookServerSideEvent::get_instance()->track( $server_event );
 
-            $code                       = PixelRenderer::render(
+            $code                   = PixelRenderer::render(
                 array( $server_event ),
                 self::TRACKING_NAME
             );
-        $code                           = sprintf(
+        $code                       = sprintf(
             '
         <!-- Meta Pixel Event Code -->
         %s

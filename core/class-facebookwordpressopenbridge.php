@@ -224,28 +224,28 @@ class FacebookWordpressOpenBridge {
 
         if ( empty( $current_user ) && '1' === $capi_pii_caching_status ) {
 
-            if ( isset( $_SESSION[ AAMSettingsFields::EMAIL ] ) ) {
+          if ( isset( $_SESSION[ AAMSettingsFields::EMAIL ] ) ) {
             $current_user['email'] = sanitize_text_field(
                 $_SESSION[ AAMSettingsFields::EMAIL ]
             );
-            }
+          }
 
-            if ( isset( $_SESSION[ AAMSettingsFields::FIRST_NAME ] ) ) {
-                $current_user['first_name'] =
-                sanitize_text_field( $_SESSION[ AAMSettingsFields::FIRST_NAME ] );
-            }
+          if ( isset( $_SESSION[ AAMSettingsFields::FIRST_NAME ] ) ) {
+              $current_user['first_name'] =
+              sanitize_text_field( $_SESSION[ AAMSettingsFields::FIRST_NAME ] );
+          }
 
-            if ( isset( $_SESSION[ AAMSettingsFields::LAST_NAME ] ) ) {
-                $current_user['last_name'] =
-                sanitize_text_field( $_SESSION[ AAMSettingsFields::LAST_NAME ] );
-            }
+          if ( isset( $_SESSION[ AAMSettingsFields::LAST_NAME ] ) ) {
+              $current_user['last_name'] =
+              sanitize_text_field( $_SESSION[ AAMSettingsFields::LAST_NAME ] );
+          }
 
-            if ( isset( $_SESSION[ AAMSettingsFields::PHONE ] ) ) {
-                $current_user['phone'] =
-                sanitize_text_field( $_SESSION[ AAMSettingsFields::PHONE ] );
-            }
+          if ( isset( $_SESSION[ AAMSettingsFields::PHONE ] ) ) {
+              $current_user['phone'] =
+              sanitize_text_field( $_SESSION[ AAMSettingsFields::PHONE ] );
+          }
 
-            return array_filter( $current_user );
+          return array_filter( $current_user );
         }
 
         $user_id = get_current_user_id();

@@ -142,13 +142,13 @@ class FacebookWordpressSettingsRecorder {
                 || empty( $external_business_id ) ) {
             return $this->handle_invalid_request();
         }
-            $settings = array(
-                FacebookPluginConfig::PIXEL_ID_KEY             => $pixel_id,
-                FacebookPluginConfig::ACCESS_TOKEN_KEY         => $access_token,
-                FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
-                $external_business_id,
-                FacebookPluginConfig::IS_FBE_INSTALLED_KEY     => '1',
-            );
+        $settings = array(
+            FacebookPluginConfig::PIXEL_ID_KEY             => $pixel_id,
+            FacebookPluginConfig::ACCESS_TOKEN_KEY         => $access_token,
+            FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
+            $external_business_id,
+            FacebookPluginConfig::IS_FBE_INSTALLED_KEY     => '1',
+        );
         \update_option(
             FacebookPluginConfig::SETTINGS_KEY,
             $settings
