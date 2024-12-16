@@ -92,15 +92,15 @@ class FacebookServerSideEvent {
      */
     public function track( $event, $send_now = true ) {
         $this->tracked_events[] = $event;
-    if ( $send_now ) {
-        do_action(
-            'send_server_events',
-            array( $event ),
-            1
-        );
-    } else {
-        $this->pending_events[] = $event;
-    }
+        if ( $send_now ) {
+            do_action(
+                'send_server_events',
+                array( $event ),
+                1
+            );
+        } else {
+            $this->pending_events[] = $event;
+        }
     }
 
     /**
@@ -172,32 +172,32 @@ class FacebookServerSideEvent {
      */
     public static function send( $events ) {
         $events = apply_filters( 'before_conversions_api_event_sent', $events );
-    if ( empty( $events ) ) {
-        return;
-    }
+        if ( empty( $events ) ) {
+            return;
+        }
 
         $pixel_id     = FacebookWordpressOptions::get_pixel_id();
         $access_token = FacebookWordpressOptions::get_access_token();
         $agent        = FacebookWordpressOptions::get_agent_string();
 
-    if ( self::is_open_bridge_event( $events ) ) {
-        $agent .= '_ob'; // agent suffix is openbridge.
-    }
+        if ( self::is_open_bridge_event( $events ) ) {
+            $agent .= '_ob'; // agent suffix is openbridge.
+        }
 
-    if ( empty( $pixel_id ) || empty( $access_token ) ) {
-        return;
-    }
-    try {
-        $api = Api::init( null, null, $access_token );
+        if ( empty( $pixel_id ) || empty( $access_token ) ) {
+            return;
+        }
+        try {
+            $api = Api::init( null, null, $access_token );
 
-        $request = ( new EventRequest( $pixel_id ) )
-                ->setEvents( $events )
-                ->setPartnerAgent( $agent );
+            $request = ( new EventRequest( $pixel_id ) )
+                    ->setEvents( $events )
+                    ->setPartnerAgent( $agent );
 
-        $response = $request->execute();
-    } catch ( \Exception $e ) {
-        throw $e;
-    }
+            $response = $request->execute();
+        } catch ( \Exception $e ) {
+            throw $e;
+        }
     }
 
     /**
@@ -217,15 +217,15 @@ class FacebookServerSideEvent {
     }
 
         $custom_data = $events[0]->getCustomData();
-    if ( ! $custom_data ) {
-        return false;
-    }
+        if ( ! $custom_data ) {
+            return false;
+        }
 
         $custom_properties = $custom_data->getCustomProperties();
-    if ( ! $custom_properties ||
-        ! isset( $custom_properties['fb_integration_tracking'] ) ) {
-        return false;
-    }
+        if ( ! $custom_properties ||
+            ! isset( $custom_properties['fb_integration_tracking'] ) ) {
+            return false;
+        }
 
         return 'wp-cloudbridge-plugin' ===
         $custom_properties['fb_integration_tracking'];

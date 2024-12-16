@@ -72,9 +72,9 @@ class FacebookWordpressOpenBridge {
      * FacebookWordpressOpenBridge class.
      */
     public static function get_instance() {
-    if ( null === self::$instance ) {
-        self::$instance = new FacebookWordpressOpenBridge();
-    }
+        if ( null === self::$instance ) {
+            self::$instance = new FacebookWordpressOpenBridge();
+        }
         return self::$instance;
     }
 
@@ -90,44 +90,44 @@ class FacebookWordpressOpenBridge {
      * @return void
      */
     private static function start_new_php_session_if_needed() {
-    if ( session_id() ) {
-        return;
-    }
+        if ( session_id() ) {
+            return;
+        }
 
         $secure      = false;
         $httponly    = true;
         $samesite    = 'lax';
         $maxlifetime = 7776000;
-    if ( PHP_VERSION_ID < 70300 ) {
-        session_set_cookie_params(
-            $maxlifetime,
-            '/; samesite=' . $samesite,
-            isset( $_SERVER['HTTP_HOST'] )
-            ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) :
-            '',
-            $secure,
-            $httponly
-        );
-    } else {
-        session_set_cookie_params(
-            array(
-                'lifetime' => $maxlifetime,
-                'path'     => '/',
-                'domain'   => isset( $_SERVER['HTTP_HOST'] ) ?
-                sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '',
-                'secure'   => $secure,
-                'httponly' => $httponly,
-                'samesite' => $samesite,
-            )
-        );
-    }
+        if ( PHP_VERSION_ID < 70300 ) {
+            session_set_cookie_params(
+                $maxlifetime,
+                '/; samesite=' . $samesite,
+                isset( $_SERVER['HTTP_HOST'] )
+                ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) :
+                '',
+                $secure,
+                $httponly
+            );
+        } else {
+            session_set_cookie_params(
+                array(
+                    'lifetime' => $maxlifetime,
+                    'path'     => '/',
+                    'domain'   => isset( $_SERVER['HTTP_HOST'] ) ?
+                    sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '',
+                    'secure'   => $secure,
+                    'httponly' => $httponly,
+                    'samesite' => $samesite,
+                )
+            );
+        }
 
         session_start();
 
-    $_SESSION[ self::EXTERNAL_ID_COOKIE ] = isset(
-        $_SESSION[ self::EXTERNAL_ID_COOKIE ]
-    ) ? sanitize_text_field( $_SESSION[ self::EXTERNAL_ID_COOKIE ] ) :
-    FacebookPluginUtils::new_guid();
+        $_SESSION[ self::EXTERNAL_ID_COOKIE ] = isset(
+            $_SESSION[ self::EXTERNAL_ID_COOKIE ]
+        ) ? sanitize_text_field( $_SESSION[ self::EXTERNAL_ID_COOKIE ] ) :
+        FacebookPluginUtils::new_guid();
     }
 
     /**
@@ -148,16 +148,16 @@ class FacebookWordpressOpenBridge {
         self::start_new_php_session_if_needed();
 
         $event_name = $data['event_name'];
-    if ( in_array( $event_name, self::$blocked_events, true ) ) {
-        return;
-    }
-    $event = ServerEventFactory::safe_create_event(
-        $event_name,
-        array( $this, 'extract_from_databag' ),
-        array( $data ),
-        'wp-cloudbridge-plugin',
-        true
-    );
+        if ( in_array( $event_name, self::$blocked_events, true ) ) {
+            return;
+        }
+        $event = ServerEventFactory::safe_create_event(
+            $event_name,
+            array( $this, 'extract_from_databag' ),
+            array( $data ),
+            'wp-cloudbridge-plugin',
+            true
+        );
         $event->setEventId( $data['event_id'] );
         FacebookServerSideEvent::send( array( $event ) );
     }
@@ -216,66 +216,66 @@ class FacebookWordpressOpenBridge {
      * @since 1.0.0
      */
     private static function get_pii_from_session() {
-    $current_user                = array_filter(
-        FacebookPluginUtils::get_logged_in_user_info()
-    );
+        $current_user                = array_filter(
+            FacebookPluginUtils::get_logged_in_user_info()
+        );
         $capi_pii_caching_status =
         FacebookWordpressOptions::get_capi_pii_caching_status();
 
-    if ( empty( $current_user ) && '1' === $capi_pii_caching_status ) {
+        if ( empty( $current_user ) && '1' === $capi_pii_caching_status ) {
 
-        if ( isset( $_SESSION[ AAMSettingsFields::EMAIL ] ) ) {
-        $current_user['email'] = sanitize_text_field(
-            $_SESSION[ AAMSettingsFields::EMAIL ]
-        );
+            if ( isset( $_SESSION[ AAMSettingsFields::EMAIL ] ) ) {
+            $current_user['email'] = sanitize_text_field(
+                $_SESSION[ AAMSettingsFields::EMAIL ]
+            );
+            }
+
+            if ( isset( $_SESSION[ AAMSettingsFields::FIRST_NAME ] ) ) {
+                $current_user['first_name'] =
+                sanitize_text_field( $_SESSION[ AAMSettingsFields::FIRST_NAME ] );
+            }
+
+            if ( isset( $_SESSION[ AAMSettingsFields::LAST_NAME ] ) ) {
+                $current_user['last_name'] =
+                sanitize_text_field( $_SESSION[ AAMSettingsFields::LAST_NAME ] );
+            }
+
+            if ( isset( $_SESSION[ AAMSettingsFields::PHONE ] ) ) {
+                $current_user['phone'] =
+                sanitize_text_field( $_SESSION[ AAMSettingsFields::PHONE ] );
+            }
+
+            return array_filter( $current_user );
         }
-
-        if ( isset( $_SESSION[ AAMSettingsFields::FIRST_NAME ] ) ) {
-            $current_user['first_name'] =
-            sanitize_text_field( $_SESSION[ AAMSettingsFields::FIRST_NAME ] );
-        }
-
-        if ( isset( $_SESSION[ AAMSettingsFields::LAST_NAME ] ) ) {
-            $current_user['last_name'] =
-            sanitize_text_field( $_SESSION[ AAMSettingsFields::LAST_NAME ] );
-        }
-
-        if ( isset( $_SESSION[ AAMSettingsFields::PHONE ] ) ) {
-            $current_user['phone'] =
-            sanitize_text_field( $_SESSION[ AAMSettingsFields::PHONE ] );
-        }
-
-        return array_filter( $current_user );
-    }
 
         $user_id = get_current_user_id();
-    if ( 0 !== $user_id ) {
-        $current_user['city']    = get_user_meta(
-            $user_id,
-            'billing_city',
-            true
-        );
-        $current_user['zip']     = get_user_meta(
-            $user_id,
-            'billing_postcode',
-            true
-        );
-        $current_user['country'] = get_user_meta(
-            $user_id,
-            'billing_country',
-            true
-        );
-        $current_user['state']   = get_user_meta(
-            $user_id,
-            'billing_state',
-            true
-        );
-        $current_user['phone']   = get_user_meta(
-            $user_id,
-            'billing_phone',
-            true
-        );
-    }
+        if ( 0 !== $user_id ) {
+            $current_user['city']    = get_user_meta(
+                $user_id,
+                'billing_city',
+                true
+            );
+            $current_user['zip']     = get_user_meta(
+                $user_id,
+                'billing_postcode',
+                true
+            );
+            $current_user['country'] = get_user_meta(
+                $user_id,
+                'billing_country',
+                true
+            );
+            $current_user['state']   = get_user_meta(
+                $user_id,
+                'billing_state',
+                true
+            );
+            $current_user['phone']   = get_user_meta(
+                $user_id,
+                'billing_phone',
+                true
+            );
+        }
         return array_filter( $current_user );
     }
 
@@ -291,9 +291,9 @@ class FacebookWordpressOpenBridge {
      * @return string The user's email address.
      */
     private static function get_email( $current_user_data, $pixel_data ) {
-    if ( isset( $current_user_data['email'] ) ) {
-        return $current_user_data['email'];
-    }
+        if ( isset( $current_user_data['email'] ) ) {
+            return $current_user_data['email'];
+        }
         return self::get_aam_field( AAMSettingsFields::EMAIL, $pixel_data );
     }
 
@@ -309,9 +309,9 @@ class FacebookWordpressOpenBridge {
      * @return string The user's first name.
      */
     private static function get_first_name( $current_user_data, $pixel_data ) {
-    if ( isset( $current_user_data['first_name'] ) ) {
-        return $current_user_data['first_name'];
-    }
+        if ( isset( $current_user_data['first_name'] ) ) {
+            return $current_user_data['first_name'];
+        }
         return self::get_aam_field(
             AAMSettingsFields::FIRST_NAME,
             $pixel_data
@@ -330,9 +330,9 @@ class FacebookWordpressOpenBridge {
      * @return string The user's last name.
      */
     private static function get_last_name( $current_user_data, $pixel_data ) {
-    if ( isset( $current_user_data['last_name'] ) ) {
-        return $current_user_data['last_name'];
-    }
+        if ( isset( $current_user_data['last_name'] ) ) {
+            return $current_user_data['last_name'];
+        }
         return self::get_aam_field( AAMSettingsFields::LAST_NAME, $pixel_data );
     }
 
@@ -351,24 +351,24 @@ class FacebookWordpressOpenBridge {
     private static function get_external_id( $current_user_data, $pixel_data ) {
         $external_ids = array();
 
-    if ( isset( $current_user_data['id'] ) ) {
-        $external_ids[] = (string) $current_user_data['id'];
-    }
+        if ( isset( $current_user_data['id'] ) ) {
+            $external_ids[] = (string) $current_user_data['id'];
+        }
 
-    $temp_external_id = self::get_aam_field(
-        AAMSettingsFields::EXTERNAL_ID,
-        $pixel_data
-    );
-
-    if ( $temp_external_id ) {
-        $external_ids[] = $temp_external_id;
-    }
-
-    if ( isset( $_SESSION[ self::EXTERNAL_ID_COOKIE ] ) ) {
-        $external_ids[] = sanitize_text_field(
-            $_SESSION[ self::EXTERNAL_ID_COOKIE ]
+        $temp_external_id = self::get_aam_field(
+            AAMSettingsFields::EXTERNAL_ID,
+            $pixel_data
         );
-    }
+
+        if ( $temp_external_id ) {
+            $external_ids[] = $temp_external_id;
+        }
+
+        if ( isset( $_SESSION[ self::EXTERNAL_ID_COOKIE ] ) ) {
+            $external_ids[] = sanitize_text_field(
+                $_SESSION[ self::EXTERNAL_ID_COOKIE ]
+            );
+        }
         return $external_ids;
     }
 
@@ -384,9 +384,9 @@ class FacebookWordpressOpenBridge {
      * @return string The user's phone.
      */
     private static function get_phone( $current_user_data, $pixel_data ) {
-    if ( isset( $current_user_data['phone'] ) ) {
-        return $current_user_data['phone'];
-    }
+        if ( isset( $current_user_data['phone'] ) ) {
+            return $current_user_data['phone'];
+        }
         return self::get_aam_field( AAMSettingsFields::PHONE, $pixel_data );
     }
 
@@ -402,9 +402,9 @@ class FacebookWordpressOpenBridge {
      * @return string The user's city.
      */
     private static function get_city( $current_user_data, $pixel_data ) {
-    if ( isset( $current_user_data['city'] ) ) {
-        return $current_user_data['city'];
-    }
+        if ( isset( $current_user_data['city'] ) ) {
+            return $current_user_data['city'];
+        }
         return self::get_aam_field( AAMSettingsFields::CITY, $pixel_data );
     }
 
@@ -420,9 +420,9 @@ class FacebookWordpressOpenBridge {
      * @return string The user's zip code.
      */
     private static function get_zip( $current_user_data, $pixel_data ) {
-    if ( isset( $current_user_data['zip'] ) ) {
-        return $current_user_data['zip'];
-    }
+        if ( isset( $current_user_data['zip'] ) ) {
+            return $current_user_data['zip'];
+        }
         return self::get_aam_field( AAMSettingsFields::ZIP_CODE, $pixel_data );
     }
 
@@ -438,9 +438,9 @@ class FacebookWordpressOpenBridge {
      * @return string The user's country.
      */
     private static function get_country( $current_user_data, $pixel_data ) {
-    if ( isset( $current_user_data['country'] ) ) {
-        return $current_user_data['country'];
-    }
+        if ( isset( $current_user_data['country'] ) ) {
+            return $current_user_data['country'];
+        }
         return self::get_aam_field( AAMSettingsFields::COUNTRY, $pixel_data );
     }
 
@@ -456,9 +456,9 @@ class FacebookWordpressOpenBridge {
      * @return string The user's state.
      */
     private static function get_state( $current_user_data, $pixel_data ) {
-    if ( isset( $current_user_data['state'] ) ) {
-        return $current_user_data['state'];
-    }
+        if ( isset( $current_user_data['state'] ) ) {
+            return $current_user_data['state'];
+        }
         return self::get_aam_field( AAMSettingsFields::STATE, $pixel_data );
     }
 
@@ -477,15 +477,15 @@ class FacebookWordpressOpenBridge {
      * if found, otherwise an empty string.
      */
     private static function get_aam_field( $key, $pixel_data ) {
-    if ( ! isset( $pixel_data[ self::ADVANCED_MATCHING_LABEL ] ) ) {
-        return '';
-    }
-    if ( isset( $pixel_data[ self::ADVANCED_MATCHING_LABEL ][ $key ] ) ) {
-        $value            =
-        $pixel_data[ self::ADVANCED_MATCHING_LABEL ][ $key ];
-        $_SESSION[ $key ] = $value;
-        return $value;
-    }
+        if ( ! isset( $pixel_data[ self::ADVANCED_MATCHING_LABEL ] ) ) {
+            return '';
+        }
+        if ( isset( $pixel_data[ self::ADVANCED_MATCHING_LABEL ][ $key ] ) ) {
+            $value            =
+            $pixel_data[ self::ADVANCED_MATCHING_LABEL ][ $key ];
+            $_SESSION[ $key ] = $value;
+            return $value;
+        }
         return '';
     }
 
@@ -498,12 +498,12 @@ class FacebookWordpressOpenBridge {
      * @return string The custom data value if found, otherwise an empty string.
      */
     private static function get_custom_data( $key, $pixel_data ) {
-    if ( ! isset( $pixel_data[ self::CUSTOM_DATA_LABEL ] ) ) {
-        return '';
-    }
-    if ( isset( $pixel_data[ self::CUSTOM_DATA_LABEL ][ $key ] ) ) {
-        return $pixel_data[ self::CUSTOM_DATA_LABEL ][ $key ];
-    }
+        if ( ! isset( $pixel_data[ self::CUSTOM_DATA_LABEL ] ) ) {
+            return '';
+        }
+        if ( isset( $pixel_data[ self::CUSTOM_DATA_LABEL ][ $key ] ) ) {
+            return $pixel_data[ self::CUSTOM_DATA_LABEL ][ $key ];
+        }
         return '';
     }
 
@@ -523,12 +523,12 @@ class FacebookWordpressOpenBridge {
      * found, otherwise an empty array.
      */
     private static function get_custom_data_array( $key, $pixel_data ) {
-    if ( ! isset( $pixel_data[ self::CUSTOM_DATA_LABEL ] ) ) {
-        return '';
-    }
-    if ( isset( $pixel_data[ self::CUSTOM_DATA_LABEL ][ $key ] ) ) {
-        return $pixel_data[ self::CUSTOM_DATA_LABEL ][ $key ];
-    }
+        if ( ! isset( $pixel_data[ self::CUSTOM_DATA_LABEL ] ) ) {
+            return '';
+        }
+        if ( isset( $pixel_data[ self::CUSTOM_DATA_LABEL ][ $key ] ) ) {
+            return $pixel_data[ self::CUSTOM_DATA_LABEL ][ $key ];
+        }
         return array();
     }
 }

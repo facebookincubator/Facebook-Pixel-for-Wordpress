@@ -56,12 +56,12 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
      * @return void
      */
     public static function inject_pixel_code() {
-    add_action(
-        'ninja_forms_submission_actions',
-        array( __CLASS__, 'injectLeadEvent' ),
-        10,
-        3
-    );
+        add_action(
+            'ninja_forms_submission_actions',
+            array( __CLASS__, 'injectLeadEvent' ),
+            10,
+            3
+        );
     }
 
     /**
@@ -87,48 +87,48 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
         $form_cache,
         $form_data
     ) {
-    if ( FacebookPluginUtils::is_internal_user() ) {
-        return $actions;
-    }
-
-    foreach ( $actions as $key => $action ) {
-        if ( ! isset( $action['settings'] ) ||
-        ! isset( $action['settings']['type'] ) ) {
-            continue;
+        if ( FacebookPluginUtils::is_internal_user() ) {
+            return $actions;
         }
 
-        $type = $action['settings']['type'];
-        if ( ! is_string( $type ) ) {
-            continue;
-        }
+        foreach ( $actions as $key => $action ) {
+            if ( ! isset( $action['settings'] ) ||
+            ! isset( $action['settings']['type'] ) ) {
+                continue;
+            }
 
-        if ( 'successmessage' === $type ) {
-        $event = ServerEventFactory::safe_create_event(
-            'Lead',
-            array( __CLASS__, 'readFormData' ),
-            array( $form_data ),
-            self::TRACKING_NAME,
-            true
-        );
-            FacebookServerSideEvent::get_instance()->track( $event );
+            $type = $action['settings']['type'];
+            if ( ! is_string( $type ) ) {
+                continue;
+            }
 
-            $pixel_code = PixelRenderer::render(
-                array( $event ),
-                self::TRACKING_NAME
+            if ( 'successmessage' === $type ) {
+            $event = ServerEventFactory::safe_create_event(
+                'Lead',
+                array( __CLASS__, 'readFormData' ),
+                array( $form_data ),
+                self::TRACKING_NAME,
+                true
             );
-        $code           = sprintf(
-            '
-<!-- Meta Pixel Event Code -->
-%s
-<!-- End Meta Pixel Event Code -->
-    ',
-            $pixel_code
-        );
+                FacebookServerSideEvent::get_instance()->track( $event );
 
-            $action['settings']['success_msg'] .= $code;
-            $actions[ $key ]                    = $action;
+                $pixel_code = PixelRenderer::render(
+                    array( $event ),
+                    self::TRACKING_NAME
+                );
+            $code           = sprintf(
+                '
+    <!-- Meta Pixel Event Code -->
+    %s
+    <!-- End Meta Pixel Event Code -->
+        ',
+                $pixel_code
+            );
+
+                $action['settings']['success_msg'] .= $code;
+                $actions[ $key ]                    = $action;
+            }
         }
-    }
 
         return $actions;
     }
@@ -155,19 +155,19 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
      * @return array An associative array of form data.
      */
     public static function readFormData( $form_data ) {
-    if ( empty( $form_data ) ) {
-        return array();
-    }
+        if ( empty( $form_data ) ) {
+            return array();
+        }
 
-        $event_data = array();
-        $name       = self::getName( $form_data );
-    if ( $name ) {
-        $event_data['first_name'] = $name[0];
-        $event_data['last_name']  = $name[1];
-    } else {
-        $event_data['first_name'] = self::getFirstName( $form_data );
-        $event_data['last_name']  = self::getLastName( $form_data );
-    }
+            $event_data = array();
+            $name       = self::getName( $form_data );
+        if ( $name ) {
+            $event_data['first_name'] = $name[0];
+            $event_data['last_name']  = $name[1];
+        } else {
+            $event_data['first_name'] = self::getFirstName( $form_data );
+            $event_data['last_name']  = self::getLastName( $form_data );
+        }
         $event_data['email']   = self::getEmail( $form_data );
         $event_data['phone']   = self::getPhone( $form_data );
         $event_data['city']    = self::getCity( $form_data );
@@ -199,10 +199,10 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
      */
     private static function getName( $form_data ) {
         $name = self::getField( $form_data, 'name' );
-    if ( $name ) {
-        return ServerEventFactory::split_name( $name );
-    }
-        return null;
+        if ( $name ) {
+            return ServerEventFactory::split_name( $name );
+        }
+            return null;
     }
 
     /**
@@ -311,15 +311,15 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
      * if no matching field is found.
      */
     private static function getField( $form_data, $key ) {
-    if ( empty( $form_data['fields'] ) ) {
-        return null;
-    }
-
-    foreach ( $form_data['fields'] as $field ) {
-        if ( self::hasPrefix( $field['key'], $key ) ) {
-            return $field['value'];
+        if ( empty( $form_data['fields'] ) ) {
+            return null;
         }
-    }
+
+        foreach ( $form_data['fields'] as $field ) {
+            if ( self::hasPrefix( $field['key'], $key ) ) {
+                return $field['value'];
+            }
+        }
 
         return null;
     }

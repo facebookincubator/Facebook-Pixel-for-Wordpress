@@ -53,12 +53,12 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
      * @since 0.9.0
      */
     public static function inject_pixel_code() {
-    add_action(
-        'caldera_forms_ajax_return',
-        array( __CLASS__, 'injectLeadEvent' ),
-        10,
-        2
-    );
+        add_action(
+            'caldera_forms_ajax_return',
+            array( __CLASS__, 'injectLeadEvent' ),
+            10,
+            2
+        );
     }
 
     /**
@@ -77,37 +77,37 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
      * @return array The modified Caldera Forms response.
      */
     public static function injectLeadEvent( $out, $form ) {
-    if (
-    FacebookPluginUtils::is_internal_user() ||
-    'complete' !== $out['status']
-    ) {
+        if (
+        FacebookPluginUtils::is_internal_user() ||
+        'complete' !== $out['status']
+        ) {
+            return $out;
+        }
+
+        $server_event = ServerEventFactory::safe_create_event(
+            'Lead',
+            array( __CLASS__, 'readFormData' ),
+            array( $form ),
+            self::TRACKING_NAME,
+            true
+        );
+        FacebookServerSideEvent::get_instance()->track( $server_event );
+
+        $code = PixelRenderer::render(
+            array( $server_event ),
+            self::TRACKING_NAME
+        );
+        $code = sprintf(
+            '
+        <!-- Meta Pixel Event Code -->
+        %s
+        <!-- End Meta Pixel Event Code -->
+            ',
+            $code
+        );
+
+        $out['html'] .= $code;
         return $out;
-    }
-
-    $server_event = ServerEventFactory::safe_create_event(
-        'Lead',
-        array( __CLASS__, 'readFormData' ),
-        array( $form ),
-        self::TRACKING_NAME,
-        true
-    );
-    FacebookServerSideEvent::get_instance()->track( $server_event );
-
-    $code = PixelRenderer::render(
-        array( $server_event ),
-        self::TRACKING_NAME
-    );
-    $code = sprintf(
-        '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-        ',
-        $code
-    );
-
-    $out['html'] .= $code;
-    return $out;
     }
 
     /**
@@ -119,16 +119,16 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
      * expected by the `FacebookServerSideEvent` class.
      */
     public static function readFormData( $form ) {
-    if ( empty( $form ) ) {
-        return array();
-    }
-    return array(
-        'email'      => self::getEmail( $form ),
-        'first_name' => self::getFirstName( $form ),
-        'last_name'  => self::getLastName( $form ),
-        'phone'      => self::getPhone( $form ),
-        'state'      => self::getState( $form ),
-    );
+        if ( empty( $form ) ) {
+            return array();
+        }
+        return array(
+            'email'      => self::getEmail( $form ),
+            'first_name' => self::getFirstName( $form ),
+            'last_name'  => self::getLastName( $form ),
+            'phone'      => self::getPhone( $form ),
+            'state'      => self::getState( $form ),
+        );
     }
 
     /**
@@ -139,7 +139,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
      * @return string The email address.
      */
     private static function getEmail( $form ) {
-    return self::getFieldValue( $form, 'type', 'email' );
+        return self::getFieldValue( $form, 'type', 'email' );
     }
 
     /**
@@ -150,7 +150,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
      * @return string The first name.
      */
     private static function getFirstName( $form ) {
-    return self::getFieldValue( $form, 'slug', 'first_name' );
+        return self::getFieldValue( $form, 'slug', 'first_name' );
     }
 
     /**
@@ -161,7 +161,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
      * @return string The last name.
      */
     private static function getLastName( $form ) {
-    return self::getFieldValue( $form, 'slug', 'last_name' );
+        return self::getFieldValue( $form, 'slug', 'last_name' );
     }
 
     /**
@@ -172,7 +172,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
      * @return string|null The state, or null if not found.
      */
     private static function getState( $form ) {
-    return self::getFieldValue( $form, 'type', 'states' );
+        return self::getFieldValue( $form, 'type', 'states' );
     }
 
     /**
@@ -186,9 +186,9 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
      * @return string|null The phone number, or null if not found.
      */
     private static function getPhone( $form ) {
-    $phone = self::getFieldValue( $form, 'type', 'phone_better' );
-    return empty( $phone ) ?
-    self::getFieldValue( $form, 'type', 'phone' ) : $phone;
+        $phone = self::getFieldValue( $form, 'type', 'phone_better' );
+        return empty( $phone ) ?
+        self::getFieldValue( $form, 'type', 'phone' ) : $phone;
     }
 
     /**
@@ -206,20 +206,20 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
      *  if not found.
      */
     private static function getFieldValue( $form, $attr, $attr_value ) {
-    if ( empty( $form['fields'] ) ) {
-        return null;
-    }
-
-    foreach ( $form['fields'] as $field ) {
-        if ( isset( $field[ $attr ] ) && $field[ $attr ] === $attr_value ) {
-        return sanitize_text_field(
-            wp_unslash(
-                $_POST[ $field['ID'] ] ?? ''  // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            )
-        );
+        if ( empty( $form['fields'] ) ) {
+            return null;
         }
-    }
 
-    return null;
+        foreach ( $form['fields'] as $field ) {
+            if ( isset( $field[ $attr ] ) && $field[ $attr ] === $attr_value ) {
+            return sanitize_text_field(
+                wp_unslash(
+                    $_POST[ $field['ID'] ] ?? ''  // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                )
+            );
+            }
+        }
+
+        return null;
     }
 }

@@ -53,12 +53,12 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      * the Pixel code is injected during the form processing stage.
      */
     public static function inject_pixel_code() {
-    add_action(
-        'wpforms_process_before',
-        array( __CLASS__, 'trackEvent' ),
-        20,
-        2
-    );
+        add_action(
+            'wpforms_process_before',
+            array( __CLASS__, 'trackEvent' ),
+            20,
+            2
+        );
     }
 
     /**
@@ -79,24 +79,24 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      * @return void
      */
     public static function trackEvent( $entry, $form_data ) {
-    if ( FacebookPluginUtils::is_internal_user() ) {
-        return;
-    }
+        if ( FacebookPluginUtils::is_internal_user() ) {
+            return;
+        }
 
-    $server_event = ServerEventFactory::safe_create_event(
-        'Lead',
-        array( __CLASS__, 'readFormData' ),
-        array( $entry, $form_data ),
-        self::TRACKING_NAME,
-        true
-    );
-    FacebookServerSideEvent::get_instance()->track( $server_event );
+        $server_event = ServerEventFactory::safe_create_event(
+            'Lead',
+            array( __CLASS__, 'readFormData' ),
+            array( $entry, $form_data ),
+            self::TRACKING_NAME,
+            true
+        );
+        FacebookServerSideEvent::get_instance()->track( $server_event );
 
-    add_action(
-        'wp_footer',
-        array( __CLASS__, 'injectLeadEvent' ),
-        20
-    );
+        add_action(
+            'wp_footer',
+            array( __CLASS__, 'injectLeadEvent' ),
+            20
+        );
     }
 
     /**
@@ -111,22 +111,22 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      * @return void
      */
     public static function injectLeadEvent() {
-    if ( FacebookPluginUtils::is_internal_user() ) {
-        return;
-    }
+        if ( FacebookPluginUtils::is_internal_user() ) {
+            return;
+        }
 
-    $events     =
-        FacebookServerSideEvent::get_instance()->get_tracked_events();
-    $pixel_code = PixelRenderer::render( $events, self::TRACKING_NAME );
+        $events     =
+            FacebookServerSideEvent::get_instance()->get_tracked_events();
+        $pixel_code = PixelRenderer::render( $events, self::TRACKING_NAME );
 
-    printf(
-        '
-<!-- Meta Pixel Event Code -->
-%s
-<!-- End Meta Pixel Event Code -->
-      ',
-        $pixel_code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-    );
+        printf(
+            '
+    <!-- Meta Pixel Event Code -->
+    %s
+    <!-- End Meta Pixel Event Code -->
+          ',
+            $pixel_code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        );
     }
 
     /**
@@ -150,25 +150,25 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      *               extracted from the form entry.
      */
     public static function readFormData( $entry, $form_data ) {
-    if ( empty( $entry ) || empty( $form_data ) ) {
-        return array();
-    }
+        if ( empty( $entry ) || empty( $form_data ) ) {
+            return array();
+        }
 
-    $name = self::getName( $entry, $form_data );
+        $name = self::getName( $entry, $form_data );
 
-    $event_data = array(
-        'email'      => self::getEmail( $entry, $form_data ),
-        'first_name' => ! empty( $name ) ? $name[0] : null,
-        'last_name'  => ! empty( $name ) ? $name[1] : null,
-        'phone'      => self::getPhone( $entry, $form_data ),
-    );
+        $event_data = array(
+            'email'      => self::getEmail( $entry, $form_data ),
+            'first_name' => ! empty( $name ) ? $name[0] : null,
+            'last_name'  => ! empty( $name ) ? $name[1] : null,
+            'phone'      => self::getPhone( $entry, $form_data ),
+        );
 
-    $event_data = array_merge(
-        $event_data,
-        self::getAddress( $entry, $form_data )
-    );
+        $event_data = array_merge(
+            $event_data,
+            self::getAddress( $entry, $form_data )
+        );
 
-    return $event_data;
+        return $event_data;
     }
 
     /**
@@ -183,7 +183,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      * @return string|null The phone number, or null if no phone field is found.
      */
     private static function getPhone( $entry, $form_data ) {
-    return self::getField( $entry, $form_data, 'phone' );
+        return self::getField( $entry, $form_data, 'phone' );
     }
 
     /**
@@ -199,7 +199,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      *                     if no email field is found.
      */
     private static function getEmail( $entry, $form_data ) {
-    return self::getField( $entry, $form_data, 'email' );
+        return self::getField( $entry, $form_data, 'email' );
     }
 
     /**
@@ -218,30 +218,30 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      * @return array The address data.
      */
     private static function getAddress( $entry, $form_data ) {
-    $address_field_data = self::getField( $entry, $form_data, 'address' );
-    if ( is_null( $address_field_data ) ) {
-        return array();
-    }
-    $address_data = array();
-    if ( isset( $address_field_data['city'] ) ) {
-        $address_data['city'] = $address_field_data['city'];
-    }
-    if ( isset( $address_field_data['state'] ) ) {
-        $address_data['state'] = $address_field_data['state'];
-    }
-
-    if ( isset( $address_field_data['country'] ) ) {
-        $address_data['country'] = $address_field_data['country'];
-    } else {
-        $address_scheme = self::getAddressScheme( $form_data );
-        if ( 'us' === $address_scheme ) {
-        $address_data['country'] = 'US';
+        $address_field_data = self::getField( $entry, $form_data, 'address' );
+        if ( is_null( $address_field_data ) ) {
+            return array();
         }
-    }
-    if ( isset( $address_field_data['postal'] ) ) {
-        $address_data['zip'] = $address_field_data['postal'];
-    }
-    return $address_data;
+        $address_data = array();
+        if ( isset( $address_field_data['city'] ) ) {
+            $address_data['city'] = $address_field_data['city'];
+        }
+        if ( isset( $address_field_data['state'] ) ) {
+            $address_data['state'] = $address_field_data['state'];
+        }
+
+        if ( isset( $address_field_data['country'] ) ) {
+            $address_data['country'] = $address_field_data['country'];
+        } else {
+            $address_scheme = self::getAddressScheme( $form_data );
+            if ( 'us' === $address_scheme ) {
+            $address_data['country'] = 'US';
+            }
+        }
+        if ( isset( $address_field_data['postal'] ) ) {
+            $address_data['zip'] = $address_field_data['postal'];
+        }
+        return $address_data;
     }
 
     /**
@@ -261,27 +261,27 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      *                    last name, or null if no name field is found.
      */
     private static function getName( $entry, $form_data ) {
-    if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
+        if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
+            return null;
+        }
+
+        $entries = $entry['fields'];
+        foreach ( $form_data['fields'] as $field ) {
+            if ( 'name' === $field['type'] ) {
+            if ( 'simple' === $field['format'] ) {
+                return ServerEventFactory::split_name(
+                    $entries[ $field['id'] ]
+                );
+            } elseif ( 'first-last' === $field['format'] ) {
+                return array(
+            $entries[ $field['id'] ]['first'],
+            $entries[ $field['id'] ]['last'],
+                );
+            }
+            }
+        }
+
         return null;
-    }
-
-    $entries = $entry['fields'];
-    foreach ( $form_data['fields'] as $field ) {
-        if ( 'name' === $field['type'] ) {
-        if ( 'simple' === $field['format'] ) {
-            return ServerEventFactory::split_name(
-                $entries[ $field['id'] ]
-            );
-        } elseif ( 'first-last' === $field['format'] ) {
-            return array(
-        $entries[ $field['id'] ]['first'],
-        $entries[ $field['id'] ]['last'],
-            );
-        }
-        }
-    }
-
-    return null;
     }
 
     /**
@@ -299,17 +299,17 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      *                    field of the specified type is found.
      */
     private static function getField( $entry, $form_data, $type ) {
-    if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
-        return null;
-    }
-
-    foreach ( $form_data['fields'] as $field ) {
-        if ( $field['type'] === $type ) {
-        return $entry['fields'][ $field['id'] ];
+        if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
+            return null;
         }
-    }
 
-    return null;
+        foreach ( $form_data['fields'] as $field ) {
+            if ( $field['type'] === $type ) {
+            return $entry['fields'][ $field['id'] ];
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -326,13 +326,13 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      *                     null if no address field is found.
      */
     private static function getAddressScheme( $form_data ) {
-    foreach ( $form_data['fields'] as $field ) {
-        if ( 'address' === $field['type'] ) {
-        if ( isset( $field['scheme'] ) ) {
-            return $field['scheme'];
+        foreach ( $form_data['fields'] as $field ) {
+            if ( 'address' === $field['type'] ) {
+            if ( isset( $field['scheme'] ) ) {
+                return $field['scheme'];
+            }
+            }
         }
-        }
-    }
-    return null;
+        return null;
     }
 }

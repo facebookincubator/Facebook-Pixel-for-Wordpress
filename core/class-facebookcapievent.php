@@ -257,9 +257,9 @@ class FacebookCapiEvent {
     public function get_invalid_event_custom_data( $custom_data ) {
         $invalid_custom_data = array();
         foreach ( $custom_data as $key => $value ) {
-        if ( ! in_array( $key, self::VALID_CUSTOM_DATA, true ) ) {
-            array_push( $invalid_custom_data, $key );
-        }
+          if ( ! in_array( $key, self::VALID_CUSTOM_DATA, true ) ) {
+              array_push( $invalid_custom_data, $key );
+          }
         }
         return $invalid_custom_data;
     }
@@ -293,15 +293,15 @@ class FacebookCapiEvent {
             foreach ( $payload['data'] as $event ) {
             foreach ( self::REQUIRED_EVENT_DATA as $attribute ) {
                 if ( ! array_key_exists( $attribute, $event ) ) {
-                if ( ! empty( $response['message'] ) ) {
-                    $response['error_user_msg'] .=
-                    ", {$attribute} attribute is missing";
-                } else {
-                    $response['valid']          = false;
-                    $response['message']        = 'Missing required attribute';
-                    $response['error_user_msg'] =
-                    "{$attribute} attribute is missing";
-                }
+                  if ( ! empty( $response['message'] ) ) {
+                      $response['error_user_msg'] .=
+                      ", {$attribute} attribute is missing";
+                  } else {
+                      $response['valid']          = false;
+                      $response['message']        = 'Missing required attribute';
+                      $response['error_user_msg'] =
+                      "{$attribute} attribute is missing";
+                  }
                 }
             }
 

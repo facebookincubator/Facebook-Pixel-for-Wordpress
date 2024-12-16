@@ -87,15 +87,15 @@ class ServerEventFactory {
         );
 
         foreach ( $headers_to_scan as $header ) {
-        if ( isset( $_SERVER[ $header ] ) ) {
-            $ip_list = explode( ',', $_SERVER[ $header ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-            foreach ( $ip_list as $ip ) {
-            $trimmed_ip = trim( $ip );
-            if ( self::is_valid_ip_address( $trimmed_ip ) ) {
-                return $trimmed_ip;
+            if ( isset( $_SERVER[ $header ] ) ) {
+                $ip_list = explode( ',', $_SERVER[ $header ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+                foreach ( $ip_list as $ip ) {
+                    $trimmed_ip = trim( $ip );
+                    if ( self::is_valid_ip_address( $trimmed_ip ) ) {
+                        return $trimmed_ip;
+                    }
+                }
             }
-            }
-        }
         }
 
         return null;
@@ -109,9 +109,9 @@ class ServerEventFactory {
     private static function get_http_user_agent() {
         $user_agent = null;
 
-    if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) ) {
-        $user_agent = sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-    }
+        if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) ) {
+            $user_agent = sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+        }
 
         return $user_agent;
     }
@@ -131,23 +131,23 @@ class ServerEventFactory {
      * URL if preferred.
      */
     private static function get_request_uri( $prefer_referrer_for_event_src ) {
-    if ( $prefer_referrer_for_event_src
-    && ! empty( $_SERVER['HTTP_REFERER'] ) ) {
-        return sanitize_text_field( $_SERVER['HTTP_REFERER'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-    }
+        if ( $prefer_referrer_for_event_src
+        && ! empty( $_SERVER['HTTP_REFERER'] ) ) {
+            return sanitize_text_field( $_SERVER['HTTP_REFERER'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+        }
 
-        $url = 'http://';
-    if ( ! empty( $_SERVER['HTTPS'] ) && 'off' !== $_SERVER['HTTPS'] ) {
-        $url = 'https://';
-    }
+            $url = 'http://';
+        if ( ! empty( $_SERVER['HTTPS'] ) && 'off' !== $_SERVER['HTTPS'] ) {
+            $url = 'https://';
+        }
 
-    if ( ! empty( $_SERVER['HTTP_HOST'] ) ) {
-        $url .= sanitize_text_field( $_SERVER['HTTP_HOST'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-    }
+        if ( ! empty( $_SERVER['HTTP_HOST'] ) ) {
+            $url .= sanitize_text_field( $_SERVER['HTTP_HOST'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+        }
 
-    if ( ! empty( $_SERVER['REQUEST_URI'] ) ) {
-        $url .= sanitize_text_field( $_SERVER['REQUEST_URI'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-    }
+        if ( ! empty( $_SERVER['REQUEST_URI'] ) ) {
+            $url .= sanitize_text_field( $_SERVER['REQUEST_URI'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+        }
 
         return $url;
     }
@@ -166,9 +166,9 @@ class ServerEventFactory {
     private static function get_fbp() {
         $fbp = null;
 
-    if ( ! empty( $_COOKIE['_fbp'] ) ) {
-        $fbp = sanitize_text_field( $_COOKIE['_fbp'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-    }
+        if ( ! empty( $_COOKIE['_fbp'] ) ) {
+            $fbp = sanitize_text_field( $_COOKIE['_fbp'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+        }
 
         return $fbp;
     }
@@ -189,26 +189,26 @@ class ServerEventFactory {
     private static function get_fbc() {
         $fbc = null;
 
-    if ( ! empty( $_COOKIE['_fbc'] ) ) {
-        $fbc              = sanitize_text_field(
-            wp_unslash( $_COOKIE['_fbc'] )
-        );
-        $_SESSION['_fbc'] = $fbc;
-    }
+        if ( ! empty( $_COOKIE['_fbc'] ) ) {
+            $fbc              = sanitize_text_field(
+                wp_unslash( $_COOKIE['_fbc'] )
+            );
+            $_SESSION['_fbc'] = $fbc;
+        }
 
-    if ( ! $fbc && isset( $_GET['fbclid'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
-        $fbclid   = sanitize_text_field( wp_unslash( $_GET['fbclid'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
-        $cur_time = (int) ( microtime( true ) * 1000 );
-        $fbc      = 'fb.1.' . $cur_time . '.' . rawurldecode( $fbclid );
-    }
+        if ( ! $fbc && isset( $_GET['fbclid'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+            $fbclid   = sanitize_text_field( wp_unslash( $_GET['fbclid'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
+            $cur_time = (int) ( microtime( true ) * 1000 );
+            $fbc      = 'fb.1.' . $cur_time . '.' . rawurldecode( $fbclid );
+        }
 
-    if ( ! $fbc && isset( $_SESSION['_fbc'] ) ) {
-        $fbc = sanitize_text_field( $_SESSION['_fbc'] );
-    }
+        if ( ! $fbc && isset( $_SESSION['_fbc'] ) ) {
+            $fbc = sanitize_text_field( $_SESSION['_fbc'] );
+        }
 
-    if ( $fbc ) {
-        $_SESSION['_fbc'] = $fbc;
-    }
+        if ( $fbc ) {
+            $_SESSION['_fbc'] = $fbc;
+        }
 
         return $fbc;
     }
@@ -224,14 +224,14 @@ class ServerEventFactory {
      * @return bool True if the IP address is valid, false otherwise.
      */
     private static function is_valid_ip_address( $ip_address ) {
-    return filter_var(
-        $ip_address,
-        FILTER_VALIDATE_IP,
-        FILTER_FLAG_IPV4 |
-        FILTER_FLAG_IPV6 |
-        FILTER_FLAG_NO_PRIV_RANGE |
-            FILTER_FLAG_NO_RES_RANGE
-    );
+        return filter_var(
+            $ip_address,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_IPV4 |
+            FILTER_FLAG_IPV6 |
+            FILTER_FLAG_NO_PRIV_RANGE |
+                FILTER_FLAG_NO_RES_RANGE
+        );
     }
 
     /**
@@ -260,11 +260,11 @@ class ServerEventFactory {
             'external_id'   => AAMSettingsFields::EXTERNAL_ID,
         );
         foreach ( $data as $key => $value ) {
-        if ( isset( $key_to_aam_field[ $key ] ) ) {
-            $user_data[ $key_to_aam_field[ $key ] ] = $value;
-        } else {
-            $custom_data[ $key ] = $value;
-        }
+            if ( isset( $key_to_aam_field[ $key ] ) ) {
+                $user_data[ $key_to_aam_field[ $key ] ] = $value;
+            } else {
+                $custom_data[ $key ] = $value;
+            }
         }
         return array(
             'user_data'   => $user_data,
@@ -303,149 +303,149 @@ class ServerEventFactory {
     ) {
         $event = self::new_event( $event_name, $prefer_referrer_for_event_src );
 
-    try {
-        $data              = call_user_func_array( $callback, $arguments );
-        $data_split        = self::split_user_data_and_custom_data( $data );
-        $user_data_array   = $data_split['user_data'];
-        $custom_data_array = $data_split['custom_data'];
-        $user_data_array   = AAMFieldsExtractor::get_normalized_user_data(
-            $user_data_array
-        );
-
-        $user_data = $event->getUserData();
-        if (
-        isset( $user_data_array[ AAMSettingsFields::EMAIL ] )
-        ) {
-        $user_data->setEmail(
-            $user_data_array[ AAMSettingsFields::EMAIL ]
-        );
-        }
-        if (
-        isset( $user_data_array[ AAMSettingsFields::FIRST_NAME ] )
-        ) {
-        $user_data->setFirstName(
-            $user_data_array[ AAMSettingsFields::FIRST_NAME ]
-        );
-        }
-        if (
-        isset( $user_data_array[ AAMSettingsFields::LAST_NAME ] )
-        ) {
-        $user_data->setLastName(
-            $user_data_array[ AAMSettingsFields::LAST_NAME ]
-        );
-        }
-        if (
-        isset( $user_data_array[ AAMSettingsFields::GENDER ] )
-        ) {
-        $user_data->setGender(
-            $user_data_array[ AAMSettingsFields::GENDER ]
-        );
-        }
-        if (
-        isset( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] )
-        ) {
-        $user_data->setDateOfBirth(
-            $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ]
-        );
-        }
-        if (
-        isset( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] ) &&
-        ! is_null( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] )
-        ) {
-        if ( is_array( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] ) ) {
-            $external_ids = $user_data_array[ AAMSettingsFields::EXTERNAL_ID ];
-            $hashed_eids  = array();
-            foreach ( $external_ids as $k => $v ) {
-            $hashed_eids[ $k ] = hash( 'sha256', $v );
-            }
-            $user_data->setExternalIds( $hashed_eids );
-        } else {
-            $user_data->setExternalId(
-                hash(
-                    'sha256',
-                    $user_data_array[ AAMSettingsFields::EXTERNAL_ID ]
-                )
+        try {
+            $data              = call_user_func_array( $callback, $arguments );
+            $data_split        = self::split_user_data_and_custom_data( $data );
+            $user_data_array   = $data_split['user_data'];
+            $custom_data_array = $data_split['custom_data'];
+            $user_data_array   = AAMFieldsExtractor::get_normalized_user_data(
+                $user_data_array
             );
-        }
-        }
-        if (
-        isset( $user_data_array[ AAMSettingsFields::PHONE ] )
-        ) {
-        $user_data->setPhone(
-            $user_data_array[ AAMSettingsFields::PHONE ]
-        );
-        }
-        if (
-        isset( $user_data_array[ AAMSettingsFields::CITY ] )
-        ) {
-        $user_data->setCity(
-            $user_data_array[ AAMSettingsFields::CITY ]
-        );
-        }
-        if (
-        isset( $user_data_array[ AAMSettingsFields::STATE ] )
-        ) {
-        $user_data->setState(
-            $user_data_array[ AAMSettingsFields::STATE ]
-        );
-        }
-        if (
-        isset( $user_data_array[ AAMSettingsFields::ZIP_CODE ] )
-        ) {
-        $user_data->setZipCode(
-            $user_data_array[ AAMSettingsFields::ZIP_CODE ]
-        );
-        }
-        if (
-        isset( $user_data_array[ AAMSettingsFields::COUNTRY ] )
-        ) {
-        $user_data->setCountryCode(
-            $user_data_array[ AAMSettingsFields::COUNTRY ]
-        );
-        }
 
-        $custom_data = $event->getCustomData();
-        $custom_data->addCustomProperty(
-            'fb_integration_tracking',
-            $integration
-        );
+            $user_data = $event->getUserData();
+            if (
+            isset( $user_data_array[ AAMSettingsFields::EMAIL ] )
+            ) {
+                $user_data->setEmail(
+                    $user_data_array[ AAMSettingsFields::EMAIL ]
+                );
+            }
+            if (
+            isset( $user_data_array[ AAMSettingsFields::FIRST_NAME ] )
+            ) {
+                $user_data->setFirstName(
+                    $user_data_array[ AAMSettingsFields::FIRST_NAME ]
+                );
+            }
+            if (
+            isset( $user_data_array[ AAMSettingsFields::LAST_NAME ] )
+            ) {
+                $user_data->setLastName(
+                    $user_data_array[ AAMSettingsFields::LAST_NAME ]
+                );
+            }
+            if (
+            isset( $user_data_array[ AAMSettingsFields::GENDER ] )
+            ) {
+                $user_data->setGender(
+                    $user_data_array[ AAMSettingsFields::GENDER ]
+                );
+            }
+            if (
+            isset( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] )
+            ) {
+                $user_data->setDateOfBirth(
+                    $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ]
+                );
+            }
+            if (
+            isset( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] ) &&
+            ! is_null( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] )
+            ) {
+            if ( is_array( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] ) ) {
+                $external_ids = $user_data_array[ AAMSettingsFields::EXTERNAL_ID ];
+                $hashed_eids  = array();
+                foreach ( $external_ids as $k => $v ) {
+                    $hashed_eids[ $k ] = hash( 'sha256', $v );
+                }
+                $user_data->setExternalIds( $hashed_eids );
+            } else {
+                $user_data->setExternalId(
+                    hash(
+                        'sha256',
+                        $user_data_array[ AAMSettingsFields::EXTERNAL_ID ]
+                    )
+                );
+            }
+            }
+            if (
+            isset( $user_data_array[ AAMSettingsFields::PHONE ] )
+            ) {
+                $user_data->setPhone(
+                    $user_data_array[ AAMSettingsFields::PHONE ]
+                );
+            }
+            if (
+            isset( $user_data_array[ AAMSettingsFields::CITY ] )
+            ) {
+                $user_data->setCity(
+                    $user_data_array[ AAMSettingsFields::CITY ]
+                );
+            }
+            if (
+            isset( $user_data_array[ AAMSettingsFields::STATE ] )
+            ) {
+                $user_data->setState(
+                    $user_data_array[ AAMSettingsFields::STATE ]
+                );
+            }
+            if (
+            isset( $user_data_array[ AAMSettingsFields::ZIP_CODE ] )
+            ) {
+                $user_data->setZipCode(
+                    $user_data_array[ AAMSettingsFields::ZIP_CODE ]
+                );
+            }
+            if (
+            isset( $user_data_array[ AAMSettingsFields::COUNTRY ] )
+            ) {
+                $user_data->setCountryCode(
+                    $user_data_array[ AAMSettingsFields::COUNTRY ]
+                );
+            }
 
-        if ( ! empty( $data['currency'] ) ) {
-            $custom_data->setCurrency( $custom_data_array['currency'] );
-        }
+            $custom_data = $event->getCustomData();
+            $custom_data->addCustomProperty(
+                'fb_integration_tracking',
+                $integration
+            );
 
-        if ( ! empty( $data['value'] ) ) {
-            $custom_data->setValue( $custom_data_array['value'] );
-        }
+            if ( ! empty( $data['currency'] ) ) {
+                $custom_data->setCurrency( $custom_data_array['currency'] );
+            }
 
-        if ( ! empty( $data['contents'] ) ) {
-            $custom_data->setContents( $custom_data_array['contents'] );
-        }
+            if ( ! empty( $data['value'] ) ) {
+                $custom_data->setValue( $custom_data_array['value'] );
+            }
 
-        if ( ! empty( $data['content_ids'] ) ) {
-            $custom_data->setContentIds( $custom_data_array['content_ids'] );
-        }
+            if ( ! empty( $data['contents'] ) ) {
+                $custom_data->setContents( $custom_data_array['contents'] );
+            }
 
-        if ( ! empty( $data['content_type'] ) ) {
-            $custom_data->setContentType( $custom_data_array['content_type'] );
-        }
+            if ( ! empty( $data['content_ids'] ) ) {
+                $custom_data->setContentIds( $custom_data_array['content_ids'] );
+            }
 
-        if ( ! empty( $data['num_items'] ) ) {
-            $custom_data->setNumItems( $custom_data_array['num_items'] );
-        }
+            if ( ! empty( $data['content_type'] ) ) {
+                $custom_data->setContentType( $custom_data_array['content_type'] );
+            }
 
-        if ( ! empty( $data['content_name'] ) ) {
-            $custom_data->setContentName( $custom_data_array['content_name'] );
-        }
+            if ( ! empty( $data['num_items'] ) ) {
+                $custom_data->setNumItems( $custom_data_array['num_items'] );
+            }
 
-        if ( ! empty( $data['content_category'] ) ) {
-        $custom_data->setContentCategory(
-            $custom_data_array['content_category']
-        );
+            if ( ! empty( $data['content_name'] ) ) {
+                $custom_data->setContentName( $custom_data_array['content_name'] );
+            }
+
+            if ( ! empty( $data['content_category'] ) ) {
+            $custom_data->setContentCategory(
+                $custom_data_array['content_category']
+            );
+            }
+        } catch ( \Exception $e ) {
+            throw $e;
         }
-    } catch ( \Exception $e ) {
-        throw $e;
-    }
 
         return $event;
     }
@@ -465,10 +465,10 @@ class ServerEventFactory {
         $first_name = $name;
         $last_name  = null;
         $index      = strpos( $name, ' ' );
-    if ( false !== $index ) {
-        $first_name = substr( $name, 0, $index );
-        $last_name  = substr( $name, $index + 1 );
-    }
+        if ( false !== $index ) {
+            $first_name = substr( $name, 0, $index );
+            $last_name  = substr( $name, $index + 1 );
+        }
 
         return array( $first_name, $last_name );
     }

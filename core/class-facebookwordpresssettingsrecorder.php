@@ -30,34 +30,34 @@ class FacebookWordpressSettingsRecorder {
             'wp_ajax_save_fbe_settings',
             array( $this, 'save_fbe_settings' )
         );
-    add_action(
-        'wp_ajax_delete_fbe_settings',
-        array(
-            $this,
-            'delete_fbe_settings',
-        )
-    );
-    add_action(
-        'wp_ajax_save_capi_integration_status',
-        array(
-            $this,
-            'save_capi_integration_status',
-        )
-    );
-    add_action(
-        'wp_ajax_save_capi_integration_events_filter',
-        array(
-            $this,
-            'save_capi_integration_events_filter',
-        )
-    );
-    add_action(
-        'wp_ajax_save_capi_pii_caching_status',
-        array(
-            $this,
-            'save_capi_pii_caching_status',
-        )
-    );
+        add_action(
+            'wp_ajax_delete_fbe_settings',
+            array(
+                $this,
+                'delete_fbe_settings',
+            )
+        );
+        add_action(
+            'wp_ajax_save_capi_integration_status',
+            array(
+                $this,
+                'save_capi_integration_status',
+            )
+        );
+        add_action(
+            'wp_ajax_save_capi_integration_events_filter',
+            array(
+                $this,
+                'save_capi_integration_events_filter',
+            )
+        );
+        add_action(
+            'wp_ajax_save_capi_pii_caching_status',
+            array(
+                $this,
+                'save_capi_pii_caching_status',
+            )
+        );
     }
 
     /**
@@ -119,12 +119,12 @@ class FacebookWordpressSettingsRecorder {
      * @return array response data
      */
     public function save_fbe_settings() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        return $this->handle_unauthorized_request();
-    }
-    check_admin_referer(
-        FacebookPluginConfig::SAVE_FBE_SETTINGS_ACTION_NAME
-    );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer(
+            FacebookPluginConfig::SAVE_FBE_SETTINGS_ACTION_NAME
+        );
         $pixel_id         = sanitize_text_field(
             isset( $_POST['pixelId'] ) ?
             wp_unslash( $_POST['pixelId'] ) : ''
@@ -133,26 +133,26 @@ class FacebookWordpressSettingsRecorder {
             isset( $_POST['accessToken'] ) ?
             wp_unslash( $_POST['accessToken'] ) : ''
         );
-    $external_business_id = sanitize_text_field(
-        isset( $_POST['externalBusinessId'] ) ?
-        wp_unslash( $_POST['externalBusinessId'] ) : ''
-    );
-    if ( empty( $pixel_id )
-            || empty( $access_token )
-            || empty( $external_business_id ) ) {
-        return $this->handle_invalid_request();
-    }
-        $settings = array(
-            FacebookPluginConfig::PIXEL_ID_KEY             => $pixel_id,
-            FacebookPluginConfig::ACCESS_TOKEN_KEY         => $access_token,
-            FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
-            $external_business_id,
-            FacebookPluginConfig::IS_FBE_INSTALLED_KEY     => '1',
+        $external_business_id = sanitize_text_field(
+            isset( $_POST['externalBusinessId'] ) ?
+            wp_unslash( $_POST['externalBusinessId'] ) : ''
         );
-    \update_option(
-        FacebookPluginConfig::SETTINGS_KEY,
-        $settings
-    );
+        if ( empty( $pixel_id )
+                || empty( $access_token )
+                || empty( $external_business_id ) ) {
+            return $this->handle_invalid_request();
+        }
+            $settings = array(
+                FacebookPluginConfig::PIXEL_ID_KEY             => $pixel_id,
+                FacebookPluginConfig::ACCESS_TOKEN_KEY         => $access_token,
+                FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
+                $external_business_id,
+                FacebookPluginConfig::IS_FBE_INSTALLED_KEY     => '1',
+            );
+        \update_option(
+            FacebookPluginConfig::SETTINGS_KEY,
+            $settings
+        );
         return $this->handle_success_request( $settings );
     }
 
@@ -169,29 +169,29 @@ class FacebookWordpressSettingsRecorder {
      * @return array response data
      */
     public function save_capi_integration_status() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        return $this->handle_unauthorized_request();
-    }
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
 
-    if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
-        \update_option(
-            FacebookPluginConfig::CAPI_INTEGRATION_STATUS,
-            FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT
+        if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
+            \update_option(
+                FacebookPluginConfig::CAPI_INTEGRATION_STATUS,
+                FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT
+            );
+            return $this->handle_invalid_request();
+        }
+
+        check_admin_referer(
+            FacebookPluginConfig::SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME
         );
-        return $this->handle_invalid_request();
-    }
-
-    check_admin_referer(
-        FacebookPluginConfig::SAVE_CAPI_INTEGRATION_STATUS_ACTION_NAME
-    );
         $val = sanitize_text_field(
             isset( $_POST['val'] ) ?
             wp_unslash( $_POST['val'] ) : ''
         );
 
-    if ( ! ( '0' === $val || '1' === $val ) ) {
-        return $this->handle_invalid_request();
-    }
+        if ( ! ( '0' === $val || '1' === $val ) ) {
+            return $this->handle_invalid_request();
+        }
 
         \update_option( FacebookPluginConfig::CAPI_INTEGRATION_STATUS, $val );
         return $this->handle_success_request( $val );
@@ -210,21 +210,21 @@ class FacebookWordpressSettingsRecorder {
      * @return array response data
      */
     public function save_capi_integration_events_filter() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        return $this->handle_unauthorized_request();
-    }
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
 
-    if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
-        \update_option(
-            FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
-            FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT
+        if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
+            \update_option(
+                FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
+                FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT
+            );
+            return $this->handle_invalid_request();
+        }
+
+        check_admin_referer(
+            FacebookPluginConfig::SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME
         );
-        return $this->handle_invalid_request();
-    }
-
-    check_admin_referer(
-        FacebookPluginConfig::SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME
-    );
         $val                    = sanitize_text_field(
             isset( $_POST['val'] ) ?
             wp_unslash( $_POST['val'] ) : ''
@@ -234,26 +234,26 @@ class FacebookWordpressSettingsRecorder {
         $const_keep_page_view   =
         FacebookPluginConfig::CAPI_INTEGRATION_KEEP_PAGE_VIEW_EVENT;
 
-    if ( ! ( $val === $const_filter_page_view
-    || $val === $const_keep_page_view ) ) {
-        return $this->handle_invalid_request();
-    }
+        if ( ! ( $val === $const_filter_page_view
+        || $val === $const_keep_page_view ) ) {
+            return $this->handle_invalid_request();
+        }
 
         $page_view_filtered =
         FacebookWordpressOptions::get_capi_integration_page_view_filtered();
 
-    if ( $val === $const_keep_page_view && $page_view_filtered ) {
-        \update_option(
-            FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
-            FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT
-        );
-    } elseif ( $val === $const_filter_page_view && ! $page_view_filtered ) {
-        \update_option(
-            FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
-            FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT .
-                ',PageView'
-        );
-    }
+        if ( $val === $const_keep_page_view && $page_view_filtered ) {
+            \update_option(
+                FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
+                FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT
+            );
+        } elseif ( $val === $const_filter_page_view && ! $page_view_filtered ) {
+            \update_option(
+                FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
+                FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT .
+                    ',PageView'
+            );
+        }
 
         return $this->handle_success_request( $val );
     }
@@ -271,29 +271,29 @@ class FacebookWordpressSettingsRecorder {
      * @return array response data
      */
     public function save_capi_pii_caching_status() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        return $this->handle_unauthorized_request();
-    }
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
 
-    if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
-        \update_option(
-            FacebookPluginConfig::CAPI_PII_CACHING_STATUS,
-            FacebookPluginConfig::CAPI_PII_CACHING_STATUS_DEFAULT
+        if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
+            \update_option(
+                FacebookPluginConfig::CAPI_PII_CACHING_STATUS,
+                FacebookPluginConfig::CAPI_PII_CACHING_STATUS_DEFAULT
+            );
+            return $this->handle_invalid_request();
+        }
+
+        check_admin_referer(
+            FacebookPluginConfig::SAVE_CAPI_PII_CACHING_STATUS_ACTION_NAME
         );
-        return $this->handle_invalid_request();
-    }
-
-    check_admin_referer(
-        FacebookPluginConfig::SAVE_CAPI_PII_CACHING_STATUS_ACTION_NAME
-    );
         $val = sanitize_text_field(
             isset( $_POST['val'] ) ?
             wp_unslash( $_POST['val'] ) : ''
         );
 
-    if ( ! ( '0' === $val || '1' === $val ) ) {
-        return $this->handle_invalid_request();
-    }
+        if ( ! ( '0' === $val || '1' === $val ) ) {
+            return $this->handle_invalid_request();
+        }
 
         \update_option( FacebookPluginConfig::CAPI_PII_CACHING_STATUS, $val );
         return $this->handle_success_request( $val );
@@ -313,12 +313,12 @@ class FacebookWordpressSettingsRecorder {
      * @return array response data
      */
     public function delete_fbe_settings() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        return $this->handle_unauthorized_request();
-    }
-    check_admin_referer(
-        FacebookPluginConfig::DELETE_FBE_SETTINGS_ACTION_NAME
-    );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer(
+            FacebookPluginConfig::DELETE_FBE_SETTINGS_ACTION_NAME
+        );
         \delete_option( FacebookPluginConfig::SETTINGS_KEY );
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
 
