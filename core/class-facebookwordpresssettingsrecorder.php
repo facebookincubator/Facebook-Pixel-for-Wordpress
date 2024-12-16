@@ -125,11 +125,11 @@ class FacebookWordpressSettingsRecorder {
         check_admin_referer(
             FacebookPluginConfig::SAVE_FBE_SETTINGS_ACTION_NAME
         );
-        $pixel_id         = sanitize_text_field(
+        $pixel_id             = sanitize_text_field(
             isset( $_POST['pixelId'] ) ?
             wp_unslash( $_POST['pixelId'] ) : ''
         );
-        $access_token     = sanitize_text_field(
+        $access_token         = sanitize_text_field(
             isset( $_POST['accessToken'] ) ?
             wp_unslash( $_POST['accessToken'] ) : ''
         );

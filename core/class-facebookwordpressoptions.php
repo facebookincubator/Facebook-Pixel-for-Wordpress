@@ -269,7 +269,7 @@ class FacebookWordpressOptions {
             self::$options = array(
                 FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
                 self::get_default_external_business_id(),
-                FacebookPluginConfig::IS_FBE_INSTALLED_KEY     =>
+                FacebookPluginConfig::IS_FBE_INSTALLED_KEY =>
                 self::get_default_is_fbe_installed(),
             );
             if (
@@ -297,9 +297,9 @@ class FacebookWordpressOptions {
             self::$options = \get_option(
                 FacebookPluginConfig::SETTINGS_KEY,
                 array(
-                    FacebookPluginConfig::PIXEL_ID_KEY         =>
+                    FacebookPluginConfig::PIXEL_ID_KEY     =>
                     self::get_default_pixel_id(),
-                    FacebookPluginConfig::ACCESS_TOKEN_KEY     =>
+                    FacebookPluginConfig::ACCESS_TOKEN_KEY =>
                     self::get_default_access_token(),
                     FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
                     self::get_default_external_business_id(),

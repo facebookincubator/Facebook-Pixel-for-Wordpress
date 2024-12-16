@@ -216,7 +216,7 @@ class FacebookWordpressOpenBridge {
      * @since 1.0.0
      */
     private static function get_pii_from_session() {
-        $current_user                = array_filter(
+        $current_user            = array_filter(
             FacebookPluginUtils::get_logged_in_user_info()
         );
         $capi_pii_caching_status =
