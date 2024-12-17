@@ -448,7 +448,12 @@ class FacebookWordpressSettingsPage {
     );
         ?>
     <div id="meta-ads-plugin">
-    <div id="ad-creation-plugin">
+    <div id="ad-creation-plugin" class="
+    <?php
+    echo empty( FacebookWordpressOptions::get_pixel_id() ) ?
+    'hidden' : '';
+    ?>
+    ">
     <h3 class="mt-5">Ads Creation</h3>
         <div
         class="my-3 p-3 bg-white rounded shadow-sm">
@@ -462,7 +467,12 @@ class FacebookWordpressSettingsPage {
         ></div>
         </div>
     </div>
-    <div id="ad-insights-plugin">
+    <div id="ad-insights-plugin" class="
+    <?php
+    echo empty( FacebookWordpressOptions::get_pixel_id() ) ?
+    'hidden' : '';
+    ?>
+    ">
         <h3 class="mt-5">Ads Insights</h3>
         <div
         class="my-3 p-3 bg-white d-block rounded shadow-sm">
