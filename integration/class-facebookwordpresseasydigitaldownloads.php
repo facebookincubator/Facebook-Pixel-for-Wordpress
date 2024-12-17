@@ -58,53 +58,53 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
      * - ViewContent: Injects view content events after download content.
      */
     public static function inject_pixel_code() {
-    add_action(
-        'edd_after_download_content',
-        array( __CLASS__, 'injectAddToCartListener' )
-    );
-    add_action(
-        'edd_downloads_list_after',
-        array( __CLASS__, 'injectAddToCartListener' )
-    );
+        add_action(
+            'edd_after_download_content',
+            array( __CLASS__, 'injectAddToCartListener' )
+        );
+        add_action(
+            'edd_downloads_list_after',
+            array( __CLASS__, 'injectAddToCartListener' )
+        );
 
-    add_action(
-        'wp_ajax_edd_add_to_cart',
-        array( __CLASS__, 'injectAddToCartEventAjax' ),
-        5
-    );
+        add_action(
+            'wp_ajax_edd_add_to_cart',
+            array( __CLASS__, 'injectAddToCartEventAjax' ),
+            5
+        );
 
-    add_action(
-        'wp_ajax_nopriv_edd_add_to_cart',
-        array( __CLASS__, 'injectAddToCartEventAjax' ),
-        5
-    );
+        add_action(
+            'wp_ajax_nopriv_edd_add_to_cart',
+            array( __CLASS__, 'injectAddToCartEventAjax' ),
+            5
+        );
 
-    add_action(
-        'edd_purchase_link_top',
-        array( __CLASS__, 'injectAddToCartEventId' )
-    );
+        add_action(
+            'edd_purchase_link_top',
+            array( __CLASS__, 'injectAddToCartEventId' )
+        );
 
-    self::add_pixel_fire_for_hook(
-        array(
-            'hook_name'       => 'edd_after_checkout_cart',
-            'classname'       => __CLASS__,
-            'inject_function' => 'injectInitiateCheckoutEvent',
-        )
-    );
+        self::add_pixel_fire_for_hook(
+            array(
+                'hook_name'       => 'edd_after_checkout_cart',
+                'classname'       => __CLASS__,
+                'inject_function' => 'injectInitiateCheckoutEvent',
+            )
+        );
 
-    add_action(
-        'edd_payment_receipt_after',
-        array( __CLASS__, 'trackPurchaseEvent' ),
-        10,
-        2
-    );
+        add_action(
+            'edd_payment_receipt_after',
+            array( __CLASS__, 'trackPurchaseEvent' ),
+            10,
+            2
+        );
 
-    add_action(
-        'edd_after_download_content',
-        array( __CLASS__, 'injectViewContentEvent' ),
-        40,
-        1
-    );
+        add_action(
+            'edd_after_download_content',
+            array( __CLASS__, 'injectViewContentEvent' ),
+            40,
+            1
+        );
     }
 
     /**
@@ -116,14 +116,14 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
      * @return void
      */
     public static function injectAddToCartEventId() {
-    if ( FacebookPluginUtils::is_internal_user() ) {
-        return;
-    }
-        $event_id = EventIdGenerator::guidv4();
-    printf(
-        '<input type="hidden" name="facebook_event_id" value="%s">',
-        esc_attr( $event_id )
-    );
+        if ( FacebookPluginUtils::is_internal_user() ) {
+            return;
+        }
+            $event_id = EventIdGenerator::guidv4();
+        printf(
+            '<input type="hidden" name="facebook_event_id" value="%s">',
+            esc_attr( $event_id )
+        );
     }
 
     /**
@@ -137,27 +137,27 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
      * @since 1.0.0
      */
     public static function injectAddToCartEventAjax() {
-    if ( isset( $_POST['nonce'] ) && isset( $_POST['download_id'] )
-        && isset( $_POST['post_data'] ) ) {
-        $download_id = absint( $_POST['download_id'] );
-        $nonce       = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
-        if ( wp_verify_nonce( $nonce, 'edd-add-to-cart-' . $download_id )
-        === false ) {
-            return;
+        if ( isset( $_POST['nonce'] ) && isset( $_POST['download_id'] )
+            && isset( $_POST['post_data'] ) ) {
+            $download_id = absint( $_POST['download_id'] );
+            $nonce       = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
+            if ( wp_verify_nonce( $nonce, 'edd-add-to-cart-' . $download_id )
+            === false ) {
+                return;
+            }
+            parse_str( $_POST['post_data'], $post_data ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+            if ( isset( $post_data['facebook_event_id'] ) ) {
+                $event_id = $post_data['facebook_event_id'];
+            $server_event = ServerEventFactory::safe_create_event(
+                'AddToCart',
+                array( __CLASS__, 'createAddToCartEvent' ),
+                array( $download_id ),
+                self::TRACKING_NAME
+            );
+                $server_event->setEventId( $event_id );
+                FacebookServerSideEvent::get_instance()->track( $server_event );
+            }
         }
-        parse_str( $_POST['post_data'], $post_data ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-        if ( isset( $post_data['facebook_event_id'] ) ) {
-            $event_id = $post_data['facebook_event_id'];
-        $server_event = ServerEventFactory::safe_create_event(
-            'AddToCart',
-            array( __CLASS__, 'createAddToCartEvent' ),
-            array( $download_id ),
-            self::TRACKING_NAME
-        );
-            $server_event->setEventId( $event_id );
-            FacebookServerSideEvent::get_instance()->track( $server_event );
-        }
-    }
     }
 
     /**
@@ -174,28 +174,28 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
      * @since 1.0.0
      */
     public static function injectAddToCartListener( $download_id ) {
-    if ( FacebookPluginUtils::is_internal_user() ) {
-        return;
-    }
+        if ( FacebookPluginUtils::is_internal_user() ) {
+            return;
+        }
 
-    wp_register_script(
-        'facebook-pixel-add-to-cart',
-        plugins_url( '../js/facebook_pixel_add_to_cart.js', __FILE__ ),
-        array( 'jquery' ),
-        '1.0',
-        true
-    );
+        wp_register_script(
+            'facebook-pixel-add-to-cart',
+            plugins_url( '../js/facebook_pixel_add_to_cart.js', __FILE__ ),
+            array( 'jquery' ),
+            '1.0',
+            true
+        );
 
-    wp_localize_script(
-        'facebook-pixel-add-to-cart',
-        'facebookPixelData',
-        array(
-            'fbIntegrationKey' => FacebookPixel::FB_INTEGRATION_TRACKING_KEY,
-            'trackingName'     => self::TRACKING_NAME,
-            'agentString'      => FacebookWordpressOptions::get_agent_string(),
-            'pixelId'          => FacebookWordpressOptions::get_pixel_id(),
-        )
-    );
+        wp_localize_script(
+            'facebook-pixel-add-to-cart',
+            'facebookPixelData',
+            array(
+                'fbIntegrationKey' => FacebookPixel::FB_INTEGRATION_TRACKING_KEY,
+                'trackingName'     => self::TRACKING_NAME,
+                'agentString'      => FacebookWordpressOptions::get_agent_string(),
+                'pixelId'          => FacebookWordpressOptions::get_pixel_id(),
+            )
+        );
 
         wp_enqueue_script( 'facebook-pixel-add-to-cart' );
     }
@@ -210,17 +210,17 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
      * @since 1.0.0
      */
     public static function injectInitiateCheckoutEvent() {
-    if ( FacebookPluginUtils::is_internal_user() ||
-    ! function_exists( 'EDD' ) ) {
-        return;
-    }
+        if ( FacebookPluginUtils::is_internal_user() ||
+        ! function_exists( 'EDD' ) ) {
+            return;
+        }
 
-    $server_event = ServerEventFactory::safe_create_event(
-        'InitiateCheckout',
-        array( __CLASS__, 'createInitiateCheckoutEvent' ),
-        array(),
-        self::TRACKING_NAME
-    );
+        $server_event = ServerEventFactory::safe_create_event(
+            'InitiateCheckout',
+            array( __CLASS__, 'createInitiateCheckoutEvent' ),
+            array(),
+            self::TRACKING_NAME
+        );
         FacebookServerSideEvent::get_instance()->track( $server_event );
 
         $code = PixelRenderer::render(
@@ -249,23 +249,23 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
      * @since 1.0.0
      */
     public static function trackPurchaseEvent( $payment, $edd_receipt_args ) {
-    if ( FacebookPluginUtils::is_internal_user() || empty( $payment->ID ) ) {
-        return;
-    }
+        if ( FacebookPluginUtils::is_internal_user() || empty( $payment->ID ) ) {
+            return;
+        }
 
-    $server_event = ServerEventFactory::safe_create_event(
-        'Purchase',
-        array( __CLASS__, 'createPurchaseEvent' ),
-        array( $payment ),
-        self::TRACKING_NAME
-    );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
+        $server_event = ServerEventFactory::safe_create_event(
+            'Purchase',
+            array( __CLASS__, 'createPurchaseEvent' ),
+            array( $payment ),
+            self::TRACKING_NAME
+        );
+            FacebookServerSideEvent::get_instance()->track( $server_event );
 
-    add_action(
-        'wp_footer',
-        array( __CLASS__, 'injectPurchaseEvent' ),
-        20
-    );
+        add_action(
+            'wp_footer',
+            array( __CLASS__, 'injectPurchaseEvent' ),
+            20
+        );
     }
 
     /**
@@ -281,14 +281,14 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
         $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
         $code   = PixelRenderer::render( $events, self::TRACKING_NAME );
 
-    printf(
-        '
-<!-- Meta Pixel Event Code -->
-%s
-<!-- End Meta Pixel Event Code -->
-      ',
-        $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-    );
+        printf(
+            '
+    <!-- Meta Pixel Event Code -->
+    %s
+    <!-- End Meta Pixel Event Code -->
+          ',
+            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        );
     }
 
     /**
@@ -305,28 +305,28 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
      * @since 1.0.0
      */
     public static function injectViewContentEvent( $download_id ) {
-    if ( FacebookPluginUtils::is_internal_user() || empty( $download_id ) ) {
-        return;
-    }
+        if ( FacebookPluginUtils::is_internal_user() || empty( $download_id ) ) {
+            return;
+        }
 
-    $server_event = ServerEventFactory::safe_create_event(
-        'ViewContent',
-        array( __CLASS__, 'createViewContentEvent' ),
-        array( $download_id ),
-        self::TRACKING_NAME
-    );
+        $server_event = ServerEventFactory::safe_create_event(
+            'ViewContent',
+            array( __CLASS__, 'createViewContentEvent' ),
+            array( $download_id ),
+            self::TRACKING_NAME
+        );
 
         FacebookServerSideEvent::get_instance()->track( $server_event );
 
         $code = PixelRenderer::render( array( $server_event ), self::TRACKING_NAME );
-    printf(
-        '
-<!-- Meta Pixel Event Code -->
-%s
-<!-- End Meta Pixel Event Code -->
-      ',
-        $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-    );
+        printf(
+            '
+    <!-- Meta Pixel Event Code -->
+    %s
+    <!-- End Meta Pixel Event Code -->
+          ',
+            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        );
     }
 
     /**
@@ -365,9 +365,9 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
         $event_data = array();
 
         $payment_meta = \edd_get_payment_meta( $payment->ID );
-    if ( empty( $payment_meta ) ) {
-        return $event_data;
-    }
+        if ( empty( $payment_meta ) ) {
+            return $event_data;
+        }
 
         $event_data['email']      = $payment_meta['email'];
         $event_data['first_name'] = $payment_meta['user_info']['first_name'];
@@ -375,10 +375,10 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
 
         $content_ids = array();
         $value       = 0;
-    foreach ( $payment_meta['cart_details'] as $item ) {
-        $content_ids[] = $item['id'];
-        $value        += $item['price'];
-    }
+        foreach ( $payment_meta['cart_details'] as $item ) {
+            $content_ids[] = $item['id'];
+            $value        += $item['price'];
+        }
 
         $event_data['currency']     = $payment_meta['currency'];
         $event_data['value']        = $value;
@@ -406,16 +406,16 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
         $download   = edd_get_download( $download_id );
         $title      = $download ? $download->post_title : '';
 
-    if ( get_post_meta( $download_id, '_variable_pricing', true ) ) {
-        $prices = get_post_meta( $download_id, 'edd_variable_prices', true );
-        $price  = array_shift( $prices );
-        $value  = $price['amount'];
-    } else {
-        $value = get_post_meta( $download_id, 'edd_price', true );
-    }
-    if ( ! $value ) {
-        $value = 0;
-    }
+        if ( get_post_meta( $download_id, '_variable_pricing', true ) ) {
+            $prices = get_post_meta( $download_id, 'edd_variable_prices', true );
+            $price  = array_shift( $prices );
+            $value  = $price['amount'];
+        } else {
+            $value = get_post_meta( $download_id, 'edd_price', true );
+        }
+        if ( ! $value ) {
+            $value = 0;
+        }
         $event_data['content_ids']  = array( (string) $download_id );
         $event_data['content_type'] = 'product';
         $event_data['currency']     = $currency;
@@ -442,16 +442,16 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
         $currency   = EDDUtils::get_currency();
         $download   = edd_get_download( $download_id );
         $title      = $download ? $download->post_title : '';
-    if ( get_post_meta( $download_id, '_variable_pricing', true ) ) {
-        $prices = get_post_meta( $download_id, 'edd_variable_prices', true );
-        $price  = array_shift( $prices );
-        $value  = $price['amount'];
-    } else {
-        $value = get_post_meta( $download_id, 'edd_price', true );
-    }
-    if ( ! $value ) {
-        $value = 0;
-    }
+        if ( get_post_meta( $download_id, '_variable_pricing', true ) ) {
+            $prices = get_post_meta( $download_id, 'edd_variable_prices', true );
+            $price  = array_shift( $prices );
+            $value  = $price['amount'];
+        } else {
+            $value = get_post_meta( $download_id, 'edd_price', true );
+        }
+        if ( ! $value ) {
+            $value = 0;
+        }
         $event_data['content_ids']  = array( (string) $download_id );
         $event_data['content_type'] = 'product';
         $event_data['currency']     = $currency;

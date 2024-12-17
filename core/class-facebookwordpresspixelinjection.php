@@ -58,26 +58,26 @@ class FacebookWordpressPixelInjection {
      */
     public function inject() {
         $pixel_id = FacebookWordpressOptions::get_pixel_id();
-    if ( FacebookPluginUtils::is_positive_integer( $pixel_id ) ) {
-        add_action(
-            'wp_head',
-            array( $this, 'inject_pixel_code' )
-        );
-        add_action(
-            'wp_head',
-            array( $this, 'inject_pixel_noscript_code' )
-        );
-        foreach (
-            FacebookPluginConfig::integration_config() as $key => $value
-            ) {
-        $class_name = 'FacebookPixelPlugin\\Integration\\' . $value;
-        $class_name::inject_pixel_code();
+        if ( FacebookPluginUtils::is_positive_integer( $pixel_id ) ) {
+            add_action(
+                'wp_head',
+                array( $this, 'inject_pixel_code' )
+            );
+            add_action(
+                'wp_head',
+                array( $this, 'inject_pixel_noscript_code' )
+            );
+            foreach (
+                FacebookPluginConfig::integration_config() as $key => $value
+                ) {
+            $class_name = 'FacebookPixelPlugin\\Integration\\' . $value;
+            $class_name::inject_pixel_code();
+            }
+            add_action(
+                'wp_footer',
+                array( $this, 'send_pending_events' )
+            );
         }
-        add_action(
-            'wp_footer',
-            array( $this, 'send_pending_events' )
-        );
-    }
     }
 
     /**
@@ -91,13 +91,13 @@ class FacebookWordpressPixelInjection {
     public function send_pending_events() {
         $pending_events =
         FacebookServerSideEvent::get_instance()->get_pending_events();
-    if ( count( $pending_events ) > 0 ) {
-        do_action(
-            'send_server_events',
-            $pending_events,
-            count( $pending_events )
-        );
-    }
+        if ( count( $pending_events ) > 0 ) {
+            do_action(
+                'send_server_events',
+                $pending_events,
+                count( $pending_events )
+            );
+        }
     }
 
     /**
@@ -114,28 +114,28 @@ class FacebookWordpressPixelInjection {
      */
     public function inject_pixel_code() {
         $pixel_id = FacebookPixel::get_pixel_id();
-    if (
-        ( isset(
-            self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ]
-        ) &&
-        true === self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] )
-        ||
-        empty( $pixel_id )
-        ) {
-        return;
-    }
+        if (
+            ( isset(
+                self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ]
+            ) &&
+            true === self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] )
+            ||
+            empty( $pixel_id )
+            ) {
+            return;
+        }
 
         self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] = true;
         echo FacebookPixel::get_pixel_base_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         $capi_integration_status =
         FacebookWordpressOptions::get_capi_integration_status();
-    if ( '1' === $capi_integration_status ) {
-        FacebookPixel::get_open_bridge_config_code();
-    }
-    echo FacebookPixel::get_pixel_init_code( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        FacebookWordpressOptions::get_agent_string(),
-        FacebookWordpressOptions::get_user_info() // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-    );
+        if ( '1' === $capi_integration_status ) {
+            FacebookPixel::get_open_bridge_config_code();
+        }
+        echo FacebookPixel::get_pixel_init_code( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            FacebookWordpressOptions::get_agent_string(),
+            FacebookWordpressOptions::get_user_info() // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        );
         echo FacebookPixel::get_pixel_page_view_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     }
 

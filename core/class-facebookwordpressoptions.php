@@ -194,10 +194,10 @@ class FacebookWordpressOptions {
      * events filter.
      */
     public static function get_capi_integration_page_view_filtered() {
-    return FacebookPluginUtils::string_contains(
-        self::get_capi_integration_events_filter(),
-        'PageView'
-    );
+        return FacebookPluginUtils::string_contains(
+            self::get_capi_integration_events_filter(),
+            'PageView'
+        );
     }
 
     /**
@@ -234,9 +234,9 @@ class FacebookWordpressOptions {
      * @return string The default external business ID.
      */
     public static function get_default_external_business_id() {
-    return uniqid(
-        FacebookPluginConfig::DEFAULT_EXTERNAL_BUSINESS_ID_PREFIX . time() . '_'
-    );
+        return uniqid(
+            FacebookPluginConfig::DEFAULT_EXTERNAL_BUSINESS_ID_PREFIX . time() . '_'
+        );
     }
 
     /**
@@ -263,51 +263,51 @@ class FacebookWordpressOptions {
     private static function init_options() {
         $old_options = \get_option( FacebookPluginConfig::OLD_SETTINGS_KEY );
         $new_options = \get_option( FacebookPluginConfig::SETTINGS_KEY );
-    if ( $new_options ) {
-        self::$options = $new_options;
-    } elseif ( $old_options ) {
-        self::$options = array(
-            FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
-            self::get_default_external_business_id(),
-            FacebookPluginConfig::IS_FBE_INSTALLED_KEY     =>
-            self::get_default_is_fbe_installed(),
-        );
-        if (
-        isset( $old_options[ FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY ] )
-        && ! empty( $old_options[ FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY ] )
-        ) {
-            self::$options[ FacebookPluginConfig::ACCESS_TOKEN_KEY ] =
-            $old_options[ FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY ];
-        } else {
-            self::$options[ FacebookPluginConfig::ACCESS_TOKEN_KEY ] =
-            self::get_default_access_token();
-        }
-        if (
-        isset( $old_options[ FacebookPluginConfig::OLD_PIXEL_ID_KEY ] )
-        && ! empty( $old_options[ FacebookPluginConfig::OLD_PIXEL_ID_KEY ] )
-        && is_numeric( $old_options[ FacebookPluginConfig::OLD_PIXEL_ID_KEY ] )
-        ) {
-            self::$options[ FacebookPluginConfig::PIXEL_ID_KEY ] =
-            $old_options[ FacebookPluginConfig::OLD_PIXEL_ID_KEY ];
-        } else {
-            self::$options[ FacebookPluginConfig::PIXEL_ID_KEY ] =
-            self::get_default_pixel_id();
-        }
-    } else {
-        self::$options = \get_option(
-            FacebookPluginConfig::SETTINGS_KEY,
-            array(
-                FacebookPluginConfig::PIXEL_ID_KEY         =>
-                self::get_default_pixel_id(),
-                FacebookPluginConfig::ACCESS_TOKEN_KEY     =>
-                self::get_default_access_token(),
+        if ( $new_options ) {
+            self::$options = $new_options;
+        } elseif ( $old_options ) {
+            self::$options = array(
                 FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
                 self::get_default_external_business_id(),
                 FacebookPluginConfig::IS_FBE_INSTALLED_KEY =>
                 self::get_default_is_fbe_installed(),
-            )
-        );
-    }
+            );
+            if (
+            isset( $old_options[ FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY ] )
+            && ! empty( $old_options[ FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY ] )
+            ) {
+                self::$options[ FacebookPluginConfig::ACCESS_TOKEN_KEY ] =
+                $old_options[ FacebookPluginConfig::OLD_ACCESS_TOKEN_KEY ];
+            } else {
+                self::$options[ FacebookPluginConfig::ACCESS_TOKEN_KEY ] =
+                self::get_default_access_token();
+            }
+            if (
+            isset( $old_options[ FacebookPluginConfig::OLD_PIXEL_ID_KEY ] )
+            && ! empty( $old_options[ FacebookPluginConfig::OLD_PIXEL_ID_KEY ] )
+            && is_numeric( $old_options[ FacebookPluginConfig::OLD_PIXEL_ID_KEY ] )
+            ) {
+                self::$options[ FacebookPluginConfig::PIXEL_ID_KEY ] =
+                $old_options[ FacebookPluginConfig::OLD_PIXEL_ID_KEY ];
+            } else {
+                self::$options[ FacebookPluginConfig::PIXEL_ID_KEY ] =
+                self::get_default_pixel_id();
+            }
+        } else {
+            self::$options = \get_option(
+                FacebookPluginConfig::SETTINGS_KEY,
+                array(
+                    FacebookPluginConfig::PIXEL_ID_KEY     =>
+                    self::get_default_pixel_id(),
+                    FacebookPluginConfig::ACCESS_TOKEN_KEY =>
+                    self::get_default_access_token(),
+                    FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY =>
+                    self::get_default_external_business_id(),
+                    FacebookPluginConfig::IS_FBE_INSTALLED_KEY =>
+                    self::get_default_is_fbe_installed(),
+                )
+            );
+        }
     }
 
     /**
@@ -319,9 +319,9 @@ class FacebookWordpressOptions {
      * @return string The Facebook pixel ID.
      */
     public static function get_pixel_id() {
-    if ( isset( self::$options[ FacebookPluginConfig::PIXEL_ID_KEY ] ) ) {
-        return self::$options[ FacebookPluginConfig::PIXEL_ID_KEY ];
-    }
+        if ( isset( self::$options[ FacebookPluginConfig::PIXEL_ID_KEY ] ) ) {
+            return self::$options[ FacebookPluginConfig::PIXEL_ID_KEY ];
+        }
 
         return self::get_default_pixel_id();
     }
@@ -336,13 +336,13 @@ class FacebookWordpressOptions {
      * @return string The external business ID.
      */
     public static function get_external_business_id() {
-    if (
-        isset(
-            self::$options[ FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY ]
-        )
-        ) {
-        return self::$options[ FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY ];
-    }
+        if (
+            isset(
+                self::$options[ FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY ]
+            )
+            ) {
+            return self::$options[ FacebookPluginConfig::EXTERNAL_BUSINESS_ID_KEY ];
+        }
 
         return self::get_default_external_business_id();
     }
@@ -357,11 +357,11 @@ class FacebookWordpressOptions {
      * @return string The FBE installed status.
      */
     public static function get_is_fbe_installed() {
-    if (
-        isset( self::$options[ FacebookPluginConfig::IS_FBE_INSTALLED_KEY ] )
-        ) {
-        return self::$options[ FacebookPluginConfig::IS_FBE_INSTALLED_KEY ];
-    }
+        if (
+            isset( self::$options[ FacebookPluginConfig::IS_FBE_INSTALLED_KEY ] )
+            ) {
+            return self::$options[ FacebookPluginConfig::IS_FBE_INSTALLED_KEY ];
+        }
 
         return self::get_default_is_fbe_installed();
     }
@@ -375,9 +375,9 @@ class FacebookWordpressOptions {
      * @return string The Facebook access token.
      */
     public static function get_access_token() {
-    if ( isset( self::$options[ FacebookPluginConfig::ACCESS_TOKEN_KEY ] ) ) {
-        return self::$options[ FacebookPluginConfig::ACCESS_TOKEN_KEY ];
-    }
+        if ( isset( self::$options[ FacebookPluginConfig::ACCESS_TOKEN_KEY ] ) ) {
+            return self::$options[ FacebookPluginConfig::ACCESS_TOKEN_KEY ];
+        }
 
         return self::get_default_access_token();
     }
@@ -406,14 +406,14 @@ class FacebookWordpressOptions {
      * @return void
      */
     public static function set_user_info() {
-    add_action(
-        'init',
-        array(
-            'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-            'register_user_info',
-        ),
-        0
-    );
+        add_action(
+            'init',
+            array(
+                'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
+                'register_user_info',
+            ),
+            0
+        );
     }
 
     /**
@@ -428,22 +428,22 @@ class FacebookWordpressOptions {
      */
     public static function register_user_info() {
         $current_user = wp_get_current_user();
-    if ( 0 === $current_user->ID ) {
-        self::$user_info = array();
-    } else {
-        $user_info       = array_filter(
-            array(
-                AAMSettingsFields::EMAIL      => $current_user->user_email,
-                AAMSettingsFields::FIRST_NAME => $current_user->user_firstname,
-                AAMSettingsFields::LAST_NAME  => $current_user->user_lastname,
-            ),
-            function ( $value ) {
-                return null !== $value && '' !== $value;
-            }
-        );
-        self::$user_info =
-        AAMFieldsExtractor::get_normalized_user_data( $user_info );
-    }
+        if ( 0 === $current_user->ID ) {
+            self::$user_info = array();
+        } else {
+            $user_info       = array_filter(
+                array(
+                    AAMSettingsFields::EMAIL      => $current_user->user_email,
+                    AAMSettingsFields::FIRST_NAME => $current_user->user_firstname,
+                    AAMSettingsFields::LAST_NAME  => $current_user->user_lastname,
+                ),
+                function ( $value ) {
+                    return null !== $value && '' !== $value;
+                }
+            );
+            self::$user_info =
+            AAMFieldsExtractor::get_normalized_user_data( $user_info );
+        }
     }
 
     /**
@@ -524,40 +524,40 @@ class FacebookWordpressOptions {
         $installed_pixel   = self::get_pixel_id();
         $settings_as_array =
         get_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
-    if ( false !== $settings_as_array ) {
-        $aam_settings = new AdsPixelSettings();
-        $aam_settings->setPixelId( $settings_as_array['pixelId'] );
-        $aam_settings->setEnableAutomaticMatching(
-            $settings_as_array['enableAutomaticMatching']
-        );
-        $aam_settings->setEnabledAutomaticMatchingFields(
-            $settings_as_array['enabledAutomaticMatchingFields']
-        );
-        if ( $installed_pixel === $aam_settings->getPixelId() ) {
-        self::$aam_settings = $aam_settings;
-        }
-    }
-    if ( ! self::$aam_settings ) {
-        $refresh_interval =
-        self::AAM_SETTINGS_REFRESH_IN_MINUTES * MINUTE_IN_SECONDS;
-        $aam_settings     =
-        AdsPixelSettings::buildFromPixelId( $installed_pixel );
-        if ( $aam_settings ) {
-            $settings_as_array = array(
-                'pixelId'                        => $aam_settings->getPixelId(),
-                'enableAutomaticMatching'        =>
-                $aam_settings->getEnableAutomaticMatching(),
-                'enabledAutomaticMatchingFields' =>
-                $aam_settings->getEnabledAutomaticMatchingFields(),
+        if ( false !== $settings_as_array ) {
+            $aam_settings = new AdsPixelSettings();
+            $aam_settings->setPixelId( $settings_as_array['pixelId'] );
+            $aam_settings->setEnableAutomaticMatching(
+                $settings_as_array['enableAutomaticMatching']
             );
-            set_transient(
-                FacebookPluginConfig::AAM_SETTINGS_KEY,
-                $settings_as_array,
-                $refresh_interval
+            $aam_settings->setEnabledAutomaticMatchingFields(
+                $settings_as_array['enabledAutomaticMatchingFields']
             );
+            if ( $installed_pixel === $aam_settings->getPixelId() ) {
             self::$aam_settings = $aam_settings;
+            }
         }
-    }
+        if ( ! self::$aam_settings ) {
+            $refresh_interval =
+            self::AAM_SETTINGS_REFRESH_IN_MINUTES * MINUTE_IN_SECONDS;
+            $aam_settings     =
+            AdsPixelSettings::buildFromPixelId( $installed_pixel );
+            if ( $aam_settings ) {
+                $settings_as_array = array(
+                    'pixelId'                        => $aam_settings->getPixelId(),
+                    'enableAutomaticMatching'        =>
+                    $aam_settings->getEnableAutomaticMatching(),
+                    'enabledAutomaticMatchingFields' =>
+                    $aam_settings->getEnabledAutomaticMatchingFields(),
+                );
+                set_transient(
+                    FacebookPluginConfig::AAM_SETTINGS_KEY,
+                    $settings_as_array,
+                    $refresh_interval
+                );
+                self::$aam_settings = $aam_settings;
+            }
+        }
     }
 
     /**
@@ -568,24 +568,24 @@ class FacebookWordpressOptions {
      */
     private static function set_old_aam_settings() {
         $old_options = \get_option( FacebookPluginConfig::OLD_SETTINGS_KEY );
-    if ( $old_options
-        && isset( $old_options[ FacebookPluginConfig::OLD_USE_PII ] )
-        && $old_options[ FacebookPluginConfig::OLD_USE_PII ] ) {
-        self::$aam_settings = new AdsPixelSettings(
-            array(
-                'enableAutomaticMatching'        => true,
-                'enabledAutomaticMatchingFields' =>
-                AAMSettingsFields::get_all_fields(),
-            )
-        );
-    } else {
-        self::$aam_settings = new AdsPixelSettings(
-            array(
-                'enableAutomaticMatching'        => false,
-                'enabledAutomaticMatchingFields' => array(),
-            )
-        );
-    }
+        if ( $old_options
+            && isset( $old_options[ FacebookPluginConfig::OLD_USE_PII ] )
+            && $old_options[ FacebookPluginConfig::OLD_USE_PII ] ) {
+            self::$aam_settings = new AdsPixelSettings(
+                array(
+                    'enableAutomaticMatching'        => true,
+                    'enabledAutomaticMatchingFields' =>
+                    AAMSettingsFields::get_all_fields(),
+                )
+            );
+        } else {
+            self::$aam_settings = new AdsPixelSettings(
+                array(
+                    'enableAutomaticMatching'        => false,
+                    'enabledAutomaticMatchingFields' => array(),
+                )
+            );
+        }
     }
 
     /**
@@ -603,13 +603,13 @@ class FacebookWordpressOptions {
      */
     private static function set_aam_settings() {
         self::$aam_settings = null;
-    if ( empty( self::get_pixel_id() ) ) {
-        return;
-    }
-    if ( self::get_is_fbe_installed() ) {
-        self::set_fbe_based_aam_settings();
-    } else {
-        self::set_old_aam_settings();
-    }
+        if ( empty( self::get_pixel_id() ) ) {
+            return;
+        }
+        if ( self::get_is_fbe_installed() ) {
+            self::set_fbe_based_aam_settings();
+        } else {
+            self::set_old_aam_settings();
+        }
     }
 }

@@ -57,9 +57,9 @@ class FacebookPluginUtils {
      */
     public static function get_logged_in_user_info() {
         $current_user = wp_get_current_user();
-    if ( empty( $current_user ) ) {
-        return array();
-    }
+        if ( empty( $current_user ) ) {
+            return array();
+        }
 
         return array(
             'email'      => $current_user->user_email,
@@ -75,21 +75,21 @@ class FacebookPluginUtils {
      * @return string The generated GUID.
      */
     public static function new_guid() {
-    if ( function_exists( 'com_create_guid' ) === true ) {
-        return trim( com_create_guid(), '{}' );
-    }
+        if ( function_exists( 'com_create_guid' ) === true ) {
+            return trim( com_create_guid(), '{}' );
+        }
 
-    return sprintf(
-        '%04X%04X-%04X-%04X-%04X-%04X%04X%04X',
-        wp_rand( 0, 65535 ),
-        wp_rand( 0, 65535 ),
-        wp_rand( 0, 65535 ),
-        wp_rand( 16384, 20479 ),
-        wp_rand( 32768, 49151 ),
-        wp_rand( 0, 65535 ),
-        wp_rand( 0, 65535 ),
-        wp_rand( 0, 65535 )
-    );
+        return sprintf(
+            '%04X%04X-%04X-%04X-%04X-%04X%04X%04X',
+            wp_rand( 0, 65535 ),
+            wp_rand( 0, 65535 ),
+            wp_rand( 0, 65535 ),
+            wp_rand( 16384, 20479 ),
+            wp_rand( 32768, 49151 ),
+            wp_rand( 0, 65535 ),
+            wp_rand( 0, 65535 ),
+            wp_rand( 0, 65535 )
+        );
     }
 
     /**
@@ -117,9 +117,9 @@ class FacebookPluginUtils {
      */
     public static function ends_with( $haystack, $needle ) {
         $length = strlen( $needle );
-    if ( ! $length ) {
-        return false;
-    }
+        if ( ! $length ) {
+            return false;
+        }
         return substr( $haystack, -$length ) === $needle;
     }
 

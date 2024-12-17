@@ -56,12 +56,12 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
      * @return void
      */
     public static function inject_pixel_code() {
-    add_action(
-        'frm_after_create_entry',
-        array( __CLASS__, 'trackServerEvent' ),
-        20,
-        2
-    );
+        add_action(
+            'frm_after_create_entry',
+            array( __CLASS__, 'trackServerEvent' ),
+            20,
+            2
+        );
     }
 
     /**
@@ -78,24 +78,24 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
      * @return void
      */
     public static function trackServerEvent( $entry_id, $form_id ) {
-    if ( FacebookPluginUtils::is_internal_user() ) {
-        return;
-    }
+        if ( FacebookPluginUtils::is_internal_user() ) {
+            return;
+        }
 
-    $server_event = ServerEventFactory::safe_create_event(
-        'Lead',
-        array( __CLASS__, 'readFormData' ),
-        array( $entry_id ),
-        self::TRACKING_NAME,
-        true
-    );
+        $server_event = ServerEventFactory::safe_create_event(
+            'Lead',
+            array( __CLASS__, 'readFormData' ),
+            array( $entry_id ),
+            self::TRACKING_NAME,
+            true
+        );
         FacebookServerSideEvent::get_instance()->track( $server_event );
 
-    add_action(
-        'wp_footer',
-        array( __CLASS__, 'injectLeadEvent' ),
-        20
-    );
+        add_action(
+            'wp_footer',
+            array( __CLASS__, 'injectLeadEvent' ),
+            20
+        );
     }
 
     /**
@@ -110,21 +110,21 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
      * @return void
      */
     public static function injectLeadEvent() {
-    if ( FacebookPluginUtils::is_internal_user() ) {
-        return;
-    }
+        if ( FacebookPluginUtils::is_internal_user() ) {
+            return;
+        }
 
         $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
         $code   = PixelRenderer::render( $events, self::TRACKING_NAME );
 
-    printf(
-        '
-<!-- Meta Pixel Event Code -->
-%s
-<!-- End Meta Pixel Event Code -->
-      ',
-        $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-    );
+        printf(
+            '
+    <!-- Meta Pixel Event Code -->
+    %s
+    <!-- End Meta Pixel Event Code -->
+          ',
+            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        );
     }
 
     /**
@@ -151,16 +151,16 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
         IntegrationUtils::get_formidable_forms_entry_values( $entry_id );
 
         $field_values = $entry_values->get_field_values();
-    if ( ! empty( $field_values ) ) {
-        $user_data    = array(
-            'email'      => self::getEmail( $field_values ),
-            'first_name' => self::getFirstName( $field_values ),
-            'last_name'  => self::getLastName( $field_values ),
-            'phone'      => self::getPhone( $field_values ),
-        );
-        $address_data = self::getAddressInformation( $field_values );
-        return array_merge( $user_data, $address_data );
-    }
+        if ( ! empty( $field_values ) ) {
+            $user_data    = array(
+                'email'      => self::getEmail( $field_values ),
+                'first_name' => self::getFirstName( $field_values ),
+                'last_name'  => self::getLastName( $field_values ),
+                'phone'      => self::getPhone( $field_values ),
+            );
+            $address_data = self::getAddressInformation( $field_values );
+            return array_merge( $user_data, $address_data );
+        }
 
         return array();
     }
@@ -234,23 +234,23 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
             'address'
         );
         $address_data        = array();
-    if ( $address_saved_value ) {
-        if ( isset( $address_saved_value['city'] ) ) {
-        $address_data['city'] = $address_saved_value['city'];
+        if ( $address_saved_value ) {
+            if ( isset( $address_saved_value['city'] ) ) {
+            $address_data['city'] = $address_saved_value['city'];
+            }
+            if ( isset( $address_saved_value['state'] ) ) {
+                $address_data['state'] = $address_saved_value['state'];
+            }
+            if (
+            isset( $address_saved_value['country'] )
+            && strlen( $address_saved_value['country'] ) === 2
+            ) {
+                $address_data['country'] = $address_saved_value['country'];
+            }
+            if ( isset( $address_saved_value['zip'] ) ) {
+                $address_data['zip'] = $address_saved_value['zip'];
+            }
         }
-        if ( isset( $address_saved_value['state'] ) ) {
-            $address_data['state'] = $address_saved_value['state'];
-        }
-        if (
-        isset( $address_saved_value['country'] )
-        && strlen( $address_saved_value['country'] ) === 2
-        ) {
-            $address_data['country'] = $address_saved_value['country'];
-        }
-        if ( isset( $address_saved_value['zip'] ) ) {
-            $address_data['zip'] = $address_saved_value['zip'];
-        }
-    }
         return $address_data;
     }
 
@@ -269,12 +269,12 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
      * or null if no matching field is found.
      */
     private static function getFieldValueByType( $field_values, $type ) {
-    foreach ( $field_values as $field_value ) {
-        $field = $field_value->get_field();
-        if ( $field->type === $type ) {
-        return $field_value->get_saved_value();
+        foreach ( $field_values as $field_value ) {
+            $field = $field_value->get_field();
+            if ( $field->type === $type ) {
+            return $field_value->get_saved_value();
+            }
         }
-    }
 
         return null;
     }
@@ -304,14 +304,14 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
         $name,
         $description
     ) {
-    foreach ( $field_values as $field_value ) {
-        $field = $field_value->get_field();
-        if ( $field->type === $type &&
-        $field->name === $name &&
-        $field->description === $description ) {
-        return $field_value->get_saved_value();
+        foreach ( $field_values as $field_value ) {
+            $field = $field_value->get_field();
+            if ( $field->type === $type &&
+            $field->name === $name &&
+            $field->description === $description ) {
+            return $field_value->get_saved_value();
+            }
         }
-    }
 
         return null;
     }

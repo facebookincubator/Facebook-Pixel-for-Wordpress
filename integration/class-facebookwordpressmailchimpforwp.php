@@ -69,31 +69,31 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
      * @return void
      */
     public static function injectLeadEvent() {
-    if ( FacebookPluginUtils::is_internal_user() ) {
-        return;
-    }
+        if ( FacebookPluginUtils::is_internal_user() ) {
+            return;
+        }
 
-    $server_event = ServerEventFactory::safe_create_event(
-        'Lead',
-        array( __CLASS__, 'readFormData' ),
-        array(),
-        self::TRACKING_NAME,
-        true
-    );
+        $server_event = ServerEventFactory::safe_create_event(
+            'Lead',
+            array( __CLASS__, 'readFormData' ),
+            array(),
+            self::TRACKING_NAME,
+            true
+        );
         FacebookServerSideEvent::get_instance()->track( $server_event );
 
         $code = PixelRenderer::render(
             array( $server_event ),
             self::TRACKING_NAME
         );
-    printf(
-        '
-<!-- Meta Pixel Event Code -->
-  %s
-<!-- End Meta Pixel Event Code -->
-    ',
-        $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-    );
+        printf(
+            '
+    <!-- Meta Pixel Event Code -->
+      %s
+    <!-- End Meta Pixel Event Code -->
+        ',
+            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        );
     }
 
     /**
@@ -118,45 +118,45 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
      */
     public static function readFormData() {
         $event_data = array();
-    if ( ! empty( $_POST['EMAIL'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $event_data['email'] = sanitize_email( wp_unslash( $_POST['EMAIL'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-    }
-
-    if ( ! empty( $_POST['FNAME'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $event_data['first_name'] = sanitize_text_field( wp_unslash( $_POST['FNAME'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-    }
-
-    if ( ! empty( $_POST['LNAME'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $event_data['last_name'] = sanitize_text_field( wp_unslash( $_POST['LNAME'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-    }
-
-    if ( ! empty( $_POST['PHONE'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $event_data['phone'] = sanitize_text_field( wp_unslash( $_POST['PHONE'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-    }
-
-    if ( ! empty( $_POST['ADDRESS'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $address_data = sanitize_text_field( wp_unslash( $_POST['ADDRESS'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-
-        if ( ! empty( $address_data['city'] ) ) {
-            $event_data['city'] = sanitize_text_field( $address_data['city'] );
+        if ( ! empty( $_POST['EMAIL'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $event_data['email'] = sanitize_email( wp_unslash( $_POST['EMAIL'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
         }
 
-        if ( ! empty( $address_data['state'] ) ) {
-            $event_data['state'] =
-            sanitize_text_field( $address_data['state'] );
+        if ( ! empty( $_POST['FNAME'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $event_data['first_name'] = sanitize_text_field( wp_unslash( $_POST['FNAME'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
         }
 
-        if ( ! empty( $address_data['zip'] ) ) {
-            $event_data['zip'] = sanitize_text_field( $address_data['zip'] );
+        if ( ! empty( $_POST['LNAME'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $event_data['last_name'] = sanitize_text_field( wp_unslash( $_POST['LNAME'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
         }
 
-        if (
-        ! empty( $address_data['country'] )
-        && strlen( $address_data['country'] ) === 2
-        ) {
-            $event_data['country'] = $address_data['country'];
+        if ( ! empty( $_POST['PHONE'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $event_data['phone'] = sanitize_text_field( wp_unslash( $_POST['PHONE'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
         }
-    }
+
+        if ( ! empty( $_POST['ADDRESS'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $address_data = sanitize_text_field( wp_unslash( $_POST['ADDRESS'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+            if ( ! empty( $address_data['city'] ) ) {
+                $event_data['city'] = sanitize_text_field( $address_data['city'] );
+            }
+
+            if ( ! empty( $address_data['state'] ) ) {
+                $event_data['state'] =
+                sanitize_text_field( $address_data['state'] );
+            }
+
+            if ( ! empty( $address_data['zip'] ) ) {
+                $event_data['zip'] = sanitize_text_field( $address_data['zip'] );
+            }
+
+            if (
+            ! empty( $address_data['country'] )
+            && strlen( $address_data['country'] ) === 2
+            ) {
+                $event_data['country'] = $address_data['country'];
+            }
+        }
         return $event_data;
     }
 }

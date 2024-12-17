@@ -140,16 +140,16 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
      * Gets OpenBridge set config code
      */
     public static function get_open_bridge_config_code() {
-    if ( empty( self::$pixel_id ) ) {
-        return;
-    }
+      if ( empty( self::$pixel_id ) ) {
+          return;
+      }
 
         $code = "
-      <script type='text/javascript'>
-        var url = window.location.origin + '?ob=open-bridge';
-        fbq('set', 'openbridge', '%s', url);
-      </script>
-    ";
+          <script type='text/javascript'>
+            var url = window.location.origin + '?ob=open-bridge';
+            fbq('set', 'openbridge', '%s', url);
+          </script>
+        ";
         return sprintf( $code, self::$pixel_id );
     }
 
@@ -169,9 +169,9 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $param = array(),
         $with_script_tag = true
     ) {
-    if ( empty( self::$pixel_id ) ) {
-        return;
-    }
+        if ( empty( self::$pixel_id ) ) {
+            return;
+        }
 
         $pixel_fbq_code_without_script = "fbq('%s', '%s'%s%s)";
 
@@ -179,20 +179,20 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $pixel_fbq_code_without_script .
         '</script>' : $pixel_fbq_code_without_script;
         $param_str = $param;
-    if ( is_array( $param ) ) {
-        $param_str = wp_json_encode(
-            $param,
-            JSON_PRETTY_PRINT | JSON_FORCE_OBJECT
-        );
-    }
+        if ( is_array( $param ) ) {
+            $param_str = wp_json_encode(
+                $param,
+                JSON_PRETTY_PRINT | JSON_FORCE_OBJECT
+            );
+        }
         $agent_param = array( 'agent' => $agent_string );
-    return sprintf(
-        $code,
-        'init',
-        self::$pixel_id,
-        ', ' . $param_str,
-        ', ' . wp_json_encode( $agent_param, JSON_PRETTY_PRINT )
-    );
+        return sprintf(
+            $code,
+            'init',
+            self::$pixel_id,
+            ', ' . $param_str,
+            ', ' . wp_json_encode( $agent_param, JSON_PRETTY_PRINT )
+        );
     }
 
     /**
@@ -217,30 +217,30 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $tracking_name = '',
         $with_script_tag = true
     ) {
-    if ( empty( self::$pixel_id ) ) {
-        return;
-    }
+        if ( empty( self::$pixel_id ) ) {
+            return;
+        }
 
         $code      = $with_script_tag ? "<script type='text/javascript'>" .
         self::$pixel_fbq_code_without_script .
         '</script>' : self::$pixel_fbq_code_without_script;
         $param_str = $param;
-    if ( is_array( $param ) ) {
-        if ( ! empty( $tracking_name ) ) {
-            $param[ self::FB_INTEGRATION_TRACKING_KEY ] = $tracking_name;
+        if ( is_array( $param ) ) {
+            if ( ! empty( $tracking_name ) ) {
+                $param[ self::FB_INTEGRATION_TRACKING_KEY ] = $tracking_name;
+            }
+            $param_str = wp_json_encode( $param, JSON_PRETTY_PRINT );
         }
-        $param_str = wp_json_encode( $param, JSON_PRETTY_PRINT );
-    }
         $class = new ReflectionClass( __CLASS__ );
-    return sprintf(
-        $code,
-        $class->getConstant(
-            strtoupper( $event )
-        ) !== false ? 'track' : 'trackCustom',
-        $event,
-        ', ' . $param_str,
-        ''
-    );
+        return sprintf(
+            $code,
+            $class->getConstant(
+                strtoupper( $event )
+            ) !== false ? 'track' : 'trackCustom',
+            $event,
+            ', ' . $param_str,
+            ''
+        );
     }
 
     /**
@@ -255,24 +255,24 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $cd = array(),
         $tracking_name = ''
     ) {
-    if ( empty( self::$pixel_id ) ) {
-        return;
-    }
+        if ( empty( self::$pixel_id ) ) {
+            return;
+        }
 
-        $data = '';
-    foreach ( $cd as $k => $v ) {
-        $data .= '&cd[' . $k . ']=' . $v;
-    }
-    if ( ! empty( $tracking_name ) ) {
-        $data .= '&cd[' . self::FB_INTEGRATION_TRACKING_KEY . ']=' .
-        $tracking_name;
-    }
-    return sprintf(
-        self::$pixel_noscript_code,
-        self::$pixel_id,
-        $event,
-        $data
-    );
+            $data = '';
+        foreach ( $cd as $k => $v ) {
+            $data .= '&cd[' . $k . ']=' . $v;
+        }
+        if ( ! empty( $tracking_name ) ) {
+            $data .= '&cd[' . self::FB_INTEGRATION_TRACKING_KEY . ']=' .
+            $tracking_name;
+        }
+        return sprintf(
+            self::$pixel_noscript_code,
+            self::$pixel_id,
+            $event,
+            $data
+        );
     }
 
     /**
@@ -288,12 +288,12 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $tracking_name = '',
         $with_script_tag = true
     ) {
-    return self::get_pixel_track_code(
-        self::ADDTOCART,
-        $param,
-        $tracking_name,
-        $with_script_tag
-    );
+        return self::get_pixel_track_code(
+            self::ADDTOCART,
+            $param,
+            $tracking_name,
+            $with_script_tag
+        );
     }
 
     /**
@@ -309,12 +309,12 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $tracking_name = '',
         $with_script_tag = true
     ) {
-    return self::get_pixel_track_code(
-        self::INITIATECHECKOUT,
-        $param,
-        $tracking_name,
-        $with_script_tag
-    );
+        return self::get_pixel_track_code(
+            self::INITIATECHECKOUT,
+            $param,
+            $tracking_name,
+            $with_script_tag
+        );
     }
 
     /**
@@ -330,12 +330,12 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $tracking_name = '',
         $with_script_tag = true
     ) {
-    return self::get_pixel_track_code(
-        self::LEAD,
-        $param,
-        $tracking_name,
-        $with_script_tag
-    );
+        return self::get_pixel_track_code(
+            self::LEAD,
+            $param,
+            $tracking_name,
+            $with_script_tag
+        );
     }
 
     /**
@@ -351,12 +351,12 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $tracking_name = '',
         $with_script_tag = true
     ) {
-    return self::get_pixel_track_code(
-        self::PAGEVIEW,
-        $param,
-        $tracking_name,
-        $with_script_tag
-    );
+        return self::get_pixel_track_code(
+            self::PAGEVIEW,
+            $param,
+            $tracking_name,
+            $with_script_tag
+        );
     }
 
     /**
@@ -372,12 +372,12 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $tracking_name = '',
         $with_script_tag = true
     ) {
-    return self::get_pixel_track_code(
-        self::PURCHASE,
-        $param,
-        $tracking_name,
-        $with_script_tag
-    );
+        return self::get_pixel_track_code(
+            self::PURCHASE,
+            $param,
+            $tracking_name,
+            $with_script_tag
+        );
     }
 
     /**
@@ -393,11 +393,11 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $tracking_name = '',
         $with_script_tag = true
     ) {
-    return self::get_pixel_track_code(
-        self::VIEWCONTENT,
-        $param,
-        $tracking_name,
-        $with_script_tag
-    );
+        return self::get_pixel_track_code(
+            self::VIEWCONTENT,
+            $param,
+            $tracking_name,
+            $with_script_tag
+        );
     }
 }

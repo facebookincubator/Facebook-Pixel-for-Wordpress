@@ -65,11 +65,11 @@ class ServerEventAsyncTask extends \WP_Async_Task {
         );
         $user_data       = array();
         foreach ( $user_data_normalized as $norm_key => $field ) {
-        if ( isset( $norm_key_to_key[ $norm_key ] ) ) {
-            $user_data[ $norm_key_to_key[ $norm_key ] ] = $field;
-        } else {
-            $user_data[ $norm_key ] = $field;
-        }
+            if ( isset( $norm_key_to_key[ $norm_key ] ) ) {
+                $user_data[ $norm_key_to_key[ $norm_key ] ] = $field;
+            } else {
+                $user_data[ $norm_key ] = $field;
+            }
         }
         return $user_data;
     }
@@ -91,38 +91,38 @@ class ServerEventAsyncTask extends \WP_Async_Task {
      */
     private function convert_array_to_event( $event_as_array ) {
         $event = new Event( $event_as_array );
-    if ( isset( $event_as_array['user_data'] ) ) {
-        $user_data = new UserData(
-            $this->convert_user_data(
-                $event_as_array['user_data']
-            )
-        );
-        $event->setUserData( $user_data );
-    }
-    if ( isset( $event_as_array['custom_data'] ) ) {
-        $custom_data = new CustomData( $event_as_array['custom_data'] );
-        if ( isset( $event_as_array['custom_data']['contents'] ) ) {
-            $contents = array();
-        foreach (
-            $event_as_array['custom_data']['contents'] as $contents_as_array
-            ) {
-            if ( isset( $contents_as_array['id'] ) ) {
-                $contents_as_array['product_id'] = $contents_as_array['id'];
+        if ( isset( $event_as_array['user_data'] ) ) {
+            $user_data = new UserData(
+                $this->convert_user_data(
+                    $event_as_array['user_data']
+                )
+            );
+            $event->setUserData( $user_data );
+        }
+        if ( isset( $event_as_array['custom_data'] ) ) {
+            $custom_data = new CustomData( $event_as_array['custom_data'] );
+            if ( isset( $event_as_array['custom_data']['contents'] ) ) {
+                $contents = array();
+            foreach (
+                $event_as_array['custom_data']['contents'] as $contents_as_array
+                ) {
+                if ( isset( $contents_as_array['id'] ) ) {
+                    $contents_as_array['product_id'] = $contents_as_array['id'];
+                }
+                $contents[] = new Content( $contents_as_array );
             }
-            $contents[] = new Content( $contents_as_array );
+                $custom_data->setContents( $contents );
+            }
+            if ( isset(
+                $event_as_array['custom_data']['fb_integration_tracking']
+            ) ) {
+            $custom_data->addCustomProperty(
+                'fb_integration_tracking',
+                $event_as_array['custom_data']['fb_integration_tracking']
+            );
+            }
+            $event->setCustomData( $custom_data );
         }
-            $custom_data->setContents( $contents );
-        }
-        if ( isset(
-            $event_as_array['custom_data']['fb_integration_tracking']
-        ) ) {
-        $custom_data->addCustomProperty(
-            'fb_integration_tracking',
-            $event_as_array['custom_data']['fb_integration_tracking']
-        );
-        }
-        $event->setCustomData( $custom_data );
-    }
         return $event;
     }
 
@@ -182,32 +182,32 @@ class ServerEventAsyncTask extends \WP_Async_Task {
      * @throws \Exception If there was an preprocessing error.
      */
     protected function run_action() {
-    try {
-        $num_events = isset( $_POST['num_events'] ) ? // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        sanitize_text_field(
-            wp_unslash( $_POST['num_events'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        ) : null;
-        if ( 0 === $num_events ) {
-        return;
-        }
-        $events_as_array = json_decode(
-            base64_decode( // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-                isset( $_POST['event_data'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-                ? $_POST['event_data'] : null // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-            ),
-            true
-        );
-        if ( ! $events_as_array ) {
+        try {
+            $num_events = isset( $_POST['num_events'] ) ? // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            sanitize_text_field(
+                wp_unslash( $_POST['num_events'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            ) : null;
+            if ( 0 === $num_events ) {
             return;
+            }
+            $events_as_array = json_decode(
+                base64_decode( // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                    isset( $_POST['event_data'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                    ? $_POST['event_data'] : null // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                ),
+                true
+            );
+            if ( ! $events_as_array ) {
+                return;
+            }
+            $events = array();
+            foreach ( $events_as_array as $event_as_array ) {
+                $event    = $this->convert_array_to_event( $event_as_array );
+                $events[] = $event;
+            }
+            FacebookServerSideEvent::send( $events );
+        } catch ( \Exception $ex ) {
+            throw $ex;
         }
-        $events = array();
-        foreach ( $events_as_array as $event_as_array ) {
-            $event    = $this->convert_array_to_event( $event_as_array );
-            $events[] = $event;
-        }
-        FacebookServerSideEvent::send( $events );
-    } catch ( \Exception $ex ) {
-        throw $ex;
-    }
     }
 }
