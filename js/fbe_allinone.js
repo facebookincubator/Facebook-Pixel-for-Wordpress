@@ -332,10 +332,16 @@ var FBEFlowContainer = React.createClass({
   },
   hideEventsManagerSection: function hideEventsManagerSection() {
     jQuery(".events-manager-wrapper").hide();
+    jQuery('#ad-creation-plugin').hide();
+    jQuery('#ad-insights-plugin').hide();
+    jQuery("#fb-adv-conf").hide();
     jQuery(".events-manager-wrapper input#pixel-id").val('');
   },
   showEventsManagerSection: function showEventsManagerSection(pixelId) {
     jQuery(".events-manager-wrapper").show();
+    jQuery('#ad-creation-plugin').show();
+    jQuery('#ad-insights-plugin').show();
+    jQuery("#fb-adv-conf").show();
     jQuery(".events-manager-wrapper input#pixel-id").val(pixelId);
   }
 });
