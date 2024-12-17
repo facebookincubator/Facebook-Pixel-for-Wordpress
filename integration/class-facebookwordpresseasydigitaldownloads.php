@@ -158,6 +158,18 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
                 FacebookServerSideEvent::get_instance()->track( $server_event );
             }
         }
+        parse_str( $_POST['post_data'], $post_data ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+        if ( isset( $post_data['facebook_event_id'] ) ) {
+            $event_id     = $post_data['facebook_event_id'];
+            $server_event = ServerEventFactory::safe_create_event(
+                'AddToCart',
+                array( __CLASS__, 'createAddToCartEvent' ),
+                array( $download_id ),
+                self::TRACKING_NAME
+            );
+            $server_event->setEventId( $event_id );
+            FacebookServerSideEvent::get_instance()->track( $server_event );
+        }
     }
 
     /**
