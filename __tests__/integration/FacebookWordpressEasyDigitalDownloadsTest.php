@@ -397,7 +397,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
     $tracked_events =
     FacebookServerSideEvent::get_instance()->get_tracked_events();
 
-    $this->assertCount( 1, $tracked_events );
+    $this->assertCount( 2, $tracked_events );
 
     $event       = $tracked_events[0];
     $custom_data = $event->getCustomData();
