@@ -164,14 +164,14 @@ class ServerEventFactory {
      * null if the cookie is not present.
      */
     private static function get_fbp() {
-        $fbp = null;
+      $fbp = null;
 
-        if ( ! empty( $_COOKIE['_fbp'] ) ) {
-            $fbp = sanitize_text_field( $_COOKIE['_fbp'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-        }
+      if ( ! empty( $_COOKIE['_fbp'] ) ) {
+          $fbp = sanitize_text_field( wp_unslash( $_COOKIE['_fbp'] ) );
+      }
 
-        return $fbp;
-    }
+      return $fbp;
+  }
 
     /**
      * Retrieves the Facebook Click ID (FBC) cookie or session variable.

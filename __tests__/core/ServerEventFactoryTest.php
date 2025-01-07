@@ -573,6 +573,16 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $_COOKIE['_fbp'] = '_fbp_value';
 
     \WP_Mock::userFunction(
+      'wp_unslash',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+
+    \WP_Mock::userFunction(
       'sanitize_text_field',
       array(
         'args'   => array( \Mockery::any() ),
