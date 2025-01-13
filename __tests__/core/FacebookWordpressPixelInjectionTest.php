@@ -79,7 +79,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
       array( $injection_obj, 'inject_pixel_code' )
     );
     \WP_Mock::expectActionAdded(
-      'wp_head',
+      'wp_body_open',
       array( $injection_obj, 'inject_pixel_noscript_code' )
     );
 
