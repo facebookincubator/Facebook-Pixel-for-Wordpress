@@ -66,8 +66,14 @@ final class AAMFieldsExtractor {
     if (
         isset( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] )
         ) {
-        $unix_timestamp =
-        strtotime( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] );
+
+        $date_time      = \DateTime::createFromFormat(
+            'Y-m-d',
+            $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ],
+            new \DateTimeZone( 'GMT' )
+        );
+        $unix_timestamp = $date_time ? $date_time->getTimestamp() : false;
+
         if ( ! $unix_timestamp ) {
             unset( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] );
         } else {
