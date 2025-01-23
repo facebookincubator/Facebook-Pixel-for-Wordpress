@@ -146,8 +146,10 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 
         $code = "
           <script type='text/javascript'>
+            console.log('loading openbridge');  
             var url = window.location.origin + '?ob=open-bridge';
             fbq('set', 'openbridge', '%s', url);
+            console.log('openbridge loaded');
           </script>
         ";
         return sprintf( $code, self::$pixel_id );
