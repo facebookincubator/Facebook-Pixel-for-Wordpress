@@ -26,9 +26,9 @@ window.facebookBusinessExtensionConfig = {
 	channel: "DEFAULT",
 };
 
-var pixelString = meta_wc_params.pixelString;
+var hasAccessToken = jQuery("#fb-adv-conf").attr("data-access-token");
 
-if (!pixelString.trim()) {
+if ("false" == hasAccessToken) {
 	jQuery("#fb-adv-conf").hide();
 } else {
 	// Set advanced configuration top relative to fbe iframe

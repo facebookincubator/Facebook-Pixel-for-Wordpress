@@ -263,7 +263,7 @@ class FacebookWordpressSettingsPage {
 
     <div class="events-manager-wrapper
     <?php
-    echo empty( FacebookWordpressOptions::get_pixel_id() ) ?
+    echo empty( FacebookWordpressOptions::get_access_token() ) ?
     'hidden' : '';
     ?>
     ">
@@ -450,7 +450,7 @@ class FacebookWordpressSettingsPage {
     <div id="meta-ads-plugin">
     <div id="ad-creation-plugin" class="
     <?php
-    echo empty( FacebookWordpressOptions::get_pixel_id() ) ?
+    echo empty( FacebookWordpressOptions::get_access_token() ) ?
     'hidden' : '';
     ?>
     ">
@@ -469,7 +469,7 @@ class FacebookWordpressSettingsPage {
     </div>
     <div id="ad-insights-plugin" class="
     <?php
-    echo empty( FacebookWordpressOptions::get_pixel_id() ) ?
+    echo empty( FacebookWordpressOptions::get_access_token() ) ?
     'hidden' : '';
     ?>
     ">
@@ -489,7 +489,10 @@ class FacebookWordpressSettingsPage {
 </div>
 
         <?php
-        $initial_script = ob_get_clean();
+        $initial_script   = ob_get_clean();
+        $access_token     = FacebookWordpressOptions::get_access_token();
+        $has_access_token = ! empty( $access_token );
+
         wp_enqueue_script( 'meta_settings_page_script' );
 
         wp_add_inline_script(
@@ -535,7 +538,11 @@ class FacebookWordpressSettingsPage {
                     'capiIntegrationEventsFilterUpdateError' =>
                     FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_UPDATE_ERROR,
                 )
-            ),
+            ) . ';
+            var hasAccessToken = ' . wp_json_encode( $has_access_token ) . ';
+            if (!hasAccessToken) {
+                jQuery("#fb-adv-conf").attr("data-access-token", "false");
+            }',
             'before'
         );
         return $initial_script;
