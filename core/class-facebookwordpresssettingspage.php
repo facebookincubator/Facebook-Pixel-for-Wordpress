@@ -153,40 +153,8 @@ class FacebookWordpressSettingsPage {
                 )
             );
         }
-        $pixel_id_message = $this->get_previous_pixel_id_message();
-        if ( $pixel_id_message ) {
-            echo $pixel_id_message; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        }
         echo $this->get_fbe_browser_settings(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         wp_enqueue_script( 'fbe_allinone_script' );
-    }
-
-    /**
-     * Retrieves a message regarding the previous pixel ID setup.
-     *
-     * If the Facebook Business Extension is installed, it returns null.
-     * Otherwise, it checks for the existence of a pixel ID and returns
-     * a formatted message indicating the reuse of the pixel ID from a
-     * previous setup. If no pixel ID is found, it returns null.
-     *
-     * @return string|null The message with the previous pixel ID or null if
-     *                     the pixel ID is not found or FBE is installed.
-     */
-    private function get_previous_pixel_id_message() {
-        if ( FacebookWordpressOptions::get_is_fbe_installed() ) {
-            return null;
-        }
-        $pixel_id = FacebookWordpressOptions::get_pixel_id();
-        if ( empty( $pixel_id ) ) {
-            return null;
-        }
-        $message =
-        sprintf(
-            '<p>Reuse the pixel id from your previous setup: ' .
-            '<strong>%s</strong></p>',
-            $pixel_id
-        );
-        return $message;
     }
 
     /**
