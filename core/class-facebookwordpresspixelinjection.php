@@ -64,7 +64,7 @@ class FacebookWordpressPixelInjection {
                 array( $this, 'inject_pixel_code' )
             );
             add_action(
-                'wp_head',
+                'wp_body_open',
                 array( $this, 'inject_pixel_noscript_code' )
             );
             foreach (
