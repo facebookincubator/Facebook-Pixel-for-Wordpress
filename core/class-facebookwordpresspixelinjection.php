@@ -130,7 +130,7 @@ class FacebookWordpressPixelInjection {
         $capi_integration_status =
         FacebookWordpressOptions::get_capi_integration_status();
         if ( '1' === $capi_integration_status ) {
-            FacebookPixel::get_open_bridge_config_code();
+            echo FacebookPixel::get_open_bridge_config_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         }
         echo FacebookPixel::get_pixel_init_code( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             FacebookWordpressOptions::get_agent_string(),
