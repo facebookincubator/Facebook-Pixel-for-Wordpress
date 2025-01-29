@@ -255,7 +255,6 @@ var FBEFlowContainer = React.createClass({
         let msg = '';
         if (response.success) {
           _this.setState({pixelId: pixelId});
-          _this.showEventsManagerSection(pixelId);
           msg = "The Meta Pixel with ID: " + pixelId + " is now installed on your website.";
         } else {
           msg = "There was a problem saving the pixel. Please try again";
@@ -275,7 +274,6 @@ var FBEFlowContainer = React.createClass({
       success: function onSuccess(data, _textStatus, _jqXHR) {
         let msg = '';
         if(data.success) {
-          _this.hideEventsManagerSection();
           msg = data.message;
         }else {
           msg = data.error_message;
@@ -329,20 +327,6 @@ var FBEFlowContainer = React.createClass({
     } catch (err) {
       console.error(err);
     }
-  },
-  hideEventsManagerSection: function hideEventsManagerSection() {
-    jQuery(".events-manager-wrapper").hide();
-    jQuery('#ad-creation-plugin').hide();
-    jQuery('#ad-insights-plugin').hide();
-    jQuery("#fb-adv-conf").hide();
-    jQuery(".events-manager-wrapper input#pixel-id").val('');
-  },
-  showEventsManagerSection: function showEventsManagerSection(pixelId) {
-    jQuery(".events-manager-wrapper").show();
-    jQuery('#ad-creation-plugin').show();
-    jQuery('#ad-insights-plugin').show();
-    jQuery("#fb-adv-conf").show();
-    jQuery(".events-manager-wrapper input#pixel-id").val(pixelId);
   }
 });
 
