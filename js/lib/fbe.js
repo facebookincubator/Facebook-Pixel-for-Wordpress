@@ -77,10 +77,12 @@ var FBEFlowContainer = React.createClass({
         if(action != null && action === 'delete') {
           // Delete asset ids stored in db instance.
           _this.consoleLog("Successfully uninstalled FBE");
-            _this.deleteFBAssets();
+          _this.deleteFBAssets();
+          _this.hideAdsPlugin();
         }else if(action != null && action === 'create') {
           _this.saveSettings(pixelId, accessToken, window.facebookBusinessExtensionConfig.externalBusinessId);
           _this.setState({installed: 'true'});
+          _this.showAdsPlugin();
         }
       }else {
         _this.consoleLog("No response received after setup");
@@ -115,6 +117,7 @@ var FBEFlowContainer = React.createClass({
         let msg = '';
         if (response.success) {
           _this.setState({pixelId: pixelId});
+          _this.showEventsManagerSection(pixelId);
           msg = "The Meta Pixel with ID: " + pixelId + " is now installed on your website.";
         } else {
           msg = "There was a problem saving the pixel. Please try again";
@@ -135,6 +138,7 @@ var FBEFlowContainer = React.createClass({
         let msg = '';
         if(data.success) {
           msg = data.message;
+          _this.hideEventsManagerSection();
         }else {
           msg = data.error_message;
         }
@@ -145,6 +149,12 @@ var FBEFlowContainer = React.createClass({
         console.error('There was a problem deleting the connection, Please try again.');
       }
     });
+  },
+  showAdsPlugin: function showAdsPlugin() {
+    jQuery("#meta-ads-plugin").show();
+  },
+  hideAdsPlugin: function hideAdsPlugin() {
+    jQuery("#meta-ads-plugin").hide();
   },
   componentDidMount: function componentDidMount() {
     this.bindMessageEvents();
@@ -164,7 +174,8 @@ var FBEFlowContainer = React.createClass({
             '&version='+window.facebookBusinessExtensionConfig.version+
             '&currency='+ window.facebookBusinessExtensionConfig.currency +
             '&business_name='+ window.facebookBusinessExtensionConfig.businessName +
-            '&channel=' + window.facebookBusinessExtensionConfig.channel;
+            '&channel=' + window.facebookBusinessExtensionConfig.channel +
+            '&hide_create_ad_button=' + true;
   },
   render: function render() {
     var _this = this;
@@ -180,6 +191,20 @@ var FBEFlowContainer = React.createClass({
     } catch (err) {
       console.error(err);
     }
+  },
+  hideEventsManagerSection: function hideEventsManagerSection() {
+    jQuery(".events-manager-wrapper").hide();
+    jQuery('#ad-creation-plugin').hide();
+    jQuery('#ad-insights-plugin').hide();
+    jQuery("#fb-adv-conf").hide();
+    jQuery(".events-manager-wrapper input#pixel-id").val('');
+  },
+  showEventsManagerSection: function showEventsManagerSection(pixelId) {
+    jQuery(".events-manager-wrapper").show();
+    jQuery('#ad-creation-plugin').show();
+    jQuery('#ad-insights-plugin').show();
+    jQuery("#fb-adv-conf").show();
+    jQuery(".events-manager-wrapper input#pixel-id").val(pixelId);
   }
 });
 
