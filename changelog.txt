@@ -1,4 +1,12 @@
 *** Facebook for WordPress Changelog ***
+2025-02-05 version 4.1.0
+* Added Test CAPI functionality
+* Fixed an issue with the MBE where user could not onboard
+* Improved the way FBP & FBC are retrieved
+* Minor improvements to the Plugin Settings page
+* Move the noscript tag to body element
+* improve the check for product categories
+
 2024-09-24 version 4.0.1
 * Updated the readme.txt to point to Meta Privacy Policy
 
