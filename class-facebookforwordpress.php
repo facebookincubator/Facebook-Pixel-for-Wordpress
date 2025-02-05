@@ -124,29 +124,6 @@ class FacebookForWordpress {
                 $data
             );
         }
-        if ( isset( $_SERVER['HTTP_ORIGIN'] ) ) {
-            $origin = wp_kses( wp_unslash( $_SERVER['HTTP_ORIGIN'] ), array() );
-            header( "Access-Control-Allow-Origin: $origin" );
-            header( 'Access-Control-Allow-Credentials: true' );
-            header( 'Access-Control-Max-Age: 86400' );
-
-            $fbc = isset(
-                $_COOKIE['_fbc']
-            )
-              ? $_COOKIE['_fbc'] : // phpcs:ignore
-              ( isset( $data['_fbc'] ) ? $data['_fbc'] : null );
-            $fbp = isset( $_COOKIE['_fbp'] )
-              ? $_COOKIE['_fbp'] : // phpcs:ignore
-            ( isset( $data['_fbp'] ) ? $data['_fbp'] : null );
-
-            if ( $fbc ) {
-                setcookie( '_fbc', $fbc, time() + ( 86400 * 30 ), '/' );
-            }
-
-            if ( $fbp ) {
-                setcookie( '_fbp', $fbp, time() + ( 86400 * 30 ), '/' );
-            }
-        }
         exit();
         }
     }

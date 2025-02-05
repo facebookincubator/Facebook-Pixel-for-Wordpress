@@ -313,6 +313,12 @@ class ServerEventFactory {
             );
 
             $user_data = $event->getUserData();
+            if ( isset ($data[ 'fbp' ])) {
+                $user_data->setFbp( $data[ 'fbp' ] );
+            }
+            if ( isset ($data[ 'fbc' ])) {
+                $user_data->setFbc( $data[ 'fbc' ] );
+            }
             if (
             isset( $user_data_array[ AAMSettingsFields::EMAIL ] )
             ) {
