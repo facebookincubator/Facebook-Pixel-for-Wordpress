@@ -200,10 +200,10 @@ class FacebookWordpressOpenBridge {
             'content_category' =>
             self::get_custom_data( 'content_category', $databag ),
         );
-        if (isset($databag['fb.fbp'])) {
+        if ( isset( $databag['fb.fbp'] ) ) {
             $event_data['fbp'] = $databag['fb.fbp'];
         }
-        if (isset($databag['fb.clickID'])) {
+        if ( isset( $databag['fb.clickID'] ) ) {
             $event_data['fbc'] = $databag['fb.clickID'];
         }
         return $event_data;
