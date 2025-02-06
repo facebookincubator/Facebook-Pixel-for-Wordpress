@@ -109,6 +109,15 @@ class FacebookWordpressOptions {
     }
 
     /**
+     * Retrieves the plugin options using the old method name for backwards compatibility.
+     *
+     * @return array The plugin options.
+     */
+    public static function getOptions() { // phpcs:ignore
+        return self::get_options();
+    }
+
+    /**
      * Retrieves the CAPI integration status option.
      *
      * Sets the class property $capi_integration_enabled from the option.
@@ -324,6 +333,15 @@ class FacebookWordpressOptions {
         }
 
         return self::get_default_pixel_id();
+    }
+
+    /**
+     * Retrieves the Facebook pixel ID using the old method name for backwards compatibility.
+     *
+     * @return string The Facebook pixel ID.
+     */
+    public static function getPixelId() { // phpcs:ignore
+        return self::get_pixel_id();
     }
 
     /**
