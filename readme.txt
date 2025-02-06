@@ -2,9 +2,9 @@
 Contributors: facebook
 Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, Conversions API, facebook retargeting, facebook standard events, Meta, Meta Pixel, Meta Conversion API, CAPI,
 Requires at least: 5.7
-Tested up to: 6.5
+Tested up to: 6.7
 Requires PHP: 8.1
-Stable tag: 4.0.1
+Stable tag: 4.1.0
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,14 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2025-02-05 version 4.1.0 =
+* Added Test CAPI functionality
+* Fixed an issue with the MBE where user could not onboard
+* Improved the way FBP & FBC are retrieved
+* Minor improvements to the Plugin Settings page
+* Move the noscript tag to body element
+* improve the check for product categories
+
 = 2024-09-24 version 4.0.1 =
 * Updated the readme.txt to point to Meta Privacy Policy
 
