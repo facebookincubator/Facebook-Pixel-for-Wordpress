@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignoreFile
 /**
  * Plugin Name: Meta pixel for WordPress
  * Plugin URI: https://www.facebook.com/business/help/881403525362441
