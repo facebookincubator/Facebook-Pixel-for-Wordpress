@@ -12,7 +12,7 @@
   "prefer-stable" : true,
   "license": "GPL",
   "require": {
-    "facebook/php-business-sdk": "^19.0",
+    "facebook/php-business-sdk": "^22.0",
     "techcrunch/wp-async-task": "dev-master"
   },
   "autoload": {
