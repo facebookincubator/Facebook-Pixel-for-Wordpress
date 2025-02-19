@@ -1,6 +1,6 @@
 === Meta pixel for WordPress ===
 Contributors: facebook
-Tags: Facebook, Meta, Conversions API, Pixel, Catalog
+Tags: Facebook, Meta, Conversions API, Pixel, Meta Ads
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 8.1
