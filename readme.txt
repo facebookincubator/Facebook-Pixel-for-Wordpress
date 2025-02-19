@@ -1,6 +1,6 @@
 === Meta pixel for WordPress ===
 Contributors: facebook
-Tags: Facebook, Facebook Conversion Pixel, Facebook Pixel, Facebook Pixel Events, Conversions API, facebook retargeting, facebook standard events, Meta, Meta Pixel, Meta Conversion API, CAPI,
+Tags: Facebook, Meta, Conversions API, Pixel, Meta Ads
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 8.1
