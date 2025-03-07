@@ -125,6 +125,12 @@ class FacebookForWordpress {
                 $data
             );
         }
+        if ( isset( $_SERVER['HTTP_ORIGIN'] ) ) {
+            $origin = wp_kses( wp_unslash( $_SERVER['HTTP_ORIGIN'] ), array() );
+            header( "Access-Control-Allow-Origin: $origin" );
+            header( 'Access-Control-Allow-Credentials: true' );
+            header( 'Access-Control-Max-Age: 86400' );
+        }
         exit();
         }
     }
