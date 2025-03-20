@@ -4,7 +4,7 @@ Tags: Facebook, Meta, Conversions API, Pixel, Meta Ads
 Requires at least: 5.7
 Tested up to: 6.7
 Requires PHP: 8.1
-Stable tag: 4.1.1
+Stable tag: 4.1.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,10 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2025-03-20 version 4.1.2 =
+* Add back CORS headers on the openbridge calls
+* Updated the wordpress.org directory tags
+
 = 2025-02-06 version 4.1.1 =
 * Fix an issue that caused fatal error when upgrading to 4.1.0
 
@@ -70,136 +74,6 @@ Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can
 * Updated the supported PHP version to 8.1, and updated the code to conform to the PHP 8.1 standards
 * Added a link to the Meta Platform Terms in readme.txt
 * Updated the Facebook Business SDK to v19.0.0
-
-= 2023-11-14 version 3.0.14 =
-* Introduced PII Caching to improve events quality
-* Removed WPFroms from the integrations. There is no need for the integrations since OpenBridge will send the events automatically.
-
-= 2023-07-12 version 3.0.13 =
-* Revise openBridge Firing Logic for Cleaner URL Indexing
-
-= 2023-06-13 version 3.0.12 =
-* Remove async processing from OpenBridge events
-* Get PII from session
-
-= 2023-05-22 version 3.0.11 =
-* Remove the dependency of Gravity Forms
-
-= 2023-04-25 version 3.0.10 =
-* Remove delays in firing pixel events
-* Upgrade to PHP SDK 16.0.*
-* Fix compatibility issues for PHP
-
-= 2023-04-03 version 3.0.9 =
-* Removed hard coded OpenBridge Javascript
-* Fix async events UserData key mapping. #32
-* Delay pixel events firing, to track engaged visitors
-* Bug Fixes
-
-= 2022-10-31 version 3.0.8 =
-* Fix PII drop when converting Pixel payload to Conversion API payload
-* Rebranded the extension from Facebook pixel to Meta pixel
-
-= 2022-08-02 version 3.0.7 =
-* Update Facebook Business SDK to v12.0.0
-* Added the ability to send website events using conversion API and OpenBridge Javascript. This can be enabled/disabled from the settings page.
-* Added ads metrics and insights on the settings page.
-
-= 2021-08-30 version 3.0.6 =
-* Update Facebook Business SDK to v11.0.0
-
-= 2021-03-10 version 3.0.5 =
-* Support for WordPress 5.7
-* Fixing pixel events for Contact Form 7 in WP >= 5.7
-
-= 2021-02-17 version 3.0.4 =
-* Update Facebook Business SDK to v9.0.4
-* Validating, sanitizing and escaping plugin settings
-
-= 2021-02-12 version 3.0.3 =
-* Adding nonce parameter to requests changing plugin settings
-
-= 2021-02-09 version 3.0.2 =
-* Removing Guzzle dependency
-
-= 2021-01-28 version 3.0.1 =
-* Support for WordPress 5.6
-* Adding banner for plugin review
-* Adding action_source parameter to Conversions API events
-* Update Business SDK to v9.0.3
-
-= 2021-01-06 version 3.0.0 =
-* Adding Facebook Business Extension based configuration
-* Renaming to Facebook for WordPress
-
-= 2020-12-08 version 2.2.2 =
-* Update Business SDK to v9.0.1
-
-= 2020-11-04 version 2.2.1 =
-* Stop sending events for internal users
-* Fix Contact Form 7 integration bug, send events only on form submit success
-* Update Facebook Business SDK to v8.0.2
-* Requires PHP 5.6 or greater
-* Sending ViewContent Conversions API event from WooCommerce
-* Support for WooCommerce through Pixel and Conversions API
-
-= 2020-08-14 version 2.2.0 =
-* Support for WordPress 5.5
-* Improved Conversions API event quality
-* Sending AddToCart and ViewContent events from Easy Digitial Downloads
-* New filter added before the Conversions API event is sent
-
-= 2020-06-18 version 2.1.0 =
-* Support for WooCommerce through the Conversions API
-
-= 2020-04-23 version 2.0.2 =
-* Support for WordPress 5.4
-* Fixing an Illegal string offset error with WP Forms
-* Fixing the event source url for Conversions API events
-
-= 2020-03-23 version 2.0.1 =
-* Fixing an Undefined index error
-
-= 2020-03-09 version 2.0.0 =
-* Added support for Conversions API [Learn More](https://developers.facebook.com/docs/marketing-api/conversions-api)
-
-= 2019-12-02 version 1.8.0 =
-* Support for WordPress 5.3
-* Fix Gravity Forms confirmation redirect
-
-= 2019-02-18 version 1.7.25 =
-* remove get_called_class from the codebase
-
-= 2019-02-10 version 1.7.24 =
-* Fix for PHP 5.3
-* Fix the Util function
-* Fix Ninja Form
-
-= 2019-01-29 version 1.7.23 =
-* Add Gravity Forms
-* Add Caldera Form
-* Add Formidable Form
-
-= 2019-01-20 version 1.7.22 =
-* fix css asset error
-
-= 2018-11-30 version 1.7.21 =
-* fix abstract static function
-
-= 2018-11-28 version 1.7.20 =
-* Change plugin file name, Add Supports for MailChimp for WordPress and WP eCommerce
-
-= 2018-11-20 version 1.7.19 =
-* Support php 5.3 onwards
-
-= 2018-11-09 version 1.7.18 =
-* Fix translation and set the advanced matching on by default
-
-= 2018-11-09 version 1.7.17 =
-* Fix Lead event
-
-= 2018-11-02 version 1.7.16 =
-* Fix advance matching
 
 == Upgrade Notice ==
 By upgrading to latest version you will have built in support to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase out of the most popular plugins.
