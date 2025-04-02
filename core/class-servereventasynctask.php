@@ -165,7 +165,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
         );
         }
     } catch ( \Exception $ex ) {
-        throw $ex;
+        error_log($ex);
     }
 
         return array();
@@ -207,7 +207,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
             }
             FacebookServerSideEvent::send( $events );
         } catch ( \Exception $ex ) {
-            throw $ex;
+            error_log($ex);
         }
     }
 }

@@ -148,7 +148,7 @@ class FacebookWordpressOpenBridge {
         self::start_new_php_session_if_needed();
 
         $event_name = $data['event_name'];
-        if ( in_array( $event_name, self::$blocked_events, true ) ) {
+        if ( in_array( $event_name, self::$blocked_events ) ) {
             return;
         }
         $event = ServerEventFactory::safe_create_event(

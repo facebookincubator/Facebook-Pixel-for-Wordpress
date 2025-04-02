@@ -450,7 +450,7 @@ class ServerEventFactory {
             );
             }
         } catch ( \Exception $e ) {
-            throw $e;
+            error_log(json_encode($e));
         }
 
         return $event;

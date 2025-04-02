@@ -196,7 +196,7 @@ class FacebookServerSideEvent {
 
             $response = $request->execute();
         } catch ( \Exception $e ) {
-            throw $e;
+            error_log(json_encode($e));
         }
     }
 
@@ -212,9 +212,9 @@ class FacebookServerSideEvent {
      * @return bool True if the event is an OpenBridge event, false otherwise.
      */
     private static function is_open_bridge_event( $events ) {
-    if ( count( $events ) !== 1 ) {
-        return false;
-    }
+        if ( count( $events ) !== 1 ) {
+            return false;
+        }
 
         $custom_data = $events[0]->getCustomData();
         if ( ! $custom_data ) {

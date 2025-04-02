@@ -177,7 +177,7 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 
         $code      = $with_script_tag ? "<script type='text/javascript'>" .
         $pixel_fbq_code_without_script .
-        '</script>' : $pixel_fbq_code_without_script;
+        "</script>" : $pixel_fbq_code_without_script;
         $param_str = $param;
         if ( is_array( $param ) ) {
             $param_str = wp_json_encode(

@@ -33,13 +33,14 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * Class FacebookPluginConfig
  */
 class FacebookPluginConfig {
-    const PLUGIN_VERSION     = '4.1.2';
-    const SOURCE             = 'wordpress';
-    const TEXT_DOMAIN        = 'official-facebook-pixel';
-    const PLUGIN_NAME        = 'Meta for WordPress';
-    const PLUGIN_REVIEW_PAGE =
+    const PLUGIN_VERSION                         = '4.1.2';
+    const SOURCE                                 = 'wordpress';
+    const TEXT_DOMAIN                            = 'official-facebook-pixel';
+    const PLUGIN_NAME                            = 'Meta for WordPress';
+    const PLUGIN_REVIEW_PAGE                     =
     'https://wordpress.org/plugins/official-facebook-pixel/#reviews';
 
+    const ADMIN_CAPABILITY                       = 'manage_options';
     const ADMIN_DISMISS_PIXEL_ID_NOTICE          = 'dismiss_pixel_id_notice';
     const ADMIN_IGNORE_PIXEL_ID_NOTICE           = 'ignore_pixel_id_notice';
     const ADMIN_DISMISS_SSAPI_NOTICE             = 'dismiss_ssapi__notice';
