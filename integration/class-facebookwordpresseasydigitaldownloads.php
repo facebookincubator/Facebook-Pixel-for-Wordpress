@@ -194,7 +194,8 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
             'facebook-pixel-add-to-cart',
             plugins_url( '../js/facebook_pixel_add_to_cart.js', __FILE__ ),
             array( 'jquery' ),
-            '1.0.0'
+            '1.0.0',
+            false
         );
 
         wp_localize_script(

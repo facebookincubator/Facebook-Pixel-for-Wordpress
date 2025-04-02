@@ -76,13 +76,15 @@ class FacebookWordpressSettingsPage {
             'fbe_allinone_script',
             plugins_url( '../js/fbe_allinone.js', __FILE__ ),
             array(),
-            '1.0.0'
+            '1.0.0',
+            false
         );
         wp_register_script(
             'meta_settings_page_script',
             plugins_url( '../js/settings_page.js', __FILE__ ),
             array(),
-            '1.0.0'
+            '1.0.0',
+            false
         );
         wp_register_style(
             'official-facebook-pixel',
@@ -409,7 +411,8 @@ class FacebookWordpressSettingsPage {
         'facebook-sdk',
         'https://connect.facebook.net/en_US/sdk.js',
         array(),
-        '1.0.0'
+        '1.0.0',
+        false
     );
         ?>
     <div id="meta-ads-plugin">
