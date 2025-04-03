@@ -676,7 +676,7 @@ class FacebookWordpressSettingsPage {
             true
         )
         ) {
-            if ( '0' == $is_fbe_installed && ! get_user_meta(
+            if ( '0' == $is_fbe_installed && ! get_user_meta( // phpcs:ignore Universal.Operators.StrictComparisons
                 get_current_user_id(),
                 FacebookPluginConfig::ADMIN_IGNORE_FBE_NOT_INSTALLED_NOTICE,
                 true
@@ -686,7 +686,7 @@ class FacebookWordpressSettingsPage {
                     array( $this, 'fbe_not_installed_notice' )
                 );
             }
-            if ( '1' == $is_fbe_installed && ! get_user_meta(
+            if ( '1' == $is_fbe_installed && ! get_user_meta( // phpcs:ignore Universal.Operators.StrictComparisons
                 get_current_user_id(),
                 FacebookPluginConfig::ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE,
                 true

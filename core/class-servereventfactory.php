@@ -358,21 +358,21 @@ class ServerEventFactory {
             isset( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] ) &&
             ! is_null( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] )
             ) {
-            if ( is_array( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] ) ) {
-                $external_ids = $user_data_array[ AAMSettingsFields::EXTERNAL_ID ];
-                $hashed_eids  = array();
-                foreach ( $external_ids as $k => $v ) {
-                    $hashed_eids[ $k ] = hash( 'sha256', $v );
+                if ( is_array( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] ) ) {
+                    $external_ids = $user_data_array[ AAMSettingsFields::EXTERNAL_ID ];
+                    $hashed_eids  = array();
+                    foreach ( $external_ids as $k => $v ) {
+                        $hashed_eids[ $k ] = hash( 'sha256', $v );
+                    }
+                    $user_data->setExternalIds( $hashed_eids );
+                } else {
+                    $user_data->setExternalId(
+                        hash(
+                            'sha256',
+                            $user_data_array[ AAMSettingsFields::EXTERNAL_ID ]
+                        )
+                    );
                 }
-                $user_data->setExternalIds( $hashed_eids );
-            } else {
-                $user_data->setExternalId(
-                    hash(
-                        'sha256',
-                        $user_data_array[ AAMSettingsFields::EXTERNAL_ID ]
-                    )
-                );
-            }
             }
             if (
             isset( $user_data_array[ AAMSettingsFields::PHONE ] )
@@ -450,7 +450,7 @@ class ServerEventFactory {
             );
             }
         } catch ( \Exception $e ) {
-            error_log(json_encode($e));
+            // WHAT TO DO HERE?
         }
 
         return $event;

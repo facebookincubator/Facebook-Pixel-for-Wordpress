@@ -145,28 +145,28 @@ class ServerEventAsyncTask extends \WP_Async_Task {
      * @throws \Exception If there was an preprocessing error.
      */
     protected function prepare_data( $data ) {
-    try {
-        if ( ! empty( $data ) ) {
-        $num_events = $data[1];
-        $events     = $data[0];
-        if ( 1 === $num_events ) {
-            $events = array( $events );
+        try {
+            if ( ! empty( $data ) ) {
+            $num_events = $data[1];
+            $events     = $data[0];
+            if ( 1 === $num_events ) {
+                $events = array( $events );
+            }
+            $events_as_array = array();
+            foreach ( $events as $event ) {
+                $events_as_array[] = $event->normalize();
+            }
+            return array(
+                'event_data' =>
+                base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+                    wp_json_encode( $events_as_array )
+                ),
+                'num_events' => $data[1],
+            );
+            }
+        } catch ( \Exception $ex ) {
+            throw $ex;
         }
-        $events_as_array = array();
-        foreach ( $events as $event ) {
-            $events_as_array[] = $event->normalize();
-        }
-        return array(
-            'event_data' =>
-            base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-                wp_json_encode( $events_as_array )
-            ),
-            'num_events' => $data[1],
-        );
-        }
-    } catch ( \Exception $ex ) {
-        error_log($ex);
-    }
 
         return array();
     }
@@ -207,7 +207,6 @@ class ServerEventAsyncTask extends \WP_Async_Task {
             }
             FacebookServerSideEvent::send( $events );
         } catch ( \Exception $ex ) {
-            error_log($ex);
         }
     }
 }

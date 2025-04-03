@@ -196,7 +196,7 @@ class FacebookServerSideEvent {
 
             $response = $request->execute();
         } catch ( \Exception $e ) {
-            error_log(json_encode($e));
+            throw $e;
         }
     }
 
