@@ -188,7 +188,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
                 wp_unslash( $_POST['num_events'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
             ) : null;
             if ( 0 === $num_events ) {
-            return;
+                return;
             }
             $events_as_array = json_decode(
                 base64_decode( // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -207,6 +207,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
             }
             FacebookServerSideEvent::send( $events );
         } catch ( \Exception $ex ) {
+            throw $ex;
         }
     }
 }
