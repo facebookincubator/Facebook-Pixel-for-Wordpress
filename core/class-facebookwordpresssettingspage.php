@@ -77,14 +77,14 @@ class FacebookWordpressSettingsPage {
             plugins_url( '../js/fbe_allinone.js', __FILE__ ),
             array(),
             '1.0.0',
-            true
+            false
         );
         wp_register_script(
             'meta_settings_page_script',
             plugins_url( '../js/settings_page.js', __FILE__ ),
             array(),
             '1.0.0',
-            true
+            false
         );
         wp_register_style(
             'official-facebook-pixel',
@@ -116,7 +116,7 @@ class FacebookWordpressSettingsPage {
         $this->options_page = add_options_page(
             FacebookPluginConfig::ADMIN_PAGE_TITLE,
             FacebookPluginConfig::ADMIN_MENU_TITLE,
-            'manage_options',
+            FacebookPluginConfig::ADMIN_CAPABILITY,
             FacebookPluginConfig::ADMIN_MENU_SLUG,
             array( $this, 'add_fbe_box' )
         );
@@ -145,7 +145,7 @@ class FacebookWordpressSettingsPage {
      * @return void
      */
     public function add_fbe_box() {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY ) ) {
             wp_die(
                 esc_html__(
                     'You do not have permissions to access this page',
@@ -412,7 +412,7 @@ class FacebookWordpressSettingsPage {
         'https://connect.facebook.net/en_US/sdk.js',
         array(),
         '1.0.0',
-        true
+        false
     );
         ?>
     <div id="meta-ads-plugin">
@@ -669,14 +669,14 @@ class FacebookWordpressSettingsPage {
         $is_fbe_installed  = FacebookWordpressOptions::get_is_fbe_installed();
         $current_screen_id = get_current_screen()->id;
 
-        if ( current_user_can( 'manage_options' ) &&
+        if ( current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY ) &&
         in_array(
             $current_screen_id,
             array( 'dashboard', 'plugins' ),
             true
         )
         ) {
-            if ( '0' === $is_fbe_installed && ! get_user_meta(
+            if ( '0' == $is_fbe_installed && ! get_user_meta( // phpcs:ignore Universal.Operators.StrictComparisons
                 get_current_user_id(),
                 FacebookPluginConfig::ADMIN_IGNORE_FBE_NOT_INSTALLED_NOTICE,
                 true
@@ -686,7 +686,7 @@ class FacebookWordpressSettingsPage {
                     array( $this, 'fbe_not_installed_notice' )
                 );
             }
-            if ( '1' === $is_fbe_installed && ! get_user_meta(
+            if ( '1' == $is_fbe_installed && ! get_user_meta( // phpcs:ignore Universal.Operators.StrictComparisons
                 get_current_user_id(),
                 FacebookPluginConfig::ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE,
                 true

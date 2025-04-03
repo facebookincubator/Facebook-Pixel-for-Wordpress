@@ -551,7 +551,7 @@ class FacebookWordpressOptions {
             $aam_settings->setEnabledAutomaticMatchingFields(
                 $settings_as_array['enabledAutomaticMatchingFields']
             );
-            if ( $installed_pixel === $aam_settings->getPixelId() ) {
+            if ( $installed_pixel == $aam_settings->getPixelId() ) { // phpcs:ignore Universal.Operators.StrictComparisons
             self::$aam_settings = $aam_settings;
             }
         }

@@ -145,28 +145,28 @@ class ServerEventAsyncTask extends \WP_Async_Task {
      * @throws \Exception If there was an preprocessing error.
      */
     protected function prepare_data( $data ) {
-    try {
-        if ( ! empty( $data ) ) {
-        $num_events = $data[1];
-        $events     = $data[0];
-        if ( 1 === $num_events ) {
-            $events = array( $events );
+        try {
+            if ( ! empty( $data ) ) {
+            $num_events = $data[1];
+            $events     = $data[0];
+            if ( 1 === $num_events ) {
+                $events = array( $events );
+            }
+            $events_as_array = array();
+            foreach ( $events as $event ) {
+                $events_as_array[] = $event->normalize();
+            }
+            return array(
+                'event_data' =>
+                base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+                    wp_json_encode( $events_as_array )
+                ),
+                'num_events' => $data[1],
+            );
+            }
+        } catch ( \Exception $ex ) {
+            throw $ex;
         }
-        $events_as_array = array();
-        foreach ( $events as $event ) {
-            $events_as_array[] = $event->normalize();
-        }
-        return array(
-            'event_data' =>
-            base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-                wp_json_encode( $events_as_array )
-            ),
-            'num_events' => $data[1],
-        );
-        }
-    } catch ( \Exception $ex ) {
-        throw $ex;
-    }
 
         return array();
     }
@@ -182,32 +182,28 @@ class ServerEventAsyncTask extends \WP_Async_Task {
      * @throws \Exception If there was an preprocessing error.
      */
     protected function run_action() {
-        try {
-            $num_events = isset( $_POST['num_events'] ) ? // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            sanitize_text_field(
-                wp_unslash( $_POST['num_events'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            ) : null;
-            if ( 0 === $num_events ) {
+        $num_events = isset( $_POST['num_events'] ) ? // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        sanitize_text_field(
+            wp_unslash( $_POST['num_events'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        ) : null;
+        if ( 0 === $num_events ) {
             return;
-            }
-            $events_as_array = json_decode(
-                base64_decode( // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-                    isset( $_POST['event_data'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-                    ? $_POST['event_data'] : null // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-                ),
-                true
-            );
-            if ( ! $events_as_array ) {
-                return;
-            }
-            $events = array();
-            foreach ( $events_as_array as $event_as_array ) {
-                $event    = $this->convert_array_to_event( $event_as_array );
-                $events[] = $event;
-            }
-            FacebookServerSideEvent::send( $events );
-        } catch ( \Exception $ex ) {
-            throw $ex;
         }
+        $events_as_array = json_decode(
+            base64_decode( // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                isset( $_POST['event_data'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                ? $_POST['event_data'] : null // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            ),
+            true
+        );
+        if ( ! $events_as_array ) {
+            return;
+        }
+        $events = array();
+        foreach ( $events_as_array as $event_as_array ) {
+            $event    = $this->convert_array_to_event( $event_as_array );
+            $events[] = $event;
+        }
+        FacebookServerSideEvent::send( $events );
     }
 }
