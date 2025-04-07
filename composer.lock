@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "facebook/php-business-sdk",
-            "version": "22.0.0",
+            "version": "22.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/facebook/facebook-php-business-sdk.git",
-                "reference": "c83b450089c557a1c64960103f3c658a429bb525"
+                "reference": "dbce4c3a96752b3e4b9bd310a9cc73eb96066cf6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/facebook/facebook-php-business-sdk/zipball/c83b450089c557a1c64960103f3c658a429bb525",
-                "reference": "c83b450089c557a1c64960103f3c658a429bb525",
+                "url": "https://api.github.com/repos/facebook/facebook-php-business-sdk/zipball/dbce4c3a96752b3e4b9bd310a9cc73eb96066cf6",
+                "reference": "dbce4c3a96752b3e4b9bd310a9cc73eb96066cf6",
                 "shasum": ""
             },
             "require": {
@@ -48,9 +48,9 @@
             ],
             "support": {
                 "issues": "https://github.com/facebook/facebook-php-business-sdk/issues",
-                "source": "https://github.com/facebook/facebook-php-business-sdk/tree/22.0.0"
+                "source": "https://github.com/facebook/facebook-php-business-sdk/tree/22.0.1"
             },
-            "time": "2025-02-13T21:08:40+00:00"
+            "time": "2025-03-28T23:54:57+00:00"
         },
         {
             "name": "techcrunch/wp-async-task",
@@ -3540,12 +3540,12 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "phing/phing": 5,
-        "techcrunch/wp-async-task": 20
+        "techcrunch/wp-async-task": 20,
+        "phing/phing": 5
     },
     "prefer-stable": true,
     "prefer-lowest": false,
-    "platform": {},
-    "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "2.3.0"
 }
