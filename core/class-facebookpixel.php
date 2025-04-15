@@ -144,12 +144,8 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
           return;
       }
 
-        $code = "
-          <script type='text/javascript'>
-            var url = window.location.origin + '?ob=open-bridge';
-            fbq('set', 'openbridge', '%s', url);
-          </script>
-        ";
+        $code = "var url = window.location.origin + '?ob=open-bridge';
+            fbq('set', 'openbridge', '%s', url);";
         return sprintf( $code, self::$pixel_id );
     }
 
@@ -161,19 +157,25 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
      * in the pixel init code.
      * @param array  $param        The parameters for the pixel event.
      * Defaults to an empty array.
+     * @param bool   $include_capi        Whether CAPI injection is
+     * enabled or not.
      * @param bool   $with_script_tag Whether to include the script tag in
      * the pixel init code. Defaults to true.
      */
     public static function get_pixel_init_code(
         $agent_string,
         $param = array(),
+        $include_capi,
         $with_script_tag = true
     ) {
         if ( empty( self::$pixel_id ) ) {
             return;
         }
 
-        $pixel_fbq_code_without_script = "fbq('%s', '%s'%s%s)";
+        $capi_integration_injection    = $include_capi ?
+            ( self::get_open_bridge_config_code() . PHP_EOL ) : '';
+        $pixel_fbq_code_without_script = $capi_integration_injection .
+            "fbq('%s', '%s'%s%s)";
 
         $code      = $with_script_tag ? "<script type='text/javascript'>" .
         $pixel_fbq_code_without_script .

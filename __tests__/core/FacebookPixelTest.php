@@ -161,14 +161,16 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
     FacebookPixel::set_pixel_id( '' );
     $code = FacebookPixel::get_pixel_init_code(
       'mockAgent',
-      array( 'key' => 'value' )
+      array( 'key' => 'value' ),
+      false
     );
     $this->assertEmpty( $code );
 
     FacebookPixel::set_pixel_id( '123' );
     $code = FacebookPixel::get_pixel_init_code(
       'mockAgent',
-      array( 'key' => 'value' )
+      array( 'key' => 'value' ),
+      false
     );
     $this->assertCodeStartAndEndWithScript( $code );
 
@@ -180,12 +182,33 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
     $code = FacebookPixel::get_pixel_init_code(
       'mockAgent',
       '{"key": "value"}',
+      false,
       false
     );
 
     $this->assertCodeStartAndEndWithNoScript( $code );
     $this->assertStringContainsString(
       "fbq('init', '123', {\"key\": \"value\"}, {\"agent\":\"mockAgent\"})",
+      $code
+    );
+
+    $code = FacebookPixel::get_pixel_init_code(
+      'mockAgent',
+      array( 'key' => 'value' ),
+      true
+    );
+
+    $this->assertCodeStartAndEndWithScript( $code );
+    $this->assertStringContainsString(
+      "var url = window.location.origin + '?ob=open-bridge';",
+      $code
+    );
+    $this->assertStringContainsString(
+      "fbq('set', 'openbridge', '123', url);",
+      $code
+    );
+    $this->assertStringContainsString(
+      "fbq('init', '123', {\"key\":\"value\"}, {\"agent\":\"mockAgent\"})",
       $code
     );
   }
