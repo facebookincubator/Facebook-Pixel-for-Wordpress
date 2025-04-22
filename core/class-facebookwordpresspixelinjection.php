@@ -129,12 +129,10 @@ class FacebookWordpressPixelInjection {
         echo FacebookPixel::get_pixel_base_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         $capi_integration_status =
         FacebookWordpressOptions::get_capi_integration_status();
-        if ( '1' === $capi_integration_status ) {
-            echo FacebookPixel::get_open_bridge_config_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        }
         echo FacebookPixel::get_pixel_init_code( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             FacebookWordpressOptions::get_agent_string(),
-            FacebookWordpressOptions::get_user_info() // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            FacebookWordpressOptions::get_user_info(), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            '1' === $capi_integration_status // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         );
         echo FacebookPixel::get_pixel_page_view_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     }
