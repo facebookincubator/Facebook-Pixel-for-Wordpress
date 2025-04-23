@@ -303,61 +303,60 @@ class ServerEventFactory {
     ) {
         $event = self::new_event( $event_name, $prefer_referrer_for_event_src );
 
-        try {
-            $data              = call_user_func_array( $callback, $arguments );
-            $data_split        = self::split_user_data_and_custom_data( $data );
-            $user_data_array   = $data_split['user_data'];
-            $custom_data_array = $data_split['custom_data'];
-            $user_data_array   = AAMFieldsExtractor::get_normalized_user_data(
-                $user_data_array
-            );
+        $data              = call_user_func_array( $callback, $arguments );
+        $data_split        = self::split_user_data_and_custom_data( $data );
+        $user_data_array   = $data_split['user_data'];
+        $custom_data_array = $data_split['custom_data'];
+        $user_data_array   = AAMFieldsExtractor::get_normalized_user_data(
+            $user_data_array
+        );
 
-            $user_data = $event->getUserData();
-            if ( isset( $data['fbp'] ) ) {
-                $user_data->setFbp( $data['fbp'] );
-            }
-            if ( isset( $data['fbc'] ) ) {
-                $user_data->setFbc( $data['fbc'] );
-            }
-            if (
-            isset( $user_data_array[ AAMSettingsFields::EMAIL ] )
-            ) {
-                $user_data->setEmail(
-                    $user_data_array[ AAMSettingsFields::EMAIL ]
-                );
-            }
-            if (
-            isset( $user_data_array[ AAMSettingsFields::FIRST_NAME ] )
-            ) {
-                $user_data->setFirstName(
-                    $user_data_array[ AAMSettingsFields::FIRST_NAME ]
-                );
-            }
-            if (
-            isset( $user_data_array[ AAMSettingsFields::LAST_NAME ] )
-            ) {
-                $user_data->setLastName(
-                    $user_data_array[ AAMSettingsFields::LAST_NAME ]
-                );
-            }
-            if (
-            isset( $user_data_array[ AAMSettingsFields::GENDER ] )
-            ) {
-                $user_data->setGender(
-                    $user_data_array[ AAMSettingsFields::GENDER ]
-                );
-            }
-            if (
-            isset( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] )
-            ) {
-                $user_data->setDateOfBirth(
-                    $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ]
-                );
-            }
-            if (
-            isset( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] ) &&
-            ! is_null( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] )
-            ) {
+        $user_data = $event->getUserData();
+        if ( isset( $data['fbp'] ) ) {
+            $user_data->setFbp( $data['fbp'] );
+        }
+        if ( isset( $data['fbc'] ) ) {
+            $user_data->setFbc( $data['fbc'] );
+        }
+        if (
+        isset( $user_data_array[ AAMSettingsFields::EMAIL ] )
+        ) {
+            $user_data->setEmail(
+                $user_data_array[ AAMSettingsFields::EMAIL ]
+            );
+        }
+        if (
+        isset( $user_data_array[ AAMSettingsFields::FIRST_NAME ] )
+        ) {
+            $user_data->setFirstName(
+                $user_data_array[ AAMSettingsFields::FIRST_NAME ]
+            );
+        }
+        if (
+        isset( $user_data_array[ AAMSettingsFields::LAST_NAME ] )
+        ) {
+            $user_data->setLastName(
+                $user_data_array[ AAMSettingsFields::LAST_NAME ]
+            );
+        }
+        if (
+        isset( $user_data_array[ AAMSettingsFields::GENDER ] )
+        ) {
+            $user_data->setGender(
+                $user_data_array[ AAMSettingsFields::GENDER ]
+            );
+        }
+        if (
+        isset( $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ] )
+        ) {
+            $user_data->setDateOfBirth(
+                $user_data_array[ AAMSettingsFields::DATE_OF_BIRTH ]
+            );
+        }
+        if (
+        isset( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] ) &&
+        ! is_null( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] )
+        ) {
             if ( is_array( $user_data_array[ AAMSettingsFields::EXTERNAL_ID ] ) ) {
                 $external_ids = $user_data_array[ AAMSettingsFields::EXTERNAL_ID ];
                 $hashed_eids  = array();
@@ -373,84 +372,81 @@ class ServerEventFactory {
                     )
                 );
             }
-            }
-            if (
-            isset( $user_data_array[ AAMSettingsFields::PHONE ] )
-            ) {
-                $user_data->setPhone(
-                    $user_data_array[ AAMSettingsFields::PHONE ]
-                );
-            }
-            if (
-            isset( $user_data_array[ AAMSettingsFields::CITY ] )
-            ) {
-                $user_data->setCity(
-                    $user_data_array[ AAMSettingsFields::CITY ]
-                );
-            }
-            if (
-            isset( $user_data_array[ AAMSettingsFields::STATE ] )
-            ) {
-                $user_data->setState(
-                    $user_data_array[ AAMSettingsFields::STATE ]
-                );
-            }
-            if (
-            isset( $user_data_array[ AAMSettingsFields::ZIP_CODE ] )
-            ) {
-                $user_data->setZipCode(
-                    $user_data_array[ AAMSettingsFields::ZIP_CODE ]
-                );
-            }
-            if (
-            isset( $user_data_array[ AAMSettingsFields::COUNTRY ] )
-            ) {
-                $user_data->setCountryCode(
-                    $user_data_array[ AAMSettingsFields::COUNTRY ]
-                );
-            }
-
-            $custom_data = $event->getCustomData();
-            $custom_data->addCustomProperty(
-                'fb_integration_tracking',
-                $integration
+        }
+        if (
+        isset( $user_data_array[ AAMSettingsFields::PHONE ] )
+        ) {
+            $user_data->setPhone(
+                $user_data_array[ AAMSettingsFields::PHONE ]
             );
-
-            if ( ! empty( $data['currency'] ) ) {
-                $custom_data->setCurrency( $custom_data_array['currency'] );
-            }
-
-            if ( ! empty( $data['value'] ) ) {
-                $custom_data->setValue( $custom_data_array['value'] );
-            }
-
-            if ( ! empty( $data['contents'] ) ) {
-                $custom_data->setContents( $custom_data_array['contents'] );
-            }
-
-            if ( ! empty( $data['content_ids'] ) ) {
-                $custom_data->setContentIds( $custom_data_array['content_ids'] );
-            }
-
-            if ( ! empty( $data['content_type'] ) ) {
-                $custom_data->setContentType( $custom_data_array['content_type'] );
-            }
-
-            if ( ! empty( $data['num_items'] ) ) {
-                $custom_data->setNumItems( $custom_data_array['num_items'] );
-            }
-
-            if ( ! empty( $data['content_name'] ) ) {
-                $custom_data->setContentName( $custom_data_array['content_name'] );
-            }
-
-            if ( ! empty( $data['content_category'] ) ) {
-            $custom_data->setContentCategory(
-                $custom_data_array['content_category']
+        }
+        if (
+        isset( $user_data_array[ AAMSettingsFields::CITY ] )
+        ) {
+            $user_data->setCity(
+                $user_data_array[ AAMSettingsFields::CITY ]
             );
-            }
-        } catch ( \Exception $e ) {
-            throw $e;
+        }
+        if (
+        isset( $user_data_array[ AAMSettingsFields::STATE ] )
+        ) {
+            $user_data->setState(
+                $user_data_array[ AAMSettingsFields::STATE ]
+            );
+        }
+        if (
+        isset( $user_data_array[ AAMSettingsFields::ZIP_CODE ] )
+        ) {
+            $user_data->setZipCode(
+                $user_data_array[ AAMSettingsFields::ZIP_CODE ]
+            );
+        }
+        if (
+        isset( $user_data_array[ AAMSettingsFields::COUNTRY ] )
+        ) {
+            $user_data->setCountryCode(
+                $user_data_array[ AAMSettingsFields::COUNTRY ]
+            );
+        }
+
+        $custom_data = $event->getCustomData();
+        $custom_data->addCustomProperty(
+            'fb_integration_tracking',
+            $integration
+        );
+
+        if ( ! empty( $data['currency'] ) ) {
+            $custom_data->setCurrency( $custom_data_array['currency'] );
+        }
+
+        if ( ! empty( $data['value'] ) ) {
+            $custom_data->setValue( $custom_data_array['value'] );
+        }
+
+        if ( ! empty( $data['contents'] ) ) {
+            $custom_data->setContents( $custom_data_array['contents'] );
+        }
+
+        if ( ! empty( $data['content_ids'] ) ) {
+            $custom_data->setContentIds( $custom_data_array['content_ids'] );
+        }
+
+        if ( ! empty( $data['content_type'] ) ) {
+            $custom_data->setContentType( $custom_data_array['content_type'] );
+        }
+
+        if ( ! empty( $data['num_items'] ) ) {
+            $custom_data->setNumItems( $custom_data_array['num_items'] );
+        }
+
+        if ( ! empty( $data['content_name'] ) ) {
+            $custom_data->setContentName( $custom_data_array['content_name'] );
+        }
+
+        if ( ! empty( $data['content_category'] ) ) {
+        $custom_data->setContentCategory(
+            $custom_data_array['content_category']
+        );
         }
 
         return $event;
