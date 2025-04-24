@@ -164,7 +164,7 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
      */
     public static function get_pixel_init_code(
         $agent_string,
-        $param = array(),
+        $param,
         $include_capi,
         $with_script_tag = true
     ) {
