@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bcfa334bbed9b46e9f878d2ca61bc6a0",
+    "content-hash": "8806b961cdc52f774ecbf00616a1a1c3",
     "packages": [
         {
             "name": "facebook/php-business-sdk",
@@ -112,16 +112,16 @@
     "packages-dev": [
         {
             "name": "10up/wp_mock",
-            "version": "1.0.1",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/10up/wp_mock.git",
-                "reference": "48b7f22934a4351e45e336f09263ee27fc9ddcbe"
+                "reference": "f25b5895ed31bf5e7036fe0c666664364ae011c2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/10up/wp_mock/zipball/48b7f22934a4351e45e336f09263ee27fc9ddcbe",
-                "reference": "48b7f22934a4351e45e336f09263ee27fc9ddcbe",
+                "url": "https://api.github.com/repos/10up/wp_mock/zipball/f25b5895ed31bf5e7036fe0c666664364ae011c2",
+                "reference": "f25b5895ed31bf5e7036fe0c666664364ae011c2",
                 "shasum": ""
             },
             "require": {
@@ -160,9 +160,9 @@
             "description": "A mocking library to take the pain out of unit testing for WordPress",
             "support": {
                 "issues": "https://github.com/10up/wp_mock/issues",
-                "source": "https://github.com/10up/wp_mock/tree/1.0.1"
+                "source": "https://github.com/10up/wp_mock/tree/1.1.0"
             },
-            "time": "2024-01-22T02:22:57+00:00"
+            "time": "2025-03-12T00:36:13+00:00"
         },
         {
             "name": "antecedent/patchwork",
@@ -3540,12 +3540,12 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "phing/phing": 5,
-        "techcrunch/wp-async-task": 20
+        "techcrunch/wp-async-task": 20,
+        "phing/phing": 5
     },
     "prefer-stable": true,
     "prefer-lowest": false,
-    "platform": {},
-    "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "2.3.0"
 }
