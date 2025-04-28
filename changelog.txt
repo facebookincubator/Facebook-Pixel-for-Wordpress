@@ -1,4 +1,9 @@
 *** Facebook for WordPress Changelog ***
+= 2025-04-23 version 4.1.3 =
+* Added the OB script to the same block as Pixel init
+* Minor improvements to the plugin's overall functionality
+* Added a template for PRs
+
 = 2025-03-20 version 4.1.2 =
 * Add back CORS headers on the openbridge calls
 * Updated the wordpress.org directory tags
