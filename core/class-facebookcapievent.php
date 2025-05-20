@@ -255,6 +255,10 @@ class FacebookCapiEvent {
      * @return array An array of the invalid custom data keys.
      */
     public function get_invalid_event_custom_data( $custom_data ) {
+        if ( empty( $custom_data ) ) {
+            return array();
+        }
+
         $invalid_custom_data = array();
         foreach ( $custom_data as $key => $value ) {
           if ( ! in_array( $key, self::VALID_CUSTOM_DATA, true ) ) {

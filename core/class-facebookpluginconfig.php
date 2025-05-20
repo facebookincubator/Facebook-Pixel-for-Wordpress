@@ -33,7 +33,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * Class FacebookPluginConfig
  */
 class FacebookPluginConfig {
-    const PLUGIN_VERSION     = '4.1.2';
+    const PLUGIN_VERSION     = '4.1.3';
     const SOURCE             = 'wordpress';
     const TEXT_DOMAIN        = 'official-facebook-pixel';
     const PLUGIN_NAME        = 'Meta for WordPress';
