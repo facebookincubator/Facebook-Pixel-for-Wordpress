@@ -508,12 +508,16 @@ class FacebookWordpressOptions {
      * @return string The constructed agent string.
      */
     public static function get_agent_string() {
-    return sprintf(
-        '%s-%s-%s',
-        self::$version_info['source'],
-        self::$version_info['version'],
-        self::$version_info['pluginVersion']
-    );
+        $source = self::$version_info['source'];
+        if (defined('IS_WPCOM') && IS_WPCOM) {
+            $source .= '_com';
+        }
+        return sprintf(
+            '%s-%s-%s',
+            $source,
+            self::$version_info['version'],
+            self::$version_info['pluginVersion']
+        );
     }
 
     /**
