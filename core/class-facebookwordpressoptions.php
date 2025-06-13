@@ -510,7 +510,7 @@ class FacebookWordpressOptions {
      public static function get_agent_string() {
         $source = self::$version_info['source'];
 
-        if ( self::is_wordpress_com_hosted() ) {
+        if ( 1 === get_option( 'is_wordpress_com_hosted' ) ) {
             $source .= '_com';
         }
 
@@ -536,9 +536,9 @@ class FacebookWordpressOptions {
         $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
         if ( ! is_wp_error( $response ) && isset( $response_body['ID'] ) ) {
-            return true;
+            return 1;
         }
-        return false;
+        return 0;
     }
 
     /**
