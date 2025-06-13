@@ -511,7 +511,7 @@ class FacebookWordpressOptions {
         $source = self::$version_info['source'];
 
         if ( 1 === get_option( 'is_wordpress_com_hosted' ) ) {
-            $source .= '_com';
+            $source .= '_1';
         }
 
         return sprintf(
