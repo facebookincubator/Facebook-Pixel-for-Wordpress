@@ -510,7 +510,7 @@ class FacebookWordpressOptions {
      public static function get_agent_string() {
         $source = self::$version_info['source'];
 
-        if ( 1 === get_option( 'is_wordpress_com_hosted' ) ) {
+        if ( function_exists( 'get_option' ) && 1 === get_option( 'is_wordpress_com_hosted' ) ) {
             $source .= '_1';
         }
 
