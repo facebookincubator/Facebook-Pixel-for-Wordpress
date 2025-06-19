@@ -228,7 +228,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
             $product_id,
             'product_cat'
         );
-        return count( $categories ) > 0 ? $categories[0]->name : null;
+        return ! empty( $categories ) && count( $categories ) > 0 ? $categories[0]->name : null;
     }
 
     /**
