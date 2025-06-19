@@ -507,13 +507,38 @@ class FacebookWordpressOptions {
      *
      * @return string The constructed agent string.
      */
-    public static function get_agent_string() {
-    return sprintf(
-        '%s-%s-%s',
-        self::$version_info['source'],
-        self::$version_info['version'],
-        self::$version_info['pluginVersion']
-    );
+     public static function get_agent_string() {
+        $source = self::$version_info['source'];
+
+        if ( function_exists( 'get_option' ) && 1 === get_option( 'is_wordpress_com_hosted' ) ) {
+            $source .= '_1';
+        }
+
+        return sprintf(
+            '%s-%s-%s',
+            $source,
+            self::$version_info['version'],
+            self::$version_info['pluginVersion']
+        );
+    }
+
+    /**
+     * Determines whether the current site is hosted on WordPress.com.
+     *
+     * This method makes a request to the WordPress.com REST API to check if the
+     * current site is hosted on WordPress.com.
+     *
+     * @return bool Whether the current site is hosted on WordPress.com.
+     */
+    public static function is_wordpress_com_hosted() {
+        $api_url       = 'https://public-api.wordpress.com/rest/v1.1/sites/' . wp_parse_url( get_site_url() )['host'];
+        $response      = wp_remote_get( $api_url );
+        $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( ! is_wp_error( $response ) && isset( $response_body['ID'] ) ) {
+            return 1;
+        }
+        return 0;
     }
 
     /**
