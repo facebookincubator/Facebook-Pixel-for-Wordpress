@@ -1,4 +1,8 @@
 *** Facebook for WordPress Changelog ***
+= 2025-06-19 version 4.1.4 =
+* Fixed an issue with uncategorized products
+* Minor improvements to the overall functionality
+
 = 2025-04-23 version 4.1.3 =
 * Added the OB script to the same block as Pixel init
 * Minor improvements to the plugin's overall functionality

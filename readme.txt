@@ -2,9 +2,9 @@
 Contributors: facebook
 Tags: Facebook, Meta, Conversions API, Pixel, Meta Ads
 Requires at least: 5.7
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 4.1.3
+Stable tag: 4.1.4
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,10 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
+= 2025-06-19 version 4.1.4 =
+* Fixed an issue with uncategorized products
+* Minor improvements to the overall functionality
+
 = 2025-04-23 version 4.1.3 =
 * Added the OB script to the same block as Pixel init
 * Minor improvements to the plugin's overall functionality
@@ -70,9 +74,6 @@ Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can
 * Minor improvements to the Plugin Settings page
 * Move the noscript tag to body element
 * improve the check for product categories
-
-= 2024-09-24 version 4.0.1 =
-* Updated the readme.txt to point to Meta Privacy Policy
 
 == Upgrade Notice ==
 By upgrading to latest version you will have built in support to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase out of the most popular plugins.
