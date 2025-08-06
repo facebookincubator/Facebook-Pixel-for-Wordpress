@@ -67,7 +67,12 @@ class FacebookForWordpress {
     $this->register_settings_page();
 
     if ( false === get_option( 'is_wordpress_com_hosted' ) ) {
-        update_option( 'is_wordpress_com_hosted', FacebookWordpressOptions::is_wordpress_com_hosted() );
+        if ( false === get_transient( 'facebook_wpcom_check' ) ) {
+            $is_wp_com_hosted = FacebookWordpressOptions::is_wordpress_com_hosted();
+
+            update_option( 'is_wordpress_com_hosted', $is_wp_com_hosted );
+            set_transient( 'facebook_wpcom_check', 1, HOUR_IN_SECONDS );
+        }
     }
 
     new ServerEventAsyncTask();
