@@ -72,7 +72,7 @@ class FacebookForWordpress {
     }
 
     private static function update_db_for_wpcom() {
-        if ( false !== get_option( 'is_wordpress_com_hosted' ) ) { 
+        if ( false !== get_option( 'is_wordpress_com_hosted' ) ) {
             return;
         }
 
