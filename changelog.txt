@@ -1,4 +1,8 @@
 *** Facebook for WordPress Changelog ***
+= 2025-08-14 version 4.1.5 =
+- Fixed the Pixel url, so it points to the Prod version instead of Canary
+- Minor fix for the agent string
+
 = 2025-06-19 version 4.1.4 =
 * Fixed an issue with uncategorized products
 * Minor improvements to the overall functionality
