@@ -4,7 +4,7 @@ Tags: Facebook, Meta, Conversions API, Pixel, Meta Ads
 Requires at least: 5.7
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 4.1.4
+Stable tag: 4.1.5
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
