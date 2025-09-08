@@ -84,9 +84,9 @@ class PixelRenderer {
     /**
      * Generate the Facebook Pixel track code for an event
      *
-     * @param \FacebookPixelPlugin\Core\Event $event The event to
+     * @param \FacebookAds\Object\ServerSide\Event $event                   The event to
      * generate the track code for.
-     * @param bool                            $fb_integration_tracking Whether
+     * @param bool                                      $fb_integration_tracking Whether
      * to track the event as a Facebook integration.
      *
      * @return string The generated track code
@@ -109,9 +109,10 @@ class PixelRenderer {
         $class = new ReflectionClass(
             'FacebookPixelPlugin\Core\FacebookPixel'
         );
+
         return sprintf(
             self::FBQ_EVENT_CODE,
-            $class->getConstant( strtoupper( $event->getEventName() ) ) !== false ?
+            $class->getConstant( strtoupper( (string) $event->getEventName() ) ) !== false ?
             self::TRACK : self::TRACK_CUSTOM,
             $event->getEventName(),
             wp_json_encode( $normalized_custom_data, JSON_PRETTY_PRINT ),

@@ -759,10 +759,10 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $aam_settings->setPixelId( $pixel_id );
     $aam_settings->setEnableAutomaticMatching( $enable_aam );
     $aam_settings->setEnabledAutomaticMatchingFields( $enable_aam_fields );
-    $this->mocked_options = \Mockery::mock(
+    $mocked_options = \Mockery::mock(
       'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
     );
-    $this->mocked_options->shouldReceive( 'get_aam_settings' )
+    $mocked_options->shouldReceive( 'get_aam_settings' )
       ->andReturn( $aam_settings );
   }
 }

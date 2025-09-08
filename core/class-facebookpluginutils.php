@@ -40,9 +40,8 @@ class FacebookPluginUtils {
      * @param string $pixel_id The id to check.
      * @return bool
      */
-    public static function is_positive_integer( $pixel_id ) {
-        return isset( $pixel_id )
-        && ctype_digit( $pixel_id ) && '0' !== $pixel_id;
+    public static function is_positive_integer(string $pixel_id ) {
+        return ctype_digit( $pixel_id ) && '0' !== $pixel_id;
     }
 
     /**

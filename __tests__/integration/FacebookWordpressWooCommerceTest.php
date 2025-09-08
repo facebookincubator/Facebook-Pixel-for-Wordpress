@@ -533,7 +533,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
      * Event Code for WooCommerce and that the server-side event tracking
      * records the event with the correct user and custom data attributes.
      */
-    public function testEnqueuePixelEvent() {
+  public function testEnqueuePixelEvent() {
     \WP_Mock::userFunction(
         'wp_json_encode',
         array(
