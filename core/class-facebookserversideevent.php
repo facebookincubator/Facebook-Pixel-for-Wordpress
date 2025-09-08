@@ -193,7 +193,7 @@ class FacebookServerSideEvent {
 
             $response = $request->execute();
         } catch ( \Exception $e ) {
-            error_log('FB Send Events Exception: ' . $e->getMessage());
+            error_log('[Facebook Pixel for Wordpress] Send Events Exception: ' . $e->getMessage());
             error_log($e->getTraceAsString());
         }
     }
