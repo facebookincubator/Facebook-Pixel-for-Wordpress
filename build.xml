@@ -26,13 +26,10 @@
     </fileset>
 
     <!-- Fileset for files using GuzzleHttp-->
-    <fileset dir="${buildsourcedir}/vendor/facebook/php-business-sdk" id="files_using_guzzle">
-        <include name="src/FacebookAds/Object/ServerSide/EventRequestAsync.php" />
-        <include name="src/FacebookAds/Object/ServerSide/BatchProcessor.php" />
-        <include name="src/FacebookAds/Object/ServerSide/AsyncClient.php" />
-        <include name="test/FacebookAdsTest/Object/ServerSide/BatchProcessorTest.php" />
-        <include name="test/FacebookAdsTest/Object/ServerSide/EventRequestAsyncTest.php" />
-        <include name="test/FacebookAdsTest/Object/ServerSide/AsyncClientTest.php" />
+    <fileset dir="${basedir}" id="files_using_guzzle">
+        <include name="FacebookAds/Object/ServerSide/EventRequestAsync.php" />
+        <include name="FacebookAds/Object/ServerSide/BatchProcessor.php" />
+        <include name="FacebookAds/Object/ServerSide/AsyncClient.php" />
     </fileset>
 
     <!-- ============================================  -->
