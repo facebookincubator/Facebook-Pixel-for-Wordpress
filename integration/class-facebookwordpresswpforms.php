@@ -35,8 +35,8 @@ use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\PixelRenderer;
-use FacebookAds\Object\ServerSide\Event;
-use FacebookAds\Object\ServerSide\UserData;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 
 /**
  * FacebookWordpressWPForms class.

@@ -1,0 +1,24 @@
+<?php
+ /*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+namespace FacebookPixelPlugin\FacebookAds\Object\Values;
+
+use FacebookPixelPlugin\FacebookAdsEnum\AbstractEnum;
+
+/**
+ * @method static BusinessRoles getInstance()
+ */
+class BusinessRoles extends AbstractEnum {
+
+  const ADMIN  = 'ADMIN';
+  const EMPLOYEE = 'EMPLOYEE';
+  const OWNER = 'OWNER';
+  const AGENCY = 'AGENCY';
+
+}

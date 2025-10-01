@@ -27,7 +27,7 @@
 
 namespace FacebookPixelPlugin\Core;
 
-use FacebookAds\Object\ServerSide\Normalizer;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Normalizer;
 
 /**
  * Class AAMFieldsExtractor

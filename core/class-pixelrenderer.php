@@ -28,7 +28,7 @@
 namespace FacebookPixelPlugin\Core;
 
 use ReflectionClass;
-use FacebookAds\Object\ServerSide\CustomData;
+use FacebookPixelPlugin\FacebookAdsObject\ServerSide\CustomData;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
