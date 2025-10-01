@@ -27,7 +27,7 @@
 
 namespace FacebookPixelPlugin\Core;
 
-use FacebookPixelPlugin\FacebookAdsApiConfig;
+use FacebookPixelPlugin\FacebookAds\ApiConfig;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
