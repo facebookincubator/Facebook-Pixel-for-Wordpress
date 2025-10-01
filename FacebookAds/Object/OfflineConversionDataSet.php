@@ -11,14 +11,14 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\OfflineConversionDataSetFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountActionSourceValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\BusinessActionSourceValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CustomAudienceActionSourceValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OfflineConversionDataSetUploadOrderValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OfflineConversionDataSetUploadSortByValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\OfflineConversionDataSetFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdAccountActionSourceValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\BusinessActionSourceValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CustomAudienceActionSourceValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OfflineConversionDataSetUploadOrderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OfflineConversionDataSetUploadSortByValues;
 
 /**
  * This class is auto-generated.

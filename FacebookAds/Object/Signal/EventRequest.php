@@ -25,10 +25,10 @@
 namespace FacebookPixelPlugin\FacebookAds\Object\Signal;
 
 use FacebookPixelPlugin\FacebookAdsApi;
-use FacebookPixelPlugin\FacebookAdsObject\AdsPixel;
-use FacebookPixelPlugin\FacebookAdsObject\Page;
-use FacebookPixelPlugin\FacebookAdsObject\BusinessDataAPI\EventRequest as BusinessDataEventRequest;
-use FacebookPixelPlugin\FacebookAdsObject\ServerSide\EventRequest as ServerSideEventRequest;
+use FacebookPixelPlugin\FacebookAds\Object\AdsPixel;
+use FacebookPixelPlugin\FacebookAds\Object\Page;
+use FacebookPixelPlugin\FacebookAds\Object\BusinessDataAPI\EventRequest as BusinessDataEventRequest;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventRequest as ServerSideEventRequest;
 
 /**
  * Event Request

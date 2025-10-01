@@ -24,8 +24,8 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object\Signal;
 
-use FacebookPixelPlugin\FacebookAdsObject\BusinessDataAPI\Event as BusinessDataEvent;
-use FacebookPixelPlugin\FacebookAdsObject\ServerSide\Event as ServerSideEvent;
+use FacebookPixelPlugin\FacebookAds\Object\BusinessDataAPI\Event as BusinessDataEvent;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event as ServerSideEvent;
 
 
 class Event {

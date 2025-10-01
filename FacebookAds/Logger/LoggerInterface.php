@@ -24,8 +24,8 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Logger;
 
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
-use FacebookPixelPlugin\FacebookAdsHttp\ResponseInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\ResponseInterface;
 
 interface LoggerInterface {
 

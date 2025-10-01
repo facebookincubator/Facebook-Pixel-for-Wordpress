@@ -11,13 +11,13 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\ManagedPartnerBusinessFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ManagedPartnerBusinessPartitionTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ManagedPartnerBusinessSurveyBusinessTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ManagedPartnerBusinessTimezoneIdValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ManagedPartnerBusinessVerticalValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\ManagedPartnerBusinessFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ManagedPartnerBusinessPartitionTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ManagedPartnerBusinessSurveyBusinessTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ManagedPartnerBusinessTimezoneIdValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ManagedPartnerBusinessVerticalValues;
 
 /**
  * This class is auto-generated.

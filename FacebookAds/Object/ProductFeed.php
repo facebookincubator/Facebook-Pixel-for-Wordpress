@@ -11,19 +11,19 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\ProductFeedFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductFeedDelimiterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductFeedEncodingValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductFeedFeedTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductFeedIngestionSourceTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductFeedItemSubTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductFeedOverrideTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductFeedQuotedFieldsModeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductFeedRuleRuleTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductItemErrorPriorityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductItemErrorTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\ProductFeedFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductFeedDelimiterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductFeedEncodingValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductFeedFeedTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductFeedIngestionSourceTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductFeedItemSubTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductFeedOverrideTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductFeedQuotedFieldsModeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductFeedRuleRuleTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductItemErrorPriorityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductItemErrorTypeValues;
 
 /**
  * This class is auto-generated.

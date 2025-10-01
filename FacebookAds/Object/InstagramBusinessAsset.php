@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\InstagramBusinessAssetFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InstagramBusinessAssetPermittedTasksValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InstagramBusinessAssetTasksValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\InstagramBusinessAssetFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InstagramBusinessAssetPermittedTasksValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InstagramBusinessAssetTasksValues;
 
 /**
  * This class is auto-generated.

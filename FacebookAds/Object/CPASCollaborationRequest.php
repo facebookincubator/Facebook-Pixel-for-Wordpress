@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\CPASCollaborationRequestFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CPASCollaborationRequestRequesterAgencyOrBrandValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\CPASCollaborationRequestFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CPASCollaborationRequestRequesterAgencyOrBrandValues;
 
 /**
  * This class is auto-generated.

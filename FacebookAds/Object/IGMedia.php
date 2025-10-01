@@ -11,12 +11,12 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\IGMediaFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InstagramInsightsResultBreakdownValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InstagramInsightsResultMetricValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InstagramInsightsResultPeriodValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\IGMediaFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InstagramInsightsResultBreakdownValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InstagramInsightsResultMetricValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InstagramInsightsResultPeriodValues;
 
 /**
  * This class is auto-generated.

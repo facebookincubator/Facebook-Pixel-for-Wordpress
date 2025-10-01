@@ -11,13 +11,13 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\BusinessAssetGroupFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\BusinessAssetGroupAdaccountTasksValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\BusinessAssetGroupOfflineConversionDataSetTasksValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\BusinessAssetGroupPageTasksValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\BusinessAssetGroupPixelTasksValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\BusinessAssetGroupFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\BusinessAssetGroupAdaccountTasksValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\BusinessAssetGroupOfflineConversionDataSetTasksValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\BusinessAssetGroupPageTasksValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\BusinessAssetGroupPixelTasksValues;
 
 /**
  * This class is auto-generated.

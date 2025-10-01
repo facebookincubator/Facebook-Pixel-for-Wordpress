@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\FundraiserPersonToCharityFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\FundraiserPersonToCharityFundraiserTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\FundraiserPersonToCharityFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\FundraiserPersonToCharityFundraiserTypeValues;
 
 /**
  * This class is auto-generated.

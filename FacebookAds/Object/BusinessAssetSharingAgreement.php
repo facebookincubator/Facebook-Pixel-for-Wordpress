@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\BusinessAssetSharingAgreementFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\BusinessAssetSharingAgreementRequestStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\BusinessAssetSharingAgreementFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\BusinessAssetSharingAgreementRequestStatusValues;
 
 /**
  * This class is auto-generated.

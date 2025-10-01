@@ -26,8 +26,8 @@ namespace FacebookPixelPlugin\FacebookAds\Object\Signal;
 
 use Util;
 
-use FacebookPixelPlugin\FacebookAdsObject\BusinessDataAPI\UserData as BusinessDataUserData;
-use FacebookPixelPlugin\FacebookAdsObject\ServerSide\UserData as ServerSideUserData;
+use FacebookPixelPlugin\FacebookAds\Object\BusinessDataAPI\UserData as BusinessDataUserData;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData as ServerSideUserData;
 
 /**
  * UserData is a set of identifiers Facebook can use for targeted attribution.

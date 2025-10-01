@@ -11,12 +11,12 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\HotelFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\HotelImageFetchStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\HotelVisibilityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OverrideDetailsTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\HotelFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\HotelImageFetchStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\HotelVisibilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OverrideDetailsTypeValues;
 
 /**
  * This class is auto-generated.

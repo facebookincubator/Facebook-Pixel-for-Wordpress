@@ -11,12 +11,12 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\ReachFrequencyPredictionFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ReachFrequencyPredictionActionValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ReachFrequencyPredictionBuyingTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ReachFrequencyPredictionInstreamPackagesValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\ReachFrequencyPredictionFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ReachFrequencyPredictionActionValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ReachFrequencyPredictionBuyingTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ReachFrequencyPredictionInstreamPackagesValues;
 
 /**
  * This class is auto-generated.

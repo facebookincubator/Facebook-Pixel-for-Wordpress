@@ -24,10 +24,10 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Logger;
 
-use FacebookPixelPlugin\FacebookAdsHttp\FileParameter;
-use FacebookPixelPlugin\FacebookAdsHttp\Parameters;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
-use FacebookPixelPlugin\FacebookAdsHttp\ResponseInterface;
+use FacebookPixelPlugin\FacebookAds\Http\FileParameter;
+use FacebookPixelPlugin\FacebookAds\Http\Parameters;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\ResponseInterface;
 use FacebookPixelPlugin\FacebookAdsLogger\CurlLogger\JsonAwareParameters;
 
 class CurlLogger implements LoggerInterface {

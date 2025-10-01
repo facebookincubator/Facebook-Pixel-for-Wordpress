@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AdAssetTargetRuleTargetingFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdAssetTargetRuleTargetingDevicePlatformsValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AdAssetTargetRuleTargetingFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdAssetTargetRuleTargetingDevicePlatformsValues;
 
 /**
  * This class is auto-generated.

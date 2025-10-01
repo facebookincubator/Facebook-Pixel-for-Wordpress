@@ -11,22 +11,22 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AdCreativeFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeApplinkTreatmentValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeAuthorizationCategoryValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeCallToActionTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeCategorizationCriteriaValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeCategoryMediaSourceValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeDynamicAdVoiceValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeObjectTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeOperatorValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdPreviewAdFormatValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdPreviewCreativeFeatureValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdPreviewRenderTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Traits\AdLabelAwareCrudObjectTrait;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AdCreativeFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdCreativeApplinkTreatmentValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdCreativeAuthorizationCategoryValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdCreativeCallToActionTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdCreativeCategorizationCriteriaValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdCreativeCategoryMediaSourceValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdCreativeDynamicAdVoiceValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdCreativeObjectTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdCreativeOperatorValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdCreativeStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdPreviewAdFormatValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdPreviewCreativeFeatureValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdPreviewRenderTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Traits\AdLabelAwareCrudObjectTrait;
 
 /**
  * This class is auto-generated.

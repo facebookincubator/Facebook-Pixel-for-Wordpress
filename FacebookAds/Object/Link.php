@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\LinkFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentCommentPrivacyValueValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\LinkFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentCommentPrivacyValueValues;
 
 /**
  * This class is auto-generated.

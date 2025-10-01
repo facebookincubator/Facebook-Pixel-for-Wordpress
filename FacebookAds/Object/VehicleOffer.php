@@ -11,12 +11,12 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\VehicleOfferFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OverrideDetailsTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleOfferImageFetchStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleOfferVisibilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\VehicleOfferFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OverrideDetailsTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleOfferImageFetchStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleOfferVisibilityValues;
 
 /**
  * This class is auto-generated.

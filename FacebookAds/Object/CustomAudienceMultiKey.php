@@ -9,11 +9,11 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object;
 
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CustomAudienceTypes;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\CustomAudienceFields;
-use FacebookPixelPlugin\FacebookAdsObject\CustomAudienceNormalizers\HashNormalizer;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\CustomAudienceMultikeySchemaFields;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CustomAudienceTypes;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\CustomAudienceFields;
+use FacebookPixelPlugin\FacebookAds\Object\CustomAudienceNormalizers\HashNormalizer;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\CustomAudienceMultikeySchemaFields;
 
 /**
  * @deprecated

@@ -9,7 +9,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object;
 
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 
 abstract class AbstractArchivableCrudObject extends AbstractCrudObject {
 

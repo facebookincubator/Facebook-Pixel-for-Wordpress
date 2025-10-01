@@ -11,20 +11,20 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\VehicleFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OverrideDetailsTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleAvailabilityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleBodyStyleValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleConditionValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleDrivetrainValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleFuelTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleImageFetchStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleStateOfVehicleValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleTransmissionValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleVehicleTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VehicleVisibilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\VehicleFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OverrideDetailsTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleAvailabilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleBodyStyleValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleConditionValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleDrivetrainValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleFuelTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleImageFetchStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleStateOfVehicleValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleTransmissionValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleVehicleTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VehicleVisibilityValues;
 
 /**
  * This class is auto-generated.

@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\CustomAudienceDataSourceFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CustomAudienceDataSourceSubTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CustomAudienceDataSourceTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\CustomAudienceDataSourceFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CustomAudienceDataSourceSubTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CustomAudienceDataSourceTypeValues;
 
 /**
  * This class is auto-generated.

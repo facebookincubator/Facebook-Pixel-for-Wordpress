@@ -11,18 +11,18 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\PhotoFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentCommentPrivacyValueValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentLiveFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentOrderValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultDatePresetValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultPeriodValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PhotoBackdatedTimeGranularityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PhotoTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PhotoUnpublishedContentTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\PhotoFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentCommentPrivacyValueValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentLiveFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentOrderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultDatePresetValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultPeriodValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PhotoBackdatedTimeGranularityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PhotoTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PhotoUnpublishedContentTypeValues;
 
 /**
  * This class is auto-generated.

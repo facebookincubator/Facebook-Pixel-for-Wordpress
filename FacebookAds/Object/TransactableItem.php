@@ -11,12 +11,12 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\TransactableItemFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OverrideDetailsTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\TransactableItemImageFetchStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\TransactableItemVisibilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\TransactableItemFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OverrideDetailsTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\TransactableItemImageFetchStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\TransactableItemVisibilityValues;
 
 /**
  * This class is auto-generated.

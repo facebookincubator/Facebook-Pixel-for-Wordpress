@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\BusinessRoleRequestFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\BusinessRoleRequestRoleValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\BusinessRoleRequestTasksValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\BusinessRoleRequestFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\BusinessRoleRequestRoleValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\BusinessRoleRequestTasksValues;
 
 /**
  * This class is auto-generated.

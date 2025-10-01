@@ -11,9 +11,9 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AdCreativeLinkDataSponsorshipInfoSpecFields;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AdCreativeLinkDataSponsorshipInfoSpecFields;
 
 /**
  * This class is auto-generated.

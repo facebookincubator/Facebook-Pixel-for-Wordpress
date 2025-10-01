@@ -11,13 +11,13 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\IGUserExportForCAMFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\IGUserExportForCAMCreatorCountriesValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\IGUserExportForCAMCreatorGenderValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\IGUserExportForCAMMajorAudienceCountriesValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\IGUserExportForCAMMajorAudienceGenderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\IGUserExportForCAMFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\IGUserExportForCAMCreatorCountriesValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\IGUserExportForCAMCreatorGenderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\IGUserExportForCAMMajorAudienceCountriesValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\IGUserExportForCAMMajorAudienceGenderValues;
 
 /**
  * This class is auto-generated.

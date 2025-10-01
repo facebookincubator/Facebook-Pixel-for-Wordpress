@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AdsDatasetFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsDatasetSortByValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AdsDatasetFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsDatasetSortByValues;
 
 /**
  * This class is auto-generated.

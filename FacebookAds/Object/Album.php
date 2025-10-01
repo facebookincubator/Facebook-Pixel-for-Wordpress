@@ -11,16 +11,16 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AlbumFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentCommentPrivacyValueValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentLiveFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentOrderValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PhotoBackdatedTimeGranularityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PhotoUnpublishedContentTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProfilePictureSourceTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AlbumFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentCommentPrivacyValueValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentLiveFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentOrderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PhotoBackdatedTimeGranularityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PhotoUnpublishedContentTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProfilePictureSourceTypeValues;
 
 /**
  * This class is auto-generated.

@@ -11,12 +11,12 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\ExtendedCreditFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ExtendedCreditAllocationConfigLiabilityTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ExtendedCreditAllocationConfigPartitionTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ExtendedCreditAllocationConfigSendBillToValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\ExtendedCreditFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ExtendedCreditAllocationConfigLiabilityTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ExtendedCreditAllocationConfigPartitionTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ExtendedCreditAllocationConfigSendBillToValues;
 
 /**
  * This class is auto-generated.

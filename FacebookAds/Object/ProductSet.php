@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\ProductSetFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductItemErrorPriorityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductItemErrorTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\ProductSetFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductItemErrorPriorityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductItemErrorTypeValues;
 
 /**
  * This class is auto-generated.

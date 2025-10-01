@@ -11,16 +11,16 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AdsInsightsFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsActionAttributionWindowsValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsActionBreakdownsValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsActionReportTimeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsBreakdownsValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsDatePresetValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsLevelValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsSummaryActionBreakdownsValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AdsInsightsFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsInsightsActionAttributionWindowsValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsInsightsActionBreakdownsValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsInsightsActionReportTimeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsInsightsBreakdownsValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsInsightsDatePresetValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsInsightsLevelValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsInsightsSummaryActionBreakdownsValues;
 
 /**
  * This class is auto-generated.
