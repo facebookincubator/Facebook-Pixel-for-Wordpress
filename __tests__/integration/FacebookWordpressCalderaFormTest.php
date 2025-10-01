@@ -30,8 +30,8 @@ namespace FacebookPixelPlugin\Tests\Integration;
 use FacebookPixelPlugin\Integration\FacebookWordpressCalderaForm;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
-use FacebookAds\Object\ServerSide\Event;
-use FacebookAds\Object\ServerSide\UserData;
+use FacebookPixelPlugin\FacebookAdsObject\ServerSide\Event;
+use FacebookPixelPlugin\FacebookAdsObject\ServerSide\UserData;
 
 /**
  * FacebookWordpressCalderaFormTest class.

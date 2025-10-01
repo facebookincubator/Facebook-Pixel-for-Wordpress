@@ -17,10 +17,10 @@ namespace FacebookPixelPlugin\Core;
 
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
-use FacebookAds\Object\ServerSide\Event;
-use FacebookAds\Object\ServerSide\UserData;
-use FacebookAds\Object\ServerSide\CustomData;
-use FacebookAds\Object\ServerSide\Content;
+use FacebookPixelPlugin\FacebookAdsObject\ServerSide\Event;
+use FacebookPixelPlugin\FacebookAdsObject\ServerSide\UserData;
+use FacebookPixelPlugin\FacebookAdsObject\ServerSide\CustomData;
+use FacebookPixelPlugin\FacebookAdsObject\ServerSide\Content;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 

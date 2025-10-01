@@ -34,7 +34,7 @@ use FacebookPixelPlugin\Tests\Mocks\MockWC;
 use FacebookPixelPlugin\Tests\Mocks\MockWCCart;
 use FacebookPixelPlugin\Tests\Mocks\MockWCOrder;
 use FacebookPixelPlugin\Tests\Mocks\MockWCProduct;
-use FacebookAds\Object\ServerSide\Event;
+use FacebookPixelPlugin\FacebookAdsObject\ServerSide\Event;
 
 /**
  * FacebookWordpressWooCommerceTest class.

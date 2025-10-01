@@ -1,0 +1,3574 @@
+<?php
+ /*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+namespace FacebookPixelPlugin\FacebookAds\Object;
+
+use FacebookPixelPlugin\FacebookAdsApiRequest;
+use FacebookPixelPlugin\FacebookAdsCursor;
+use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAdsTypeChecker;
+use FacebookPixelPlugin\FacebookAdsObject\Fields\AdAccountFields;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountActionSourceValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountAdRulesHistoryActionValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountAdRulesHistoryEvaluationTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountAdVolumeRecommendationTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountBrandSafetyContentFilterLevelsValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountClaimObjectiveValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountContentTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountCurrencyValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountDeliveryEstimateOptimizationGoalValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountMatchedSearchApplicationsEdgeDataAppStoreValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountMatchedSearchApplicationsEdgeDataStoresToFilterValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountPermittedTasksValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountSubtypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountTargetingUnifiedAppStoreValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountTargetingUnifiedLimitTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountTargetingUnifiedModeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountTargetingUnifiedObjectiveValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountTargetingUnifiedRegulatedCategoriesValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountTargetingUnifiedRegulatedCountriesValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountTargetingUnifiedWhitelistedTypesValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountTasksValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdActivityCategoryValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdActivityDataSourceValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdAsyncRequestSetNotificationModeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeApplinkTreatmentValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeAuthorizationCategoryValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeCategorizationCriteriaValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeCategoryMediaSourceValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeDynamicAdVoiceValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeOperatorValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdDatePresetValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdExecutionOptionsValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdOperatorValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdPlacePageSetLocationTypesValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdPlacePageSetTargetedAreaTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdPreviewAdFormatValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdPreviewCreativeFeatureValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdPreviewRenderTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdRuleStatusValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdRuleUiCreationSourceValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetAutomaticManualStateValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetBidStrategyValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetBillingEventValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetBudgetSourceValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetCreativeSequenceRepetitionPatternValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetDatePresetValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetDestinationTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetEffectiveStatusValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetExecutionOptionsValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetFullFunnelExplorationModeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetMultiOptimizationGoalWeightValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetOperatorValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetOptimizationGoalValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetOptimizationSubEventValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetRegionalRegulatedCategoriesValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetStatusValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdSetTuneForCategoryValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdStatusValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdVideoContainerTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdVideoContentCategoryValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdVideoFormattingValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdVideoOriginalProjectionTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdVideoSwapModeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdVideoUnpublishedContentTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdVideoUploadPhaseValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdVideoVideoStateValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsActionAttributionWindowsValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsActionBreakdownsValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsActionReportTimeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsBreakdownsValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsDatePresetValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsLevelValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdsInsightsSummaryActionBreakdownsValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdsPixelSortByValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdsValueAdjustmentRuleCollectionProductTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AdsValueAdjustmentRuleCollectionStatusValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AsyncRequestStatusValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\AsyncRequestTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\BusinessOwnedObjectOnBehalfOfRequestStatusValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CampaignBidStrategyValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CampaignDatePresetValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CampaignEffectiveStatusValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CampaignExecutionOptionsValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CampaignObjectiveValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CampaignOperatorValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CampaignSmartPromotionTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CampaignSpecialAdCategoriesValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CampaignSpecialAdCategoryCountryValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CampaignStatusValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CustomAudienceClaimObjectiveValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CustomAudienceContentTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CustomAudienceCustomerFileSourceValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CustomAudienceSubscriptionInfoValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CustomAudienceSubtypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CustomAudienceUseForProductsValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CustomConversionActionSourceTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\CustomConversionCustomEventTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\MessageDeliveryEstimateOptimizationGoalValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\MessageDeliveryEstimatePacingTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\ReachFrequencyPredictionActionValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\ReachFrequencyPredictionBuyingTypeValues;
+use FacebookPixelPlugin\FacebookAdsObject\Values\ReachFrequencyPredictionInstreamPackagesValues;
+
+/**
+ * This class is auto-generated.
+ *
+ * For any issues or feature requests related to this class, please let us know
+ * on github and we'll fix in our codegen framework. We'll not be able to accept
+ * pull request for this class.
+ *
+ */
+
+class AdAccount extends AbstractCrudObject {
+
+  /**
+   * @deprecated getEndpoint function is deprecated
+   */
+  protected function getEndpoint() {
+    return 'adaccounts';
+  }
+
+  /**
+   * @return AdAccountFields
+   */
+  public static function getFieldsEnum() {
+    return AdAccountFields::getInstance();
+  }
+
+  protected static function getReferencedEnums() {
+    $ref_enums = array();
+    $ref_enums['Currency'] = AdAccountCurrencyValues::getInstance()->getValues();
+    $ref_enums['PermittedTasks'] = AdAccountPermittedTasksValues::getInstance()->getValues();
+    $ref_enums['Tasks'] = AdAccountTasksValues::getInstance()->getValues();
+    $ref_enums['BrandSafetyContentFilterLevels'] = AdAccountBrandSafetyContentFilterLevelsValues::getInstance()->getValues();
+    $ref_enums['ClaimObjective'] = AdAccountClaimObjectiveValues::getInstance()->getValues();
+    $ref_enums['ContentType'] = AdAccountContentTypeValues::getInstance()->getValues();
+    $ref_enums['Subtype'] = AdAccountSubtypeValues::getInstance()->getValues();
+    $ref_enums['ActionSource'] = AdAccountActionSourceValues::getInstance()->getValues();
+    return $ref_enums;
+  }
+
+
+  public function getAccountControls(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/account_controls',
+      new AdAccountBusinessConstraints(),
+      'EDGE',
+      AdAccountBusinessConstraints::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAccountControl(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'audience_controls' => 'Object',
+      'placement_controls' => 'Object',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/account_controls',
+      new AdAccountBusinessConstraints(),
+      'EDGE',
+      AdAccountBusinessConstraints::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getActivities(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'add_children' => 'bool',
+      'after' => 'string',
+      'business_id' => 'string',
+      'category' => 'category_enum',
+      'data_source' => 'data_source_enum',
+      'extra_oids' => 'list<string>',
+      'limit' => 'int',
+      'oid' => 'string',
+      'since' => 'datetime',
+      'uid' => 'int',
+      'until' => 'datetime',
+    );
+    $enums = array(
+      'category_enum' => AdActivityCategoryValues::getInstance()->getValues(),
+      'data_source_enum' => AdActivityDataSourceValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/activities',
+      new AdActivity(),
+      'EDGE',
+      AdActivity::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdPlacePageSets(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/ad_place_page_sets',
+      new AdPlacePageSet(),
+      'EDGE',
+      AdPlacePageSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAdPlacePageSet(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'location_types' => 'list<location_types_enum>',
+      'name' => 'string',
+      'parent_page' => 'string',
+      'targeted_area_type' => 'targeted_area_type_enum',
+    );
+    $enums = array(
+      'location_types_enum' => AdPlacePageSetLocationTypesValues::getInstance()->getValues(),
+      'targeted_area_type_enum' => AdPlacePageSetTargetedAreaTypeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/ad_place_page_sets',
+      new AdPlacePageSet(),
+      'EDGE',
+      AdPlacePageSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAdPlacePageSetsAsync(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'location_types' => 'list<location_types_enum>',
+      'name' => 'string',
+      'parent_page' => 'string',
+      'targeted_area_type' => 'targeted_area_type_enum',
+    );
+    $enums = array(
+      'location_types_enum' => AdPlacePageSetLocationTypesValues::getInstance()->getValues(),
+      'targeted_area_type_enum' => AdPlacePageSetTargetedAreaTypeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/ad_place_page_sets_async',
+      new AdPlacePageSet(),
+      'EDGE',
+      AdPlacePageSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdSavedKeywords(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'fields' => 'list<string>',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/ad_saved_keywords',
+      new AdSavedKeywords(),
+      'EDGE',
+      AdSavedKeywords::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdStudies(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/ad_studies',
+      new AdStudy(),
+      'EDGE',
+      AdStudy::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdCloudPlayables(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adcloudplayables',
+      new CloudGame(),
+      'EDGE',
+      CloudGame::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdCreatives(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adcreatives',
+      new AdCreative(),
+      'EDGE',
+      AdCreative::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAdCreative(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'actor_id' => 'unsigned int',
+      'ad_disclaimer_spec' => 'map',
+      'adlabels' => 'list<Object>',
+      'applink_treatment' => 'applink_treatment_enum',
+      'asset_feed_spec' => 'Object',
+      'authorization_category' => 'authorization_category_enum',
+      'body' => 'string',
+      'branded_content' => 'map',
+      'branded_content_sponsor_page_id' => 'string',
+      'bundle_folder_id' => 'string',
+      'call_to_action' => 'Object',
+      'categorization_criteria' => 'categorization_criteria_enum',
+      'category_media_source' => 'category_media_source_enum',
+      'contextual_multi_ads' => 'map',
+      'creative_sourcing_spec' => 'map',
+      'degrees_of_freedom_spec' => 'map',
+      'destination_set_id' => 'string',
+      'destination_spec' => 'map',
+      'dynamic_ad_voice' => 'dynamic_ad_voice_enum',
+      'enable_launch_instant_app' => 'bool',
+      'facebook_branded_content' => 'map',
+      'format_transformation_spec' => 'list<map>',
+      'image_crops' => 'map',
+      'image_file' => 'string',
+      'image_hash' => 'string',
+      'image_url' => 'string',
+      'instagram_branded_content' => 'map',
+      'instagram_permalink_url' => 'string',
+      'instagram_user_id' => 'string',
+      'interactive_components_spec' => 'map',
+      'is_dco_internal' => 'bool',
+      'link_og_id' => 'string',
+      'link_url' => 'string',
+      'media_sourcing_spec' => 'map',
+      'name' => 'string',
+      'object_id' => 'unsigned int',
+      'object_story_id' => 'string',
+      'object_story_spec' => 'AdCreativeObjectStorySpec',
+      'object_type' => 'string',
+      'object_url' => 'string',
+      'omnichannel_link_spec' => 'map',
+      'page_welcome_message' => 'string',
+      'place_page_set_id' => 'string',
+      'platform_customizations' => 'Object',
+      'playable_asset_id' => 'string',
+      'portrait_customizations' => 'map',
+      'product_set_id' => 'string',
+      'recommender_settings' => 'map',
+      'regional_regulation_disclaimer_spec' => 'map',
+      'source_instagram_media_id' => 'string',
+      'template_url' => 'string',
+      'template_url_spec' => 'string',
+      'thumbnail_url' => 'string',
+      'title' => 'string',
+      'url_tags' => 'string',
+      'use_page_actor_override' => 'bool',
+    );
+    $enums = array(
+      'applink_treatment_enum' => AdCreativeApplinkTreatmentValues::getInstance()->getValues(),
+      'authorization_category_enum' => AdCreativeAuthorizationCategoryValues::getInstance()->getValues(),
+      'categorization_criteria_enum' => AdCreativeCategorizationCriteriaValues::getInstance()->getValues(),
+      'category_media_source_enum' => AdCreativeCategoryMediaSourceValues::getInstance()->getValues(),
+      'dynamic_ad_voice_enum' => AdCreativeDynamicAdVoiceValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/adcreatives',
+      new AdCreative(),
+      'EDGE',
+      AdCreative::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdCreativesByLabels(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'ad_label_ids' => 'list<string>',
+      'operator' => 'operator_enum',
+    );
+    $enums = array(
+      'operator_enum' => AdCreativeOperatorValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adcreativesbylabels',
+      new AdCreative(),
+      'EDGE',
+      AdCreative::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function deleteAdImages(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'hash' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_DELETE,
+      '/adimages',
+      new AbstractCrudObject(),
+      'EDGE',
+      array(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdImages(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'biz_tag_id' => 'unsigned int',
+      'business_id' => 'string',
+      'hashes' => 'list<string>',
+      'minheight' => 'unsigned int',
+      'minwidth' => 'unsigned int',
+      'name' => 'string',
+      'selected_hashes' => 'list<string>',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adimages',
+      new AdImage(),
+      'EDGE',
+      AdImage::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAdImage(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'bytes' => 'string',
+      'copy_from' => 'Object',
+      'filename' => 'file'
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/adimages',
+      new AdImage(),
+      'EDGE',
+      AdImage::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums),
+      true
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdLabels(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adlabels',
+      new AdLabel(),
+      'EDGE',
+      AdLabel::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAdLabel(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'name' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/adlabels',
+      new AdLabel(),
+      'EDGE',
+      AdLabel::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdPlayables(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adplayables',
+      new PlayableContent(),
+      'EDGE',
+      PlayableContent::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAdPlayable(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'app_id' => 'string',
+      'name' => 'string',
+      'session_id' => 'string',
+      'source' => 'file',
+      'source_url' => 'string',
+      'source_zip' => 'file',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/adplayables',
+      new PlayableContent(),
+      'EDGE',
+      PlayableContent::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdRulesHistory(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'action' => 'action_enum',
+      'evaluation_type' => 'evaluation_type_enum',
+      'hide_no_changes' => 'bool',
+      'object_id' => 'string',
+    );
+    $enums = array(
+      'action_enum' => AdAccountAdRulesHistoryActionValues::getInstance()->getValues(),
+      'evaluation_type_enum' => AdAccountAdRulesHistoryEvaluationTypeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adrules_history',
+      new AdAccountAdRulesHistory(),
+      'EDGE',
+      AdAccountAdRulesHistory::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdRulesLibrary(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adrules_library',
+      new AdRule(),
+      'EDGE',
+      AdRule::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAdRulesLibrary(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'account_id' => 'string',
+      'evaluation_spec' => 'Object',
+      'execution_spec' => 'Object',
+      'name' => 'string',
+      'schedule_spec' => 'Object',
+      'status' => 'status_enum',
+      'ui_creation_source' => 'ui_creation_source_enum',
+    );
+    $enums = array(
+      'status_enum' => AdRuleStatusValues::getInstance()->getValues(),
+      'ui_creation_source_enum' => AdRuleUiCreationSourceValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/adrules_library',
+      new AdRule(),
+      'EDGE',
+      AdRule::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAds(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'date_preset' => 'date_preset_enum',
+      'effective_status' => 'list<string>',
+      'time_range' => 'map',
+      'updated_since' => 'int',
+    );
+    $enums = array(
+      'date_preset_enum' => AdDatePresetValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/ads',
+      new Ad(),
+      'EDGE',
+      Ad::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAd(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'ad_schedule_end_time' => 'datetime',
+      'ad_schedule_start_time' => 'datetime',
+      'adlabels' => 'list<Object>',
+      'adset_id' => 'unsigned int',
+      'adset_spec' => 'AdSet',
+      'audience_id' => 'string',
+      'bid_amount' => 'int',
+      'conversion_domain' => 'string',
+      'creative' => 'AdCreative',
+      'creative_asset_groups_spec' => 'Object',
+      'date_format' => 'string',
+      'display_sequence' => 'unsigned int',
+      'draft_adgroup_id' => 'string',
+      'engagement_audience' => 'bool',
+      'execution_options' => 'list<execution_options_enum>',
+      'include_demolink_hashes' => 'bool',
+      'name' => 'string',
+      'priority' => 'unsigned int',
+      'source_ad_id' => 'string',
+      'status' => 'status_enum',
+      'tracking_specs' => 'Object',
+    );
+    $enums = array(
+      'execution_options_enum' => AdExecutionOptionsValues::getInstance()->getValues(),
+      'status_enum' => AdStatusValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/ads',
+      new Ad(),
+      'EDGE',
+      Ad::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums),
+      true
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdsReportingMmmReports(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'filtering' => 'list<map>',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/ads_reporting_mmm_reports',
+      new AdsReportBuilderMMMReport(),
+      'EDGE',
+      AdsReportBuilderMMMReport::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdsReportingMmmSchedulers(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/ads_reporting_mmm_schedulers',
+      new AdsReportBuilderMMMReportScheduler(),
+      'EDGE',
+      AdsReportBuilderMMMReportScheduler::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdsVolume(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'page_id' => 'string',
+      'recommendation_type' => 'recommendation_type_enum',
+      'show_breakdown_by_actor' => 'bool',
+    );
+    $enums = array(
+      'recommendation_type_enum' => AdAccountAdVolumeRecommendationTypeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/ads_volume',
+      new AdAccountAdVolume(),
+      'EDGE',
+      AdAccountAdVolume::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdsByLabels(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'ad_label_ids' => 'list<string>',
+      'operator' => 'operator_enum',
+    );
+    $enums = array(
+      'operator_enum' => AdOperatorValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adsbylabels',
+      new Ad(),
+      'EDGE',
+      Ad::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdSets(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'date_preset' => 'date_preset_enum',
+      'effective_status' => 'list<effective_status_enum>',
+      'is_completed' => 'bool',
+      'time_range' => 'map',
+      'updated_since' => 'int',
+    );
+    $enums = array(
+      'date_preset_enum' => AdSetDatePresetValues::getInstance()->getValues(),
+      'effective_status_enum' => AdSetEffectiveStatusValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adsets',
+      new AdSet(),
+      'EDGE',
+      AdSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAdSet(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'adlabels' => 'list<Object>',
+      'adset_schedule' => 'list<Object>',
+      'attribution_spec' => 'list<map>',
+      'automatic_manual_state' => 'automatic_manual_state_enum',
+      'bid_adjustments' => 'Object',
+      'bid_amount' => 'int',
+      'bid_constraints' => 'map<string, Object>',
+      'bid_strategy' => 'bid_strategy_enum',
+      'billing_event' => 'billing_event_enum',
+      'budget_schedule_specs' => 'list<Object>',
+      'budget_source' => 'budget_source_enum',
+      'budget_split_set_id' => 'string',
+      'campaign_attribution' => 'Object',
+      'campaign_id' => 'string',
+      'campaign_spec' => 'Object',
+      'creative_sequence' => 'list<string>',
+      'creative_sequence_repetition_pattern' => 'creative_sequence_repetition_pattern_enum',
+      'daily_budget' => 'unsigned int',
+      'daily_imps' => 'unsigned int',
+      'daily_min_spend_target' => 'unsigned int',
+      'daily_spend_cap' => 'unsigned int',
+      'date_format' => 'string',
+      'destination_type' => 'destination_type_enum',
+      'dsa_beneficiary' => 'string',
+      'dsa_payor' => 'string',
+      'end_time' => 'datetime',
+      'execution_options' => 'list<execution_options_enum>',
+      'existing_customer_budget_percentage' => 'unsigned int',
+      'frequency_control_specs' => 'list<Object>',
+      'full_funnel_exploration_mode' => 'full_funnel_exploration_mode_enum',
+      'is_ba_skip_delayed_eligible' => 'bool',
+      'is_budget_schedule_enabled' => 'bool',
+      'is_dynamic_creative' => 'bool',
+      'is_incremental_attribution_enabled' => 'bool',
+      'is_sac_cfca_terms_certified' => 'bool',
+      'lifetime_budget' => 'unsigned int',
+      'lifetime_imps' => 'unsigned int',
+      'lifetime_min_spend_target' => 'unsigned int',
+      'lifetime_spend_cap' => 'unsigned int',
+      'line_number' => 'unsigned int',
+      'max_budget_spend_percentage' => 'unsigned int',
+      'min_budget_spend_percentage' => 'unsigned int',
+      'multi_optimization_goal_weight' => 'multi_optimization_goal_weight_enum',
+      'name' => 'string',
+      'optimization_goal' => 'optimization_goal_enum',
+      'optimization_sub_event' => 'optimization_sub_event_enum',
+      'pacing_type' => 'list<string>',
+      'promoted_object' => 'Object',
+      'rb_prediction_id' => 'string',
+      'regional_regulated_categories' => 'list<regional_regulated_categories_enum>',
+      'regional_regulation_identities' => 'map',
+      'rf_prediction_id' => 'string',
+      'source_adset_id' => 'string',
+      'start_time' => 'datetime',
+      'status' => 'status_enum',
+      'targeting' => 'Targeting',
+      'time_based_ad_rotation_id_blocks' => 'list<list<unsigned int>>',
+      'time_based_ad_rotation_intervals' => 'list<unsigned int>',
+      'time_start' => 'datetime',
+      'time_stop' => 'datetime',
+      'topline_id' => 'string',
+      'trending_topics_spec' => 'map',
+      'tune_for_category' => 'tune_for_category_enum',
+      'value_rule_set_id' => 'string',
+      'value_rules_applied' => 'bool',
+    );
+    $enums = array(
+      'automatic_manual_state_enum' => AdSetAutomaticManualStateValues::getInstance()->getValues(),
+      'bid_strategy_enum' => AdSetBidStrategyValues::getInstance()->getValues(),
+      'billing_event_enum' => AdSetBillingEventValues::getInstance()->getValues(),
+      'budget_source_enum' => AdSetBudgetSourceValues::getInstance()->getValues(),
+      'creative_sequence_repetition_pattern_enum' => AdSetCreativeSequenceRepetitionPatternValues::getInstance()->getValues(),
+      'destination_type_enum' => AdSetDestinationTypeValues::getInstance()->getValues(),
+      'execution_options_enum' => AdSetExecutionOptionsValues::getInstance()->getValues(),
+      'full_funnel_exploration_mode_enum' => AdSetFullFunnelExplorationModeValues::getInstance()->getValues(),
+      'multi_optimization_goal_weight_enum' => AdSetMultiOptimizationGoalWeightValues::getInstance()->getValues(),
+      'optimization_goal_enum' => AdSetOptimizationGoalValues::getInstance()->getValues(),
+      'optimization_sub_event_enum' => AdSetOptimizationSubEventValues::getInstance()->getValues(),
+      'regional_regulated_categories_enum' => AdSetRegionalRegulatedCategoriesValues::getInstance()->getValues(),
+      'status_enum' => AdSetStatusValues::getInstance()->getValues(),
+      'tune_for_category_enum' => AdSetTuneForCategoryValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/adsets',
+      new AdSet(),
+      'EDGE',
+      AdSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdSetsByLabels(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'ad_label_ids' => 'list<string>',
+      'operator' => 'operator_enum',
+    );
+    $enums = array(
+      'operator_enum' => AdSetOperatorValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adsetsbylabels',
+      new AdSet(),
+      'EDGE',
+      AdSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdsPixels(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'sort_by' => 'sort_by_enum',
+    );
+    $enums = array(
+      'sort_by_enum' => AdsPixelSortByValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/adspixels',
+      new AdsPixel(),
+      'EDGE',
+      AdsPixel::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAdsPixel(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'name' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/adspixels',
+      new AdsPixel(),
+      'EDGE',
+      AdsPixel::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdvertisableApplications(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'app_id' => 'string',
+      'business_id' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/advertisable_applications',
+      new Application(),
+      'EDGE',
+      Application::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function deleteAdVideos(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'video_id' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_DELETE,
+      '/advideos',
+      new AbstractCrudObject(),
+      'EDGE',
+      array(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAdVideos(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'max_aspect_ratio' => 'float',
+      'maxheight' => 'unsigned int',
+      'maxlength' => 'unsigned int',
+      'maxwidth' => 'unsigned int',
+      'min_aspect_ratio' => 'float',
+      'minheight' => 'unsigned int',
+      'minlength' => 'unsigned int',
+      'minwidth' => 'unsigned int',
+      'title' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/advideos',
+      new AdVideo(),
+      'EDGE',
+      AdVideo::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAdVideo(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'application_id' => 'string',
+      'asked_fun_fact_prompt_id' => 'unsigned int',
+      'audio_story_wave_animation_handle' => 'string',
+      'chunk_session_id' => 'string',
+      'composer_entry_picker' => 'string',
+      'composer_entry_point' => 'string',
+      'composer_entry_time' => 'unsigned int',
+      'composer_session_events_log' => 'string',
+      'composer_session_id' => 'string',
+      'composer_source_surface' => 'string',
+      'composer_type' => 'string',
+      'container_type' => 'container_type_enum',
+      'content_category' => 'content_category_enum',
+      'creative_tools' => 'string',
+      'description' => 'string',
+      'embeddable' => 'bool',
+      'end_offset' => 'unsigned int',
+      'fbuploader_video_file_chunk' => 'string',
+      'file_size' => 'unsigned int',
+      'file_url' => 'string',
+      'fisheye_video_cropped' => 'bool',
+      'formatting' => 'formatting_enum',
+      'fov' => 'unsigned int',
+      'front_z_rotation' => 'float',
+      'fun_fact_prompt_id' => 'string',
+      'fun_fact_toastee_id' => 'unsigned int',
+      'guide' => 'list<list<unsigned int>>',
+      'guide_enabled' => 'bool',
+      'initial_heading' => 'unsigned int',
+      'initial_pitch' => 'unsigned int',
+      'instant_game_entry_point_data' => 'string',
+      'is_boost_intended' => 'bool',
+      'is_group_linking_post' => 'bool',
+      'is_partnership_ad' => 'bool',
+      'is_voice_clip' => 'bool',
+      'location_source_id' => 'string',
+      'name' => 'string',
+      'og_action_type_id' => 'string',
+      'og_icon_id' => 'string',
+      'og_object_id' => 'string',
+      'og_phrase' => 'string',
+      'og_suggestion_mechanism' => 'string',
+      'original_fov' => 'unsigned int',
+      'original_projection_type' => 'original_projection_type_enum',
+      'partnership_ad_ad_code' => 'string',
+      'publish_event_id' => 'unsigned int',
+      'referenced_sticker_id' => 'string',
+      'replace_video_id' => 'string',
+      'slideshow_spec' => 'map',
+      'source' => 'file',
+      'source_instagram_media_id' => 'string',
+      'spherical' => 'bool',
+      'start_offset' => 'unsigned int',
+      'swap_mode' => 'swap_mode_enum',
+      'text_format_metadata' => 'string',
+      'thumb' => 'file',
+      'time_since_original_post' => 'unsigned int',
+      'title' => 'string',
+      'transcode_setting_properties' => 'string',
+      'unpublished_content_type' => 'unpublished_content_type_enum',
+      'upload_phase' => 'upload_phase_enum',
+      'upload_session_id' => 'string',
+      'upload_setting_properties' => 'string',
+      'video_file_chunk' => 'file',
+      'video_id_original' => 'string',
+      'video_start_time_ms' => 'unsigned int',
+      'waterfall_id' => 'string',
+    );
+    $enums = array(
+      'container_type_enum' => AdVideoContainerTypeValues::getInstance()->getValues(),
+      'content_category_enum' => AdVideoContentCategoryValues::getInstance()->getValues(),
+      'formatting_enum' => AdVideoFormattingValues::getInstance()->getValues(),
+      'original_projection_type_enum' => AdVideoOriginalProjectionTypeValues::getInstance()->getValues(),
+      'swap_mode_enum' => AdVideoSwapModeValues::getInstance()->getValues(),
+      'unpublished_content_type_enum' => AdVideoUnpublishedContentTypeValues::getInstance()->getValues(),
+      'upload_phase_enum' => AdVideoUploadPhaseValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/advideos',
+      new AdVideo(),
+      'EDGE',
+      AdVideo::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums),
+      true,
+      true
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAffectedAdSets(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/affectedadsets',
+      new AdSet(),
+      'EDGE',
+      AdSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function deleteAgencies(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'business' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_DELETE,
+      '/agencies',
+      new AbstractCrudObject(),
+      'EDGE',
+      array(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAgencies(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/agencies',
+      new Business(),
+      'EDGE',
+      Business::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAgency(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'business' => 'string',
+      'permitted_tasks' => 'list<permitted_tasks_enum>',
+    );
+    $enums = array(
+      'permitted_tasks_enum' => AdAccountPermittedTasksValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/agencies',
+      new AdAccount(),
+      'EDGE',
+      AdAccount::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getApplications(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/applications',
+      new Application(),
+      'EDGE',
+      Application::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function deleteAssignedUsers(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'user' => 'int',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_DELETE,
+      '/assigned_users',
+      new AbstractCrudObject(),
+      'EDGE',
+      array(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAssignedUsers(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'business' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/assigned_users',
+      new AssignedUser(),
+      'EDGE',
+      AssignedUser::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAssignedUser(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'tasks' => 'list<tasks_enum>',
+      'user' => 'int',
+    );
+    $enums = array(
+      'tasks_enum' => AdAccountTasksValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/assigned_users',
+      new AdAccount(),
+      'EDGE',
+      AdAccount::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAsyncBatchRequest(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'adbatch' => 'list<Object>',
+      'name' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/async_batch_requests',
+      new Campaign(),
+      'EDGE',
+      Campaign::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAsyncRequests(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'status' => 'status_enum',
+      'type' => 'type_enum',
+    );
+    $enums = array(
+      'status_enum' => AsyncRequestStatusValues::getInstance()->getValues(),
+      'type_enum' => AsyncRequestTypeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/async_requests',
+      new AsyncRequest(),
+      'EDGE',
+      AsyncRequest::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAsyncAdCreatives(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'is_completed' => 'bool',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/asyncadcreatives',
+      new AdAsyncRequestSet(),
+      'EDGE',
+      AdAsyncRequestSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAsyncAdCreative(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'creative_spec' => 'AdCreative',
+      'name' => 'string',
+      'notification_mode' => 'notification_mode_enum',
+      'notification_uri' => 'string',
+    );
+    $enums = array(
+      'notification_mode_enum' => AdAsyncRequestSetNotificationModeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/asyncadcreatives',
+      new AdAsyncRequestSet(),
+      'EDGE',
+      AdAsyncRequestSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAsyncAdRequestSets(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'is_completed' => 'bool',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/asyncadrequestsets',
+      new AdAsyncRequestSet(),
+      'EDGE',
+      AdAsyncRequestSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createAsyncAdRequestSet(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'ad_specs' => 'list<map>',
+      'name' => 'string',
+      'notification_mode' => 'notification_mode_enum',
+      'notification_uri' => 'string',
+    );
+    $enums = array(
+      'notification_mode_enum' => AdAsyncRequestSetNotificationModeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/asyncadrequestsets',
+      new AdAsyncRequestSet(),
+      'EDGE',
+      AdAsyncRequestSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getAudienceFunnel(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/audience_funnel',
+      new AudienceFunnel(),
+      'EDGE',
+      AudienceFunnel::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createBlockListDraft(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'publisher_urls_file' => 'file',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/block_list_drafts',
+      new AdAccount(),
+      'EDGE',
+      AdAccount::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createBrandSafetyContentFilterLevel(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'brand_safety_content_filter_levels' => 'list<brand_safety_content_filter_levels_enum>',
+      'business_id' => 'string',
+    );
+    $enums = array(
+      'brand_safety_content_filter_levels_enum' => AdAccountBrandSafetyContentFilterLevelsValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/brand_safety_content_filter_levels',
+      new AdAccount(),
+      'EDGE',
+      AdAccount::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getBroadTargetingCategories(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'custom_categories_only' => 'bool',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/broadtargetingcategories',
+      new BroadTargetingCategories(),
+      'EDGE',
+      BroadTargetingCategories::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getBusinessProjects(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'business' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/businessprojects',
+      new BusinessProject(),
+      'EDGE',
+      BusinessProject::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function deleteCampaigns(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'before_date' => 'datetime',
+      'delete_offset' => 'unsigned int',
+      'delete_strategy' => 'delete_strategy_enum',
+      'object_count' => 'int',
+    );
+    $enums = array(
+      'delete_strategy_enum' => array(
+        'DELETE_ANY',
+        'DELETE_ARCHIVED_BEFORE',
+        'DELETE_OLDEST',
+      ),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_DELETE,
+      '/campaigns',
+      new AbstractCrudObject(),
+      'EDGE',
+      array(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getCampaigns(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'date_preset' => 'date_preset_enum',
+      'effective_status' => 'list<effective_status_enum>',
+      'is_completed' => 'bool',
+      'time_range' => 'map',
+    );
+    $enums = array(
+      'date_preset_enum' => CampaignDatePresetValues::getInstance()->getValues(),
+      'effective_status_enum' => CampaignEffectiveStatusValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/campaigns',
+      new Campaign(),
+      'EDGE',
+      Campaign::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createCampaign(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'adlabels' => 'list<Object>',
+      'bid_strategy' => 'bid_strategy_enum',
+      'budget_schedule_specs' => 'list<Object>',
+      'buying_type' => 'string',
+      'daily_budget' => 'unsigned int',
+      'execution_options' => 'list<execution_options_enum>',
+      'is_adset_budget_sharing_enabled' => 'bool',
+      'is_budget_schedule_enabled' => 'bool',
+      'is_direct_send_campaign' => 'bool',
+      'is_message_campaign' => 'bool',
+      'is_skadnetwork_attribution' => 'bool',
+      'iterative_split_test_configs' => 'list<Object>',
+      'lifetime_budget' => 'unsigned int',
+      'name' => 'string',
+      'objective' => 'objective_enum',
+      'pacing_type' => 'list<string>',
+      'promoted_object' => 'Object',
+      'smart_promotion_type' => 'smart_promotion_type_enum',
+      'source_campaign_id' => 'string',
+      'special_ad_categories' => 'list<special_ad_categories_enum>',
+      'special_ad_category_country' => 'list<special_ad_category_country_enum>',
+      'spend_cap' => 'unsigned int',
+      'start_time' => 'datetime',
+      'status' => 'status_enum',
+      'stop_time' => 'datetime',
+      'topline_id' => 'string',
+    );
+    $enums = array(
+      'bid_strategy_enum' => CampaignBidStrategyValues::getInstance()->getValues(),
+      'execution_options_enum' => CampaignExecutionOptionsValues::getInstance()->getValues(),
+      'objective_enum' => CampaignObjectiveValues::getInstance()->getValues(),
+      'smart_promotion_type_enum' => CampaignSmartPromotionTypeValues::getInstance()->getValues(),
+      'special_ad_categories_enum' => CampaignSpecialAdCategoriesValues::getInstance()->getValues(),
+      'special_ad_category_country_enum' => CampaignSpecialAdCategoryCountryValues::getInstance()->getValues(),
+      'status_enum' => CampaignStatusValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/campaigns',
+      new Campaign(),
+      'EDGE',
+      Campaign::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getCampaignsByLabels(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'ad_label_ids' => 'list<string>',
+      'operator' => 'operator_enum',
+    );
+    $enums = array(
+      'operator_enum' => CampaignOperatorValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/campaignsbylabels',
+      new Campaign(),
+      'EDGE',
+      Campaign::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getConnectedInstagramAccounts(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/connected_instagram_accounts',
+      new IGUser(),
+      'EDGE',
+      IGUser::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getConnectedInstagramAccountsWithIabp(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'business_id' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/connected_instagram_accounts_with_iabp',
+      new IGUser(),
+      'EDGE',
+      IGUser::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getConversionGoals(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/conversion_goals',
+      new AdsConversionGoal(),
+      'EDGE',
+      AdsConversionGoal::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getCustomAudiences(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'business_id' => 'string',
+      'fetch_primary_audience' => 'bool',
+      'fields' => 'list<string>',
+      'filtering' => 'list<Object>',
+      'pixel_id' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/customaudiences',
+      new CustomAudience(),
+      'EDGE',
+      CustomAudience::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createCustomAudience(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'allowed_domains' => 'list<string>',
+      'associated_audience_id' => 'unsigned int',
+      'claim_objective' => 'claim_objective_enum',
+      'content_type' => 'content_type_enum',
+      'countries' => 'string',
+      'creation_params' => 'map',
+      'customer_file_source' => 'customer_file_source_enum',
+      'dataset_id' => 'string',
+      'description' => 'string',
+      'enable_fetch_or_create' => 'bool',
+      'event_source_group' => 'string',
+      'event_sources' => 'list<map>',
+      'exclusions' => 'list<Object>',
+      'facebook_page_id' => 'string',
+      'inclusions' => 'list<Object>',
+      'is_snapshot' => 'bool',
+      'is_value_based' => 'bool',
+      'list_of_accounts' => 'list<unsigned int>',
+      'lookalike_spec' => 'string',
+      'marketing_message_channels' => 'Object',
+      'name' => 'string',
+      'opt_out_link' => 'string',
+      'origin_audience_id' => 'string',
+      'parent_audience_id' => 'unsigned int',
+      'partner_reference_key' => 'string',
+      'pixel_id' => 'string',
+      'prefill' => 'bool',
+      'product_set_id' => 'string',
+      'regulated_audience_spec' => 'string',
+      'retention_days' => 'unsigned int',
+      'rev_share_policy_id' => 'unsigned int',
+      'rule' => 'string',
+      'rule_aggregation' => 'string',
+      'subscription_info' => 'list<subscription_info_enum>',
+      'subtype' => 'subtype_enum',
+      'use_for_products' => 'list<use_for_products_enum>',
+      'use_in_campaigns' => 'bool',
+      'video_group_ids' => 'list<string>',
+      'whats_app_business_phone_number_id' => 'string',
+    );
+    $enums = array(
+      'claim_objective_enum' => CustomAudienceClaimObjectiveValues::getInstance()->getValues(),
+      'content_type_enum' => CustomAudienceContentTypeValues::getInstance()->getValues(),
+      'customer_file_source_enum' => CustomAudienceCustomerFileSourceValues::getInstance()->getValues(),
+      'subscription_info_enum' => CustomAudienceSubscriptionInfoValues::getInstance()->getValues(),
+      'subtype_enum' => CustomAudienceSubtypeValues::getInstance()->getValues(),
+      'use_for_products_enum' => CustomAudienceUseForProductsValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/customaudiences',
+      new CustomAudience(),
+      'EDGE',
+      CustomAudience::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getCustomAudiencesTos(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/customaudiencestos',
+      new CustomAudiencesTOS(),
+      'EDGE',
+      CustomAudiencesTOS::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createCustomAudiencesTo(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'business_id' => 'string',
+      'tos_id' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/customaudiencestos',
+      new AdAccount(),
+      'EDGE',
+      AdAccount::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getCustomConversions(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/customconversions',
+      new CustomConversion(),
+      'EDGE',
+      CustomConversion::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createCustomConversion(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'action_source_type' => 'action_source_type_enum',
+      'advanced_rule' => 'string',
+      'custom_event_type' => 'custom_event_type_enum',
+      'default_conversion_value' => 'float',
+      'description' => 'string',
+      'event_source_id' => 'string',
+      'name' => 'string',
+      'rule' => 'string',
+    );
+    $enums = array(
+      'action_source_type_enum' => CustomConversionActionSourceTypeValues::getInstance()->getValues(),
+      'custom_event_type_enum' => CustomConversionCustomEventTypeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/customconversions',
+      new CustomConversion(),
+      'EDGE',
+      CustomConversion::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getDeliveryEstimate(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'optimization_goal' => 'optimization_goal_enum',
+      'promoted_object' => 'Object',
+      'targeting_spec' => 'Targeting',
+    );
+    $enums = array(
+      'optimization_goal_enum' => AdAccountDeliveryEstimateOptimizationGoalValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/delivery_estimate',
+      new AdAccountDeliveryEstimate(),
+      'EDGE',
+      AdAccountDeliveryEstimate::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getDeprecatedTargetingAdSets(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'type' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/deprecatedtargetingadsets',
+      new AdSet(),
+      'EDGE',
+      AdSet::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getDsaRecommendations(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/dsa_recommendations',
+      new AdAccountDsaRecommendations(),
+      'EDGE',
+      AdAccountDsaRecommendations::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getGeneratePreviews(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'ad_format' => 'ad_format_enum',
+      'creative' => 'AdCreative',
+      'creative_feature' => 'creative_feature_enum',
+      'dynamic_asset_label' => 'string',
+      'dynamic_creative_spec' => 'Object',
+      'dynamic_customization' => 'Object',
+      'end_date' => 'datetime',
+      'height' => 'unsigned int',
+      'locale' => 'string',
+      'message' => 'Object',
+      'place_page_id' => 'int',
+      'post' => 'Object',
+      'product_item_ids' => 'list<string>',
+      'render_type' => 'render_type_enum',
+      'start_date' => 'datetime',
+      'width' => 'unsigned int',
+    );
+    $enums = array(
+      'ad_format_enum' => AdPreviewAdFormatValues::getInstance()->getValues(),
+      'creative_feature_enum' => AdPreviewCreativeFeatureValues::getInstance()->getValues(),
+      'render_type_enum' => AdPreviewRenderTypeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/generatepreviews',
+      new AdPreview(),
+      'EDGE',
+      AdPreview::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getImpactingAdStudies(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/impacting_ad_studies',
+      new AdStudy(),
+      'EDGE',
+      AdStudy::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getInsights(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'action_attribution_windows' => 'list<action_attribution_windows_enum>',
+      'action_breakdowns' => 'list<action_breakdowns_enum>',
+      'action_report_time' => 'action_report_time_enum',
+      'breakdowns' => 'list<breakdowns_enum>',
+      'date_preset' => 'date_preset_enum',
+      'default_summary' => 'bool',
+      'export_columns' => 'list<string>',
+      'export_format' => 'string',
+      'export_name' => 'string',
+      'fields' => 'list<string>',
+      'filtering' => 'list<Object>',
+      'graph_cache' => 'bool',
+      'level' => 'level_enum',
+      'limit' => 'int',
+      'product_id_limit' => 'int',
+      'sort' => 'list<string>',
+      'summary' => 'list<string>',
+      'summary_action_breakdowns' => 'list<summary_action_breakdowns_enum>',
+      'time_increment' => 'string',
+      'time_range' => 'map',
+      'time_ranges' => 'list<map>',
+      'use_account_attribution_setting' => 'bool',
+      'use_unified_attribution_setting' => 'bool',
+    );
+    $enums = array(
+      'action_attribution_windows_enum' => AdsInsightsActionAttributionWindowsValues::getInstance()->getValues(),
+      'action_breakdowns_enum' => AdsInsightsActionBreakdownsValues::getInstance()->getValues(),
+      'action_report_time_enum' => AdsInsightsActionReportTimeValues::getInstance()->getValues(),
+      'breakdowns_enum' => AdsInsightsBreakdownsValues::getInstance()->getValues(),
+      'date_preset_enum' => AdsInsightsDatePresetValues::getInstance()->getValues(),
+      'level_enum' => AdsInsightsLevelValues::getInstance()->getValues(),
+      'summary_action_breakdowns_enum' => AdsInsightsSummaryActionBreakdownsValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/insights',
+      new AdsInsights(),
+      'EDGE',
+      AdsInsights::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getInsightsAsync(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'action_attribution_windows' => 'list<action_attribution_windows_enum>',
+      'action_breakdowns' => 'list<action_breakdowns_enum>',
+      'action_report_time' => 'action_report_time_enum',
+      'breakdowns' => 'list<breakdowns_enum>',
+      'date_preset' => 'date_preset_enum',
+      'default_summary' => 'bool',
+      'export_columns' => 'list<string>',
+      'export_format' => 'string',
+      'export_name' => 'string',
+      'fields' => 'list<string>',
+      'filtering' => 'list<Object>',
+      'graph_cache' => 'bool',
+      'level' => 'level_enum',
+      'limit' => 'int',
+      'product_id_limit' => 'int',
+      'sort' => 'list<string>',
+      'summary' => 'list<string>',
+      'summary_action_breakdowns' => 'list<summary_action_breakdowns_enum>',
+      'time_increment' => 'string',
+      'time_range' => 'map',
+      'time_ranges' => 'list<map>',
+      'use_account_attribution_setting' => 'bool',
+      'use_unified_attribution_setting' => 'bool',
+    );
+    $enums = array(
+      'action_attribution_windows_enum' => AdsInsightsActionAttributionWindowsValues::getInstance()->getValues(),
+      'action_breakdowns_enum' => AdsInsightsActionBreakdownsValues::getInstance()->getValues(),
+      'action_report_time_enum' => AdsInsightsActionReportTimeValues::getInstance()->getValues(),
+      'breakdowns_enum' => AdsInsightsBreakdownsValues::getInstance()->getValues(),
+      'date_preset_enum' => AdsInsightsDatePresetValues::getInstance()->getValues(),
+      'level_enum' => AdsInsightsLevelValues::getInstance()->getValues(),
+      'summary_action_breakdowns_enum' => AdsInsightsSummaryActionBreakdownsValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/insights',
+      new AdReportRun(),
+      'EDGE',
+      AdReportRun::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getInstagramAccounts(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/instagram_accounts',
+      new IGUser(),
+      'EDGE',
+      IGUser::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getIosFourteenCampaignLimits(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'app_id' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/ios_fourteen_campaign_limits',
+      new AdAccountIosFourteenCampaignLimits(),
+      'EDGE',
+      AdAccountIosFourteenCampaignLimits::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getMatchedSearchApplications(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'allow_incomplete_app' => 'bool',
+      'app_store' => 'app_store_enum',
+      'app_store_country' => 'string',
+      'business_id' => 'string',
+      'is_skadnetwork_search' => 'bool',
+      'only_apps_with_permission' => 'bool',
+      'query_term' => 'string',
+      'stores_to_filter' => 'list<stores_to_filter_enum>',
+    );
+    $enums = array(
+      'app_store_enum' => AdAccountMatchedSearchApplicationsEdgeDataAppStoreValues::getInstance()->getValues(),
+      'stores_to_filter_enum' => AdAccountMatchedSearchApplicationsEdgeDataStoresToFilterValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/matched_search_applications',
+      new AdAccountMatchedSearchApplicationsEdgeData(),
+      'EDGE',
+      AdAccountMatchedSearchApplicationsEdgeData::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getMaxBid(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/max_bid',
+      new AdAccountMaxBid(),
+      'EDGE',
+      AdAccountMaxBid::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getMcmeConversions(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/mcmeconversions',
+      new AdsMcmeConversion(),
+      'EDGE',
+      AdsMcmeConversion::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createMessageCampaign(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'bid_amount' => 'unsigned int',
+      'daily_budget' => 'unsigned int',
+      'lifetime_budget' => 'unsigned int',
+      'name' => 'string',
+      'page_id' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/message_campaign',
+      new AbstractCrudObject(),
+      'EDGE',
+      array(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getMessageDeliveryEstimate(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'bid_amount' => 'unsigned int',
+      'daily_budget' => 'unsigned int',
+      'is_direct_send_campaign' => 'bool',
+      'lifetime_budget' => 'unsigned int',
+      'lifetime_in_days' => 'unsigned int',
+      'optimization_goal' => 'optimization_goal_enum',
+      'pacing_type' => 'pacing_type_enum',
+      'promoted_object' => 'Object',
+      'targeting_spec' => 'Targeting',
+    );
+    $enums = array(
+      'optimization_goal_enum' => MessageDeliveryEstimateOptimizationGoalValues::getInstance()->getValues(),
+      'pacing_type_enum' => MessageDeliveryEstimatePacingTypeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/message_delivery_estimate',
+      new MessageDeliveryEstimate(),
+      'EDGE',
+      MessageDeliveryEstimate::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createMessage(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'message' => 'Object',
+      'message_id' => 'unsigned int',
+      'messenger_delivery_data' => 'map',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/messages',
+      new AbstractCrudObject(),
+      'EDGE',
+      array(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getMinimumBudgets(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'bid_amount' => 'int',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/minimum_budgets',
+      new MinimumBudget(),
+      'EDGE',
+      MinimumBudget::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getOnBehalfRequests(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'status' => 'status_enum',
+    );
+    $enums = array(
+      'status_enum' => BusinessOwnedObjectOnBehalfOfRequestStatusValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/onbehalf_requests',
+      new BusinessOwnedObjectOnBehalfOfRequest(),
+      'EDGE',
+      BusinessOwnedObjectOnBehalfOfRequest::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createProductAudience(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'allowed_domains' => 'list<string>',
+      'associated_audience_id' => 'unsigned int',
+      'claim_objective' => 'claim_objective_enum',
+      'content_type' => 'content_type_enum',
+      'creation_params' => 'map',
+      'description' => 'string',
+      'enable_fetch_or_create' => 'bool',
+      'event_source_group' => 'string',
+      'event_sources' => 'list<map>',
+      'exclusions' => 'list<Object>',
+      'inclusions' => 'list<Object>',
+      'is_snapshot' => 'bool',
+      'is_value_based' => 'bool',
+      'name' => 'string',
+      'opt_out_link' => 'string',
+      'parent_audience_id' => 'unsigned int',
+      'product_set_id' => 'string',
+      'rev_share_policy_id' => 'unsigned int',
+      'subtype' => 'subtype_enum',
+    );
+    $enums = array(
+      'claim_objective_enum' => AdAccountClaimObjectiveValues::getInstance()->getValues(),
+      'content_type_enum' => AdAccountContentTypeValues::getInstance()->getValues(),
+      'subtype_enum' => AdAccountSubtypeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/product_audiences',
+      new CustomAudience(),
+      'EDGE',
+      CustomAudience::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getPromotePages(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/promote_pages',
+      new Page(),
+      'EDGE',
+      Page::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getPublisherBlockLists(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/publisher_block_lists',
+      new PublisherBlockList(),
+      'EDGE',
+      PublisherBlockList::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createPublisherBlockList(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'name' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/publisher_block_lists',
+      new PublisherBlockList(),
+      'EDGE',
+      PublisherBlockList::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getReachEstimate(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'adgroup_ids' => 'list<string>',
+      'caller_id' => 'string',
+      'concepts' => 'string',
+      'creative_action_spec' => 'string',
+      'is_debug' => 'bool',
+      'object_store_url' => 'string',
+      'targeting_spec' => 'Targeting',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/reachestimate',
+      new AdAccountReachEstimate(),
+      'EDGE',
+      AdAccountReachEstimate::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getReachFrequencyPredictions(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/reachfrequencypredictions',
+      new ReachFrequencyPrediction(),
+      'EDGE',
+      ReachFrequencyPrediction::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createReachFrequencyPrediction(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'action' => 'action_enum',
+      'ad_formats' => 'list<map>',
+      'auction_entry_option_index' => 'unsigned int',
+      'budget' => 'unsigned int',
+      'buying_type' => 'buying_type_enum',
+      'campaign_group_id' => 'string',
+      'day_parting_schedule' => 'list<Object>',
+      'deal_id' => 'string',
+      'destination_id' => 'unsigned int',
+      'destination_ids' => 'list<string>',
+      'end_time' => 'unsigned int',
+      'exceptions' => 'bool',
+      'existing_campaign_id' => 'string',
+      'expiration_time' => 'unsigned int',
+      'frequency_cap' => 'unsigned int',
+      'grp_buying' => 'bool',
+      'impression' => 'unsigned int',
+      'instream_packages' => 'list<instream_packages_enum>',
+      'interval_frequency_cap_reset_period' => 'unsigned int',
+      'is_balanced_frequency' => 'bool',
+      'is_bonus_media' => 'bool',
+      'is_conversion_goal' => 'bool',
+      'is_full_view' => 'bool',
+      'is_higher_average_frequency' => 'bool',
+      'is_reach_and_frequency_io_buying' => 'bool',
+      'is_reserved_buying' => 'bool',
+      'num_curve_points' => 'unsigned int',
+      'objective' => 'string',
+      'optimization_goal' => 'string',
+      'prediction_mode' => 'unsigned int',
+      'reach' => 'unsigned int',
+      'rf_prediction_id' => 'string',
+      'rf_prediction_id_to_release' => 'string',
+      'rf_prediction_id_to_share' => 'string',
+      'start_time' => 'unsigned int',
+      'stop_time' => 'unsigned int',
+      'story_event_type' => 'unsigned int',
+      'target_cpm' => 'unsigned int',
+      'target_frequency' => 'unsigned int',
+      'target_frequency_reset_period' => 'unsigned int',
+      'target_spec' => 'Targeting',
+      'trending_topics_spec' => 'map',
+      'video_view_length_constraint' => 'unsigned int',
+    );
+    $enums = array(
+      'action_enum' => ReachFrequencyPredictionActionValues::getInstance()->getValues(),
+      'buying_type_enum' => ReachFrequencyPredictionBuyingTypeValues::getInstance()->getValues(),
+      'instream_packages_enum' => ReachFrequencyPredictionInstreamPackagesValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/reachfrequencypredictions',
+      new ReachFrequencyPrediction(),
+      'EDGE',
+      ReachFrequencyPrediction::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getRecommendations(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/recommendations',
+      new AdAccountRecommendations(),
+      'EDGE',
+      AdAccountRecommendations::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createRecommendation(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'asc_fragmentation_parameters' => 'map',
+      'autoflow_parameters' => 'map',
+      'fragmentation_parameters' => 'map',
+      'music_parameters' => 'map',
+      'recommendation_signature' => 'string',
+      'scale_good_campaign_parameters' => 'map',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/recommendations',
+      new AdAccountRecommendations(),
+      'EDGE',
+      AdAccountRecommendations::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getSavedAudiences(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'business_id' => 'string',
+      'fields' => 'list<string>',
+      'filtering' => 'list<Object>',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/saved_audiences',
+      new SavedAudience(),
+      'EDGE',
+      SavedAudience::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function deleteSubscribedApps(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'app_id' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_DELETE,
+      '/subscribed_apps',
+      new AbstractCrudObject(),
+      'EDGE',
+      array(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getSubscribedApps(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/subscribed_apps',
+      new AdAccountSubscribedApps(),
+      'EDGE',
+      AdAccountSubscribedApps::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createSubscribedApp(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'app_id' => 'string',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/subscribed_apps',
+      new AdAccountSubscribedApps(),
+      'EDGE',
+      AdAccountSubscribedApps::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getTargetingBrowse(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'excluded_category' => 'string',
+      'include_nodes' => 'bool',
+      'is_exclusion' => 'bool',
+      'limit_type' => 'limit_type_enum',
+      'regulated_categories' => 'list<regulated_categories_enum>',
+      'regulated_countries' => 'list<regulated_countries_enum>',
+      'whitelisted_types' => 'list<whitelisted_types_enum>',
+    );
+    $enums = array(
+      'limit_type_enum' => AdAccountTargetingUnifiedLimitTypeValues::getInstance()->getValues(),
+      'regulated_categories_enum' => AdAccountTargetingUnifiedRegulatedCategoriesValues::getInstance()->getValues(),
+      'regulated_countries_enum' => AdAccountTargetingUnifiedRegulatedCountriesValues::getInstance()->getValues(),
+      'whitelisted_types_enum' => AdAccountTargetingUnifiedWhitelistedTypesValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/targetingbrowse',
+      new AdAccountTargetingUnified(),
+      'EDGE',
+      AdAccountTargetingUnified::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getTargetingSearch(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'allow_only_fat_head_interests' => 'bool',
+      'app_store' => 'app_store_enum',
+      'countries' => 'list<string>',
+      'is_account_level_brand_safety_exclusion' => 'bool',
+      'is_account_level_employer_exclusion' => 'bool',
+      'is_exclusion' => 'bool',
+      'limit_type' => 'limit_type_enum',
+      'objective' => 'objective_enum',
+      'promoted_object' => 'Object',
+      'q' => 'string',
+      'regulated_categories' => 'list<regulated_categories_enum>',
+      'regulated_countries' => 'list<regulated_countries_enum>',
+      'session_id' => 'unsigned int',
+      'targeting_list' => 'list<Object>',
+      'whitelisted_types' => 'list<whitelisted_types_enum>',
+    );
+    $enums = array(
+      'app_store_enum' => AdAccountTargetingUnifiedAppStoreValues::getInstance()->getValues(),
+      'limit_type_enum' => AdAccountTargetingUnifiedLimitTypeValues::getInstance()->getValues(),
+      'objective_enum' => AdAccountTargetingUnifiedObjectiveValues::getInstance()->getValues(),
+      'regulated_categories_enum' => AdAccountTargetingUnifiedRegulatedCategoriesValues::getInstance()->getValues(),
+      'regulated_countries_enum' => AdAccountTargetingUnifiedRegulatedCountriesValues::getInstance()->getValues(),
+      'whitelisted_types_enum' => AdAccountTargetingUnifiedWhitelistedTypesValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/targetingsearch',
+      new AdAccountTargetingUnified(),
+      'EDGE',
+      AdAccountTargetingUnified::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getTargetingSentenceLines(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'discard_ages' => 'bool',
+      'discard_placements' => 'bool',
+      'hide_targeting_spec_from_return' => 'bool',
+      'targeting_spec' => 'Targeting',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/targetingsentencelines',
+      new TargetingSentenceLine(),
+      'EDGE',
+      TargetingSentenceLine::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getTargetingSuggestions(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'app_store' => 'app_store_enum',
+      'countries' => 'list<string>',
+      'limit_type' => 'limit_type_enum',
+      'mode' => 'mode_enum',
+      'objective' => 'objective_enum',
+      'objects' => 'Object',
+      'regulated_categories' => 'list<regulated_categories_enum>',
+      'regulated_countries' => 'list<regulated_countries_enum>',
+      'session_id' => 'unsigned int',
+      'targeting_list' => 'list<Object>',
+      'whitelisted_types' => 'list<whitelisted_types_enum>',
+    );
+    $enums = array(
+      'app_store_enum' => AdAccountTargetingUnifiedAppStoreValues::getInstance()->getValues(),
+      'limit_type_enum' => AdAccountTargetingUnifiedLimitTypeValues::getInstance()->getValues(),
+      'mode_enum' => AdAccountTargetingUnifiedModeValues::getInstance()->getValues(),
+      'objective_enum' => AdAccountTargetingUnifiedObjectiveValues::getInstance()->getValues(),
+      'regulated_categories_enum' => AdAccountTargetingUnifiedRegulatedCategoriesValues::getInstance()->getValues(),
+      'regulated_countries_enum' => AdAccountTargetingUnifiedRegulatedCountriesValues::getInstance()->getValues(),
+      'whitelisted_types_enum' => AdAccountTargetingUnifiedWhitelistedTypesValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/targetingsuggestions',
+      new AdAccountTargetingUnified(),
+      'EDGE',
+      AdAccountTargetingUnified::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getTargetingValidATIOn(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'id_list' => 'list<unsigned int>',
+      'is_exclusion' => 'bool',
+      'name_list' => 'list<string>',
+      'targeting_list' => 'list<Object>',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/targetingvalidation',
+      new AdAccountTargetingUnified(),
+      'EDGE',
+      AdAccountTargetingUnified::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getTracking(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/tracking',
+      new AdAccountTrackingData(),
+      'EDGE',
+      AdAccountTrackingData::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createTracking(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'tracking_specs' => 'Object',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/tracking',
+      new AdAccount(),
+      'EDGE',
+      AdAccount::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getUsers(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/users',
+      new AdAccountUser(),
+      'EDGE',
+      AdAccountUser::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function deleteUsersOfAnyAudience(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'namespace' => 'string',
+      'payload' => 'Object',
+      'session' => 'Object',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_DELETE,
+      '/usersofanyaudience',
+      new AbstractCrudObject(),
+      'EDGE',
+      array(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getValueRuleSet(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'product_type' => 'product_type_enum',
+      'status' => 'status_enum',
+    );
+    $enums = array(
+      'product_type_enum' => AdsValueAdjustmentRuleCollectionProductTypeValues::getInstance()->getValues(),
+      'status_enum' => AdsValueAdjustmentRuleCollectionStatusValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/value_rule_set',
+      new AdsValueAdjustmentRuleCollection(),
+      'EDGE',
+      AdsValueAdjustmentRuleCollection::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createValueRuleSet(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'name' => 'string',
+      'product_type' => 'product_type_enum',
+      'rules' => 'list<map>',
+    );
+    $enums = array(
+      'product_type_enum' => AdsValueAdjustmentRuleCollectionProductTypeValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/value_rule_set',
+      new AdsValueAdjustmentRuleCollection(),
+      'EDGE',
+      AdsValueAdjustmentRuleCollection::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getVideoAds(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'since' => 'datetime',
+      'until' => 'datetime',
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/video_ads',
+      new AdVideo(),
+      'EDGE',
+      AdVideo::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function createVideoAd(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'description' => 'string',
+      'privacy' => 'string',
+      'title' => 'string',
+      'upload_phase' => 'upload_phase_enum',
+      'video_id' => 'string',
+      'video_state' => 'video_state_enum',
+    );
+    $enums = array(
+      'upload_phase_enum' => AdVideoUploadPhaseValues::getInstance()->getValues(),
+      'video_state_enum' => AdVideoVideoStateValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/video_ads',
+      new AdVideo(),
+      'EDGE',
+      AdVideo::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function getSelf(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+    );
+    $enums = array(
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_GET,
+      '/',
+      new AdAccount(),
+      'NODE',
+      AdAccount::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+  public function updateSelf(array $fields = array(), array $params = array(), $pending = false) {
+    $this->assureId();
+
+    $param_types = array(
+      'agency_client_declaration' => 'map',
+      'attribution_spec' => 'list<Object>',
+      'business_info' => 'map',
+      'currency' => 'currency_enum',
+      'custom_audience_info' => 'map',
+      'default_dsa_beneficiary' => 'string',
+      'default_dsa_payor' => 'string',
+      'end_advertiser' => 'string',
+      'existing_customers' => 'list<string>',
+      'is_ba_skip_delayed_eligible' => 'bool',
+      'is_notifications_enabled' => 'bool',
+      'media_agency' => 'string',
+      'name' => 'string',
+      'partner' => 'string',
+      'spend_cap' => 'float',
+      'spend_cap_action' => 'string',
+      'timezone_id' => 'unsigned int',
+      'tos_accepted' => 'map',
+    );
+    $enums = array(
+      'currency_enum' => AdAccountCurrencyValues::getInstance()->getValues(),
+    );
+
+    $request = new ApiRequest(
+      $this->api,
+      $this->data['id'],
+      RequestInterface::METHOD_POST,
+      '/',
+      new AdAccount(),
+      'NODE',
+      AdAccount::getFieldsEnum()->getValues(),
+      new TypeChecker($param_types, $enums)
+    );
+    $request->addParams($params);
+    $request->addFields($fields);
+    return $pending ? $request : $request->execute();
+  }
+
+}

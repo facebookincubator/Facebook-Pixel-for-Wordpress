@@ -1,0 +1,62 @@
+<?php
+ /*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * All rights reserved.
+ *
+ * This source code is licensed under the license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+namespace FacebookPixelPlugin\FacebookAds\Object\Fields;
+
+use FacebookPixelPlugin\FacebookAdsEnum\AbstractEnum;
+
+/**
+ * This class is auto-generated.
+ *
+ * For any issues or feature requests related to this class, please let us know
+ * on github and we'll fix in our codegen framework. We'll not be able to accept
+ * pull request for this class.
+ *
+ */
+
+class AdCreativeLinkDataCallToActionValueFields extends AbstractEnum {
+
+  const ANDROID_URL = 'android_url';
+  const APP_DESTINATION = 'app_destination';
+  const APP_LINK = 'app_link';
+  const APPLICATION = 'application';
+  const EVENT_ID = 'event_id';
+  const IOS_URL = 'ios_url';
+  const LAND_ON_WHATSAPP_CATALOG = 'land_on_whatsapp_catalog';
+  const LAND_ON_WHATSAPP_PROFILE = 'land_on_whatsapp_profile';
+  const LEAD_GEN_FORM_ID = 'lead_gen_form_id';
+  const LINK = 'link';
+  const LINK_CAPTION = 'link_caption';
+  const LINK_FORMAT = 'link_format';
+  const OBJECT_STORE_URLS = 'object_store_urls';
+  const PAGE = 'page';
+  const PRODUCT_LINK = 'product_link';
+  const WHATSAPP_NUMBER = 'whatsapp_number';
+
+  public function getFieldTypes() {
+    return array(
+      'android_url' => 'string',
+      'app_destination' => 'string',
+      'app_link' => 'string',
+      'application' => 'string',
+      'event_id' => 'string',
+      'ios_url' => 'string',
+      'land_on_whatsapp_catalog' => 'int',
+      'land_on_whatsapp_profile' => 'int',
+      'lead_gen_form_id' => 'string',
+      'link' => 'string',
+      'link_caption' => 'string',
+      'link_format' => 'string',
+      'object_store_urls' => 'list<string>',
+      'page' => 'string',
+      'product_link' => 'string',
+      'whatsapp_number' => 'string',
+    );
+  }
+}
