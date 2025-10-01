@@ -15,10 +15,10 @@
 
 namespace FacebookPixelPlugin\Core;
 
-use FacebookPixelPlugin\FacebookAdsObject\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAdsObject\ServerSide\UserData;
-use FacebookPixelPlugin\FacebookAdsObject\ServerSide\CustomData;
-use FacebookPixelPlugin\FacebookAdsObject\ServerSide\Normalizer;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Normalizer;
 
 use FacebookPixelPlugin\Core\AAMFieldsExtractor;
 use FacebookPixelPlugin\Core\AAMSettingsFields;

@@ -27,7 +27,7 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\FacebookAdsObject\ServerSide\AdsPixelSettings;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\AAMFieldsExtractor;
