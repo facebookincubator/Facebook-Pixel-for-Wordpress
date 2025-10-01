@@ -11,25 +11,25 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\PostFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentCommentPrivacyValueValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentLiveFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentOrderValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultDatePresetValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultPeriodValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PostBackdatedTimeGranularityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PostFeedStoryVisibilityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PostFormattingValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PostPlaceAttachmentSettingValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PostPostSurfacesBlacklistValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PostPostingToRedspaceValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PostTargetSurfaceValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PostTimelineVisibilityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PostUnpublishedContentTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProfileTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\PostFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentCommentPrivacyValueValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentLiveFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentOrderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultDatePresetValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultPeriodValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PostBackdatedTimeGranularityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PostFeedStoryVisibilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PostFormattingValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PostPlaceAttachmentSettingValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PostPostSurfacesBlacklistValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PostPostingToRedspaceValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PostTargetSurfaceValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PostTimelineVisibilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PostUnpublishedContentTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProfileTypeValues;
 
 /**
  * This class is auto-generated.

@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\MessengerBusinessTemplateFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\MessengerBusinessTemplateStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\MessengerBusinessTemplateFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\MessengerBusinessTemplateStatusValues;
 
 /**
  * This class is auto-generated.

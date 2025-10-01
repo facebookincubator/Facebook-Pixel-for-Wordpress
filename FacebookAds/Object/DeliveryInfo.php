@@ -11,9 +11,9 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\DeliveryInfoFields;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\DeliveryInfoFields;
 
 /**
  * This class is auto-generated.

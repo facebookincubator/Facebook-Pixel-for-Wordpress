@@ -11,9 +11,9 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\BusinessMediaAdPlacementValidationResultFields;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\BusinessMediaAdPlacementValidationResultFields;
 
 /**
  * This class is auto-generated.

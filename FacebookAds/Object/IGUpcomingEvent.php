@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\IGUpcomingEventFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\IGUpcomingEventNotificationSubtypesValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\IGUpcomingEventNotificationTargetTimeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\IGUpcomingEventFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\IGUpcomingEventNotificationSubtypesValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\IGUpcomingEventNotificationTargetTimeValues;
 
 /**
  * This class is auto-generated.

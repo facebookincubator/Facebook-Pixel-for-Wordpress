@@ -11,14 +11,14 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\LocalServiceBusinessFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LocalServiceBusinessAvailabilityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LocalServiceBusinessConditionValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LocalServiceBusinessImageFetchStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LocalServiceBusinessVisibilityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OverrideDetailsTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\LocalServiceBusinessFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LocalServiceBusinessAvailabilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LocalServiceBusinessConditionValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LocalServiceBusinessImageFetchStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LocalServiceBusinessVisibilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OverrideDetailsTypeValues;
 
 /**
  * This class is auto-generated.

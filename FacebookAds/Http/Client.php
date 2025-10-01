@@ -25,10 +25,10 @@
 namespace FacebookPixelPlugin\FacebookAds\Http;
 
 use FacebookPixelPlugin\FacebookAdsApiConfig;
-use FacebookPixelPlugin\FacebookAdsHttp\Adapter\AdapterInterface;
-use FacebookPixelPlugin\FacebookAdsHttp\Adapter\CurlAdapter;
-use FacebookPixelPlugin\FacebookAdsHttp\Exception\EmptyResponseException;
-use FacebookPixelPlugin\FacebookAdsHttp\Exception\RequestException;
+use FacebookPixelPlugin\FacebookAds\Http\Adapter\AdapterInterface;
+use FacebookPixelPlugin\FacebookAds\Http\Adapter\CurlAdapter;
+use FacebookPixelPlugin\FacebookAds\Http\Exception\EmptyResponseException;
+use FacebookPixelPlugin\FacebookAds\Http\Exception\RequestException;
 
 class Client {
 

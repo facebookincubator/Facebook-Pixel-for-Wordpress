@@ -29,7 +29,7 @@ namespace FacebookPixelPlugin\Tests;
 
 use WP_Mock\Tools\TestCase;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
-use FacebookPixelPlugin\FacebookAdsObject\ServerSide\AdsPixelSettings;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 
 /**
  * FacebookWordpressTestBase class.

@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\LeadgenFormFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LeadgenFormLocaleValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LeadgenFormStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\LeadgenFormFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LeadgenFormLocaleValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LeadgenFormStatusValues;
 
 /**
  * This class is auto-generated.

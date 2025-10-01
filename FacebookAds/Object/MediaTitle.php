@@ -11,13 +11,13 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\MediaTitleFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\MediaTitleContentCategoryValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\MediaTitleImageFetchStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\MediaTitleVisibilityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OverrideDetailsTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\MediaTitleFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\MediaTitleContentCategoryValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\MediaTitleImageFetchStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\MediaTitleVisibilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OverrideDetailsTypeValues;
 
 /**
  * This class is auto-generated.

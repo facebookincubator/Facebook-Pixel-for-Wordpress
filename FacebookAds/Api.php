@@ -9,10 +9,10 @@
 
 namespace FacebookPixelPlugin\FacebookAds;
 
-use FacebookPixelPlugin\FacebookAdsHttp\Client;
-use FacebookPixelPlugin\FacebookAdsHttp\Exception\RequestException;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
-use FacebookPixelPlugin\FacebookAdsHttp\ResponseInterface;
+use FacebookPixelPlugin\FacebookAds\Http\Client;
+use FacebookPixelPlugin\FacebookAds\Http\Exception\RequestException;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\ResponseInterface;
 use FacebookPixelPlugin\FacebookAdsLogger\LoggerInterface;
 use FacebookPixelPlugin\FacebookAdsLogger\NullLogger;
 use FacebookPixelPlugin\FacebookAdsCrashReporter;

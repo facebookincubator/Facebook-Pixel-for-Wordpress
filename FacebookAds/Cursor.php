@@ -9,10 +9,10 @@
 
 namespace FacebookPixelPlugin\FacebookAds;
 
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
-use FacebookPixelPlugin\FacebookAdsHttp\ResponseInterface;
-use FacebookPixelPlugin\FacebookAdsHttp\Util;
-use FacebookPixelPlugin\FacebookAdsObject\AbstractObject;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\ResponseInterface;
+use FacebookPixelPlugin\FacebookAds\Http\Util;
+use FacebookPixelPlugin\FacebookAds\Object\AbstractObject;
 
 class Cursor implements \Iterator, \Countable, \ArrayAccess {
   /**

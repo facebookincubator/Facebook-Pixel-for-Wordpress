@@ -11,15 +11,15 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\InsightsResultFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultBreakdownValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultDatePresetValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultMetricTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultMetricValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultPeriodValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultTimeframeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\InsightsResultFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultBreakdownValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultDatePresetValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultMetricTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultMetricValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultPeriodValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultTimeframeValues;
 
 /**
  * This class is auto-generated.

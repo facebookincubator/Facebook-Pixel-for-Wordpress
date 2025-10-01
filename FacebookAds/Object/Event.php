@@ -11,19 +11,19 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\EventFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\EventCategoryValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\EventEventStateFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\EventOnlineEventFormatValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\EventTimeFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\EventTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoProjectionValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoSpatialAudioFormatValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoStereoscopicModeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoStreamTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\EventFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\EventCategoryValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\EventEventStateFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\EventOnlineEventFormatValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\EventTimeFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\EventTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoProjectionValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoSpatialAudioFormatValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoStereoscopicModeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoStreamTypeValues;
 
 /**
  * This class is auto-generated.

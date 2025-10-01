@@ -24,9 +24,9 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Http\Adapter;
 
-use FacebookPixelPlugin\FacebookAdsHttp\Client;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
-use FacebookPixelPlugin\FacebookAdsHttp\ResponseInterface;
+use FacebookPixelPlugin\FacebookAds\Http\Client;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\ResponseInterface;
 
 interface AdapterInterface {
 

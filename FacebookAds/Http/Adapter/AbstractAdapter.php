@@ -24,7 +24,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Http\Adapter;
 
-use FacebookPixelPlugin\FacebookAdsHttp\Client;
+use FacebookPixelPlugin\FacebookAds\Http\Client;
 
 abstract class AbstractAdapter implements AdapterInterface {
 

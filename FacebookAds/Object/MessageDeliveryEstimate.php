@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\MessageDeliveryEstimateFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\MessageDeliveryEstimateOptimizationGoalValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\MessageDeliveryEstimatePacingTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\MessageDeliveryEstimateFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\MessageDeliveryEstimateOptimizationGoalValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\MessageDeliveryEstimatePacingTypeValues;
 
 /**
  * This class is auto-generated.

@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\VideoCopyrightFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VideoCopyrightContentCategoryValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VideoCopyrightMonitoringTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\VideoCopyrightFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VideoCopyrightContentCategoryValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VideoCopyrightMonitoringTypeValues;
 
 /**
  * This class is auto-generated.

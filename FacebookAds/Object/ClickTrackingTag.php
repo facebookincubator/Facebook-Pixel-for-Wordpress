@@ -9,8 +9,8 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object;
 
-use FacebookPixelPlugin\FacebookAdsObject\Fields\ClickTrackingTagFields;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\ClickTrackingTagFields;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 
 class ClickTrackingTag extends AbstractCrudObject {
 

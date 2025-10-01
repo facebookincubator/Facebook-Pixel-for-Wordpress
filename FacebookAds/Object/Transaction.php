@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\TransactionFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\TransactionProductTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\TransactionFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\TransactionProductTypeValues;
 
 /**
  * This class is auto-generated.

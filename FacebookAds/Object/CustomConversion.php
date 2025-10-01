@@ -11,12 +11,12 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\CustomConversionFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CustomConversionActionSourceTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CustomConversionCustomEventTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CustomConversionStatsResultAggregationValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\CustomConversionFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CustomConversionActionSourceTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CustomConversionCustomEventTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CustomConversionStatsResultAggregationValues;
 
 /**
  * This class is auto-generated.

@@ -24,8 +24,8 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object\Signal;
 
-use FacebookPixelPlugin\FacebookAdsObject\BusinessDataAPI\Content as BusinessDataContent;
-use FacebookPixelPlugin\FacebookAdsObject\ServerSide\Content as ServerSideContent;
+use FacebookPixelPlugin\FacebookAds\Object\BusinessDataAPI\Content as BusinessDataContent;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content as ServerSideContent;
 
 class Content {
   /**

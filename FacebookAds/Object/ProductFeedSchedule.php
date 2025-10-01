@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\ProductFeedScheduleFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductFeedScheduleIntervalValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\ProductFeedScheduleFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductFeedScheduleIntervalValues;
 
 /**
  * This class is auto-generated.

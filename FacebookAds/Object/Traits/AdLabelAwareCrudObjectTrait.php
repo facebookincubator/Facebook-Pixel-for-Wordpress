@@ -10,7 +10,7 @@
 namespace FacebookPixelPlugin\FacebookAds\Object\Traits;
 
 use FacebookPixelPlugin\FacebookAdsApi;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 
 /**
  * @method Api getApi()

@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AdRecommendationFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdRecommendationConfidenceValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdRecommendationImportanceValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AdRecommendationFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdRecommendationConfidenceValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdRecommendationImportanceValues;
 
 /**
  * This class is auto-generated.

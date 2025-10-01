@@ -11,14 +11,14 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\CommentFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentCommentPrivacyValueValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentLiveFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentOrderValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProfileTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\CommentFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentCommentPrivacyValueValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentLiveFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentOrderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProfileTypeValues;
 
 /**
  * This class is auto-generated.

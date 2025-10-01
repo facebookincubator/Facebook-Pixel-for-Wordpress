@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\VideoPollFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VideoPollActionValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\VideoPollStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\VideoPollFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VideoPollActionValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\VideoPollStatusValues;
 
 /**
  * This class is auto-generated.

@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\ThirdPartyPartnerPanelScheduledFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ThirdPartyPartnerPanelScheduledStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ThirdPartyPartnerPanelScheduledStudyTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\ThirdPartyPartnerPanelScheduledFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ThirdPartyPartnerPanelScheduledStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ThirdPartyPartnerPanelScheduledStudyTypeValues;
 
 /**
  * This class is auto-generated.

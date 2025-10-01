@@ -9,8 +9,8 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object\CustomAudienceNormalizers;
 
-use FacebookPixelPlugin\FacebookAdsObject\CustomAudienceNormalizers\ValueNormalizerInterface;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\CustomAudienceMultikeySchemaFields;
+use FacebookPixelPlugin\FacebookAds\Object\CustomAudienceNormalizers\ValueNormalizerInterface;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\CustomAudienceMultikeySchemaFields;
 
 class HashNormalizer implements ValueNormalizerInterface {
 

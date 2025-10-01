@@ -27,7 +27,7 @@ namespace FacebookPixelPlugin\FacebookAds\Object\ServerSide;
 use ArrayAccess;
 use FacebookPixelPlugin\FacebookAdsApi;
 use FacebookPixelPlugin\FacebookAdsApiConfig;
-use FacebookPixelPlugin\FacebookAdsObject\AdsPixel;
+use FacebookPixelPlugin\FacebookAds\Object\AdsPixel;
 
 /**
  * Conversions API Event Request

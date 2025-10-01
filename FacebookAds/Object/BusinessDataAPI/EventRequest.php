@@ -26,7 +26,7 @@ namespace FacebookPixelPlugin\FacebookAds\Object\BusinessDataAPI;
 
 use FacebookPixelPlugin\FacebookAdsApi;
 use FacebookPixelPlugin\FacebookAdsApiConfig;
-use FacebookPixelPlugin\FacebookAdsObject\Page;
+use FacebookPixelPlugin\FacebookAds\Object\Page;
 
 /**
  * Business Data API Event Request

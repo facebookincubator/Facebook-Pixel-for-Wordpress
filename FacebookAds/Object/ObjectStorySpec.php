@@ -9,8 +9,8 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object;
 
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AdCreativeObjectStorySpecFields;
-use FacebookPixelPlugin\FacebookAdsObject\Traits\FieldValidation;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AdCreativeObjectStorySpecFields;
+use FacebookPixelPlugin\FacebookAds\Object\Traits\FieldValidation;
 
 /**
  * @deprecated use AdCreativeObjectStorySpec instead

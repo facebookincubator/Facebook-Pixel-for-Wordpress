@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\PaymentEnginePaymentFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PaymentEnginePaymentReasonValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\PaymentEnginePaymentFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PaymentEnginePaymentReasonValues;
 
 /**
  * This class is auto-generated.

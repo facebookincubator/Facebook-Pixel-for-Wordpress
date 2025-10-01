@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\CheckBatchRequestStatusFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CheckBatchRequestStatusErrorPriorityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\CheckBatchRequestStatusFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CheckBatchRequestStatusErrorPriorityValues;
 
 /**
  * This class is auto-generated.

@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\PlacementFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PlacementDevicePlatformsValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PlacementEffectiveDevicePlatformsValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\PlacementFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PlacementDevicePlatformsValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PlacementEffectiveDevicePlatformsValues;
 
 /**
  * This class is auto-generated.

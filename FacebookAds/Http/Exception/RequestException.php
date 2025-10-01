@@ -25,7 +25,7 @@
 namespace FacebookPixelPlugin\FacebookAds\Http\Exception;
 
 use FacebookPixelPlugin\FacebookAdsException\Exception;
-use FacebookPixelPlugin\FacebookAdsHttp\ResponseInterface;
+use FacebookPixelPlugin\FacebookAds\Http\ResponseInterface;
 
 class RequestException extends Exception {
 

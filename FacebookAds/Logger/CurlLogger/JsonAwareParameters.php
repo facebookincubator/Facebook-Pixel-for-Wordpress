@@ -24,7 +24,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Logger\CurlLogger;
 
-use FacebookPixelPlugin\FacebookAdsHttp\Parameters;
+use FacebookPixelPlugin\FacebookAds\Http\Parameters;
 
 class JsonAwareParameters extends Parameters {
 

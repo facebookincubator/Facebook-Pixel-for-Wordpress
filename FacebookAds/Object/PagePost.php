@@ -11,20 +11,20 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\PagePostFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentCommentPrivacyValueValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentLiveFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentOrderValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultDatePresetValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\InsightsResultPeriodValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PagePostBackdatedTimeGranularityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PagePostFeedStoryVisibilityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PagePostTimelineVisibilityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PagePostWithValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProfileTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\PagePostFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentCommentPrivacyValueValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentLiveFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentOrderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultDatePresetValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\InsightsResultPeriodValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PagePostBackdatedTimeGranularityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PagePostFeedStoryVisibilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PagePostTimelineVisibilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PagePostWithValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProfileTypeValues;
 
 /**
  * This class is auto-generated.

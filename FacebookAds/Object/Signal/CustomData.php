@@ -24,8 +24,8 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object\Signal;
 
-use FacebookPixelPlugin\FacebookAdsObject\BusinessDataAPI\CustomData as BusinessDataCustomData;
-use FacebookPixelPlugin\FacebookAdsObject\ServerSide\CustomData as ServerSideCustomData;
+use FacebookPixelPlugin\FacebookAds\Object\BusinessDataAPI\CustomData as BusinessDataCustomData;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData as ServerSideCustomData;
 
 class CustomData {
 

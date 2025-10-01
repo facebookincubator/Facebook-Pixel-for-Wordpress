@@ -9,8 +9,8 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object;
 
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\SystemUserFields;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\SystemUserFields;
 
 class SystemUser extends AbstractCrudObject {
 

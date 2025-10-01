@@ -25,13 +25,13 @@
 namespace FacebookPixelPlugin\FacebookAds\Http\Adapter;
 
 use FacebookPixelPlugin\FacebookAdsException\Exception;
-use FacebookPixelPlugin\FacebookAdsHttp\Adapter\Curl\AbstractCurl;
-use FacebookPixelPlugin\FacebookAdsHttp\Adapter\Curl\Curl;
-use FacebookPixelPlugin\FacebookAdsHttp\Adapter\Curl\CurlInterface;
-use FacebookPixelPlugin\FacebookAdsHttp\Client;
-use FacebookPixelPlugin\FacebookAdsHttp\Headers;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
-use FacebookPixelPlugin\FacebookAdsHttp\ResponseInterface;
+use FacebookPixelPlugin\FacebookAds\Http\Adapter\Curl\AbstractCurl;
+use FacebookPixelPlugin\FacebookAds\Http\Adapter\Curl\Curl;
+use FacebookPixelPlugin\FacebookAds\Http\Adapter\Curl\CurlInterface;
+use FacebookPixelPlugin\FacebookAds\Http\Client;
+use FacebookPixelPlugin\FacebookAds\Http\Headers;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\ResponseInterface;
 
 class CurlAdapter extends AbstractAdapter {
 

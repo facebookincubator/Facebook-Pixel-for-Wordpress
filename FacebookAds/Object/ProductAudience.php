@@ -9,7 +9,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object;
 
-use FacebookPixelPlugin\FacebookAdsObject\Fields\ProductAudienceFields;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\ProductAudienceFields;
 
 class ProductAudience extends AbstractCrudObject {
 

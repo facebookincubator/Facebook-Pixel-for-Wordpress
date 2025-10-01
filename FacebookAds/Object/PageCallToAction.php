@@ -11,13 +11,13 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\PageCallToActionFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PageCallToActionAndroidDestinationTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PageCallToActionIphoneDestinationTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PageCallToActionTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\PageCallToActionWebDestinationTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\PageCallToActionFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PageCallToActionAndroidDestinationTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PageCallToActionIphoneDestinationTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PageCallToActionTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\PageCallToActionWebDestinationTypeValues;
 
 /**
  * This class is auto-generated.

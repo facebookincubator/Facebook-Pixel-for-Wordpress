@@ -11,13 +11,13 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\JobOpeningFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\JobOpeningJobStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\JobOpeningPlatformReviewStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\JobOpeningReviewRejectionReasonsValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\JobOpeningTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\JobOpeningFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\JobOpeningJobStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\JobOpeningPlatformReviewStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\JobOpeningReviewRejectionReasonsValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\JobOpeningTypeValues;
 
 /**
  * This class is auto-generated.

@@ -24,7 +24,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Http\Adapter\Curl;
 
-use FacebookPixelPlugin\FacebookAdsHttp\FileParameter;
+use FacebookPixelPlugin\FacebookAds\Http\FileParameter;
 
 class Curl extends AbstractCurl {
 

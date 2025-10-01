@@ -11,19 +11,19 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AdsPixelFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsPixelAutomaticMatchingFieldsValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsPixelDataUseSettingValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsPixelFirstPartyCookieStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsPixelPermittedTasksValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsPixelSortByValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsPixelStatsResultAggregationValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdsPixelTasksValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\DACheckConnectionMethodValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OfflineConversionDataSetUploadOrderValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OfflineConversionDataSetUploadSortByValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AdsPixelFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsPixelAutomaticMatchingFieldsValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsPixelDataUseSettingValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsPixelFirstPartyCookieStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsPixelPermittedTasksValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsPixelSortByValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsPixelStatsResultAggregationValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdsPixelTasksValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\DACheckConnectionMethodValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OfflineConversionDataSetUploadOrderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OfflineConversionDataSetUploadSortByValues;
 
 /**
  * This class is auto-generated.

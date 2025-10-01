@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AdAccountMatchedSearchApplicationsEdgeDataFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountMatchedSearchApplicationsEdgeDataAppStoreValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdAccountMatchedSearchApplicationsEdgeDataStoresToFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AdAccountMatchedSearchApplicationsEdgeDataFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdAccountMatchedSearchApplicationsEdgeDataAppStoreValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdAccountMatchedSearchApplicationsEdgeDataStoresToFilterValues;
 
 /**
  * This class is auto-generated.

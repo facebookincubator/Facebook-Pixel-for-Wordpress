@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AdCreativeLinkDataMomentFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdCreativeLinkDataMomentTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AdCreativeLinkDataMomentFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdCreativeLinkDataMomentTypeValues;
 
 /**
  * This class is auto-generated.

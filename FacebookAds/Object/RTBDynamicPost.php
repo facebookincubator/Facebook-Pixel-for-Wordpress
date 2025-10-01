@@ -11,12 +11,12 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\RTBDynamicPostFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentLiveFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentOrderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\RTBDynamicPostFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentLiveFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentOrderValues;
 
 /**
  * This class is auto-generated.

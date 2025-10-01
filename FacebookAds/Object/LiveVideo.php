@@ -11,22 +11,22 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\LiveVideoFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentLiveFilterValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\CommentOrderValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoBroadcastStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoLiveCommentModerationSettingValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoPersistentStreamKeyStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoProjectionValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoSourceValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoSpatialAudioFormatValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoStatusValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoStereoscopicModeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\LiveVideoStreamTypeValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProfileTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\LiveVideoFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentLiveFilterValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\CommentOrderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoBroadcastStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoLiveCommentModerationSettingValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoPersistentStreamKeyStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoProjectionValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoSourceValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoSpatialAudioFormatValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoStatusValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoStereoscopicModeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\LiveVideoStreamTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProfileTypeValues;
 
 /**
  * This class is auto-generated.

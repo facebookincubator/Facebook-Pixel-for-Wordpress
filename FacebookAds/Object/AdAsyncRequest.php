@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\AdAsyncRequestFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\AdAsyncRequestStatusesValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\AdAsyncRequestFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\AdAsyncRequestStatusesValues;
 
 /**
  * This class is auto-generated.

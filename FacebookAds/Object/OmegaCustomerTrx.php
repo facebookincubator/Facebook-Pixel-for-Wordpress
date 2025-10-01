@@ -11,11 +11,11 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\OmegaCustomerTrxFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OmegaCustomerTrxProductTypesValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\OmegaCustomerTrxTypeValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\OmegaCustomerTrxFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OmegaCustomerTrxProductTypesValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\OmegaCustomerTrxTypeValues;
 
 /**
  * This class is auto-generated.

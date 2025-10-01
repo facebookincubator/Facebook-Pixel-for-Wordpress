@@ -11,16 +11,16 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\ProductGroupFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductItemAgeGroupValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductItemAvailabilityValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductItemCommerceTaxCategoryValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductItemConditionValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductItemGenderValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductItemMarkedForProductLaunchValues;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ProductItemVisibilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\ProductGroupFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductItemAgeGroupValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductItemAvailabilityValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductItemCommerceTaxCategoryValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductItemConditionValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductItemGenderValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductItemMarkedForProductLaunchValues;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ProductItemVisibilityValues;
 
 /**
  * This class is auto-generated.

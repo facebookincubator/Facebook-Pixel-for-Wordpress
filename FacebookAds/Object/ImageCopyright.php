@@ -11,10 +11,10 @@ namespace FacebookPixelPlugin\FacebookAds\Object;
 
 use FacebookPixelPlugin\FacebookAdsApiRequest;
 use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsHttp\RequestInterface;
+use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsObject\Fields\ImageCopyrightFields;
-use FacebookPixelPlugin\FacebookAdsObject\Values\ImageCopyrightGeoOwnershipValues;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\ImageCopyrightFields;
+use FacebookPixelPlugin\FacebookAds\Object\Values\ImageCopyrightGeoOwnershipValues;
 
 /**
  * This class is auto-generated.
