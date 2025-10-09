@@ -538,6 +538,10 @@ class FacebookWordpressOptions {
         if ( ! is_wp_error( $response ) && isset( $response_body['ID'] ) ) {
             return 1;
         }
+        if ( defined( 'IS_ATOMIC' ) && IS_ATOMIC ) {
+          return 1;
+	      }
+
         return 0;
     }
 
