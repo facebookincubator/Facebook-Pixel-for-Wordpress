@@ -72,19 +72,14 @@ class FacebookForWordpress {
     }
 
     private static function update_db_for_wpcom() {
-        if ( false !== get_option( 'is_wordpress_com_hosted' ) ) {
-            return;
-        }
-
         if ( false !== get_transient( 'facebook_wpcom_check' ) ) {
             return;
         }
 
-        set_transient( 'facebook_wpcom_check', 1, HOUR_IN_SECONDS );
-
         $is_wp_com_hosted = FacebookWordpressOptions::is_wordpress_com_hosted();
 
         update_option( 'is_wordpress_com_hosted', $is_wp_com_hosted );
+        set_transient( 'facebook_wpcom_check', 1, WEEK_IN_SECONDS );
     }
 
     /**
