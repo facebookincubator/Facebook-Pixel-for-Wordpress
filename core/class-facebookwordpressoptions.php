@@ -533,7 +533,7 @@ class FacebookWordpressOptions {
     public static function is_wordpress_com_hosted() {
         if ( defined( 'WPCOMSH_VERSION' ) && defined( 'IS_ATOMIC' ) && IS_ATOMIC ) {
           return 1;
-	      }
+        }
 
         return 0;
     }
