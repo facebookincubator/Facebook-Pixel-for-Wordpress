@@ -531,13 +531,10 @@ class FacebookWordpressOptions {
      * @return bool Whether the current site is hosted on WordPress.com.
      */
     public static function is_wordpress_com_hosted() {
-        $api_url       = 'https://public-api.wordpress.com/rest/v1.1/sites/' . wp_parse_url( get_site_url() )['host'];
-        $response      = wp_remote_get( $api_url );
-        $response_body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-        if ( ! is_wp_error( $response ) && isset( $response_body['ID'] ) ) {
-            return 1;
+        if ( defined( 'WPCOMSH_VERSION' ) && defined( 'IS_ATOMIC' ) && IS_ATOMIC ) {
+          return 1;
         }
+
         return 0;
     }
 
