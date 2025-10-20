@@ -129,7 +129,7 @@ class FacebookWordpressPixelInjection {
         echo FacebookPixel::get_pixel_base_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         $capi_integration_status =
         FacebookWordpressOptions::get_capi_integration_status();
-        // Only include user info for frontend users, not internal/admin users
+        // Only include user info for frontend users, not internal/admin users.
         $user_info = FacebookPluginUtils::is_internal_user() ?
             array() : FacebookWordpressOptions::get_user_info();
         echo FacebookPixel::get_pixel_init_code( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
