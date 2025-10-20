@@ -36,6 +36,7 @@ use FacebookAds\Object\ServerSide\AdsPixelSettings;
  */
 abstract class FacebookWordpressTestBase extends TestCase {
 
+    protected $mocked_fbpixel;
     /**
      * Sets up the environment for each test.
      *
@@ -110,45 +111,45 @@ abstract class FacebookWordpressTestBase extends TestCase {
         $options = array(),
         $aam_settings = null
     ) {
-    $this->mocked_options = \Mockery::mock(
+    $mocked_options = \Mockery::mock(
         'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
     );
     if ( array_key_exists( 'agent_string', $options ) ) {
-        $this->mocked_options->shouldReceive( 'get_agent_string' )
+        $mocked_options->shouldReceive( 'get_agent_string' )
         ->andReturn( $options['agent_string'] );
     } else {
-        $this->mocked_options->shouldReceive( 'get_agent_string' )
+        $mocked_options->shouldReceive( 'get_agent_string' )
                         ->andReturn( 'WordPress' );
     }
     if ( array_key_exists( 'pixel_id', $options ) ) {
-        $this->mocked_options->shouldReceive( 'get_pixel_id' )
+        $mocked_options->shouldReceive( 'get_pixel_id' )
         ->andReturn( $options['pixel_id'] );
     } else {
-        $this->mocked_options->shouldReceive( 'get_pixel_id' )
+        $mocked_options->shouldReceive( 'get_pixel_id' )
         ->andReturn( '1234' );
     }
     if ( array_key_exists( 'access_token', $options ) ) {
-        $this->mocked_options->shouldReceive( 'get_access_token' )
+        $mocked_options->shouldReceive( 'get_access_token' )
         ->andReturn( $options['access_token'] );
     } else {
-        $this->mocked_options->shouldReceive( 'get_access_token' )
+        $mocked_options->shouldReceive( 'get_access_token' )
         ->andReturn( 'abcd' );
     }
     if ( array_key_exists( 'is_fbe_installed', $options ) ) {
-        $this->mocked_options->shouldReceive( 'get_is_fbe_installed' )
+        $mocked_options->shouldReceive( 'get_is_fbe_installed' )
         ->andReturn( $options['is_fbe_installed'] );
     } else {
-        $this->mocked_options->shouldReceive( 'get_is_fbe_installed' )
+        $mocked_options->shouldReceive( 'get_is_fbe_installed' )
         ->andReturn( '0' );
     }
     if ( is_null( $aam_settings ) ) {
-        $this->mocked_options->shouldReceive( 'get_aam_settings' )
+        $mocked_options->shouldReceive( 'get_aam_settings' )
         ->andReturn( $this->getDefaultAAMSettings() );
     } else {
-        $this->mocked_options->shouldReceive( 'get_aam_settings' )
+        $mocked_options->shouldReceive( 'get_aam_settings' )
         ->andReturn( $aam_settings );
     }
-        $this->mocked_options->shouldReceive( 'get_capi_pii_caching_status' )
+        $mocked_options->shouldReceive( 'get_capi_pii_caching_status' )
                             ->andReturn( 0 );
     }
 
