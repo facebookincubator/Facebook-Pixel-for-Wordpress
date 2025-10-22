@@ -9,8 +9,8 @@
 
 namespace FacebookPixelPlugin\FacebookAds;
 
-use FacebookPixelPlugin\FacebookAdsCursor;
-use FacebookPixelPlugin\FacebookAdsAbstractObject;
+use FacebookPixelPlugin\FacebookAds\Cursor;
+use FacebookPixelPlugin\FacebookAds\AbstractObject;
 
 class ApiRequest {
   protected $api;

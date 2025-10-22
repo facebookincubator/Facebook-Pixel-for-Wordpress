@@ -9,7 +9,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object\Traits;
 
-use FacebookPixelPlugin\FacebookAdsEnum\EnumInstanceInterface;
+use FacebookPixelPlugin\FacebookAds\Enum\EnumInstanceInterface;
 
 /**
  * @method static EnumInstanceInterface getFieldsEnum()

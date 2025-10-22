@@ -9,7 +9,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object\Values;
 
-use FacebookPixelPlugin\FacebookAdsEnum\AbstractEnum;
+use FacebookPixelPlugin\FacebookAds\Enum\AbstractEnum;
 
 /**
  * @method static AppRoles getInstance()

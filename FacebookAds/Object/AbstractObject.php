@@ -8,9 +8,9 @@
  */
 
 namespace FacebookPixelPlugin\FacebookAds\Object;
-use FacebookPixelPlugin\FacebookAdsApiConfig;
-use FacebookPixelPlugin\FacebookAdsTypeChecker;
-use FacebookPixelPlugin\FacebookAdsEnum\EmptyEnum;
+use FacebookPixelPlugin\FacebookAds\ApiConfig;
+use FacebookPixelPlugin\FacebookAds\TypeChecker;
+use FacebookPixelPlugin\FacebookAds\Enum\EmptyEnum;
 class AbstractObject {
   /**
    * @var mixed[] set of key value pairs representing data

@@ -9,10 +9,10 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object;
 
-use FacebookPixelPlugin\FacebookAdsApiRequest;
-use FacebookPixelPlugin\FacebookAdsCursor;
+use FacebookPixelPlugin\FacebookAds\ApiRequest;
+use FacebookPixelPlugin\FacebookAds\Cursor;
 use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
-use FacebookPixelPlugin\FacebookAdsTypeChecker;
+use FacebookPixelPlugin\FacebookAds\TypeChecker;
 use FacebookPixelPlugin\FacebookAds\Object\Fields\JobOpeningFields;
 use FacebookPixelPlugin\FacebookAds\Object\Values\JobOpeningJobStatusValues;
 use FacebookPixelPlugin\FacebookAds\Object\Values\JobOpeningPlatformReviewStatusValues;

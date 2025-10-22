@@ -9,8 +9,8 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object;
 
-use FacebookPixelPlugin\FacebookAdsApi;
-use FacebookPixelPlugin\FacebookAdsCursor;
+use FacebookPixelPlugin\FacebookAds\Api;
+use FacebookPixelPlugin\FacebookAds\Cursor;
 use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 
 class TargetingSearch extends AbstractObject {

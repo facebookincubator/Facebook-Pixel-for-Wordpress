@@ -9,8 +9,8 @@
 
 namespace FacebookPixelPlugin\FacebookAds;
 
-use FacebookPixelPlugin\FacebookAdsApi;
-use FacebookPixelPlugin\FacebookAdsException\Exception;
+use FacebookPixelPlugin\FacebookAds\Api;
+use FacebookPixelPlugin\FacebookAds\Exception\Exception;
 use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAds\Http\Exception\RequestException;
 

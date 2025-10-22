@@ -24,7 +24,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object\ServerSide;
 
-use FacebookPixelPlugin\FacebookAdsEnum\AbstractEnum;
+use FacebookPixelPlugin\FacebookAds\Enum\AbstractEnum;
 
 final class HttpMethod extends AbstractEnum {
   const POST = 'POST';

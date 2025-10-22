@@ -9,7 +9,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object\Traits;
 
-use FacebookPixelPlugin\FacebookAdsApi;
+use FacebookPixelPlugin\FacebookAds\Api;
 use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 
 /**

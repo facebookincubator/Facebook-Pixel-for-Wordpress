@@ -24,7 +24,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Http\Adapter;
 
-use FacebookPixelPlugin\FacebookAdsException\Exception;
+use FacebookPixelPlugin\FacebookAds\Exception\Exception;
 use FacebookPixelPlugin\FacebookAds\Http\Adapter\Curl\AbstractCurl;
 use FacebookPixelPlugin\FacebookAds\Http\Adapter\Curl\Curl;
 use FacebookPixelPlugin\FacebookAds\Http\Adapter\Curl\CurlInterface;

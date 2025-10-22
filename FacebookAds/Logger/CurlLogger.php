@@ -28,7 +28,7 @@ use FacebookPixelPlugin\FacebookAds\Http\FileParameter;
 use FacebookPixelPlugin\FacebookAds\Http\Parameters;
 use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAds\Http\ResponseInterface;
-use FacebookPixelPlugin\FacebookAdsLogger\CurlLogger\JsonAwareParameters;
+use FacebookPixelPlugin\FacebookAds\Logger\CurlLogger\JsonAwareParameters;
 
 class CurlLogger implements LoggerInterface {
 
