@@ -13,9 +13,9 @@ use FacebookPixelPlugin\FacebookAds\Http\Client;
 use FacebookPixelPlugin\FacebookAds\Http\Exception\RequestException;
 use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAds\Http\ResponseInterface;
-use FacebookPixelPlugin\FacebookAdsLogger\LoggerInterface;
-use FacebookPixelPlugin\FacebookAdsLogger\NullLogger;
-use FacebookPixelPlugin\FacebookAdsCrashReporter;
+use FacebookPixelPlugin\FacebookAds\Logger\LoggerInterface;
+use FacebookPixelPlugin\FacebookAds\Logger\NullLogger;
+use FacebookPixelPlugin\FacebookAds\CrashReporter;
 
 class Api {
 

@@ -24,7 +24,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Http;
 
-use FacebookPixelPlugin\FacebookAdsApiConfig;
+use FacebookPixelPlugin\FacebookAds\ApiConfig;
 use FacebookPixelPlugin\FacebookAds\Http\Adapter\AdapterInterface;
 use FacebookPixelPlugin\FacebookAds\Http\Adapter\CurlAdapter;
 use FacebookPixelPlugin\FacebookAds\Http\Exception\EmptyResponseException;

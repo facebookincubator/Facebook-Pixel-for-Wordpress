@@ -24,7 +24,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object\Signal;
 
-use FacebookPixelPlugin\FacebookAdsApi;
+use FacebookPixelPlugin\FacebookAds\Api;
 use FacebookPixelPlugin\FacebookAds\Object\AdsPixel;
 use FacebookPixelPlugin\FacebookAds\Object\Page;
 use FacebookPixelPlugin\FacebookAds\Object\BusinessDataAPI\EventRequest as BusinessDataEventRequest;

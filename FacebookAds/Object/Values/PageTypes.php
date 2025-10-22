@@ -9,7 +9,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object\Values;
 
-use FacebookPixelPlugin\FacebookAdsEnum\AbstractEnum;
+use FacebookPixelPlugin\FacebookAds\Enum\AbstractEnum;
 
 /**
  * @deprecated page_types are read-only in v2.7 and to be removed in v2.8

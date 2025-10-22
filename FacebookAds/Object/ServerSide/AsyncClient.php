@@ -24,7 +24,7 @@
 
 namespace FacebookPixelPlugin\FacebookAds\Object\ServerSide;
 
-use FacebookPixelPlugin\FacebookAdsApi;
+use FacebookPixelPlugin\FacebookAds\Api;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;

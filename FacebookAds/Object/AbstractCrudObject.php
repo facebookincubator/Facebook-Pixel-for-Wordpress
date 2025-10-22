@@ -8,8 +8,8 @@
  */
 
 namespace FacebookPixelPlugin\FacebookAds\Object;
-use FacebookPixelPlugin\FacebookAdsApi;
-use FacebookPixelPlugin\FacebookAdsCursor;
+use FacebookPixelPlugin\FacebookAds\Api;
+use FacebookPixelPlugin\FacebookAds\Cursor;
 use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAds\Http\ResponseInterface;
 class AbstractCrudObject extends AbstractObject {

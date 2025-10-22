@@ -25,8 +25,8 @@
 namespace FacebookPixelPlugin\FacebookAds\Object\ServerSide;
 
 use ArrayAccess;
-use FacebookPixelPlugin\FacebookAdsApi;
-use FacebookPixelPlugin\FacebookAdsApiConfig;
+use FacebookPixelPlugin\FacebookAds\Api;
+use FacebookPixelPlugin\FacebookAds\ApiConfig;
 use FacebookPixelPlugin\FacebookAds\Object\AdsPixel;
 
 /**

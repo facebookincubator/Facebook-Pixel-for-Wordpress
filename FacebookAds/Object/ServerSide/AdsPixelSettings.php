@@ -26,7 +26,7 @@ namespace FacebookPixelPlugin\FacebookAds\Object\ServerSide;
 
 use FacebookPixelPlugin\FacebookAds\Http\Client;
 use FacebookPixelPlugin\FacebookAds\Http\SimpleRequest;
-use FacebookPixelPlugin\FacebookAdsException\Exception;
+use FacebookPixelPlugin\FacebookAds\Exception\Exception;
 
 use ArrayAccess;
 
