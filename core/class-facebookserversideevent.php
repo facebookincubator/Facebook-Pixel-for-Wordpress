@@ -166,9 +166,6 @@ class FacebookServerSideEvent {
      * filter to the events before sending them.
      *
      * @param ServerEvent[] $events The events to send to the Conversions API.
-     *
-     * @throws \Exception If there was an error sending the events to
-     * the Conversions API.
      */
     public static function send( $events ) {
         $events = apply_filters( 'before_conversions_api_event_sent', $events );
@@ -196,7 +193,11 @@ class FacebookServerSideEvent {
 
             $response = $request->execute();
         } catch ( \Exception $e ) {
-            throw $e;
+            // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log( '[Facebook Pixel for WordPress] Send Events Exception: ' . $e->getMessage() );
+            error_log( $e->getTraceAsString() );
+            // phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
         }
     }
 
