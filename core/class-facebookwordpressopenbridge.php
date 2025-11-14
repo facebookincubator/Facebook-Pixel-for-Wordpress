@@ -94,7 +94,7 @@ class FacebookWordpressOpenBridge {
             return;
         }
 
-        $secure      = false;
+        $secure      = is_ssl();
         $httponly    = true;
         $samesite    = 'lax';
         $maxlifetime = 7776000;
