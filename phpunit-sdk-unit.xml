@@ -1,5 +1,5 @@
 <phpunit
-    bootstrap="init_unit.php"
+    bootstrap="./__tests_sdk__/init_unit.php"
     colors="true"
     convertDeprecationsToExceptions="true"
     convertErrorsToExceptions="true"
@@ -8,8 +8,8 @@
 >
     <testsuites>
         <testsuite name="Facebook AdsAPI PHP SDK">
-            <directory>./FacebookAdsTest</directory>
-            <exclude>./FacebookAdsTest/Object</exclude>
+            <directory>./__tests_sdk__/FacebookAdsTest</directory>
+            <exclude>./__tests_sdk__/FacebookAdsTest/Object</exclude>
         </testsuite>
     </testsuites>
     <logging>
@@ -18,10 +18,10 @@
     </logging>
     <filter>
         <whitelist processUncoveredFilesFromWhitelist="true">
-            <directory suffix=".php">./FacebookAds/</directory>
+            <directory suffix=".php">FacebookAds/</directory>
             <exclude>
-                <directory>./FacebookAds/Http/Adapter/Curl/</directory>
-                <directory>./FacebookAds/Object/</directory>
+                <directory>FacebookAds/Http/Adapter/Curl/</directory>
+                <directory>FacebookAds/Object/</directory>
             </exclude>
         </whitelist>
     </filter>
