@@ -40,7 +40,7 @@ class EventRequest implements ArrayAccess {
    * @var string[]
    */
   protected static $param_types = array(
-    'events' => '\FacebookAds\Object\ServerSide\Event[]',
+    'events' => '\FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[]',
     'test_event_code' => 'string',
     'partner_agent' => 'string',
     'namespace_id' => 'string',

@@ -192,7 +192,7 @@ class Client {
   public function getCaBundlePath() {
     if ($this->caBundlePath === null) {
       $this->caBundlePath = __DIR__.DIRECTORY_SEPARATOR
-        .str_repeat('..'.DIRECTORY_SEPARATOR, 3)
+        .str_repeat('..'.DIRECTORY_SEPARATOR, 2)
         .'fb_ca_chain_bundle.crt';
     }
 

@@ -44,53 +44,53 @@ abstract class AbstractUnitTestCase extends AbstractTestCase {
   /**
    * @var string
    */
-  const FQN_ADAPTER_INTERFACE = '\FacebookAds\Http\Adapter\AdapterInterface';
+  const FQN_ADAPTER_INTERFACE = '\FacebookPixelPlugin\FacebookAds\Http\Adapter\AdapterInterface';
 
   /**
    * @var string
    */
-  const FQN_CLIENT = '\FacebookAds\Http\Client';
+  const FQN_CLIENT = '\FacebookPixelPlugin\FacebookAds\Http\Client';
 
   /**
    * @var string
    */
-  const FQN_CURL_INTERFACE = '\FacebookAds\Http\Adapter\Curl\CurlInterface';
+  const FQN_CURL_INTERFACE = '\FacebookPixelPlugin\FacebookAds\Http\Adapter\Curl\CurlInterface';
 
   /**
    * @var string
    */
-  const FQN_HEADERS = '\FacebookAds\Http\Headers';
+  const FQN_HEADERS = '\FacebookPixelPlugin\FacebookAds\Http\Headers';
 
   /**
    * @var string
    */
-  const FQN_LOGGER_INTERFACE = '\FacebookAds\Logger\LoggerInterface';
+  const FQN_LOGGER_INTERFACE = '\FacebookPixelPlugin\FacebookAds\Logger\LoggerInterface';
 
   /**
    * @var string
    */
-  const FQN_PARAMETERS = '\FacebookAds\Http\Parameters';
+  const FQN_PARAMETERS = '\FacebookPixelPlugin\FacebookAds\Http\Parameters';
 
   /**
    * @var string
    */
   const FQN_JSON_AWARE_PARAMETERS
-    = '\FacebookAds\Logger\CurlLogger\JsonAwareParameters';
+    = '\FacebookPixelPlugin\FacebookAds\Logger\CurlLogger\JsonAwareParameters';
 
   /**
    * @var string
    */
-  const FQN_REQUEST_INTERFACE = '\FacebookAds\Http\RequestInterface';
+  const FQN_REQUEST_INTERFACE = '\FacebookPixelPlugin\FacebookAds\Http\RequestInterface';
 
   /**
    * @var string
    */
-  const FQN_RESPONSE_INTERFACE = '\FacebookAds\Http\ResponseInterface';
+  const FQN_RESPONSE_INTERFACE = '\FacebookPixelPlugin\FacebookAds\Http\ResponseInterface';
 
   /**
    * @var string
    */
-  const FQN_SESSION = '\FacebookAds\Session';
+  const FQN_SESSION = '\FacebookPixelPlugin\FacebookAds\Session';
 
   /**
    * @var string

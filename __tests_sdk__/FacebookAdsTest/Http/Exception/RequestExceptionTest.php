@@ -117,7 +117,7 @@ class RequestExceptionTest extends AbstractUnitTestCase {
     $response->setBody(json_encode(array('error' => $data)));
     $response->setStatusCode(400);
     $e = RequestException::create($response);
-    $fqn = '\FacebookAds\Http\Exception\\'.$expected_class;
+    $fqn = '\FacebookPixelPlugin\FacebookAds\Http\Exception\\'.$expected_class;
     $this->assertTrue(is_a($e, $fqn));
   }
 }
