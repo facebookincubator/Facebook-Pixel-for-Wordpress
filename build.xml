@@ -20,6 +20,7 @@
         <exclude name="vendor/**" />
         <exclude name="task/**" />
         <exclude name="__tests__/**" />
+		<exclude name="__tests_sdk__/**" />
         <exclude name="js/lib/**" />
         <exclude name=".githooks/**" />
         <exclude name=".github/**" />
@@ -80,6 +81,17 @@
         <exec executable="./vendor/bin/phpunit" dir="${basedir}" passthru="true">
             <arg value="--bootstrap"/>
             <arg value="./__tests__/bootstrap.php" />
+            <arg value="--colors" />
+            <arg value="${testdir}" />
+        </exec>
+        <echo msg="Test complete" />
+    </target>
+
+	<target name="Test-SDK-UNIT" description="Run tests">
+        <echo msg="Running Test..." />
+        <exec executable="./vendor/bin/phpunit" dir="${basedir}" passthru="true">
+            <arg value="--bootstrap"/>
+            <arg value="./__tests_sdk__/init_unit.php" />
             <arg value="--colors" />
             <arg value="${testdir}" />
         </exec>
