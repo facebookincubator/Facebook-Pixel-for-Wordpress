@@ -88,14 +88,14 @@
     </target>
 
 	<target name="Test-SDK-UNIT" description="Run tests">
-        <echo msg="Running Test..." />
+        <echo msg="Running SDK Tests..." />
         <exec executable="./vendor/bin/phpunit" dir="${basedir}" passthru="true">
             <arg value="--bootstrap"/>
             <arg value="./__tests_sdk__/init_unit.php" />
             <arg value="--colors" />
             <arg value="${testdir}" />
         </exec>
-        <echo msg="Test complete" />
+        <echo msg="SDK Tests complete" />
     </target>
 
     <!-- ============================================  -->
@@ -139,12 +139,12 @@
         <echo msg="Test   : Run all tests." />
         <echo msg="Package: Create plugin package (zip)." />
         <echo msg="Dockerize: Create docker images for E2E site and start the containers." />
-        <echo msg="If you run phing without providing any target, following targets will run in order: Clean, Test, Build, Package." />
+        <echo msg="If you run phing without providing any target, following targets will run in order: Clean, Test, Test-SDK-UNIT, Build, Package." />
     </target>
 
     <!-- ============================================  -->
     <!-- (DEFAULT) Target: main                        -->
     <!-- ============================================  -->
-    <target name="main" description="Prepare, Build, Test, Package" depends="Clean, Test, Build, Package">
+    <target name="main" description="Prepare, Build, Test, Test-SDK-UNIT, Package" depends="Clean, Test, Test-SDK-UNIT, Build, Package">
     </target>
 </project>
