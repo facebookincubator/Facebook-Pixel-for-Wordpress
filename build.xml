@@ -90,10 +90,10 @@
 	<target name="Test-SDK-UNIT" description="Run tests">
         <echo msg="Running SDK Tests..." />
         <exec executable="./vendor/bin/phpunit" dir="${basedir}" passthru="true">
-            <arg value="--bootstrap"/>
-            <arg value="./__tests_sdk__/init_unit.php" />
+            <arg value="-v"/>
+			<arg value="-c"/>
+            <arg value="./phpunit-sdk-unit.xml" />
             <arg value="--colors" />
-            <arg value="${testdir}" />
         </exec>
         <echo msg="SDK Tests complete" />
     </target>
