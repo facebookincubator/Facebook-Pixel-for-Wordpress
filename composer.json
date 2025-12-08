@@ -15,8 +15,7 @@
   "prefer-stable" : true,
   "license": "GPL",
   "require": {
-    "techcrunch/wp-async-task": "dev-master",
-    "guzzlehttp/guzzle": "^6.5 || ^7.0"
+    "techcrunch/wp-async-task": "dev-master"
   },
   "autoload": {
     "psr-4": {

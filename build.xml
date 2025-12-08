@@ -26,13 +26,6 @@
         <exclude name=".github/**" />
     </fileset>
 
-    <!-- Fileset for files using GuzzleHttp-->
-    <fileset dir="${basedir}" id="files_using_guzzle">
-        <include name="FacebookAds/Object/ServerSide/EventRequestAsync.php" />
-        <include name="FacebookAds/Object/ServerSide/BatchProcessor.php" />
-        <include name="FacebookAds/Object/ServerSide/AsyncClient.php" />
-    </fileset>
-
     <!-- ============================================  -->
     <!-- Target: Clean                                 -->
     <!-- ============================================  -->
@@ -60,11 +53,6 @@
             <arg value="--no-dev" />
         </composer>
         <echo msg="composer install complete" />
-        <echo msg="Deleting files using Guzzle" />
-        <delete>
-            <fileset refid="files_using_guzzle" />
-        </delete>
-        <echo msg="Files using Guzzle deleted" />
         <echo msg="Build complete" />
         <echo msg="Adding Version Number..." />
         <taskdef name="addversion" classname="FacebookWordpressAddVersionNumberTask" classpath="${taskdir}" />
@@ -87,6 +75,9 @@
         <echo msg="Test complete" />
     </target>
 
+    <!-- ============================================  -->
+    <!-- Target: SDK tests post Business SDK removal   -->
+    <!-- ============================================  -->
 	<target name="Test-SDK-UNIT" description="Run tests">
         <echo msg="Running SDK Tests..." />
         <exec executable="./vendor/bin/phpunit" dir="${basedir}" passthru="true">
