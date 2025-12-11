@@ -57,43 +57,6 @@
     <!-- Show progress and sniff codes in all reports -->
     <arg value="p"/>
 
-    <!-- Exclude SDK replacement FacebookAds folder from specific checks -->
-    <rule ref="WordPress.Files.FileName.NotHyphenatedLowercase">
-        <!-- This pattern excludes all files within specific directory -->
-        <exclude-pattern>FacebookAds/*</exclude-pattern>
-        <!-- You can add more exclude-pattern lines for other specific files or folders -->
-    </rule>
-    <rule ref="WordPress.Files.FileName.InvalidClassFileName">
-        <exclude-pattern>FacebookAds/*</exclude-pattern>
-    </rule>
-    <rule ref="Squiz.Commenting.FileComment">
-        <exclude-pattern>FacebookAds/*</exclude-pattern>
-    </rule>
-    <rule ref="Generic.Commenting.DocComment">
-        <exclude-pattern>FacebookAds/*</exclude-pattern>
-    </rule>
-    <rule ref="Squiz.Commenting.ClassComment">
-        <exclude-pattern>FacebookAds/*</exclude-pattern>
-    </rule>
-    <rule ref="Universal.UseStatements.LowercaseFunctionConst">
-        <exclude-pattern>FacebookAds/*</exclude-pattern>
-    </rule>
-    <rule ref="Squiz.Commenting.VariableComment">
-        <exclude-pattern>FacebookAds/*</exclude-pattern>
-    </rule>
-    <rule ref="Generic.Formatting.MultipleStatementAlignment">
-        <exclude-pattern>FacebookAds/*</exclude-pattern>
-    </rule>
-    <rule ref="Squiz.Commenting.DocCommentAlignment">
-        <exclude-pattern>FacebookAds/*</exclude-pattern>
-    </rule>
-    <rule ref="WordPress.Arrays.ArrayKeySpacingRestrictions">
-        <exclude-pattern>FacebookAds/*</exclude-pattern>
-    </rule>
-    <rule ref="Squiz.Commenting.FunctionComment">
-        <exclude-pattern>FacebookAds/*</exclude-pattern>
-    </rule>
-
     <!-- Exclude specific directories -->
     <exclude-pattern>vendor/*</exclude-pattern>
     <exclude-pattern>node_modules/*</exclude-pattern>

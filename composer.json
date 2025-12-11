@@ -15,6 +15,7 @@
   "prefer-stable" : true,
   "license": "GPL",
   "require": {
+    "php": ">=7.4",
     "techcrunch/wp-async-task": "dev-master"
   },
   "autoload": {
