@@ -364,9 +364,9 @@ class Event implements ArrayAccess {
   /**
    * Gets offset.
    * @param integer $offset Offset
-   * @return mixed
+   * @return CustomData
    */
-  public function offsetGet($offset) : mixed {
+  public function offsetGet($offset) : CustomData {
     return isset($this->container[$offset]) ? $this->container[$offset] : null;
   }
 
