@@ -166,4 +166,3 @@ class CAPIGatewayEndpoint implements CustomEndpointRequest {
         return $this->endpoint_URL;
     }
 }
-

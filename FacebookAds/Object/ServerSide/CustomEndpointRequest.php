@@ -72,4 +72,3 @@ interface CustomEndpointRequest {
      */
     public function getEndpoint(): string;
 }
-

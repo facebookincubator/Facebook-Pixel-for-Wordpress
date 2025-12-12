@@ -32,7 +32,7 @@ class CampaignTest extends AbstractCrudObjectTestCase {
   public function testCrud() {
     $campaign = new Campaign(null, $this->getConfig()->accountId);
     $campaign->{CampaignFields::NAME} = $this->getConfig()->testRunId;
-    
+
     $this->assertCanCreate($campaign);
     $this->assertCanRead($campaign);
     $this->assertCanUpdate(

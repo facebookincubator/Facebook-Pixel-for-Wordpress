@@ -20,7 +20,7 @@ jobs:
         run: vendor/bin/phpunit --bootstrap __tests__/bootstrap.php __tests__
 
       - name: Run SDK tests
-        run: vendor/bin/phpunit -v -c ./phpunit-sdk-unit.xml       
-      
+        run: vendor/bin/phpunit -v -c ./phpunit-sdk-unit.xml
+
       - name: Run PHPCS
         run: vendor/bin/phpcs --standard=phpcs.xml --extensions=php --ignore=vendor/ .
