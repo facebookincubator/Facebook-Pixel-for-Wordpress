@@ -1600,63 +1600,6 @@ class Application extends AbstractCrudObject {
     return $pending ? $request : $request->execute();
   }
 
-  public function createWhatsAppBusinessSolution(array $fields = array(), array $params = array(), $pending = false) {
-    $this->assureId();
-
-    $param_types = array(
-      'owner_permissions' => 'list<owner_permissions_enum>',
-      'partner_app_id' => 'string',
-      'partner_permissions' => 'list<partner_permissions_enum>',
-      'solution_name' => 'string',
-    );
-    $enums = array(
-      'owner_permissions_enum' => ApplicationOwnerPermissionsValues::getInstance()->getValues(),
-      'partner_permissions_enum' => ApplicationPartnerPermissionsValues::getInstance()->getValues(),
-    );
-
-    $request = new ApiRequest(
-      $this->api,
-      $this->data['id'],
-      RequestInterface::METHOD_POST,
-      '/whatsapp_business_solution',
-      new Application(),
-      'EDGE',
-      Application::getFieldsEnum()->getValues(),
-      new TypeChecker($param_types, $enums)
-    );
-    $request->addParams($params);
-    $request->addFields($fields);
-    return $pending ? $request : $request->execute();
-  }
-
-  public function getWhatsAppBusinessSolutions(array $fields = array(), array $params = array(), $pending = false) {
-    $this->assureId();
-
-    $param_types = array(
-      'role' => 'role_enum',
-    );
-    $enums = array(
-      'role_enum' => array(
-        'OWNER',
-        'PARTNER',
-      ),
-    );
-
-    $request = new ApiRequest(
-      $this->api,
-      $this->data['id'],
-      RequestInterface::METHOD_GET,
-      '/whatsapp_business_solutions',
-      new AbstractCrudObject(),
-      'EDGE',
-      array(),
-      new TypeChecker($param_types, $enums)
-    );
-    $request->addParams($params);
-    $request->addFields($fields);
-    return $pending ? $request : $request->execute();
-  }
-
   public function getSelf(array $fields = array(), array $params = array(), $pending = false) {
     $this->assureId();
 
