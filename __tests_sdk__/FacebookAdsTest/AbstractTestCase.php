@@ -72,30 +72,6 @@ class AbstractTestCase extends TestCase {
   }
 
   /**
-   * @return string
-   * @deprecated use getConfig()
-   */
-  public function getTestImagePath() {
-    return $this->getConfig()->testImagePath;
-  }
-
-  /**
-   * @return string
-   * @deprecated use getConfig()
-   */
-  public function getTestZippedImagesPath() {
-    return $this->getConfig()->testZippedImagesPath;
-  }
-
-  /**
-   * @return string
-   * @deprecated use getConfig()
-   */
-  public function getTestVideoPath() {
-    return $this->getConfig()->testVideoPath;
-  }
-
-  /**
    * @param mixed $mock
    * @param array $data
    */

@@ -39,21 +39,6 @@ final class Config {
   /**
    * @var string
    */
-  public $testImagePath;
-
-  /**
-   * @var string
-   */
-  public $testZippedImagesPath;
-
-  /**
-   * @var string
-   */
-  public $testVideoPath;
-
-  /**
-   * @var string
-   */
   public $curlLogger;
 
   /**

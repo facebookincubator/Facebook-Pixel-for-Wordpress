@@ -127,9 +127,6 @@ class Bootstrap {
       $this->config = new Config();
       $this->config->testRunId
         = md5($this->idx($_SERVER, 'LOGNAME', uniqid(true)).microtime(true));
-      $this->config->testImagePath = __DIR__.'/../../misc/image.png';
-      $this->config->testZippedImagesPath = __DIR__.'/../../misc/images.zip';
-      $this->config->testVideoPath = __DIR__.'/../../misc/video.mp4';
     }
 
     return $this->config;
