@@ -31,8 +31,6 @@ var hasAccessToken = jQuery("#fb-adv-conf").attr("data-access-token");
 if ("false" == hasAccessToken) {
 	jQuery("#fb-adv-conf").hide();
 } else {
-	// Set advanced configuration top relative to fbe iframe
-	setFbAdvConfTop();
 	jQuery("#fb-adv-conf").show();
 	jQuery("#fb-capi-ef").show();
 
@@ -46,16 +44,6 @@ if ("false" == hasAccessToken) {
 			saveCapiPiiCachingStatus("0");
 		}
 	});
-	function setFbAdvConfTop() {
-		var fbeIframeTop = 0;
-		// Add try catch to handle any error and avoid breaking js
-		try {
-			fbeIframeTop = jQuery("#fbe-iframe")[0].getBoundingClientRect().top;
-		} catch (e) {}
-
-		var fbAdvConfTop = meta_wc_params.fbAdvConfTop + fbeIframeTop;
-		jQuery("#fb-adv-conf").css({ top: fbAdvConfTop + "px" });
-	}
 
 	var enablePageViewFilterCheckBox = document.getElementById("capi-ef");
 	var capiIntegrationPageViewFiltered =
