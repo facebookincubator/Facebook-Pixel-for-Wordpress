@@ -189,7 +189,14 @@ class FacebookServerSideEvent {
 
             $request = ( new EventRequest( $pixel_id ) )
                     ->setEvents( $events )
-                    ->setPartnerAgent( $agent );
+                    ->setPartnerAgent( $agent )
+                    ->setTestEventCode(
+                        isset( $_SESSION[ FacebookPixelConstants::TEST_EVENT_SESSION ] ) ?
+                        sanitize_text_field(
+                            wp_unslash( $_SESSION[ FacebookPixelConstants::TEST_EVENT_SESSION ] )
+                        ) :
+                        null
+                    );
 
             $response = $request->execute();
         } catch ( \Exception $e ) {

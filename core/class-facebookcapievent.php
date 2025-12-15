@@ -179,24 +179,31 @@ class FacebookCapiEvent {
             $events = array();
             array_push( $events, $event );
 
+            // A test event code could be posted from admin settings. 
+            // If so, store a session so that front end events can be
+            // viewed as Events Manager test events too.
+            session_start();
+            $test_event_code = null;
+            if (isset( $_POST[ 'test_event_code' ] )) {
+                $test_event_code = sanitize_text_field(
+                    wp_unslash( $_POST[ 'test_event_code' ] )
+                );
+                $_SESSION[ FacebookPixelConstants::TEST_EVENT_SESSION ] 
+                    = $test_event_code;
+            }
+
             $event_request = ( new EventRequest( $pixel_id ) )
                 ->setEvents( $events )
-                ->setTestEventCode(
-                    isset( $_POST['test_event_code'] ) ?
-                    sanitize_text_field(
-                        wp_unslash( $_POST['test_event_code'] )
-                    ) :
-                    null
-                );
+                ->setTestEventCode($test_event_code);
 
             $normalized_event = $event_request->normalize();
 
             if ( ! empty( $_POST['user_data'] ) ) {
-            foreach ( $normalized_event['data'] as $key => $value ) {
-                $normalized_event['data'][ $key ]['user_data'] +=
-                isset( $_POST['user_data'] ) ?
-                $_POST['user_data'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-            }
+                foreach ( $normalized_event['data'] as $key => $value ) {
+                    $normalized_event['data'][ $key ]['user_data'] +=
+                    isset( $_POST['user_data'] ) ?
+                    $_POST['user_data'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+                }
             }
 
             $payload = wp_json_encode( $normalized_event );
