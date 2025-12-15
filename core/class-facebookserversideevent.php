@@ -191,9 +191,13 @@ class FacebookServerSideEvent {
                     ->setEvents( $events )
                     ->setPartnerAgent( $agent )
                     ->setTestEventCode(
-                        isset( $_SESSION[ FacebookPixelConstants::TEST_EVENT_SESSION ] ) ?
+                        isset(
+                            $_SESSION[ FacebookPixelConstants::TEST_EVENT_SESSION ]
+                        ) ?
                         sanitize_text_field(
-                            wp_unslash( $_SESSION[ FacebookPixelConstants::TEST_EVENT_SESSION ] )
+                            wp_unslash(
+                                $_SESSION[ FacebookPixelConstants::TEST_EVENT_SESSION ]
+                            )
                         ) :
                         null
                     );

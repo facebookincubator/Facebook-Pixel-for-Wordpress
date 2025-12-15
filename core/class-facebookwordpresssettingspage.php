@@ -307,10 +307,10 @@ class FacebookWordpressSettingsPage {
                                 ?>
                                 /test_events">
                                 <b>Events Manager</b></a>.
-                                For developers: this will be applied 
-                                to your current browser session, 
-                                applicable to your website events 
-                                too. 
+                                For developers: this will be applied
+                                to your current browser session,
+                                applicable to your website events
+                                too.
                             </p>
                         </div>
                     </div>

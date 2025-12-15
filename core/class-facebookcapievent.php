@@ -157,7 +157,8 @@ class FacebookCapiEvent {
                     wp_json_encode(
                         array(
                             'error' => array(
-                                'message'        => 'Invalid custom_data attribute',
+                                'message'
+                                    => 'Invalid custom_data attribute',
                                 'error_user_msg' =>
                                 'Invalid custom_data attributes: '
                                 . $invalid_custom_data_msg,
@@ -186,8 +187,11 @@ class FacebookCapiEvent {
                 $test_event_code = null;
                 if ( isset( $_POST['test_event_code'] ) ) {
                     $test_event_code                                        =
-                        sanitize_text_field( wp_unslash( $_POST['test_event_code'] ) );
-                    $_SESSION[ FacebookPixelConstants::TEST_EVENT_SESSION ] = $test_event_code;
+                        sanitize_text_field(
+                            wp_unslash( $_POST['test_event_code'] )
+                        );
+                    $_SESSION[ FacebookPixelConstants::TEST_EVENT_SESSION ] =
+                        $test_event_code;
                 }
 
                 $event_request = ( new EventRequest( $pixel_id ) )
@@ -217,7 +221,8 @@ class FacebookCapiEvent {
                     wp_json_encode(
                         array(
                             'error' => array(
-                                'message'        => $validated_payload['message'],
+                                'message'
+                                    => $validated_payload['message'],
                                 'error_user_msg' =>
                                 $validated_payload['error_user_msg'],
                             ),
