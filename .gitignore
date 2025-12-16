@@ -2,6 +2,8 @@
 /build
 /js/lib/node_modules
 /node_modules
+/report
+/__test_sdk__/report
 .DS_Store
 .vscode
 composer.phar

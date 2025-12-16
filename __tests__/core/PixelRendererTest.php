@@ -30,8 +30,8 @@ namespace FacebookPixelPlugin\Tests\Core;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
-use FacebookAds\Object\ServerSide\Event;
-use FacebookAds\Object\ServerSide\CustomData;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
 
 
 /**

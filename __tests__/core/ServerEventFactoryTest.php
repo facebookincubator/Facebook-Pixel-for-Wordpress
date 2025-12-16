@@ -31,7 +31,7 @@ use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
-use FacebookAds\Object\ServerSide\AdsPixelSettings;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 
 /**
  * ServerEventFactoryTest class.

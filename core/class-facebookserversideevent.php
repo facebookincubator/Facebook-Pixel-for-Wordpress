@@ -27,11 +27,11 @@
 
 namespace FacebookPixelPlugin\Core;
 
-use FacebookAds\Api;
-use FacebookAds\Object\ServerSide\Event;
-use FacebookAds\Object\ServerSide\EventRequest;
-use FacebookAds\Object\ServerSide\UserData;
-use FacebookAds\Exception\Exception;
+use FacebookPixelPlugin\FacebookAds\Api;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventRequest;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
+use FacebookPixelPlugin\FacebookAds\Exception\Exception;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 

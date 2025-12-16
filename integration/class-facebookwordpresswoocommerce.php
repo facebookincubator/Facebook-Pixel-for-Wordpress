@@ -34,7 +34,7 @@ use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\PixelRenderer;
-use FacebookAds\Object\ServerSide\Content;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content;
 
 /**
  * FacebookWordpressWooCommerce class.
