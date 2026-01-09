@@ -122,16 +122,16 @@ class FacebookCapiEvent {
         sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : null;
         if ( ! isset( $nonce ) ||
         ! wp_verify_nonce( $nonce, 'send_capi_event_nonce' ) ) {
-        wp_send_json_error(
-            wp_json_encode(
-                array(
-                    'error' => array(
-                        'message'        => 'Invalid nonce',
-                        'error_user_msg' => 'Invalid nonce',
-                    ),
+            wp_send_json_error(
+                wp_json_encode(
+                    array(
+                        'error' => array(
+                            'message'        => 'Invalid nonce',
+                            'error_user_msg' => 'Invalid nonce',
+                        ),
+                    )
                 )
-            )
-        );
+            );
             wp_die();
         }
 
@@ -151,81 +151,91 @@ class FacebookCapiEvent {
             $_POST['custom_data'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
             $invalid_custom_data =
             self::get_invalid_event_custom_data( $custom_data );
-        if ( ! empty( $invalid_custom_data ) ) {
-            $invalid_custom_data_msg = implode( ',', $invalid_custom_data );
-            wp_send_json_error(
-                wp_json_encode(
-                    array(
-                        'error' => array(
-                            'message'        => 'Invalid custom_data attribute',
-                            'error_user_msg' =>
-                            'Invalid custom_data attributes: '
-                            . $invalid_custom_data_msg,
+            if ( ! empty( $invalid_custom_data ) ) {
+                $invalid_custom_data_msg = implode( ',', $invalid_custom_data );
+                wp_send_json_error(
+                    wp_json_encode(
+                        array(
+                            'error' => array(
+                                'message'
+                                    => 'Invalid custom_data attribute',
+                                'error_user_msg' =>
+                                'Invalid custom_data attributes: '
+                                . $invalid_custom_data_msg,
 
-                        ),
+                            ),
+                        )
                     )
-                )
-            );
-            wp_die();
-        } else {
-            $event = ServerEventFactory::safe_create_event(
-                $event_name,
-                array( $this, 'get_event_custom_data' ),
-                array( $custom_data ),
-                'fb-capi-event',
-                true
-            );
-
-            $events = array();
-            array_push( $events, $event );
-
-            $event_request = ( new EventRequest( $pixel_id ) )
-                ->setEvents( $events )
-                ->setTestEventCode(
-                    isset( $_POST['test_event_code'] ) ?
-                    sanitize_text_field(
-                        wp_unslash( $_POST['test_event_code'] )
-                    ) :
-                    null
+                );
+                wp_die();
+            } else {
+                $event = ServerEventFactory::safe_create_event(
+                    $event_name,
+                    array( $this, 'get_event_custom_data' ),
+                    array( $custom_data ),
+                    'fb-capi-event',
+                    true
                 );
 
-            $normalized_event = $event_request->normalize();
+                $events = array();
+                array_push( $events, $event );
 
-            if ( ! empty( $_POST['user_data'] ) ) {
-            foreach ( $normalized_event['data'] as $key => $value ) {
-                $normalized_event['data'][ $key ]['user_data'] +=
-                isset( $_POST['user_data'] ) ?
-                $_POST['user_data'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-            }
-            }
+                // A test event code could be posted from admin settings.
+                // If so, store a session so that front end events can be
+                // viewed as Events Manager test events too.
+                session_start();
+                $test_event_code = null;
+                if ( isset( $_POST['test_event_code'] ) ) {
+                    $test_event_code                                        =
+                        sanitize_text_field(
+                            wp_unslash( $_POST['test_event_code'] )
+                        );
+                    $_SESSION[ FacebookPixelConstants::TEST_EVENT_SESSION ] =
+                        $test_event_code;
+                }
 
-            $payload = wp_json_encode( $normalized_event );
-        }
+                $event_request = ( new EventRequest( $pixel_id ) )
+                    ->setEvents( $events )
+                    ->setTestEventCode( $test_event_code );
+
+                $normalized_event = $event_request->normalize();
+
+                if ( ! empty( $_POST['user_data'] ) ) {
+                    foreach ( $normalized_event['data'] as $key => $value ) {
+                        $normalized_event['data'][ $key ]['user_data'] +=
+                        isset( $_POST['user_data'] ) ?
+                        $_POST['user_data'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+                    }
+                }
+
+                $payload = wp_json_encode( $normalized_event );
+            }
         } else {
             $validated_payload =
             self::validate_payload(
                 isset( $_POST['payload'] ) ?
                 $_POST['payload'] : null // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
             );
-        if ( ! $validated_payload['valid'] ) {
-            wp_send_json_error(
-                wp_json_encode(
-                    array(
-                        'error' => array(
-                            'message'        => $validated_payload['message'],
-                            'error_user_msg' =>
-                            $validated_payload['error_user_msg'],
-                        ),
+            if ( ! $validated_payload['valid'] ) {
+                wp_send_json_error(
+                    wp_json_encode(
+                        array(
+                            'error' => array(
+                                'message'
+                                    => $validated_payload['message'],
+                                'error_user_msg' =>
+                                $validated_payload['error_user_msg'],
+                            ),
+                        )
                     )
-                )
-            );
-            wp_die();
-        } else {
-            $payload = wp_json_encode(
-                isset( $_POST['payload'] )
-                ? $_POST['payload'] : null // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-            );
-        }
+                );
+                wp_die();
+            } else {
+                $payload = wp_json_encode(
+                    isset( $_POST['payload'] )
+                    ? $_POST['payload'] : null // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+                );
+            }
         }
 
         $args = array(
