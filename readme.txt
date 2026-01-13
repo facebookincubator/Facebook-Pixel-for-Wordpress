@@ -51,25 +51,15 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
-= 2025-08-14 version 4.1.5 =
-- Fixed the Pixel url, so it points to the Prod version instead of Canary
-- Minor fix for the agent string
+= 2026-01-15 version 5.0.0 =
+- Optimize source detection, by @ukilla, in #115
+- Add the proper email to pixel init code, instead of admin email, by @rishijd in #114
+- Improve error logging, by @shkabo in #116
+- Fix Admin style that caused Advanced config overlap with CAPI Test header, by @rishijd in #120
+- Remove SDK as a dependency to add PHP 7.4 support, by @rishijd in #118
+- BizSDK clean up, Phase 2, by @rishijd in #123
 
-= 2025-06-19 version 4.1.4 =
-* Fixed an issue with uncategorized products
-* Minor improvements to the overall functionality
-
-= 2025-04-23 version 4.1.3 =
-* Added the OB script to the same block as Pixel init
-* Minor improvements to the plugin's overall functionality
-* Added a template for PRs
-
-= 2025-03-20 version 4.1.2 =
-* Add back CORS headers on the openbridge calls
-* Updated the wordpress.org directory tags
-
-= 2025-02-06 version 4.1.1 =
-* Fix an issue that caused fatal error when upgrading to 4.1.0
+[See changelog for all versions](https://raw.githubusercontent.com/facebookincubator/Facebook-Pixel-for-Wordpress/refs/heads/main/changelog.txt).
 
 == Upgrade Notice ==
-By upgrading to latest version you will have built in support to fire lower funnel events: Lead, ViewContent, AddToCart, InitiateCheckout and Purchase out of the most popular plugins.
+By upgrading to latest version you will have support for PHP7.4, and are unblocked to upgrade from 3.x versions.

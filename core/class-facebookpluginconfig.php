@@ -33,10 +33,10 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * Class FacebookPluginConfig
  */
 class FacebookPluginConfig {
-    const PLUGIN_VERSION     = '4.1.5';
+    const PLUGIN_VERSION     = '5.0.0';
     const SOURCE             = 'wordpress';
     const TEXT_DOMAIN        = 'official-facebook-pixel';
-    const PLUGIN_NAME        = 'Meta for WordPress';
+    const PLUGIN_NAME        = 'Meta Pixel for WordPress';
     const PLUGIN_REVIEW_PAGE =
     'https://wordpress.org/plugins/official-facebook-pixel/#reviews';
 
