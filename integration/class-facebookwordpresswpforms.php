@@ -53,11 +53,33 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	 * the Pixel code is injected during the form processing stage.
 	 */
 	public static function inject_pixel_code() {
+		// Tracks server and browser events when a submission is processed.
 		add_action(
 			'wpforms_process_before',
 			array( __CLASS__, 'trackEvent' ),
 			20,
 			2
+		);
+
+		// Enriches AJAX responses (success or redirect) with pixel code.
+		add_filter(
+			'wpforms_ajax_submit_success_response',
+			array( __CLASS__, 'injectLeadEventAjax' ),
+			20,
+			3
+		);
+		add_filter(
+			'wpforms_ajax_submit_redirect',
+			array( __CLASS__, 'injectLeadEventAjax' ),
+			20,
+			3
+		);
+
+		// Adds a front-end listener that fires pixel code returned in AJAX responses.
+		add_action(
+			'wp_footer',
+			array( __CLASS__, 'injectAjaxListener' ),
+			9
 		);
 	}
 
@@ -127,6 +149,66 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 		  ',
 			$pixel_code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		);
+	}
+
+	/**
+	 * Add pixel code into AJAX success/redirect responses.
+	 *
+	 * @param array $response  Existing AJAX response payload.
+	 * @param int   $form_id   Form ID (provided by WPForms).
+	 * @param mixed $extra     Unused extra parameter (URL or form data).
+	 *
+	 * @return array Modified response containing fb_pxl_code when available.
+	 */
+	public static function injectLeadEventAjax( $response, $form_id = null, $extra = null ) {
+		if ( FacebookPluginUtils::is_internal_user() ) {
+			return $response;
+		}
+
+		$events = FacebookServerSideEvent::get_instance()->get_tracked_events();
+		if ( empty( $events ) ) {
+			return $response;
+		}
+
+		$response['fb_pxl_code'] = PixelRenderer::render(
+			$events,
+			self::TRACKING_NAME,
+			false // Return raw fbq calls; they will be eval'd on the client.
+		);
+
+		return $response;
+	}
+
+	/**
+	 * Outputs a JS listener that evaluates fb_pxl_code from WPForms AJAX responses.
+	 *
+	 * This covers the default WPForms AJAX path where the page is not reloaded
+	 * and no wp_footer hook is executed after submission.
+	 *
+	 * @return void
+	 */
+	public static function injectAjaxListener() {
+		?>
+		<!-- Meta Pixel Event Code -->
+		<script type='text/javascript'>
+		(function ( $ ) {
+			if ( ! $ || typeof document === 'undefined' ) {
+				return;
+			}
+			// WPForms triggers this jQuery event and passes the AJAX response object.
+			$( document ).on( 'wpformsAjaxSubmitSuccess', function ( event, data ) {
+				if ( data && data.data && data.data.fb_pxl_code ) {
+					try {
+						eval( data.data.fb_pxl_code );
+					} catch ( e ) {
+						console && console.warn && console.warn( 'Meta Pixel eval failed', e );
+					}
+				}
+			} );
+		})( window.jQuery );
+		</script>
+		<!-- End Meta Pixel Event Code -->
+		<?php
 	}
 
 	/**
