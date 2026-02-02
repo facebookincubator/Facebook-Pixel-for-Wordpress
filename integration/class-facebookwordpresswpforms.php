@@ -199,7 +199,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 			$( document ).on( 'wpformsAjaxSubmitSuccess', function ( event, data ) {
 				if ( data && data.data && data.data.fb_pxl_code ) {
 					try {
-						eval( data.data.fb_pxl_code );
+						new Function( data.data.fb_pxl_code )();
 					} catch ( e ) {
 						console && console.warn && console.warn( 'Meta Pixel eval failed', e );
 					}
