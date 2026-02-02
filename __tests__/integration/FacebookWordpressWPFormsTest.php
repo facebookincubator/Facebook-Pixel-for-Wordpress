@@ -58,6 +58,23 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
         20,
         2
     );
+    \WP_Mock::expectFilterAdded(
+        'wpforms_ajax_submit_success_response',
+        array( FacebookWordpressWPForms::class, 'injectLeadEventAjax' ),
+        20,
+        3
+    );
+    \WP_Mock::expectFilterAdded(
+        'wpforms_ajax_submit_redirect',
+        array( FacebookWordpressWPForms::class, 'injectLeadEventAjax' ),
+        20,
+        3
+    );
+    \WP_Mock::expectActionAdded(
+        'wp_footer',
+        array( FacebookWordpressWPForms::class, 'injectAjaxListener' ),
+        9
+    );
 
         FacebookWordpressWPForms::inject_pixel_code();
         $this->assertHooksAdded();
@@ -260,6 +277,72 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
         $this->assertEquals( 'ohio', $event->getUserData()->getState() );
         $this->assertEquals( '45401', $event->getUserData()->getZipCode() );
         $this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
+    }
+
+    /**
+     * Tests that ajax responses are enriched with pixel code.
+     *
+     * @return void
+     */
+    public function testInjectLeadEventAjaxAddsPixelCode() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+
+    \WP_Mock::userFunction(
+        'sanitize_text_field',
+        array(
+            'args'   => array( \Mockery::any() ),
+            'return' => function ( $input ) {
+                return $input;
+            },
+        )
+    );
+
+    \WP_Mock::userFunction(
+        'wp_json_encode',
+        array(
+            'args'   => array(
+                \Mockery::type( 'array' ),
+        \Mockery::type( 'int' ),
+      ),
+            'return' => function ( $data, $options ) {
+                return json_encode( $data );
+            },
+        )
+    );
+
+        $event = ServerEventFactory::new_event( 'Lead' );
+        FacebookServerSideEvent::get_instance()->track( $event );
+
+        $response = FacebookWordpressWPForms::injectLeadEventAjax( array(), 123, null );
+
+        $this->assertArrayHasKey( 'fb_pxl_code', $response );
+        $this->assertStringContainsString( "fbq('track'", $response['fb_pxl_code'] );
+    }
+
+    /**
+     * Tests that ajax responses remain unchanged for internal users.
+     *
+     * @return void
+     */
+    public function testInjectLeadEventAjaxSkipsForInternalUser() {
+        self::mockIsInternalUser( true );
+        self::mockFacebookWordpressOptions();
+
+        $response = FacebookWordpressWPForms::injectLeadEventAjax( array( 'foo' => 'bar' ), 123, null );
+
+        $this->assertArrayNotHasKey( 'fb_pxl_code', $response );
+        $this->assertEquals( 'bar', $response['foo'] );
+    }
+
+    /**
+     * Tests that the AJAX listener script is printed.
+     *
+     * @return void
+     */
+    public function testInjectAjaxListenerOutputsScript() {
+        FacebookWordpressWPForms::injectAjaxListener();
+        $this->expectOutputRegex( '/wpformsAjaxSubmitSuccess/' );
     }
 
     /**
