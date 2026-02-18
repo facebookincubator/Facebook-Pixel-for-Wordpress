@@ -696,6 +696,18 @@ class FacebookWordpressSettingsPage {
                     array( $this, 'plugin_review_notice' )
                 );
             }
+            if ( get_transient( FacebookPluginConfig::TOKEN_INVALID_TRANSIENT_KEY )
+                && ! get_user_meta(
+                    get_current_user_id(),
+                    FacebookPluginConfig::ADMIN_IGNORE_TOKEN_INVALID_NOTICE,
+                    true
+                )
+            ) {
+                add_action(
+                    'admin_notices',
+                    array( $this, 'token_invalid_notice' )
+                );
+            }
         }
     }
 
@@ -840,6 +852,28 @@ class FacebookWordpressSettingsPage {
     }
 
     /**
+     * Displays a notice indicating that the access token is invalid.
+     *
+     * This function generates an admin notice prompting the user to
+     * reconnect their Meta account when the access token has been
+     * detected as invalid by the Conversions API.
+     *
+     * @since 4.2.0
+     */
+    public function token_invalid_notice() {
+        $message = '<strong>' . FacebookPluginConfig::PLUGIN_NAME
+            . '</strong>: Your Meta access token is no longer valid. '
+            . 'Conversions API events are not being sent. '
+            . 'Please <a href="%s">reconnect your account</a> '
+            . 'to resume event tracking.';
+        $this->set_notice(
+            $message,
+            FacebookPluginConfig::ADMIN_DISMISS_TOKEN_INVALID_NOTICE,
+            'error'
+        );
+    }
+
+    /**
      * Handles dismissals of admin notices.
      *
      * This function checks for the presence of
@@ -868,6 +902,15 @@ class FacebookWordpressSettingsPage {
             update_user_meta(
                 $user_id,
                 FacebookPluginConfig::ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE,
+                true
+            );
+        }
+        if ( isset(
+            $_GET[ FacebookPluginConfig::ADMIN_DISMISS_TOKEN_INVALID_NOTICE ] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        ) ) {
+            update_user_meta(
+                $user_id,
+                FacebookPluginConfig::ADMIN_IGNORE_TOKEN_INVALID_NOTICE,
                 true
             );
         }

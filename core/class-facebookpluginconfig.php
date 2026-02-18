@@ -53,6 +53,12 @@ class FacebookPluginConfig {
     'dismiss_plugin_review_notice';
     const ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE      =
     'ignore_plugin_review_notice';
+    const ADMIN_DISMISS_TOKEN_INVALID_NOTICE     =
+    'dismiss_token_invalid_notice';
+    const ADMIN_IGNORE_TOKEN_INVALID_NOTICE      =
+    'ignore_token_invalid_notice';
+    const TOKEN_INVALID_TRANSIENT_KEY            =
+    'facebook_pixel_token_invalid';
     const ADMIN_MENU_SLUG                        = 'facebook_pixel_options';
     const ADMIN_MENU_TITLE                       = 'Meta';
     const ADMIN_OPTION_GROUP                     = 'facebook_option_group';

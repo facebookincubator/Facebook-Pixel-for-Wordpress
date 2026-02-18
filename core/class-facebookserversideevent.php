@@ -32,6 +32,7 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventRequest;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 use FacebookPixelPlugin\FacebookAds\Exception\Exception;
+use FacebookPixelPlugin\FacebookAds\Http\Exception\AuthorizationException;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -192,6 +193,33 @@ class FacebookServerSideEvent {
                     ->setPartnerAgent( $agent );
 
             $response = $request->execute();
+
+            if ( get_transient( FacebookPluginConfig::TOKEN_INVALID_TRANSIENT_KEY ) ) {
+                delete_transient( FacebookPluginConfig::TOKEN_INVALID_TRANSIENT_KEY );
+            }
+        } catch ( AuthorizationException $e ) {
+            $error_data = array(
+                'code'      => $e->getCode(),
+                'subcode'   => $e->getErrorSubcode(),
+                'message'   => $e->getMessage(),
+                'timestamp' => time(),
+            );
+            set_transient(
+                FacebookPluginConfig::TOKEN_INVALID_TRANSIENT_KEY,
+                $error_data,
+                DAY_IN_SECONDS
+            );
+            // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log(
+                sprintf(
+                    '[Meta for WordPress] Access token is invalid (code %d, subcode %s): %s. '
+                    . 'Please reconnect your account in Settings > Meta.',
+                    $e->getCode(),
+                    $e->getErrorSubcode() ?? 'none',
+                    $e->getMessage()
+                )
+            );
+            // phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_error_log
         } catch ( \Exception $e ) {
             // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
             error_log( '[Facebook Pixel for WordPress] Send Events Exception: ' . $e->getMessage() );

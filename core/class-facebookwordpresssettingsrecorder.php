@@ -153,6 +153,14 @@ class FacebookWordpressSettingsRecorder {
             FacebookPluginConfig::SETTINGS_KEY,
             $settings
         );
+        \delete_transient( FacebookPluginConfig::TOKEN_INVALID_TRANSIENT_KEY );
+        \delete_metadata(
+            'user',
+            0,
+            FacebookPluginConfig::ADMIN_IGNORE_TOKEN_INVALID_NOTICE,
+            '',
+            true
+        );
         return $this->handle_success_request( $settings );
     }
 
