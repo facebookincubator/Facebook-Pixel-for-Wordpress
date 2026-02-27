@@ -265,7 +265,16 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	 * @return string|null The phone number, or null if no phone field is found.
 	 */
 	private static function getPhone( $entry, $form_data ) {
-		return self::getField( $entry, $form_data, 'phone' );
+		$phone = self::getField( $entry, $form_data, 'phone' );
+		if ( ! is_null( $phone ) && '' !== $phone ) {
+			return $phone;
+		}
+
+		return self::getTextFieldByLabel(
+			$entry,
+			$form_data,
+			array( 'phone', 'tel', 'telephone', 'mobile' )
+		);
 	}
 
 	/**
@@ -302,12 +311,16 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	private static function getAddress( $entry, $form_data ) {
 		$address_field_data = self::getField( $entry, $form_data, 'address' );
 		if ( is_null( $address_field_data ) ) {
-			return array();
+			// Fall back to individual text fields when the Address fancy field
+			// is not available in WPForms Lite.
+			return self::getAddressFromTextFields( $entry, $form_data );
 		}
+
 		$address_data = array();
 		if ( isset( $address_field_data['city'] ) ) {
 			$address_data['city'] = $address_field_data['city'];
 		}
+
 		if ( isset( $address_field_data['state'] ) ) {
 			$address_data['state'] = $address_field_data['state'];
 		}
@@ -317,12 +330,14 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 		} else {
 			$address_scheme = self::getAddressScheme( $form_data );
 			if ( 'us' === $address_scheme ) {
-			$address_data['country'] = 'US';
+				$address_data['country'] = 'US';
 			}
 		}
+
 		if ( isset( $address_field_data['postal'] ) ) {
 			$address_data['zip'] = $address_field_data['postal'];
 		}
+
 		return $address_data;
 	}
 
@@ -350,16 +365,16 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 		$entries = $entry['fields'];
 		foreach ( $form_data['fields'] as $field ) {
 			if ( 'name' === $field['type'] ) {
-			if ( 'simple' === $field['format'] ) {
-				return ServerEventFactory::split_name(
-					$entries[ $field['id'] ]
-				);
-			} elseif ( 'first-last' === $field['format'] ) {
-				return array(
-			$entries[ $field['id'] ]['first'],
-			$entries[ $field['id'] ]['last'],
-				);
-			}
+				if ( 'simple' === $field['format'] ) {
+					return ServerEventFactory::split_name(
+						$entries[ $field['id'] ]
+					);
+				} elseif ( 'first-last' === $field['format'] ) {
+					return array(
+						$entries[ $field['id'] ]['first'],
+						$entries[ $field['id'] ]['last'],
+					);
+				}
 			}
 		}
 
@@ -387,11 +402,103 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 
 		foreach ( $form_data['fields'] as $field ) {
 			if ( $field['type'] === $type ) {
-			return $entry['fields'][ $field['id'] ];
+				return $entry['fields'][ $field['id'] ];
 			}
 		}
 
 		return null;
+	}
+
+	/**
+	 * Retrieves a text field value by matching its label.
+	 *
+	 * WPForms Lite users often rely on generic "text" fields instead of
+	 * the premium/fancy types. This helper lets us recover values for
+	 * phone/address-like fields when their labels match expected names.
+	 *
+	 * @param array    $entry   The form entry data.
+	 * @param array    $form_data The form schema data.
+	 * @param string[] $labels Candidate labels (case-insensitive).
+	 * @return string|null
+	 */
+	private static function getTextFieldByLabel( $entry, $form_data, $labels ) {
+		if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
+			return null;
+		}
+
+		$normalized_labels = array_map( 'self::normalizeLabel', $labels );
+
+		foreach ( $form_data['fields'] as $field ) {
+			if ( 'text' !== $field['type'] || empty( $field['label'] ) ) {
+				continue;
+			}
+
+			$label = self::normalizeLabel( $field['label'] );
+			if ( in_array( $label, $normalized_labels, true ) ) {
+				$value = isset( $entry['fields'][ $field['id'] ] )
+					? $entry['fields'][ $field['id'] ]
+					: null;
+
+				return '' !== $value ? $value : null;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Builds address data from individual text fields when the Address field
+	 * isn't present.
+	 *
+	 * @param array $entry     The form entry data.
+	 * @param array $form_data The form schema data.
+	 *
+	 * @return array
+	 */
+	private static function getAddressFromTextFields( $entry, $form_data ) {
+		$address_data = array();
+
+		$address_data['city'] = self::getTextFieldByLabel(
+			$entry,
+			$form_data,
+			array( 'city', 'town' )
+		);
+
+		$address_data['state'] = self::getTextFieldByLabel(
+			$entry,
+			$form_data,
+			array( 'state', 'province', 'region', 'county' )
+		);
+
+		$address_data['country'] = self::getTextFieldByLabel(
+			$entry,
+			$form_data,
+			array( 'country', 'country/region' )
+		);
+
+		$address_data['zip'] = self::getTextFieldByLabel(
+			$entry,
+			$form_data,
+			array( 'zip', 'postal', 'postcode', 'zip code' )
+		);
+
+		// Remove null/empty values so we don't send sparse keys.
+		return array_filter(
+			$address_data,
+			function ( $value ) {
+				return ! is_null( $value ) && '' !== $value;
+			}
+		);
+	}
+
+	/**
+	 * Normalizes labels for case-insensitive comparison.
+	 *
+	 * @param string $label The label to normalize.
+	 * @return string
+	 */
+	private static function normalizeLabel( $label ) {
+		return strtolower( trim( $label ) );
 	}
 
 	/**
@@ -410,9 +517,9 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 	private static function getAddressScheme( $form_data ) {
 		foreach ( $form_data['fields'] as $field ) {
 			if ( 'address' === $field['type'] ) {
-			if ( isset( $field['scheme'] ) ) {
-				return $field['scheme'];
-			}
+				if ( isset( $field['scheme'] ) ) {
+					return $field['scheme'];
+				}
 			}
 		}
 		return null;
