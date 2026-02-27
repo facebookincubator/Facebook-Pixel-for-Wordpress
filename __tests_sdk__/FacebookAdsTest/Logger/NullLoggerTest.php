@@ -32,16 +32,25 @@ class NullLoggerTest extends AbstractLoggerTest {
     return new NullLogger();
   }
 
+  /**
+  * @doesNotPerformAssertions
+  */
   public function testLog() {
     $this->createLogger()->log(
       static::VALUE_LOG_LEVEL, static::VALUE_LOG_MESSAGE);
   }
 
+  /**
+  * @doesNotPerformAssertions
+  */
   public function testLogRequest() {
     $this->createLogger()->logRequest(
       static::VALUE_LOG_LEVEL, $this->createRequestMock());
   }
 
+  /**
+  * @doesNotPerformAssertions
+  */
   public function testLogResponse() {
     $this->createLogger()->logResponse(
       static::VALUE_LOG_LEVEL, $this->createResponseMock());
