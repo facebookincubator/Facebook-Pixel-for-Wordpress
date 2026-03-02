@@ -68,11 +68,17 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
      */
     public static function inject_pixel_code() {
         if ( ! self::isFacebookForWooCommerceActive() ) {
+			// InitiateCheckout events for classic checkout.
             add_action(
                 'woocommerce_after_checkout_form',
                 array( __CLASS__, 'trackInitiateCheckout' ),
                 40
             );
+			// InitiateCheckout events for block-based checkout.
+			add_action(
+				'woocommerce_blocks_checkout_enqueue_data',
+				array( __CLASS__, 'trackInitiateCheckout' )
+			);
 
             add_action(
                 'woocommerce_add_to_cart',
