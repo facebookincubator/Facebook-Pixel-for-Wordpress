@@ -756,9 +756,33 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
      *
      * @since 1.0.0
      */
-    public static function enqueuePixelCode( $server_event ) {
-        $code = self::generatePixelCode( $server_event, false );
-        wc_enqueue_js( $code );
-        return $code;
-    }
+	public static function enqueuePixelCode( $server_event ) {
+		$code   = self::generatePixelCode( $server_event, false );
+		$handle = 'meta_pixel_inline';
+
+		if ( ! function_exists( 'wp_add_inline_script' ) ) {
+			global $wc_queued_js;
+			$wc_queued_js .= "\n" . $code;
+			return $code;
+		}
+
+		static $registered = false;
+		if ( ! $registered ) {
+			if ( ! wp_script_is( $handle, 'registered' ) ) {
+				wp_register_script(
+					$handle,
+					'',
+					array(),
+					\FacebookPixelPlugin\Core\FacebookPluginConfig::PLUGIN_VERSION,
+					true
+				);
+			}
+			wp_enqueue_script( $handle );
+			$registered = true;
+		}
+
+		wp_add_inline_script( $handle, $code );
+
+		return $code;
+	}
 }
