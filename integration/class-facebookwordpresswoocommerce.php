@@ -452,7 +452,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
      * @since 1.0.0
      */
     public static function trackInitiateCheckout() {
-        if ( FacebookPluginUtils::is_internal_user() ) {
+        if ( FacebookPluginUtils::is_internal_user() || null === WC()->cart || WC()->cart->get_cart_contents_count() === 0 ) {
             return;
         }
 
