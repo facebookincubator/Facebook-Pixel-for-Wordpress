@@ -1,0 +1,279 @@
+name: "Prepare New Release"
+run-name: "Prepare New Release release/${{ github.event.inputs.version }} by @${{ github.actor }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version number to be released (semver, e.g. 3.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Validate version format
+        env:
+          NEW_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if ! echo "$NEW_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Version must be in semver format (e.g., 3.1.0). Got: $NEW_VERSION"
+            exit 1
+          fi
+
+      - name: Set Version
+        id: set_version
+        env:
+          NEW_VERSION: ${{ github.event.inputs.version }}
+        run: echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if branch exists
+        uses: actions/github-script@v8
+        env:
+          NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
+        with:
+          script: |
+            const branch = `release/${process.env.NEW_VERSION.trim()}`;
+            try {
+              await github.rest.repos.getBranch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch,
+              });
+              core.setFailed(`Branch "${branch}" already exists.`);
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`Branch "${branch}" does not exist. Proceeding.`);
+              } else {
+                throw error;
+              }
+            }
+
+      - name: Get latest release tag
+        id: get_release
+        uses: actions/github-script@v8
+        with:
+          script: |
+            try {
+              const latestRelease = await github.rest.repos.getLatestRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+              core.setOutput("latest_tag", latestRelease.data.tag_name);
+              core.setOutput("has_release", "true");
+              console.log("Latest release tag:", latestRelease.data.tag_name);
+            } catch (error) {
+              if (error.status === 404) {
+                console.log("No previous release found. Will include all commits.");
+                core.setOutput("has_release", "false");
+              } else {
+                throw error;
+              }
+            }
+
+      - name: Build changelog from PRs
+        id: changelog
+        uses: actions/github-script@v8
+        env:
+          HAS_RELEASE: ${{ steps.get_release.outputs.has_release }}
+          LATEST_TAG: ${{ steps.get_release.outputs.latest_tag }}
+          NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
+        with:
+          script: |
+            const newVersion = process.env.NEW_VERSION.trim();
+            const hasRelease = process.env.HAS_RELEASE === 'true';
+            const latestTag = process.env.LATEST_TAG;
+
+            // Determine the cutoff date for merged PRs
+            let since = null;
+            if (hasRelease) {
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: latestTag,
+              });
+              since = new Date(release.data.published_at);
+              console.log(`Including PRs merged after ${since.toISOString()}`);
+            } else {
+              console.log("No previous release. Including all merged PRs.");
+            }
+
+            // Query merged PRs directly — only returns PRs on this repo
+            const prs = await github.paginate(github.rest.pulls.list, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed',
+              sort: 'updated',
+              direction: 'desc',
+              base: 'main',
+              per_page: 100,
+            });
+
+            const changelog = [];
+            for (const pr of prs) {
+              if (!pr.merged_at) continue;
+              if (since && new Date(pr.merged_at) < since) continue;
+
+              const labelPrefix = "changelog:";
+              const labels = pr.labels
+                .map(l => l.name)
+                .filter(l => l.startsWith(labelPrefix))
+                .map(l => l.replace(labelPrefix, "").trim());
+              if (labels.length === 0 || labels[0].toLowerCase() === 'none') continue;
+
+              const category = labels[0];
+              changelog.push(`* ${category.charAt(0).toUpperCase()}${category.slice(1)} - ${pr.title} by @${pr.user.login} in #${pr.number}`);
+            }
+
+            const date = new Date().toISOString().slice(0, 10);
+            const output = `= ${newVersion} - ${date} =\n${changelog.join('\n')}\n`;
+            core.setOutput('changelog', output);
+            console.log(output);
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release branch
+        env:
+          NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
+        run: git checkout -b "release/$NEW_VERSION"
+
+      - name: Update PLUGIN_VERSION
+        env:
+          NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
+        run: |
+          sed -i -E "s/(const PLUGIN_VERSION[[:space:]]*=[[:space:]]*')[^']*(';)/\1$NEW_VERSION\2/" \
+            "core/class-facebookpluginconfig.php"
+
+      - name: Update package.json version
+        env:
+          NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
+        run: |
+          sed -i -E "s/^  \"version\":[[:space:]]*\"[^\"]*\"/  \"version\": \"$NEW_VERSION\"/" "package.json"
+
+      - name: Update language files
+        env:
+          NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y gettext
+          # Update Project-Id-Version in all .po files
+          find ./languages/ -name "*.po" -exec \
+            sed -i -E "s/(Project-Id-Version: Facebook for WordPress )[0-9]+\.[0-9]+\.[0-9]+/\1$NEW_VERSION/" {} \;
+          # Regenerate .mo files from updated .po files
+          for po in languages/*.po; do
+            msgfmt -o "${po%.po}.mo" "$po"
+          done
+
+      - name: Update WordPress tested up to version
+        run: |
+          LATEST_WP=$(curl -sf 'https://api.wordpress.org/core/version-check/1.7/' | jq -r '.offers[0].version')
+          if [ -z "$LATEST_WP" ] || [ "$LATEST_WP" = "null" ]; then
+            echo "::error::Failed to fetch latest WordPress version"
+            exit 1
+          fi
+          echo "Latest WordPress version: $LATEST_WP"
+          sed -i -E "s/^(Tested up to:).*/\1 $LATEST_WP/" "readme.txt"
+
+      - name: Update changelog.txt
+        uses: actions/github-script@v8
+        env:
+          CHANGELOG_TEXT: ${{ steps.changelog.outputs.changelog }}
+        with:
+          script: |
+            const fs = require('fs');
+            let content = fs.readFileSync('changelog.txt').toString().split('\n');
+            const newLines = process.env.CHANGELOG_TEXT.split(/\r?\n/);
+            // Insert new entry after the header line
+            content.splice(1, 0, ...newLines);
+            fs.writeFileSync('changelog.txt', content.join('\n'));
+
+      - name: Set stable tag to current stable version
+        run: |
+          CURRENT_STABLE=$(curl -sf 'https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request%5Bslug%5D=official-facebook-pixel' | jq -r '.version')
+          if [ -z "$CURRENT_STABLE" ] || [ "$CURRENT_STABLE" = "null" ]; then
+            echo "::error::Failed to fetch current stable version from WordPress.org API"
+            exit 1
+          fi
+          echo "Current stable version: ${CURRENT_STABLE}"
+          sed -i -E "s/^(Stable tag:)[[:space:]]*[0-9.]+/\1 $CURRENT_STABLE/" "readme.txt"
+
+      - name: Update readme.txt changelog
+        uses: actions/github-script@v8
+        env:
+          CHANGELOG_TEXT: ${{ steps.changelog.outputs.changelog }}
+        with:
+          script: |
+            const fs = require('fs');
+            let content = fs.readFileSync('readme.txt').toString().split('\n');
+            const markerIndex = content.findIndex(line =>
+              line.trim().toLowerCase() === '== changelog ==');
+            if (markerIndex === -1) {
+              throw new Error('"== Changelog ==" marker not found in readme.txt');
+            }
+
+            // Remove existing changelog entries after the marker
+            // Stop at next section boundary (== Upgrade Notice == etc.)
+            let i = markerIndex + 1;
+            while (i < content.length) {
+              const trimmed = content[i].trim();
+              if (/^==\s/.test(trimmed)) break;
+              if (trimmed === '' || trimmed.startsWith('=') ||
+                  trimmed.startsWith('*') || trimmed.startsWith('-')) {
+                content.splice(i, 1);
+              } else {
+                break;
+              }
+            }
+
+            // Insert new changelog
+            const newLines = process.env.CHANGELOG_TEXT.split(/\r?\n/);
+            newLines.unshift("");
+            content.splice(i, 0, ...newLines);
+            fs.writeFileSync('readme.txt', content.join('\n'));
+
+      - name: Commit and push
+        env:
+          NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
+        run: |
+          git add .
+          git commit -m "Prepare release $NEW_VERSION"
+          git push origin HEAD
+
+  build-and-upload:
+    needs: prepare-release
+    name: Build and Upload Artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ format('refs/heads/release/{0}', github.event.inputs.version) }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          tools: composer
+
+      - name: Install dependencies and build
+        run: |
+          composer install
+          vendor/bin/phing
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: facebook-pixel-for-wordpress
+          path: build/facebook-pixel-for-wordpress-*.zip
