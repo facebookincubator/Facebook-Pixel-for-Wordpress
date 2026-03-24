@@ -13,7 +13,9 @@ use FacebookPixelPlugin\FacebookAds\ApiRequest;
 use FacebookPixelPlugin\FacebookAds\Cursor;
 use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAds\TypeChecker;
-use FacebookPixelPlugin\FacebookAds\Object\Fields\UserPaymentModulesOptionsFields;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\{
+    UserPaymentModulesOptionsFields
+};
 
 /**
  * This class is auto-generated.
