@@ -13,7 +13,9 @@ use FacebookPixelPlugin\FacebookAds\ApiRequest;
 use FacebookPixelPlugin\FacebookAds\Cursor;
 use FacebookPixelPlugin\FacebookAds\Http\RequestInterface;
 use FacebookPixelPlugin\FacebookAds\TypeChecker;
-use FacebookPixelPlugin\FacebookAds\Object\Fields\WebsiteCreativeAssetSourceFields;
+use FacebookPixelPlugin\FacebookAds\Object\Fields\{
+    WebsiteCreativeAssetSourceFields
+};
 
 /**
  * This class is auto-generated.
