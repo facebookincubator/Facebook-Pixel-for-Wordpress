@@ -35,7 +35,10 @@ class JsonAwareParametersTest extends AbstractUnitTestCase {
    * @param mixed $param_data
    */
   public function testExtract($param_data) {
-    foreach ((new JsonAwareParameters($param_data))->export() as $param) {
+    $params = (new JsonAwareParameters($param_data))->export();
+
+    $this->assertIsArray($params);
+    foreach ($params as $param) {
       $this->assertTrue(is_scalar($param) || is_null($param));
     }
   }

@@ -55,6 +55,15 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
       10,
       3
     );
+    \WP_Mock::expectFilterAdded(
+      'ninja_forms_post_run_action_type_successmessage',
+      array( FacebookWordpressNinjaForms::class, 'injectLeadEventResponse' )
+    );
+    \WP_Mock::expectActionAdded(
+      'wp_footer',
+      array( FacebookWordpressNinjaForms::class, 'injectAjaxListener' ),
+      9
+    );
 
     FacebookWordpressNinjaForms::inject_pixel_code();
     $this->assertHooksAdded();
@@ -63,8 +72,8 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
   /**
    * Tests the injectLeadEvent method when the user is not an internal user.
    *
-   * This test verifies that the Pixel code is appended to the HTML output
-   * and that the server-side event is tracked with the correct parameters.
+   * This test verifies that the success message is left unchanged and that the
+   * server-side event is tracked with the correct parameters.
    * It ensures that the 'Lead' event is recorded with the expected user data,
    * including email, first name, last name, phone number,
      * city, state, country,
@@ -100,19 +109,6 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
             )
         );
 
-        \WP_Mock::userFunction(
-            'wp_json_encode',
-            array(
-        'args'   => array(
-                    \Mockery::type( 'array' ),
-          \Mockery::type( 'int' ),
-        ),
-        'return' => function ( $data, $options ) {
-          return json_encode( $data );
-        },
-            )
-        );
-
     $result = FacebookWordpressNinjaForms::injectLeadEvent(
       $mock_actions,
       null,
@@ -122,11 +118,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     $this->assertNotEmpty( $result );
     $this->assertArrayHasKey( 'settings', $result[0] );
     $this->assertArrayHasKey( 'success_msg', $result[0]['settings'] );
-    $msg = $result[0]['settings']['success_msg'];
-    $this->assertMatchesRegularExpression(
-      '/ninja-forms[\s\S]+End Meta Pixel Event Code/',
-      $msg
-    );
+    $this->assertEquals( 'successful', $result[0]['settings']['success_msg'] );
 
     $tracked_events =
     FacebookServerSideEvent::get_instance()->get_tracked_events();
@@ -175,6 +167,57 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     );
 
     $this->assertEquals( 'mock_actions', $result );
+  }
+
+  /**
+   * Tests that the AJAX response is enriched with raw pixel code.
+   *
+   * @return void
+   */
+  public function testInjectLeadEventResponseAddsPixelCode() {
+    parent::mockIsInternalUser( false );
+    self::mockFacebookWordpressOptions();
+
+        \WP_Mock::userFunction(
+            'sanitize_text_field',
+            array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+            )
+        );
+
+        \WP_Mock::userFunction(
+            'wp_json_encode',
+            array(
+        'args'   => array(
+                    \Mockery::type( 'array' ),
+          \Mockery::type( 'int' ),
+        ),
+        'return' => function ( $data, $options ) {
+          return json_encode( $data );
+        },
+            )
+        );
+
+    $event = \FacebookPixelPlugin\Core\ServerEventFactory::new_event( 'Lead' );
+    FacebookServerSideEvent::get_instance()->track( $event );
+
+    $response = FacebookWordpressNinjaForms::injectLeadEventResponse( array() );
+
+    $this->assertArrayHasKey( 'fb_pxl_code', $response );
+    $this->assertStringContainsString( "fbq('track'", $response['fb_pxl_code'] );
+  }
+
+  /**
+   * Tests that the AJAX response listener script is printed.
+   *
+   * @return void
+   */
+  public function testInjectAjaxListenerOutputsScript() {
+    FacebookWordpressNinjaForms::injectAjaxListener();
+    $this->expectOutputRegex( '/submit:response/' );
   }
 
   /**

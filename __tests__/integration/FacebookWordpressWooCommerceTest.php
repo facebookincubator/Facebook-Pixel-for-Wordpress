@@ -722,7 +722,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
      * - get_the_terms(): Returns an array containing a
      *                    stdClass object with a name
      *                    property set to 'Dinosaurs'.
-     * - wc_enqueue_js(): Does nothing.
+     * - wp_add_inline_script(): Does nothing.
      *
      * Additionally, it sets up the MockWC object
      * to return a MockWCCart object when
@@ -803,6 +803,9 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         )
     );
 
-        \WP_Mock::userFunction( 'wc_enqueue_js', array() );
+        \WP_Mock::userFunction( 'wp_add_inline_script', array() );
+		\WP_Mock::userFunction('wp_script_is', array('return' => false));
+		\WP_Mock::userFunction('wp_register_script', array());
+		\WP_Mock::userFunction('wp_enqueue_script', array());
     }
 }
