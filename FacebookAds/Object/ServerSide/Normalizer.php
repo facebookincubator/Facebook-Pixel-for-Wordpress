@@ -39,6 +39,23 @@ class Normalizer {
    * @return string
    */
   public static function normalize($field, $data) {
+    if (is_array($data)) {
+      foreach ($data as $value) {
+        if (is_scalar($value) && $value !== '') {
+          $data = (string) $value;
+          break;
+        }
+      }
+
+      if (!is_scalar($data)) {
+        return null;
+      }
+    }
+
+    if (is_numeric($data)) {
+      $data = (string) $data;
+    }
+
     if ($data == null || strlen($data) == 0) {
       return null;
     }
