@@ -36,6 +36,9 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
  */
 abstract class FacebookWordpressTestBase extends TestCase {
 
+    protected $mocked_fbpixel;
+    protected $mocked_options;
+
     /**
      * Sets up the environment for each test.
      *

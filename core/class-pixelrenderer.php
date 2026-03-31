@@ -111,7 +111,7 @@ class PixelRenderer {
         );
         return sprintf(
             self::FBQ_EVENT_CODE,
-            $class->getConstant( strtoupper( $event->getEventName() ) ) !== false ?
+            $class->getConstant( strtoupper( (string) $event->getEventName() ) ) !== false ?
             self::TRACK : self::TRACK_CUSTOM,
             $event->getEventName(),
             wp_json_encode( $normalized_custom_data, JSON_PRETTY_PRINT ),
