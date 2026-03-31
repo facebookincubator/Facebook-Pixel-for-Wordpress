@@ -34,6 +34,9 @@
         <echo msg="Cleaning build folder..." />
         <delete dir="${builddir}" />
         <echo msg="Build folder deleted" />
+        <echo msg="Regenerating autoloader..." />
+        <composer command="dump-autoload" />
+        <echo msg="Autoloader regenerated" />
         <echo msg="Prepare complete" />
     </target>
 
