@@ -16,7 +16,8 @@
   "license": "GPL",
   "require": {
     "php": ">=7.4",
-    "techcrunch/wp-async-task": "dev-master"
+    "techcrunch/wp-async-task": "dev-master",
+    "facebook/capi-param-builder-php": "^1.2.1"
   },
   "autoload": {
     "psr-4": {

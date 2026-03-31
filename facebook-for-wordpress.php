@@ -50,6 +50,7 @@ use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
 use FacebookPixelPlugin\Core\ReleaseSignalsAjax;
+use FacebookPixelPlugin\Core\FacebookParamBuilder;
 use FacebookPixelPlugin\Core\ServerEventAsyncTask;
 
 /**
@@ -78,6 +79,9 @@ class FacebookForWordpress {
     if ( Signals::should_hold_signals() ) {
         FacebookSignalState::hold();
     }
+
+    // Initialize ParamBuilder server-side before pixel injection.
+    FacebookParamBuilder::server_setup();
 
     add_action( 'init', array( $this, 'register_pixel_injection' ), 0 );
     add_action( 'parse_request', array( $this, 'handle_events_request' ), 0 );

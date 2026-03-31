@@ -153,25 +153,27 @@ class ServerEventFactory {
     }
 
     /**
-     * Retrieves the Facebook Browser ID (FBP) cookie.
+     * Retrieves the Facebook Browser ID (FBP).
      *
-     * This function returns the value of the FBP cookie, which
-     * is a unique identifier assigned to a user by Facebook.
-     * The FBP cookie is used by the Facebook pixel to track
-     * user behavior across multiple sites and sessions.
+     * Resolution order:
+     * 1. _fbp cookie (set by fbevents.js or ParamBuilder)
+     * 2. ParamBuilder server-side extraction
      *
-     * @return string|null The value of the FBP cookie, or
-     * null if the cookie is not present.
+     * @return string|null The FBP value, or null if unavailable.
      */
     private static function get_fbp() {
-      $fbp = null;
+        $fbp = null;
 
-      if ( ! empty( $_COOKIE['_fbp'] ) ) {
-          $fbp = sanitize_text_field( wp_unslash( $_COOKIE['_fbp'] ) );
-      }
+        if ( ! empty( $_COOKIE['_fbp'] ) ) {
+            $fbp = sanitize_text_field( wp_unslash( $_COOKIE['_fbp'] ) );
+        }
 
-      return $fbp;
-  }
+        if ( ! $fbp ) {
+            $fbp = FacebookParamBuilder::get_fbp();
+        }
+
+        return $fbp;
+    }
 
     /**
      * Public wrapper for the current request's FBP value.
@@ -183,17 +185,16 @@ class ServerEventFactory {
     }
 
     /**
-     * Retrieves the Facebook Click ID (FBC) cookie or session variable.
+     * Retrieves the Facebook Click ID (FBC).
      *
-     * This function returns the value of the FBC cookie or session variable,
-     * which is a unique identifier assigned to a user by Facebook. The FBC
-     * cookie is used by the Facebook pixel to track user behavior across
-     * multiple sites and sessions. If the FBC cookie is not present, the
-     * function will attempt to generate an FBC value from the fbclid query
-     * parameter, if present.
+     * Resolution order:
+     * 1. _fbc cookie (set by fbevents.js or ParamBuilder)
+     * 2. Session cache
+     * 3. ParamBuilder server-side extraction
+     * 4. Constructed from fbclid query parameter
+     * 5. Session fallback
      *
-     * @return string|null The value of the FBC cookie or session variable, or
-     *                     null if neither is present.
+     * @return string|null The FBC value, or null if unavailable.
      */
     private static function get_fbc() {
         $fbc = null;
@@ -203,6 +204,10 @@ class ServerEventFactory {
                 wp_unslash( $_COOKIE['_fbc'] )
             );
             $_SESSION['_fbc'] = $fbc;
+        }
+
+        if ( ! $fbc ) {
+            $fbc = FacebookParamBuilder::get_fbc();
         }
 
         if ( ! $fbc && isset( $_GET['fbclid'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification

@@ -71,6 +71,11 @@ class FacebookWordpressPixelInjection {
                 'wp_body_open',
                 array( $this, 'inject_pixel_noscript_code' )
             );
+            // Enqueue CAPI ParamBuilder client-side JS.
+            add_action(
+                'wp_enqueue_scripts',
+                array( 'FacebookPixelPlugin\Core\FacebookParamBuilder', 'client_setup' )
+            );
             foreach (
                 FacebookPluginConfig::integration_config() as $key => $value
                 ) {
