@@ -1,0 +1,159 @@
+name: Release Plugin
+run-name: "Release Plugin ${{ github.ref_name }} by @${{ github.actor }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Dry run (skip SVN commit and GitHub release creation)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    environment: Deployment
+    steps:
+      - name: Validate branch
+        run: |
+          if [[ ! "${{ github.ref }}" =~ ^refs/heads/release/ ]]; then
+            echo "::error::This workflow must be run from a release/* branch. Current ref: ${{ github.ref }}"
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Get version
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+
+      - name: Validate Git tag
+        run: |
+          if [ $(git tag -l "v${{ steps.package-version.outputs.current-version }}") ]; then
+            echo "::error::Git tag v${{ steps.package-version.outputs.current-version }} already exists"
+            exit 1
+          fi
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          tools: composer
+
+      - name: Build plugin
+        run: |
+          composer install
+          vendor/bin/phing Package
+
+      - name: Verify build artifact
+        id: build-check
+        env:
+          VERSION: ${{ steps.package-version.outputs.current-version }}
+        run: |
+          ARTIFACT="build/facebook-pixel-for-wordpress-${VERSION}.zip"
+          if [ ! -f "$ARTIFACT" ]; then
+            echo "::error::Build artifact not found: $ARTIFACT"
+            exit 1
+          fi
+          echo "artifact_path=$ARTIFACT" >> $GITHUB_OUTPUT
+          echo "filesize=$(du -h "$ARTIFACT" | cut -f1)" >> $GITHUB_OUTPUT
+          echo "Build artifact: $ARTIFACT ($(du -h "$ARTIFACT" | cut -f1))"
+
+      - name: Extract release notes
+        run: |
+          readme_file="readme.txt"
+          found_changelog=0
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          while IFS= read -r line || [[ -n $line ]]; do
+              clean_line=$(echo "$line" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+              if [[ $found_changelog -eq 0 ]]; then
+                  if [[ "$clean_line" == "== Changelog ==" ]]; then
+                      found_changelog=1
+                  fi
+              else
+                  if [[ "$clean_line" =~ ^=\ [0-9]+\.[0-9] ]]; then
+                      break
+                  fi
+                  if [[ "$clean_line" == \** ]]; then
+                      echo "$clean_line" >> $GITHUB_ENV
+                  fi
+              fi
+          done < "$readme_file"
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: facebook-pixel-for-wordpress
+          path: ${{ steps.build-check.outputs.artifact_path }}
+
+      - name: Install SVN
+        run: sudo apt-get install subversion -y
+
+      - name: Checkout SVN Repository
+        run: svn co https://plugins.svn.wordpress.org/official-facebook-pixel/ pixel_svn --quiet --non-interactive
+
+      - name: Validate SVN tag
+        env:
+          VERSION: ${{ steps.package-version.outputs.current-version }}
+        run: |
+          if [ -d "pixel_svn/tags/$VERSION" ]; then
+            echo "::error::SVN tag directory tags/$VERSION already exists"
+            exit 1
+          fi
+
+      - name: Commit to SVN
+        if: ${{ inputs.dry-run != true }}
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          VERSION: ${{ steps.package-version.outputs.current-version }}
+          ARTIFACT_PATH: ${{ steps.build-check.outputs.artifact_path }}
+        run: |
+          cd pixel_svn
+          rm -rf trunk
+          cp "../$ARTIFACT_PATH" ./
+          echo "Unzipping the artifact"
+          unzip "facebook-pixel-for-wordpress-${VERSION}.zip"
+          mv official-facebook-pixel trunk
+          rm "facebook-pixel-for-wordpress-${VERSION}.zip"
+          find trunk -type d -name ".github" -exec rm -rf {} +
+          svn add --force .
+          svn st | grep ^! | awk '{print $2}' | xargs -d '\n' -r svn rm
+          svn status
+          echo "Tagging version $VERSION"
+          svn cp trunk "tags/$VERSION"
+          echo "Status:"
+          svn status
+          svn commit -m "Deploy new version $VERSION" --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --no-auth-cache --non-interactive
+
+      - name: Create GitHub Release
+        if: ${{ inputs.dry-run != true }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.package-version.outputs.current-version }}
+          ARTIFACT_PATH: ${{ steps.build-check.outputs.artifact_path }}
+        run: |
+          gh release create "v$VERSION" \
+            "$ARTIFACT_PATH" \
+            --repo facebookincubator/Facebook-Pixel-for-Wordpress \
+            --target "${{ github.sha }}" \
+            --title "Release $VERSION" \
+            --notes "$RELEASE_NOTES" \
+            --draft \
+            --prerelease
+
+      - name: Dry run summary
+        if: ${{ inputs.dry-run == true }}
+        env:
+          VERSION: ${{ steps.package-version.outputs.current-version }}
+        run: |
+          echo "::notice::Dry run complete. Skipped SVN commit and GitHub release creation."
+          echo "Version: $VERSION"
+          echo "Build artifact: ${{ steps.build-check.outputs.artifact_path }} (${{ steps.build-check.outputs.filesize }})"
+          echo "SVN tag validation: passed (tags/$VERSION does not exist)"
