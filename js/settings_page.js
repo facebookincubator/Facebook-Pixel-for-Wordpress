@@ -1,3 +1,9 @@
+function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
 window.fbAsyncInit = function () {
     FB.init({
         appId: "221646389321681",
@@ -192,15 +198,15 @@ function sendTestEvent(e) {
                     .querySelector(".event-log-block>table>tbody")
                     .insertAdjacentHTML(
                         "beforeend",
-                        `<tr><td clas="test-event-td">${testEventCode}</td><td><span class="test-event-pill test-event-pill--type">${testEventName}</span></td><td><span class="test-event-pill test-event-pill--success">Success</span></td></tr>`
+                        `<tr><td clas="test-event-td">${escapeHtml(testEventCode)}</td><td><span class="test-event-pill test-event-pill--type">${escapeHtml(testEventName)}</span></td><td><span class="test-event-pill test-event-pill--success">Success</span></td></tr>`
                     );
             } else {
                 let tableRow = `
                 <tr class="test-event--error">
                     <td class="test-event-td test-event-td--error">
-                        ${data.error.message}
+                        ${escapeHtml(data.error.message)}
                     </td>
-                    <td class="test-event-pill test-event-pill--type">${testEventName}</td>
+                    <td class="test-event-pill test-event-pill--type">${escapeHtml(testEventName)}</td>
                     <td style="margin-left:auto;">
                         <span class="test-event-pill test-event-button--error">
                             Error
@@ -210,7 +216,7 @@ function sendTestEvent(e) {
                         </span>
                     </td>
                     <td class="test-event-msg--error hidden">
-                        ${data.error.error_user_msg}
+                        ${escapeHtml(data.error.error_user_msg)}
                     </td>
                 </tr>
                 `;
