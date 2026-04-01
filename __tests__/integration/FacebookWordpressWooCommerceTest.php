@@ -804,8 +804,8 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     );
 
         \WP_Mock::userFunction( 'wp_add_inline_script', array() );
-		\WP_Mock::userFunction('wp_script_is', array('return' => false));
-		\WP_Mock::userFunction('wp_register_script', array());
-		\WP_Mock::userFunction('wp_enqueue_script', array());
+        \WP_Mock::userFunction('wp_script_is', array('return' => false));
+        \WP_Mock::userFunction('wp_register_script', array());
+        \WP_Mock::userFunction('wp_enqueue_script', array());
     }
 }
