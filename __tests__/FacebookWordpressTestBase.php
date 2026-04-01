@@ -27,7 +27,8 @@
 
 namespace FacebookPixelPlugin\Tests;
 
-use WP_Mock\Tools\TestCase;
+use PHPUnit\Framework\TestCase;
+use WP_Mock\Tools\Constraints\ExpectationsMet;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 
@@ -173,5 +174,20 @@ abstract class FacebookWordpressTestBase extends TestCase {
         $aam_settings->setEnableAutomaticMatching( true );
         $aam_settings->setEnabledAutomaticMatchingFields( AAMSettingsFields::get_all_fields() );
         return $aam_settings;
+    }
+
+    public function assertConditionsMet( $message = '' ) {
+        $this->assertThat( null, new ExpectationsMet(), $message );
+    }
+
+    public function assertHooksAdded() {
+        $hooks_not_added = $expected_hooks = 0;
+        try {
+            \WP_Mock::assertHooksAdded();
+        } catch ( \Exception $e ) {
+            $hooks_not_added = 1;
+            $expected_hooks  = $e->getMessage();
+        }
+        $this->assertEmpty( $hooks_not_added, (string) $expected_hooks );
     }
 }
