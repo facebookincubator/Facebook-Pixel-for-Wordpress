@@ -53,11 +53,33 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      * the Pixel code is injected during the form processing stage.
      */
     public static function inject_pixel_code() {
+        // Tracks server and browser events when a submission is processed.
         add_action(
             'wpforms_process_before',
             array( __CLASS__, 'trackEvent' ),
             20,
             2
+        );
+
+        // Enriches AJAX responses (success or redirect) with pixel code.
+        add_filter(
+            'wpforms_ajax_submit_success_response',
+            array( __CLASS__, 'injectLeadEventAjax' ),
+            20,
+            3
+        );
+        add_filter(
+            'wpforms_ajax_submit_redirect',
+            array( __CLASS__, 'injectLeadEventAjax' ),
+            20,
+            3
+        );
+
+        // Adds a front-end listener that fires pixel code returned in AJAX responses.
+        add_action(
+            'wp_footer',
+            array( __CLASS__, 'injectAjaxListener' ),
+            9
         );
     }
 
@@ -130,6 +152,66 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
     }
 
     /**
+     * Add pixel code into AJAX success/redirect responses.
+     *
+     * @param array $response  Existing AJAX response payload.
+     * @param int   $form_id   Form ID (provided by WPForms).
+     * @param mixed $extra     Unused extra parameter (URL or form data).
+     *
+     * @return array Modified response containing fb_pxl_code when available.
+     */
+    public static function injectLeadEventAjax( $response, $form_id = null, $extra = null ) {
+        if ( FacebookPluginUtils::is_internal_user() ) {
+            return $response;
+        }
+
+        $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
+        if ( empty( $events ) ) {
+            return $response;
+        }
+
+        $response['fb_pxl_code'] = PixelRenderer::render(
+            $events,
+            self::TRACKING_NAME,
+            false // Return raw fbq calls; they will be eval'd on the client.
+        );
+
+        return $response;
+    }
+
+    /**
+     * Outputs a JS listener that evaluates fb_pxl_code from WPForms AJAX responses.
+     *
+     * This covers the default WPForms AJAX path where the page is not reloaded
+     * and no wp_footer hook is executed after submission.
+     *
+     * @return void
+     */
+    public static function injectAjaxListener() {
+        ?>
+        <!-- Meta Pixel Event Code -->
+        <script type='text/javascript'>
+        (function ( $ ) {
+            if ( ! $ || typeof document === 'undefined' ) {
+                return;
+            }
+            // WPForms triggers this jQuery event and passes the AJAX response object.
+            $( document ).on( 'wpformsAjaxSubmitSuccess', function ( event, data ) {
+                if ( data && data.data && data.data.fb_pxl_code ) {
+                    try {
+                        new Function( data.data.fb_pxl_code )();
+                    } catch ( e ) {
+                        console && console.warn && console.warn( 'Meta Pixel eval failed', e );
+                    }
+                }
+            } );
+        })( window.jQuery );
+        </script>
+        <!-- End Meta Pixel Event Code -->
+        <?php
+    }
+
+    /**
      * Reads the form submission data and extracts user information.
      *
      * This method processes the form entry and form
@@ -183,7 +265,16 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      * @return string|null The phone number, or null if no phone field is found.
      */
     private static function getPhone( $entry, $form_data ) {
-        return self::getField( $entry, $form_data, 'phone' );
+        $phone = self::getField( $entry, $form_data, 'phone' );
+        if ( ! is_null( $phone ) && '' !== $phone ) {
+            return $phone;
+        }
+
+        return self::getTextFieldByLabel(
+            $entry,
+            $form_data,
+            array( 'phone', 'tel', 'telephone', 'mobile' )
+        );
     }
 
     /**
@@ -220,12 +311,16 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
     private static function getAddress( $entry, $form_data ) {
         $address_field_data = self::getField( $entry, $form_data, 'address' );
         if ( is_null( $address_field_data ) ) {
-            return array();
+            // Fall back to individual text fields when the Address fancy field
+            // is not available in WPForms Lite.
+            return self::getAddressFromTextFields( $entry, $form_data );
         }
+
         $address_data = array();
         if ( isset( $address_field_data['city'] ) ) {
             $address_data['city'] = $address_field_data['city'];
         }
+
         if ( isset( $address_field_data['state'] ) ) {
             $address_data['state'] = $address_field_data['state'];
         }
@@ -235,12 +330,14 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
         } else {
             $address_scheme = self::getAddressScheme( $form_data );
             if ( 'us' === $address_scheme ) {
-            $address_data['country'] = 'US';
+                $address_data['country'] = 'US';
             }
         }
+
         if ( isset( $address_field_data['postal'] ) ) {
             $address_data['zip'] = $address_field_data['postal'];
         }
+
         return $address_data;
     }
 
@@ -268,16 +365,16 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
         $entries = $entry['fields'];
         foreach ( $form_data['fields'] as $field ) {
             if ( 'name' === $field['type'] ) {
-            if ( 'simple' === $field['format'] ) {
-                return ServerEventFactory::split_name(
-                    $entries[ $field['id'] ]
-                );
-            } elseif ( 'first-last' === $field['format'] ) {
-                return array(
-            $entries[ $field['id'] ]['first'],
-            $entries[ $field['id'] ]['last'],
-                );
-            }
+                if ( 'simple' === $field['format'] ) {
+                    return ServerEventFactory::split_name(
+                        $entries[ $field['id'] ]
+                    );
+                } elseif ( 'first-last' === $field['format'] ) {
+                    return array(
+                        $entries[ $field['id'] ]['first'],
+                        $entries[ $field['id'] ]['last'],
+                    );
+                }
             }
         }
 
@@ -305,11 +402,103 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
 
         foreach ( $form_data['fields'] as $field ) {
             if ( $field['type'] === $type ) {
-            return $entry['fields'][ $field['id'] ];
+                return $entry['fields'][ $field['id'] ];
             }
         }
 
         return null;
+    }
+
+    /**
+     * Retrieves a text field value by matching its label.
+     *
+     * WPForms Lite users often rely on generic "text" fields instead of
+     * the premium/fancy types. This helper lets us recover values for
+     * phone/address-like fields when their labels match expected names.
+     *
+     * @param array    $entry   The form entry data.
+     * @param array    $form_data The form schema data.
+     * @param string[] $labels Candidate labels (case-insensitive).
+     * @return string|null
+     */
+    private static function getTextFieldByLabel( $entry, $form_data, $labels ) {
+        if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
+            return null;
+        }
+
+        $normalized_labels = array_map( 'self::normalizeLabel', $labels );
+
+        foreach ( $form_data['fields'] as $field ) {
+            if ( 'text' !== $field['type'] || empty( $field['label'] ) ) {
+                continue;
+            }
+
+            $label = self::normalizeLabel( $field['label'] );
+            if ( in_array( $label, $normalized_labels, true ) ) {
+                $value = isset( $entry['fields'][ $field['id'] ] )
+                    ? $entry['fields'][ $field['id'] ]
+                    : null;
+
+                return '' !== $value ? $value : null;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Builds address data from individual text fields when the Address field
+     * isn't present.
+     *
+     * @param array $entry     The form entry data.
+     * @param array $form_data The form schema data.
+     *
+     * @return array
+     */
+    private static function getAddressFromTextFields( $entry, $form_data ) {
+        $address_data = array();
+
+        $address_data['city'] = self::getTextFieldByLabel(
+            $entry,
+            $form_data,
+            array( 'city', 'town' )
+        );
+
+        $address_data['state'] = self::getTextFieldByLabel(
+            $entry,
+            $form_data,
+            array( 'state', 'province', 'region', 'county' )
+        );
+
+        $address_data['country'] = self::getTextFieldByLabel(
+            $entry,
+            $form_data,
+            array( 'country', 'country/region' )
+        );
+
+        $address_data['zip'] = self::getTextFieldByLabel(
+            $entry,
+            $form_data,
+            array( 'zip', 'postal', 'postcode', 'zip code' )
+        );
+
+        // Remove null/empty values so we don't send sparse keys.
+        return array_filter(
+            $address_data,
+            function ( $value ) {
+                return ! is_null( $value ) && '' !== $value;
+            }
+        );
+    }
+
+    /**
+     * Normalizes labels for case-insensitive comparison.
+     *
+     * @param string $label The label to normalize.
+     * @return string
+     */
+    private static function normalizeLabel( $label ) {
+        return strtolower( trim( $label ) );
     }
 
     /**
@@ -328,9 +517,9 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
     private static function getAddressScheme( $form_data ) {
         foreach ( $form_data['fields'] as $field ) {
             if ( 'address' === $field['type'] ) {
-            if ( isset( $field['scheme'] ) ) {
-                return $field['scheme'];
-            }
+                if ( isset( $field['scheme'] ) ) {
+                    return $field['scheme'];
+                }
             }
         }
         return null;

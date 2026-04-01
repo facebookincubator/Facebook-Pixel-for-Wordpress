@@ -51,6 +51,15 @@ class CurlLoggerTest extends AbstractLoggerTest {
   }
 
   /**
+   * @return string
+   */
+  protected function getBuffer() {
+    rewind($this->getHandle());
+
+    return stream_get_contents($this->getHandle());
+  }
+
+  /**
    * @return CurlLogger
    */
   protected function createLogger() {
@@ -84,8 +93,11 @@ class CurlLoggerTest extends AbstractLoggerTest {
   }
 
   public function testLog() {
-    $this->createLogger()->log(
-      static::VALUE_LOG_LEVEL, static::VALUE_LOG_MESSAGE);
+    $logger = $this->createLogger();
+
+    $this->assertNull($logger->log(
+      static::VALUE_LOG_LEVEL, static::VALUE_LOG_MESSAGE));
+    $this->assertSame('', $this->getBuffer());
   }
 
   /**
@@ -109,12 +121,26 @@ class CurlLoggerTest extends AbstractLoggerTest {
     $request->method('getMethod')->willReturn($http_method);
 
     $logger = $this->createLogger();
-    $logger->logRequest(static::VALUE_LOG_LEVEL, $request);
+    $this->assertNull($logger->logRequest(static::VALUE_LOG_LEVEL, $request));
+
+    $output = $this->getBuffer();
+    $method_flag = CurlLogger::getMethodFlag($http_method);
+
+    $this->assertStringStartsWith(
+      'curl'.($method_flag ? ' -'.$method_flag : ''),
+      $output);
+    $this->assertStringContainsString("'query_field=query_value'", $output);
+    $this->assertStringContainsString("'body_field=body_value'", $output);
+    $this->assertStringContainsString("'file_field=filepath'", $output);
+    $this->assertStringContainsString('/v', $output);
   }
 
   public function testLogResponse() {
-    $this->createLogger()->logResponse(
-      static::VALUE_LOG_LEVEL, $this->createResponseMock());
+    $logger = $this->createLogger();
+
+    $this->assertNull($logger->logResponse(
+      static::VALUE_LOG_LEVEL, $this->createResponseMock()));
+    $this->assertSame('', $this->getBuffer());
   }
 
   public function testJsonPrettyPrint() {

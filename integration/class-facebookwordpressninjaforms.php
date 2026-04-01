@@ -62,6 +62,15 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
             10,
             3
         );
+        add_filter(
+            'ninja_forms_post_run_action_type_successmessage',
+            array( __CLASS__, 'injectLeadEventResponse' )
+        );
+        add_action(
+            'wp_footer',
+            array( __CLASS__, 'injectAjaxListener' ),
+            9
+        );
     }
 
     /**
@@ -69,12 +78,8 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
      *
      * This method hooks into the 'ninja_forms_submission_actions' action,
      * which is triggered during the form submission process in Ninja Forms.
-     * It injects code into the form submission action, which is triggered
-     * when the form is submitted successfully. The code generates a lead
-     * event for the form submission and renders
-     * it as pixel code using the PixelRenderer. The resulting code
-     * is appended to the
-     * success message of the form submission action.
+     * It generates a lead event for successful submissions so the event can be
+     * added to the AJAX response later in the request lifecycle.
      *
      * @param array $actions An array of form submission actions.
      * @param array $form_cache An array of form cache data.
@@ -91,7 +96,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
             return $actions;
         }
 
-        foreach ( $actions as $key => $action ) {
+        foreach ( $actions as $action ) {
             if ( ! isset( $action['settings'] ) ||
             ! isset( $action['settings']['type'] ) ) {
                 continue;
@@ -103,34 +108,90 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
             }
 
             if ( 'successmessage' === $type ) {
-            $event = ServerEventFactory::safe_create_event(
-                'Lead',
-                array( __CLASS__, 'readFormData' ),
-                array( $form_data ),
-                self::TRACKING_NAME,
-                true
-            );
-                FacebookServerSideEvent::get_instance()->track( $event );
-
-                $pixel_code = PixelRenderer::render(
-                    array( $event ),
-                    self::TRACKING_NAME
+                $event = ServerEventFactory::safe_create_event(
+                    'Lead',
+                    array( __CLASS__, 'readFormData' ),
+                    array( $form_data ),
+                    self::TRACKING_NAME,
+                    true
                 );
-            $code           = sprintf(
-                '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-        ',
-                $pixel_code
-            );
-
-                $action['settings']['success_msg'] .= $code;
-                $actions[ $key ]                    = $action;
+                FacebookServerSideEvent::get_instance()->track( $event );
+                break;
             }
         }
 
         return $actions;
+    }
+
+    /**
+     * Adds raw pixel calls to the Ninja Forms AJAX response.
+     *
+     * @param array $data Submission response data.
+     * @return array
+     */
+    public static function injectLeadEventResponse( $data ) {
+        if ( FacebookPluginUtils::is_internal_user()
+            || isset( $data['fb_pxl_code'] ) ) {
+            return $data;
+        }
+
+        $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
+        if ( empty( $events ) ) {
+            return $data;
+        }
+
+        $data['fb_pxl_code'] = PixelRenderer::render(
+            $events,
+            self::TRACKING_NAME,
+            false
+        );
+
+        return $data;
+    }
+
+    /**
+     * Outputs a listener that executes pixel code returned by Ninja Forms AJAX.
+     *
+     * @return void
+     */
+    public static function injectAjaxListener() {
+        ?>
+        <!-- Meta Pixel Event Code -->
+        <script type='text/javascript'>
+        (function () {
+            function runPixelCode( response ) {
+                if ( ! response || ! response.data || ! response.data.fb_pxl_code ) {
+                    return;
+                }
+
+                try {
+                    new Function( response.data.fb_pxl_code )();
+                } catch ( e ) {
+                    console && console.warn
+                        && console.warn( 'Meta Pixel response parsing failed. Please check if your pixel is connected.', e );
+                }
+            }
+
+            var radio = window.nfRadio
+                || ( window.Backbone && window.Backbone.Radio );
+            if ( radio && radio.channel ) {
+                radio.channel( 'forms' ).on( 'submit:response', runPixelCode );
+            }
+
+            if ( window.jQuery ) {
+                window.jQuery( document ).on(
+                    'nfFormSubmitResponse',
+                    function ( event, data ) {
+                        if ( data && data.response ) {
+                            runPixelCode( data.response );
+                        }
+                    }
+                );
+            }
+        })();
+        </script>
+        <!-- End Meta Pixel Event Code -->
+        <?php
     }
 
     /**

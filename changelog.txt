@@ -1,4 +1,12 @@
-*** Facebook for WordPress Changelog ***
+*** Meta Pixel for WordPress Changelog ***
+= 2026-01-15 version 5.0.0 =
+- Optimize detection of wordpress.com websites, by @ukilla, in #115
+- Add the proper email to pixel init code, instead of admin email, by @rishijd in #114
+- Improve error logging, by @shkabo in #116
+- Fix Admin style that caused Advanced config overlap with CAPI Test header, by @rishijd in #120
+- Remove SDK as a dependency to add PHP 7.4 support, by @rishijd in #118
+- BizSDK clean up, Phase 2, by @rishijd in #123
+
 = 2025-08-14 version 4.1.5 =
 - Fixed the Pixel url, so it points to the Prod version instead of Canary
 - Minor fix for the agent string
