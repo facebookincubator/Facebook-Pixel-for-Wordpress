@@ -1,0 +1,192 @@
+name: Set Stable Tag
+run-name: "Set Stable Tag ${{ github.ref_name }} by @${{ github.actor }}"
+
+on: workflow_dispatch
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  set-stable-tag:
+    runs-on: ubuntu-latest
+    environment: Deployment
+    outputs:
+      version: ${{ steps.package-version.outputs.current-version }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Fail if not on a release publish branch
+        run: |
+          echo "Current ref: ${{ github.ref }}"
+          BRANCH="${{ github.ref }}"
+          if [[ ! $BRANCH == refs/heads/release/*/publish ]]; then
+            echo "❌ This workflow can only be run on release/*/publish branches."
+            exit 1
+          fi
+
+      - name: Get NPM Version
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+
+      - name: Compare marketplace artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.package-version.outputs.current-version }}
+        run: |
+          set -e
+
+          TEMP_DIR=$(mktemp -d)
+          trap "rm -rf $TEMP_DIR" EXIT
+
+          echo "Comparing Meta Pixel for WordPress v$VERSION"
+
+          # Download from WordPress.org
+          curl -sL "https://downloads.wordpress.org/plugin/official-facebook-pixel.zip" \
+            -o "$TEMP_DIR/marketplace.zip"
+
+          # Download GitHub artifact from prepare-release workflow
+          RUN_ID=$(gh run list \
+            --repo ${{ github.repository }} \
+            --workflow prepare-release.yml \
+            --status success \
+            --limit 100 \
+            --json databaseId,displayTitle \
+            --jq '[.[] | select(.displayTitle | contains("release/'"$VERSION"'"))] | sort_by(.databaseId) | reverse | .[0].databaseId')
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+              echo "❌ No successful prepare-release build found for release/$VERSION"
+              exit 1
+          fi
+          gh run download "$RUN_ID" --repo ${{ github.repository }} --dir "$TEMP_DIR/artifact"
+
+          # Find and prepare GitHub zip
+          ARTIFACT_ZIP=$(find "$TEMP_DIR/artifact" -name "*.zip" -type f | sort | head -1)
+          if [ -z "$ARTIFACT_ZIP" ]; then
+              PLUGIN_FILE=$(find "$TEMP_DIR/artifact" -name "class-facebookpluginconfig.php" -type f | sort | head -1)
+              if [ -n "$PLUGIN_FILE" ]; then
+                  PLUGIN_DIR=$(dirname "$(dirname "$PLUGIN_FILE")")
+                  (cd "$(dirname "$PLUGIN_DIR")" && zip -rq "$TEMP_DIR/github.zip" "$(basename "$PLUGIN_DIR")")
+                  ARTIFACT_ZIP="$TEMP_DIR/github.zip"
+              fi
+          fi
+          [ -z "$ARTIFACT_ZIP" ] && echo "❌ No artifact found" && exit 1
+
+          # Extract and compare
+          mkdir -p "$TEMP_DIR/wp" "$TEMP_DIR/gh"
+          unzip -q "$TEMP_DIR/marketplace.zip" -d "$TEMP_DIR/wp"
+          unzip -q "$ARTIFACT_ZIP" -d "$TEMP_DIR/gh"
+
+          # Compare directories (ignore .gitignore)
+          echo "Comparing archives..."
+          DIFF_OUTPUT=$(diff -rq --exclude='.gitignore' "$TEMP_DIR/wp" "$TEMP_DIR/gh" 2>&1 || true)
+
+          # For .pot files, check if differences are only timestamps
+          REAL_DIFFS=""
+          while IFS= read -r line; do
+              if echo "$line" | grep -q '\.pot '; then
+                  FILE_A=$(echo "$line" | sed 's/^Files \(.*\) and .* differ$/\1/')
+                  FILE_B=$(echo "$line" | sed 's/^Files .* and \(.*\) differ$/\1/')
+                  POT_DIFF=$(diff "$FILE_A" "$FILE_B" \
+                    | grep -v "^[<>] \"POT-Creation-Date:" \
+                    | grep -v "^[<>] \"PO-Revision-Date:" \
+                    | grep "^[<>]" || true)
+                  if [ -n "$POT_DIFF" ]; then
+                      REAL_DIFFS="${REAL_DIFFS}${line}\n"
+                  fi
+              else
+                  REAL_DIFFS="${REAL_DIFFS}${line}\n"
+              fi
+          done <<< "$DIFF_OUTPUT"
+
+          REAL_DIFFS=$(echo -e "$REAL_DIFFS" | sed '/^$/d')
+
+          if [ -n "$REAL_DIFFS" ]; then
+              echo "❌ Differences found:"
+              echo "$REAL_DIFFS"
+              exit 1
+          fi
+
+          echo "✅ Artifacts match"
+
+      - name: Validate Git tag
+        run: |
+          git fetch --tags
+          if [ -z "$(git tag -l "v${{ steps.package-version.outputs.current-version }}")" ]; then
+            echo "❌ Git tag v${{ steps.package-version.outputs.current-version }} does not exist" 1>&2
+            exit 1
+          fi
+
+      - name: Install SVN
+        run: sudo apt-get install subversion -y
+
+      - name: Checkout SVN Repository
+        run: svn co https://plugins.svn.wordpress.org/official-facebook-pixel/ pixel_svn --quiet --non-interactive
+
+      - name: Validate SVN tag
+        run: |
+          if [ ! -d "pixel_svn/tags/${{ steps.package-version.outputs.current-version }}" ]; then
+            echo "❌ SVN tag directory does not exist" 1>&2
+            exit 1
+          fi
+
+      - name: Update readme.txt
+        env:
+          NEW_VERSION: ${{ steps.package-version.outputs.current-version }}
+        run: |
+          cd pixel_svn
+          sed -i -E "s/^(Stable tag:)[[:space:]]*[0-9.]+/\1 $NEW_VERSION/" "trunk/readme.txt"
+
+      - name: Commit to SVN
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+        run: |
+          cd pixel_svn
+          cat trunk/readme.txt
+          svn status
+          svn diff
+          svn commit -m "Update stable tag for version ${{ steps.package-version.outputs.current-version }}" \
+            --username "$SVN_USERNAME" --password "$SVN_PASSWORD" \
+            --no-auth-cache --non-interactive
+
+  create-release-pr:
+    needs: set-stable-tag
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.set-stable-tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: release/${{ needs.set-stable-tag.outputs.version }}
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release edit "v$VERSION" \
+            --repo ${{ github.repository }} \
+            --draft=false \
+            --prerelease=false \
+            --latest
+
+      - name: Create pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "v$VERSION" --repo ${{ github.repository }} \
+            --json body --jq '.body' > /tmp/release-notes.md
+          EXISTING_PR=$(gh pr list \
+            --repo ${{ github.repository }} \
+            --head "release/$VERSION" \
+            --base main \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists for release/$VERSION, skipping creation"
+          else
+            gh pr create \
+              --repo ${{ github.repository }} \
+              --base main \
+              --head "release/$VERSION" \
+              --title "Release $VERSION" \
+              --body-file /tmp/release-notes.md
+          fi
