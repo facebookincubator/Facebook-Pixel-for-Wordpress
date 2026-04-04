@@ -654,6 +654,92 @@ class FacebookWordpressOptions {
     }
 
     /**
+     * Checks if FBL4B (Facebook Login for Business) is installed.
+     *
+     * FBL4B is considered installed if we have an encrypted access token stored.
+     *
+     * @return bool True if FBL4B is installed, false otherwise.
+     */
+    public static function get_is_fbl4b_installed() {
+        $fbl4b_settings = \get_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            array()
+        );
+        return ! empty(
+            $fbl4b_settings[ FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY ]
+        );
+    }
+
+    /**
+     * Retrieves the FBL4B access token (decrypted).
+     *
+     * @return string The FBL4B access token, or empty string if not set.
+     */
+    public static function get_fbl4b_access_token() {
+        $fbl4b_settings = \get_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            array()
+        );
+        $stored = isset(
+            $fbl4b_settings[ FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY ]
+        ) ? $fbl4b_settings[ FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY ]
+        : '';
+        if ( empty( $stored ) ) {
+            return '';
+        }
+        $decrypted = self::decrypt_token( $stored );
+        return false !== $decrypted ? $decrypted : '';
+    }
+
+    /**
+     * Retrieves the FBL4B pixel ID.
+     *
+     * @return string The FBL4B pixel ID, or empty string if not set.
+     */
+    public static function get_fbl4b_pixel_id() {
+        $fbl4b_settings = \get_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            array()
+        );
+        return isset(
+            $fbl4b_settings[ FacebookPluginConfig::FBL4B_PIXEL_ID_KEY ]
+        ) ? $fbl4b_settings[ FacebookPluginConfig::FBL4B_PIXEL_ID_KEY ]
+        : '';
+    }
+
+    /**
+     * Retrieves the FBL4B business ID.
+     *
+     * @return string The FBL4B business ID, or empty string if not set.
+     */
+    public static function get_fbl4b_business_id() {
+        $fbl4b_settings = \get_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            array()
+        );
+        return isset(
+            $fbl4b_settings[ FacebookPluginConfig::FBL4B_BUSINESS_ID_KEY ]
+        ) ? $fbl4b_settings[ FacebookPluginConfig::FBL4B_BUSINESS_ID_KEY ]
+        : '';
+    }
+
+    /**
+     * Retrieves the FBL4B pixel name.
+     *
+     * @return string The FBL4B pixel name, or empty string if not set.
+     */
+    public static function get_fbl4b_pixel_name() {
+        $fbl4b_settings = \get_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            array()
+        );
+        return isset(
+            $fbl4b_settings[ FacebookPluginConfig::FBL4B_PIXEL_NAME_KEY ]
+        ) ? $fbl4b_settings[ FacebookPluginConfig::FBL4B_PIXEL_NAME_KEY ]
+        : '';
+    }
+
+    /**
      * Encrypts a token using AES-256-CBC with a random IV.
      *
      * @param string $token The plaintext token to encrypt.
