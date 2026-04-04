@@ -67,6 +67,18 @@ class FacebookWordpressSettingsRecorder {
             'wp_ajax_delete_fbl4b_settings',
             array( $this, 'delete_fbl4b_settings' )
         );
+        add_action(
+            'wp_ajax_fbl4b_validate_token',
+            array( $this, 'fbl4b_validate_token' )
+        );
+        add_action(
+            'wp_ajax_fbl4b_fetch_business_id',
+            array( $this, 'fbl4b_fetch_business_id' )
+        );
+        add_action(
+            'wp_ajax_fbl4b_fetch_pixels',
+            array( $this, 'fbl4b_fetch_pixels' )
+        );
     }
 
     /**
@@ -430,5 +442,198 @@ class FacebookWordpressSettingsRecorder {
         \delete_option( FacebookPluginConfig::FBL4B_SETTINGS_KEY );
 
         return $this->handle_success_request( 'FBL4B settings deleted' );
+    }
+
+    /**
+     * Proxies a Graph API call to validate the FBL4B access token.
+     * Returns whether the token is valid and the client_business_id.
+     */
+    public function fbl4b_validate_token() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized', 403 );
+            return;
+        }
+        check_admin_referer( 'fbl4b_validate_token' );
+
+        $access_token = FacebookWordpressOptions::get_fbl4b_access_token();
+        if ( empty( $access_token ) ) {
+            wp_send_json_success(
+                array(
+                    'valid'              => false,
+                    'client_business_id' => null,
+                )
+            );
+            return;
+        }
+
+        $response = wp_remote_get(
+            $this->get_graph_api_base_url() . '/me?fields=client_business_id',
+            array(
+                'headers' => array(
+                    'Authorization' => 'Bearer ' . $access_token,
+                ),
+                'timeout' => 15,
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            wp_send_json_success(
+                array(
+                    'valid'              => false,
+                    'client_business_id' => null,
+                )
+            );
+            return;
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $body        = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( $status_code >= 400 ) {
+            wp_send_json_success(
+                array(
+                    'valid'              => false,
+                    'client_business_id' => null,
+                )
+            );
+            return;
+        }
+
+        wp_send_json_success(
+            array(
+                'valid'              => ! empty( $body['client_business_id'] ),
+                'client_business_id' => isset( $body['client_business_id'] )
+                    ? $body['client_business_id'] : null,
+            )
+        );
+    }
+
+    /**
+     * Proxies a Graph API call to fetch the client_business_id.
+     * Token is read server-side from the database.
+     */
+    public function fbl4b_fetch_business_id() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized', 403 );
+            return;
+        }
+        check_admin_referer( 'fbl4b_fetch_business_id' );
+
+        $access_token = FacebookWordpressOptions::get_fbl4b_access_token();
+        if ( empty( $access_token ) ) {
+            wp_send_json_error( 'No access token stored', 400 );
+            return;
+        }
+
+        $response = wp_remote_get(
+            $this->get_graph_api_base_url() . '/me?fields=client_business_id',
+            array(
+                'headers' => array(
+                    'Authorization' => 'Bearer ' . $access_token,
+                ),
+                'timeout' => 15,
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            wp_send_json_error( $response->get_error_message() );
+            return;
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $body        = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        if ( $status_code >= 400 ) {
+            $error_msg = isset( $body['error']['message'] )
+                ? $body['error']['message'] : 'Graph API error';
+            wp_send_json_error( $error_msg, $status_code );
+            return;
+        }
+
+        wp_send_json_success( $body );
+    }
+
+    /**
+     * Proxies Graph API calls to fetch owned + client pixels for a business.
+     * Deduplicates by pixel ID, owned pixels first.
+     */
+    public function fbl4b_fetch_pixels() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( 'Unauthorized', 403 );
+            return;
+        }
+        check_admin_referer( 'fbl4b_fetch_pixels' );
+
+        $access_token = FacebookWordpressOptions::get_fbl4b_access_token();
+        $business_id  = sanitize_text_field(
+            isset( $_POST['businessId'] ) ?
+            wp_unslash( $_POST['businessId'] ) : ''
+        );
+
+        if ( empty( $access_token ) || empty( $business_id ) ) {
+            wp_send_json_error( 'Missing parameters', 400 );
+            return;
+        }
+
+        $base_url = $this->get_graph_api_base_url();
+        $headers  = array( 'Authorization' => 'Bearer ' . $access_token );
+
+        $owned_url  = $base_url . '/' . $business_id
+            . '/owned_pixels?fields=id,name&limit=100';
+        $client_url = $base_url . '/' . $business_id
+            . '/client_pixels?fields=id,name&limit=100';
+
+        $owned_response  = wp_remote_get(
+            $owned_url,
+            array( 'headers' => $headers, 'timeout' => 15 )
+        );
+        $client_response = wp_remote_get(
+            $client_url,
+            array( 'headers' => $headers, 'timeout' => 15 )
+        );
+
+        $pixels   = array();
+        $seen_ids = array();
+
+        if ( ! is_wp_error( $owned_response )
+            && 200 === wp_remote_retrieve_response_code( $owned_response ) ) {
+            $owned_data = json_decode(
+                wp_remote_retrieve_body( $owned_response ),
+                true
+            );
+            if ( isset( $owned_data['data'] ) ) {
+                foreach ( $owned_data['data'] as $pixel ) {
+                    $pixels[]   = $pixel;
+                    $seen_ids[] = $pixel['id'];
+                }
+            }
+        }
+
+        if ( ! is_wp_error( $client_response )
+            && 200 === wp_remote_retrieve_response_code( $client_response ) ) {
+            $client_data = json_decode(
+                wp_remote_retrieve_body( $client_response ),
+                true
+            );
+            if ( isset( $client_data['data'] ) ) {
+                foreach ( $client_data['data'] as $pixel ) {
+                    if ( ! in_array( $pixel['id'], $seen_ids, true ) ) {
+                        $pixels[] = $pixel;
+                    }
+                }
+            }
+        }
+
+        if ( empty( $pixels ) ) {
+            wp_send_json_error(
+                array(
+                    'message' => 'No pixels found for this business.',
+                    'code'    => 'no_pixels',
+                )
+            );
+            return;
+        }
+
+        wp_send_json_success( array( 'data' => $pixels ) );
     }
 }
