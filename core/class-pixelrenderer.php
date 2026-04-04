@@ -72,7 +72,7 @@ class PixelRenderer {
         $code = sprintf(
             self::FBQ_AGENT_CODE,
             FacebookWordpressOptions::get_agent_string(),
-            FacebookWordpressOptions::get_pixel_id()
+            FacebookWordpressOptions::get_active_pixel_id()
         );
         foreach ( $events as $event ) {
             $code .= self::get_pixel_track_code( $event, $fb_integration_tracking );
