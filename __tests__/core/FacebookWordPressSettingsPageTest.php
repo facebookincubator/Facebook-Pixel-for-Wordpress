@@ -133,4 +133,84 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
     );
     $this->assertStringStartsWith( $expected_prefix, $message );
   }
+
+  /**
+   * Tests that FBL4B route generators produce valid URLs with nonces.
+   */
+  public function testFBL4BRouteGeneratorsIncludeNonces() {
+    $this->mockFacebookWordpressOptions();
+
+    \WP_Mock::userFunction(
+      'wp_create_nonce',
+      array( 'return' => 'test_nonce' )
+    );
+    \WP_Mock::userFunction(
+      'admin_url',
+      array( 'return' => 'https://example.com/wp-admin/admin-ajax.php' )
+    );
+    \WP_Mock::userFunction(
+      'add_query_arg',
+      array(
+        'return' => function ( $args, $url ) {
+          return $url . '?' . http_build_query( $args );
+        },
+      )
+    );
+
+    $settings_page = new FacebookWordpressSettingsPage(
+      'facebook_for_wordpress'
+    );
+
+    $save_route = $settings_page->get_fbl4b_save_settings_ajax_route();
+    $this->assertStringContainsString( 'save_fbl4b_settings', $save_route );
+    $this->assertStringContainsString( 'test_nonce', $save_route );
+
+    $delete_route = $settings_page->get_fbl4b_delete_settings_ajax_route();
+    $this->assertStringContainsString( 'delete_fbl4b_settings', $delete_route );
+
+    $validate_route = $settings_page->get_fbl4b_validate_token_route();
+    $this->assertStringContainsString( 'fbl4b_validate_token', $validate_route );
+
+    $business_route = $settings_page->get_fbl4b_fetch_business_id_route();
+    $this->assertStringContainsString( 'fbl4b_fetch_business_id', $business_route );
+
+    $pixels_route = $settings_page->get_fbl4b_fetch_pixels_route();
+    $this->assertStringContainsString( 'fbl4b_fetch_pixels', $pixels_route );
+  }
+
+  /**
+   * Tests that the FBL4B popup origin returns the correct domain.
+   */
+  public function testFBL4BPopupOriginDefaultDomain() {
+    $this->mockFacebookWordpressOptions();
+
+    $settings_page = new FacebookWordpressSettingsPage(
+      'facebook_for_wordpress'
+    );
+
+    $reflection = new \ReflectionMethod( $settings_page, 'get_fbl4b_popup_origin' );
+    $reflection->setAccessible( true );
+    $origin = $reflection->invoke( $settings_page );
+
+    $this->assertEquals( 'https://business.facebook.com', $origin );
+  }
+
+  /**
+   * Tests that the FBL4B iframe URL includes app_id and config_id.
+   */
+  public function testFBL4BIframeUrlIncludesParams() {
+    $this->mockFacebookWordpressOptions();
+
+    $settings_page = new FacebookWordpressSettingsPage(
+      'facebook_for_wordpress'
+    );
+
+    $reflection = new \ReflectionMethod( $settings_page, 'get_fbl4b_iframe_url' );
+    $reflection->setAccessible( true );
+    $url = $reflection->invoke( $settings_page, '12345', '67890' );
+
+    $this->assertStringContainsString( 'fbl4b-iframe-get-started', $url );
+    $this->assertStringContainsString( 'app_id=12345', $url );
+    $this->assertStringContainsString( 'config_id=67890', $url );
+  }
 }
