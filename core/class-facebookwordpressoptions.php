@@ -652,4 +652,31 @@ class FacebookWordpressOptions {
             self::set_old_aam_settings();
         }
     }
+
+    /**
+     * Encrypts a token using AES-256-CBC with a random IV.
+     *
+     * @param string $token The plaintext token to encrypt.
+     * @return string The base64-encoded IV + ciphertext.
+     */
+    public static function encrypt_token( $token ) {
+        $key       = hash( 'sha256', \wp_salt( 'auth' ), true );
+        $iv        = openssl_random_pseudo_bytes( 16 );
+        $encrypted = openssl_encrypt( $token, 'aes-256-cbc', $key, 0, $iv );
+        return base64_encode( $iv . base64_decode( $encrypted ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode,WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+    }
+
+    /**
+     * Decrypts a token encrypted by encrypt_token().
+     *
+     * @param string $stored The base64-encoded IV + ciphertext.
+     * @return string|false The decrypted token, or false on failure.
+     */
+    public static function decrypt_token( $stored ) {
+        $key       = hash( 'sha256', \wp_salt( 'auth' ), true );
+        $raw       = base64_decode( $stored ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+        $iv        = substr( $raw, 0, 16 );
+        $encrypted = base64_encode( substr( $raw, 16 ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+        return openssl_decrypt( $encrypted, 'aes-256-cbc', $key, 0, $iv );
+    }
 }
