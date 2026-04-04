@@ -207,4 +207,183 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
       $this->assertEquals( $expected_json, $result );
     }
   }
+
+  /**
+   * Verifies that the FBL4B AJAX actions are added to WordPress.
+   */
+  public function testFBL4BAjaxActionsAdded() {
+    $settings_recorder = new FacebookWordpressSettingsRecorder();
+    \WP_Mock::expectActionAdded(
+      'wp_ajax_save_fbl4b_settings',
+      array( $settings_recorder, 'save_fbl4b_settings' )
+    );
+    \WP_Mock::expectActionAdded(
+      'wp_ajax_delete_fbl4b_settings',
+      array( $settings_recorder, 'delete_fbl4b_settings' )
+    );
+    $settings_recorder->init();
+  }
+
+  /**
+   * Tests that FBL4B settings are saved correctly on initial save.
+   */
+  public function testSaveFBL4BSettingsInitialSave() {
+    $settings_recorder = new FacebookWordpressSettingsRecorder();
+    self::mockWordPressFunctions();
+    self::mockSanitizeAndUnslash();
+
+    \WP_Mock::userFunction(
+      'wp_salt',
+      array(
+        'args'   => array( 'auth' ),
+        'return' => 'test-salt-key',
+      )
+    );
+
+    global $_POST;
+    $_POST['accessToken'] = 'EAABsbCS1iBABO0TestToken';
+    $_POST['pixelId']     = '12345';
+    $_POST['pixelName']   = 'Test Pixel';
+    $_POST['businessId']  = '67890';
+
+    $result = $settings_recorder->save_fbl4b_settings();
+
+    $this->assertTrue( $result['success'] );
+    $this->assertEquals( 'FBL4B settings saved', $result['msg'] );
+  }
+
+  /**
+   * Tests that FBL4B partial update merges with existing settings.
+   */
+  public function testSaveFBL4BSettingsPartialUpdate() {
+    $settings_recorder = new FacebookWordpressSettingsRecorder();
+    self::mockWordPressFunctions();
+    self::mockSanitizeAndUnslash();
+
+    \WP_Mock::userFunction(
+      'get_option',
+      array(
+        'return' => array(
+          FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY => 'encrypted_token',
+          FacebookPluginConfig::FBL4B_BUSINESS_ID_KEY  => '67890',
+        ),
+      )
+    );
+
+    global $_POST;
+    $_POST['accessToken'] = '';
+    $_POST['pixelId']     = '99999';
+    $_POST['pixelName']   = 'Selected Pixel';
+    $_POST['businessId']  = '';
+
+    $result = $settings_recorder->save_fbl4b_settings();
+
+    $this->assertTrue( $result['success'] );
+    $this->assertArrayHasKey( FacebookPluginConfig::FBL4B_PIXEL_ID_KEY, $result['msg'] );
+    $this->assertEquals( '99999', $result['msg'][ FacebookPluginConfig::FBL4B_PIXEL_ID_KEY ] );
+  }
+
+  /**
+   * Tests that FBL4B save rejects unauthorized users.
+   */
+  public function testSaveFBL4BSettingsUnauthorized() {
+    $settings_recorder = new FacebookWordpressSettingsRecorder();
+
+    \WP_Mock::userFunction(
+      'current_user_can',
+      array( 'return' => false )
+    );
+    \WP_Mock::userFunction(
+      'wp_send_json',
+      array( 'return' => true )
+    );
+
+    $result = $settings_recorder->save_fbl4b_settings();
+
+    $this->assertFalse( $result['success'] );
+  }
+
+  /**
+   * Tests that partial update with no existing data returns invalid.
+   */
+  public function testSaveFBL4BSettingsInvalidNoExistingData() {
+    $settings_recorder = new FacebookWordpressSettingsRecorder();
+    self::mockWordPressFunctions();
+    self::mockSanitizeAndUnslash();
+
+    \WP_Mock::userFunction(
+      'get_option',
+      array( 'return' => array() )
+    );
+
+    global $_POST;
+    $_POST['accessToken'] = '';
+    $_POST['pixelId']     = '12345';
+    $_POST['pixelName']   = '';
+    $_POST['businessId']  = '';
+
+    $result = $settings_recorder->save_fbl4b_settings();
+
+    $this->assertFalse( $result['success'] );
+  }
+
+  /**
+   * Tests that FBL4B settings are deleted successfully.
+   */
+  public function testDeleteFBL4BSettings() {
+    $settings_recorder = new FacebookWordpressSettingsRecorder();
+    self::mockWordPressFunctions();
+
+    \WP_Mock::userFunction(
+      'delete_option',
+      array( 'return' => true )
+    );
+
+    $result = $settings_recorder->delete_fbl4b_settings();
+
+    $this->assertTrue( $result['success'] );
+    $this->assertEquals( 'FBL4B settings deleted', $result['msg'] );
+  }
+
+  /**
+   * Tests that FBL4B delete rejects unauthorized users.
+   */
+  public function testDeleteFBL4BSettingsUnauthorized() {
+    $settings_recorder = new FacebookWordpressSettingsRecorder();
+
+    \WP_Mock::userFunction(
+      'current_user_can',
+      array( 'return' => false )
+    );
+    \WP_Mock::userFunction(
+      'wp_send_json',
+      array( 'return' => true )
+    );
+
+    $result = $settings_recorder->delete_fbl4b_settings();
+
+    $this->assertFalse( $result['success'] );
+  }
+
+  /**
+   * Mocks sanitize_text_field and wp_unslash for AJAX tests.
+   */
+  private static function mockSanitizeAndUnslash() {
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_unslash',
+      array(
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+  }
 }

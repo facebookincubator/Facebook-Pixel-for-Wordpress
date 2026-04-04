@@ -58,6 +58,15 @@ class FacebookWordpressSettingsRecorder {
                 'save_capi_pii_caching_status',
             )
         );
+        // FBL4B AJAX actions
+        add_action(
+            'wp_ajax_save_fbl4b_settings',
+            array( $this, 'save_fbl4b_settings' )
+        );
+        add_action(
+            'wp_ajax_delete_fbl4b_settings',
+            array( $this, 'delete_fbl4b_settings' )
+        );
     }
 
     /**
@@ -323,5 +332,103 @@ class FacebookWordpressSettingsRecorder {
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
 
         return $this->handle_success_request( 'Done' );
+    }
+
+    /**
+     * Returns the Graph API base URL.
+     *
+     * @return string The Graph API base URL.
+     */
+    private function get_graph_api_base_url() {
+        return 'https://graph.facebook.com/' . FacebookPluginConfig::FBL4B_API_VERSION;
+    }
+
+    /**
+     * Saves FBL4B settings. On initial save, encrypts and stores the
+     * access token. On partial update (pixel selection), merges with
+     * existing settings.
+     *
+     * @return array Response data.
+     */
+    public function save_fbl4b_settings() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer( 'save_fbl4b_settings' );
+
+        $access_token = sanitize_text_field(
+            isset( $_POST['accessToken'] ) ?
+            wp_unslash( $_POST['accessToken'] ) : ''
+        );
+        $pixel_id = sanitize_text_field(
+            isset( $_POST['pixelId'] ) ?
+            wp_unslash( $_POST['pixelId'] ) : ''
+        );
+        $pixel_name = sanitize_text_field(
+            isset( $_POST['pixelName'] ) ?
+            wp_unslash( $_POST['pixelName'] ) : ''
+        );
+        $business_id = sanitize_text_field(
+            isset( $_POST['businessId'] ) ?
+            wp_unslash( $_POST['businessId'] ) : ''
+        );
+
+        if ( empty( $access_token ) ) {
+            // Partial update (e.g., pixel selection after initial save)
+            $existing = \get_option(
+                FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+                array()
+            );
+            if ( empty( $existing ) ) {
+                return $this->handle_invalid_request();
+            }
+            if ( ! empty( $pixel_id ) ) {
+                $existing[ FacebookPluginConfig::FBL4B_PIXEL_ID_KEY ] = $pixel_id;
+            }
+            if ( ! empty( $pixel_name ) ) {
+                $existing[ FacebookPluginConfig::FBL4B_PIXEL_NAME_KEY ] =
+                    $pixel_name;
+            }
+            if ( ! empty( $business_id ) ) {
+                $existing[ FacebookPluginConfig::FBL4B_BUSINESS_ID_KEY ] =
+                    $business_id;
+            }
+            \update_option(
+                FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+                $existing
+            );
+            return $this->handle_success_request( $existing );
+        }
+
+        // Initial save — encrypt and store the access token
+        $fbl4b_settings = array(
+            FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY =>
+                FacebookWordpressOptions::encrypt_token( $access_token ),
+            FacebookPluginConfig::FBL4B_PIXEL_ID_KEY   => $pixel_id,
+            FacebookPluginConfig::FBL4B_PIXEL_NAME_KEY => $pixel_name,
+            FacebookPluginConfig::FBL4B_BUSINESS_ID_KEY => $business_id,
+        );
+        \update_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            $fbl4b_settings
+        );
+
+        return $this->handle_success_request( 'FBL4B settings saved' );
+    }
+
+    /**
+     * Deletes all FBL4B settings.
+     *
+     * @return array Response data.
+     */
+    public function delete_fbl4b_settings() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer( 'delete_fbl4b_settings' );
+
+        \delete_option( FacebookPluginConfig::FBL4B_SETTINGS_KEY );
+
+        return $this->handle_success_request( 'FBL4B settings deleted' );
     }
 }
