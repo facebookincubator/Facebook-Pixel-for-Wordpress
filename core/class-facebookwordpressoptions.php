@@ -740,6 +740,60 @@ class FacebookWordpressOptions {
     }
 
     /**
+     * Returns the active connection type.
+     *
+     * FBL4B takes priority when fully configured (token + pixel).
+     * During upgrade from MBE, if FBL4B has a token but no pixel yet,
+     * MBE stays active to avoid disrupting live traffic.
+     * For fresh installs (no MBE), FBL4B is active immediately.
+     *
+     * @return string 'fbl4b', 'mbe', or 'none'.
+     */
+    public static function get_connection_type() {
+        if ( self::get_is_fbl4b_installed() ) {
+            if ( ! empty( self::get_fbl4b_pixel_id() ) ) {
+                return 'fbl4b';
+            }
+            if ( self::get_is_fbe_installed() ) {
+                return 'mbe';
+            }
+            return 'fbl4b';
+        }
+        if ( self::get_is_fbe_installed() ) {
+            return 'mbe';
+        }
+        return 'none';
+    }
+
+    /**
+     * Retrieves the active pixel ID based on connection type.
+     *
+     * Returns FBL4B pixel ID if connected via FBL4B, otherwise MBE.
+     *
+     * @return string The active pixel ID.
+     */
+    public static function get_active_pixel_id() {
+        if ( 'fbl4b' === self::get_connection_type() ) {
+            return self::get_fbl4b_pixel_id();
+        }
+        return self::get_pixel_id();
+    }
+
+    /**
+     * Retrieves the active access token based on connection type.
+     *
+     * Returns FBL4B BISU token if connected via FBL4B, otherwise MBE.
+     *
+     * @return string The active access token.
+     */
+    public static function get_active_access_token() {
+        if ( 'fbl4b' === self::get_connection_type() ) {
+            return self::get_fbl4b_access_token();
+        }
+        return self::get_access_token();
+    }
+
+    /**
      * Encrypts a token using AES-256-CBC with a random IV.
      *
      * @param string $token The plaintext token to encrypt.
