@@ -173,7 +173,7 @@ class FacebookWordpressSettingsRecorder {
             return $this->handle_unauthorized_request();
         }
 
-        if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
+        if ( empty( FacebookWordpressOptions::get_active_pixel_id() ) ) {
             \update_option(
                 FacebookPluginConfig::CAPI_INTEGRATION_STATUS,
                 FacebookPluginConfig::CAPI_INTEGRATION_STATUS_DEFAULT
@@ -214,7 +214,7 @@ class FacebookWordpressSettingsRecorder {
             return $this->handle_unauthorized_request();
         }
 
-        if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
+        if ( empty( FacebookWordpressOptions::get_active_pixel_id() ) ) {
             \update_option(
                 FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER,
                 FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_DEFAULT
@@ -275,7 +275,7 @@ class FacebookWordpressSettingsRecorder {
             return $this->handle_unauthorized_request();
         }
 
-        if ( empty( FacebookWordpressOptions::get_pixel_id() ) ) {
+        if ( empty( FacebookWordpressOptions::get_active_pixel_id() ) ) {
             \update_option(
                 FacebookPluginConfig::CAPI_PII_CACHING_STATUS,
                 FacebookPluginConfig::CAPI_PII_CACHING_STATUS_DEFAULT

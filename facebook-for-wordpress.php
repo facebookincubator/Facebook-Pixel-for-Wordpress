@@ -59,7 +59,7 @@ class FacebookForWordpress {
     );
 
     $options = FacebookWordpressOptions::get_options();
-    FacebookPixel::initialize( FacebookWordpressOptions::get_pixel_id() );
+    FacebookPixel::initialize( FacebookWordpressOptions::get_active_pixel_id() );
 
     add_action( 'init', array( $this, 'register_pixel_injection' ), 0 );
     add_action( 'parse_request', array( $this, 'handle_events_request' ), 0 );
