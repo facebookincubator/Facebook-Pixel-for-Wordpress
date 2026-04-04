@@ -240,11 +240,18 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
       )
     );
 
+    // Token sent via Authorization: Bearer header (not POST body)
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer EAABsbCS1iBABO0TestToken';
+
     global $_POST;
-    $_POST['accessToken'] = 'EAABsbCS1iBABO0TestToken';
     $_POST['pixelId']     = '12345';
     $_POST['pixelName']   = 'Test Pixel';
     $_POST['businessId']  = '67890';
+
+    \WP_Mock::userFunction(
+      'update_option',
+      array( 'return' => true )
+    );
 
     $result = $settings_recorder->save_fbl4b_settings();
 

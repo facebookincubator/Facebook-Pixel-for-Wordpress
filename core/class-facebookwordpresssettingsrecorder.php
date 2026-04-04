@@ -368,10 +368,14 @@ class FacebookWordpressSettingsRecorder {
         }
         check_admin_referer( 'save_fbl4b_settings' );
 
-        $access_token = sanitize_text_field(
-            isset( $_POST['accessToken'] ) ?
-            wp_unslash( $_POST['accessToken'] ) : ''
-        );
+        $access_token = '';
+        // Read access token from Authorization: Bearer header
+        $auth_header = isset( $_SERVER['HTTP_AUTHORIZATION'] )
+            ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) )
+            : '';
+        if ( 0 === strpos( $auth_header, 'Bearer ' ) ) {
+            $access_token = substr( $auth_header, 7 );
+        }
         $pixel_id = sanitize_text_field(
             isset( $_POST['pixelId'] ) ?
             wp_unslash( $_POST['pixelId'] ) : ''

@@ -384,8 +384,10 @@ var FBEFlowContainer = React.createClass({
     jQuery.ajax({
       type: 'post',
       url: window.fbl4bConfig.setSaveSettingsRoute,
+      headers: {
+        'Authorization': 'Bearer ' + accessToken
+      },
       data: ajaxParam({
-        accessToken: accessToken,
         pixelId: '',
         businessId: '',
       }),
