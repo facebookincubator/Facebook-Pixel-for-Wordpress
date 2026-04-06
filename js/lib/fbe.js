@@ -258,6 +258,7 @@ var FBEFlowContainer = React.createClass({
           // Mark as installed so render() transitions to connected/loading state
           window.fbl4bConfig.installed = true;
           _this.setState({installed: 'true'});
+          _processingOAuth = false;
           _this.fetchPixelIdAndSave();
         } else {
           _this.consoleLog("FBL4B: Failed to save access token");
