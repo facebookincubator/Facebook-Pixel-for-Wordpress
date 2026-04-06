@@ -83,8 +83,8 @@ class FacebookPluginConfig {
     const FBL4B_API_VERSION        = 'v25.0';
 
     // FBL4B OAuth configuration (public values, like OAuth client_id)
-    const FBL4B_APP_ID    = '';  // Set when production Meta app is provisioned
-    const FBL4B_CONFIG_ID = '';  // Set when FBL4B config is created (MUST be SUAT type)
+    const FBL4B_APP_ID    = '221646389321681';
+    const FBL4B_CONFIG_ID = '1509863200530691';
 
     const DELETE_FBE_SETTINGS_ACTION_NAME = 'delete_fbe_settings';
     const SAVE_FBE_SETTINGS_ACTION_NAME   = 'save_fbe_settings';
