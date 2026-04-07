@@ -86,11 +86,16 @@ jobs:
           done < "$readme_file"
           echo "EOF" >> $GITHUB_ENV
 
+      - name: Extract built plugin for artifact upload
+        env:
+          ARTIFACT_PATH: ${{ steps.build-check.outputs.artifact_path }}
+        run: unzip "$ARTIFACT_PATH" -d artifact-contents
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
           name: facebook-pixel-for-wordpress
-          path: ${{ steps.build-check.outputs.artifact_path }}
+          path: artifact-contents/official-facebook-pixel
 
       - name: Install SVN
         run: sudo apt-get install subversion -y
