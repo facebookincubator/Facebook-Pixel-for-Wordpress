@@ -297,20 +297,20 @@ var FBEFlowContainer = React.createClass({
           } else {
             // Multiple pixels — store on config for renderConnectedState to use
             window.fbl4bConfig.pendingPixels = response.data.data;
-            // Force re-render by updating state
-            _this.setState({});
+            // Force re-render with meaningful state change
+            _this.setState({fbl4bPixels: response.data.data});
           }
         } else {
           // Store empty array so renderConnectedState shows "no pixels" state
           window.fbl4bConfig.pendingPixels = [];
-          _this.setState({});
+          _this.setState({fbl4bPixels: []});
         }
       },
       error: function(jqXHR, textStatus, errorThrown) {
         _this.consoleLog('FBL4B: Failed to fetch pixels: ' + errorThrown);
         // Store empty array so renderConnectedState shows "no pixels" state
         window.fbl4bConfig.pendingPixels = [];
-        _this.setState({});
+        _this.setState({fbl4bPixels: []});
       }
     });
   },
