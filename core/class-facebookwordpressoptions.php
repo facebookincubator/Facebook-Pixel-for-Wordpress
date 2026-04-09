@@ -643,13 +643,61 @@ class FacebookWordpressOptions {
      */
     private static function set_aam_settings() {
         self::$aam_settings = null;
-        if ( empty( self::get_pixel_id() ) ) {
+        $active_pixel = self::get_active_pixel_id();
+        if ( empty( $active_pixel ) ) {
             return;
         }
-        if ( self::get_is_fbe_installed() ) {
+        if ( self::get_is_fbl4b_installed()
+            && ! empty( self::get_fbl4b_pixel_id() ) ) {
+            self::set_fbl4b_based_aam_settings();
+        } elseif ( self::get_is_fbe_installed() ) {
             self::set_fbe_based_aam_settings();
         } else {
             self::set_old_aam_settings();
+        }
+    }
+
+    /**
+     * Sets AAM settings based on the FBL4B pixel.
+     * Uses the same transient cache as FBE but reads from the active pixel.
+     */
+    private static function set_fbl4b_based_aam_settings() {
+        $installed_pixel   = self::get_fbl4b_pixel_id();
+        $settings_as_array =
+        get_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
+        if ( false !== $settings_as_array ) {
+            $aam_settings = new AdsPixelSettings();
+            $aam_settings->setPixelId( $settings_as_array['pixelId'] );
+            $aam_settings->setEnableAutomaticMatching(
+                $settings_as_array['enableAutomaticMatching']
+            );
+            $aam_settings->setEnabledAutomaticMatchingFields(
+                $settings_as_array['enabledAutomaticMatchingFields']
+            );
+            if ( $installed_pixel == $aam_settings->getPixelId() ) { // phpcs:ignore Universal.Operators.StrictComparisons
+                self::$aam_settings = $aam_settings;
+            }
+        }
+        if ( ! self::$aam_settings ) {
+            $refresh_interval =
+            self::AAM_SETTINGS_REFRESH_IN_MINUTES * MINUTE_IN_SECONDS;
+            $aam_settings     =
+            AdsPixelSettings::buildFromPixelId( $installed_pixel );
+            if ( $aam_settings ) {
+                $settings_as_array = array(
+                    'pixelId'                        => $aam_settings->getPixelId(),
+                    'enableAutomaticMatching'        =>
+                    $aam_settings->getEnableAutomaticMatching(),
+                    'enabledAutomaticMatchingFields' =>
+                    $aam_settings->getEnabledAutomaticMatchingFields(),
+                );
+                set_transient(
+                    FacebookPluginConfig::AAM_SETTINGS_KEY,
+                    $settings_as_array,
+                    $refresh_interval
+                );
+                self::$aam_settings = $aam_settings;
+            }
         }
     }
 

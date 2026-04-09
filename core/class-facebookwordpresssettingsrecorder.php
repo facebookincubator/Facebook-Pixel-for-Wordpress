@@ -413,6 +413,21 @@ class FacebookWordpressSettingsRecorder {
                 FacebookPluginConfig::FBL4B_SETTINGS_KEY,
                 $existing
             );
+            // If FBL4B now has a pixel, mark MBE as not installed so
+            // connection doesn't fall back to MBE after FBL4B disconnect
+            if ( ! empty( $pixel_id ) ) {
+                $mbe_settings = \get_option(
+                    FacebookPluginConfig::SETTINGS_KEY,
+                    array()
+                );
+                if ( ! empty( $mbe_settings ) ) {
+                    $mbe_settings[ FacebookPluginConfig::IS_FBE_INSTALLED_KEY ] = '0';
+                    \update_option(
+                        FacebookPluginConfig::SETTINGS_KEY,
+                        $mbe_settings
+                    );
+                }
+            }
             return $this->handle_success_request( $existing );
         }
 
@@ -444,6 +459,7 @@ class FacebookWordpressSettingsRecorder {
         check_admin_referer( 'delete_fbl4b_settings' );
 
         \delete_option( FacebookPluginConfig::FBL4B_SETTINGS_KEY );
+        \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
 
         return $this->handle_success_request( 'FBL4B settings deleted' );
     }
