@@ -2,6 +2,9 @@ name: Release Plugin
 run-name: "Release Plugin ${{ github.ref_name }} by @${{ github.actor }}"
 
 on:
+  push:
+    branches:
+      - 'release/p*/publish'
   workflow_dispatch:
     inputs:
       dry-run:
@@ -20,8 +23,8 @@ jobs:
     steps:
       - name: Validate branch
         run: |
-          if [[ ! "${{ github.ref }}" =~ ^refs/heads/release/ ]]; then
-            echo "::error::This workflow must be run from a release/* branch. Current ref: ${{ github.ref }}"
+          if [[ ! "${{ github.ref }}" =~ ^refs/heads/release/p.+/publish$ ]]; then
+            echo "::error::This workflow must be run from a release/p<VERSION>/publish branch. Current ref: ${{ github.ref }}"
             exit 1
           fi
 
