@@ -41,12 +41,9 @@ jobs:
 
           echo "Comparing Meta Pixel for WordPress v$VERSION"
 
-          # Download the version-specific zip from WordPress.org.
-          # release-plugin already deployed this version to SVN, so the
-          # versioned URL is available even though the stable tag hasn't
-          # been updated yet. The generic (unversioned) URL still serves
-          # the previous stable release and would always mismatch.
-          curl -sL "https://downloads.wordpress.org/plugin/official-facebook-pixel.${VERSION}.zip" \
+          # Download from WordPress.org (release-plugin already deployed
+          # this version to SVN trunk, so the generic URL serves it).
+          curl -sL "https://downloads.wordpress.org/plugin/official-facebook-pixel.zip" \
             -o "$TEMP_DIR/marketplace.zip"
 
           # Download GitHub artifact from prepare-release workflow
@@ -80,9 +77,12 @@ jobs:
           unzip -q "$TEMP_DIR/marketplace.zip" -d "$TEMP_DIR/wp"
           unzip -q "$ARTIFACT_ZIP" -d "$TEMP_DIR/gh"
 
-          # Compare directories (ignore .gitignore)
+          # Compare directories (ignore files that differ only due to build context)
           echo "Comparing archives..."
-          DIFF_OUTPUT=$(diff -rq --exclude='.gitignore' "$TEMP_DIR/wp" "$TEMP_DIR/gh" 2>&1 || true)
+          DIFF_OUTPUT=$(diff -rq \
+            --exclude='.gitignore' \
+            --exclude='installed.php' \
+            "$TEMP_DIR/wp" "$TEMP_DIR/gh" 2>&1 || true)
 
           # For .pot files, check if differences are only timestamps
           REAL_DIFFS=""
