@@ -41,8 +41,12 @@ jobs:
 
           echo "Comparing Meta Pixel for WordPress v$VERSION"
 
-          # Download from WordPress.org
-          curl -sL "https://downloads.wordpress.org/plugin/official-facebook-pixel.zip" \
+          # Download the version-specific zip from WordPress.org.
+          # release-plugin already deployed this version to SVN, so the
+          # versioned URL is available even though the stable tag hasn't
+          # been updated yet. The generic (unversioned) URL still serves
+          # the previous stable release and would always mismatch.
+          curl -sL "https://downloads.wordpress.org/plugin/official-facebook-pixel.${VERSION}.zip" \
             -o "$TEMP_DIR/marketplace.zip"
 
           # Download GitHub artifact from prepare-release workflow
