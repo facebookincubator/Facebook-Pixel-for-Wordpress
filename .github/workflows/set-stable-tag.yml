@@ -76,9 +76,12 @@ jobs:
           unzip -q "$TEMP_DIR/marketplace.zip" -d "$TEMP_DIR/wp"
           unzip -q "$ARTIFACT_ZIP" -d "$TEMP_DIR/gh"
 
-          # Compare directories (ignore .gitignore)
+          # Compare directories (ignore files that differ only due to build context)
           echo "Comparing archives..."
-          DIFF_OUTPUT=$(diff -rq --exclude='.gitignore' "$TEMP_DIR/wp" "$TEMP_DIR/gh" 2>&1 || true)
+          DIFF_OUTPUT=$(diff -rq \
+            --exclude='.gitignore' \
+            --exclude='installed.php' \
+            "$TEMP_DIR/wp" "$TEMP_DIR/gh" 2>&1 || true)
 
           # For .pot files, check if differences are only timestamps
           REAL_DIFFS=""

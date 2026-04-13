@@ -24,6 +24,8 @@
         <exclude name="js/lib/**" />
         <exclude name=".githooks/**" />
         <exclude name=".github/**" />
+        <exclude name=".phpunit.result.cache" />
+        <exclude name="report/**" />
     </fileset>
 
     <!-- ============================================  -->
