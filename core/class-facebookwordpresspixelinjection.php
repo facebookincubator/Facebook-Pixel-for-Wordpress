@@ -178,6 +178,7 @@ window.FacebookSignal = window.FacebookSignal || {
     _paused: false,
     _queue: [],
     _config: {},
+    _seenEventIds: {},
     _fbclid: (function() {
         try {
             var match = window.location.search.match(/[?&]fbclid=([^&]*)/);
@@ -190,15 +191,37 @@ window.FacebookSignal = window.FacebookSignal || {
     init: function(config) {
         this._config = config || {};
         this._paused = !!this._config.paused;
+
+        try {
+            var raw = window.sessionStorage.getItem('fbpix_seen_event_ids');
+            this._seenEventIds = raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            this._seenEventIds = this._seenEventIds || {};
+        }
     },
 
     queueEvent: function(eventData) {
         if (!eventData || !eventData.event_name) {
             return;
         }
+
+        if (eventData.event_id && this._seenEventIds[eventData.event_id]) {
+            return;
+        }
+
         eventData.event_time = eventData.event_time || Math.floor(Date.now() / 1000);
         eventData.event_source_url = eventData.event_source_url || window.location.href;
         this._queue.push(eventData);
+
+        if (eventData.event_id) {
+            this._seenEventIds[eventData.event_id] = 1;
+            try {
+                window.sessionStorage.setItem(
+                    'fbpix_seen_event_ids',
+                    JSON.stringify(this._seenEventIds)
+                );
+            } catch (e) {}
+        }
     },
 
     trackEvent: function(name, params, userData) {
