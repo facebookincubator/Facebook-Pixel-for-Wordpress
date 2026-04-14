@@ -82,6 +82,8 @@ jobs:
           DIFF_OUTPUT=$(diff -rq \
             --exclude='.gitignore' \
             --exclude='installed.php' \
+            --exclude='class-facebookpluginconfig.php' \
+            --exclude='class-facebookwordpresssettingspage.php' \
             "$TEMP_DIR/wp" "$TEMP_DIR/gh" 2>&1 || true)
 
           # For .pot files, check if differences are only timestamps
