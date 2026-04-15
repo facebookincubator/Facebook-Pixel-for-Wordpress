@@ -39,6 +39,22 @@ use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
 use FacebookPixelPlugin\Core\ServerEventAsyncTask;
+use Automattic\WooCommerce\Utilities\FeaturesUtil;
+
+
+// HPOS compatibility declaration.
+add_action(
+	'before_woocommerce_init',
+	function() {
+		if ( class_exists( FeaturesUtil::class ) ) {
+			FeaturesUtil::declare_compatibility(
+				'custom_order_tables',
+				plugin_basename( __FILE__ ),
+				true
+			);
+		}
+	}
+);
 
 /**
  * FacebookForWordpress root class.
