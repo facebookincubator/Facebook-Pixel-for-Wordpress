@@ -569,7 +569,12 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
      */
     private static function getAddToCartValue( $cart_item, $quantity ) {
         if ( ! empty( $cart_item ) ) {
-            $price = $cart_item['line_total'] / $cart_item['quantity'];
+            $item_quantity = (int) $cart_item['quantity'];
+            if ( $item_quantity <= 0 ) {
+                return null;
+            }
+
+            $price = $cart_item['line_total'] / $item_quantity;
             return $quantity * $price;
         }
 
@@ -638,12 +643,16 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         $contents = array();
         foreach ( $cart->get_cart() as $item ) {
             if ( ! empty( $item['data'] )
-                && $item['data'] instanceof \WC_Product
-                && ! empty( $item['quantity'] ) ) {
+                && $item['data'] instanceof \WC_Product ) {
+                $quantity = (int) $item['quantity'];
+                if ( $quantity <= 0 ) {
+                    continue;
+                }
+
                 $content = new Content();
                 $content->setProductId( self::getProductId( $item['data'] ) );
-                $content->setQuantity( $item['quantity'] );
-                $content->setItemPrice( $item['line_total'] / $item['quantity'] );
+                $content->setQuantity( $quantity );
+                $content->setItemPrice( $item['line_total'] / $quantity );
 
                 $contents[] = $content;
             }
