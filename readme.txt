@@ -2,9 +2,9 @@
 Contributors: facebook
 Tags: Facebook, Meta, Conversions API, Pixel, Meta Ads
 Requires at least: 5.7
-Tested up to: 6.8
+Tested up to: 6.9.4
 Requires PHP: 7.4
-Stable tag: 4.1.5
+Stable tag: 5.0.0
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,13 +51,9 @@ If you get stuck, or have any questions, you can ask for help in the [Facebook f
 Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can find the code and contribution instructions in the [plugin repository](https://github.com/facebookincubator/Facebook-Pixel-for-WordPress).
 
 == Changelog ==
-= 2026-01-15 version 5.0.0 =
-- Optimize source detection, by @ukilla, in #115
-- Add the proper email to pixel init code, instead of admin email, by @rishijd in #114
-- Improve error logging, by @shkabo in #116
-- Fix Admin style that caused Advanced config overlap with CAPI Test header, by @rishijd in #120
-- Remove SDK as a dependency to add PHP 7.4 support, by @rishijd in #118
-- BizSDK clean up, Phase 2, by @rishijd in #123
+
+= 5.0.1 - 2026-04-07 =
+
 
 [See changelog for all versions](https://raw.githubusercontent.com/facebookincubator/Facebook-Pixel-for-Wordpress/refs/heads/main/changelog.txt).
 

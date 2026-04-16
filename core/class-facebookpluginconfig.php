@@ -33,7 +33,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * Class FacebookPluginConfig
  */
 class FacebookPluginConfig {
-    const PLUGIN_VERSION     = '5.0.0';
+    const PLUGIN_VERSION     = '5.0.1';
     const SOURCE             = 'wordpress';
     const TEXT_DOMAIN        = 'official-facebook-pixel';
     const PLUGIN_NAME        = 'Meta Pixel for WordPress';
@@ -53,6 +53,10 @@ class FacebookPluginConfig {
     'dismiss_plugin_review_notice';
     const ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE      =
     'ignore_plugin_review_notice';
+    const ADMIN_DISMISS_WPCOM_UPDATE_NOTICE      =
+    'dismiss_wpcom_update_notice';
+    const ADMIN_IGNORE_WPCOM_UPDATE_NOTICE       =
+    'ignore_wpcom_update_notice';
     const ADMIN_MENU_SLUG                        = 'facebook_pixel_options';
     const ADMIN_MENU_TITLE                       = 'Meta';
     const ADMIN_OPTION_GROUP                     = 'facebook_option_group';

@@ -676,6 +676,12 @@ class FacebookWordpressSettingsPage {
             true
         )
         ) {
+            if ( $this->should_show_wpcom_update_notice() ) {
+                add_action(
+                    'admin_notices',
+                    array( $this, 'wpcom_update_notice' )
+                );
+            }
             if ( '0' == $is_fbe_installed && ! get_user_meta( // phpcs:ignore Universal.Operators.StrictComparisons
                 get_current_user_id(),
                 FacebookPluginConfig::ADMIN_IGNORE_FBE_NOT_INSTALLED_NOTICE,
@@ -742,6 +748,40 @@ class FacebookWordpressSettingsPage {
         }
         return $message . ' To complete your configuration, ' .
         '<a href="%s">follow the setup steps.</a>';
+    }
+
+    /**
+     * Determines whether the WordPress.com update notice should be shown.
+     *
+     * @return bool Whether the WordPress.com update notice should be shown.
+     */
+    public function should_show_wpcom_update_notice() {
+        if ( 1 !== (int) get_option( 'is_wordpress_com_hosted' ) ) {
+            return false;
+        }
+
+        return ! get_user_meta(
+            get_current_user_id(),
+            FacebookPluginConfig::ADMIN_IGNORE_WPCOM_UPDATE_NOTICE,
+            true
+        );
+    }
+
+    /**
+     * Returns the WordPress.com update notice message.
+     *
+     * @return string The WordPress.com update notice message.
+     */
+    public function get_wpcom_update_notice_message() {
+        $plugin_url = 'https://wordpress.org/plugins/' . FacebookPluginConfig::TEXT_DOMAIN . '/';
+        return sprintf(
+            /* translators: %s: WordPress.org plugin page URL */
+            __(
+                'After April 30th, 2026, Meta Pixel for WordPress will no longer receive automatic updates on WordPress.com-hosted websites. <a href="%s">Download the latest version from WordPress.org</a> and install it manually via <strong>Plugins</strong> &rsaquo; <strong>Add New Plugin</strong> &rsaquo; <strong>Upload Plugin</strong> to ensure you receive future updates.',
+                'official-facebook-pixel'
+            ),
+            esc_url( $plugin_url )
+        );
     }
 
     /**
@@ -820,6 +860,19 @@ class FacebookWordpressSettingsPage {
     }
 
     /**
+     * Displays a notice about WordPress.com automatic updates ending.
+     *
+     * @return void
+     */
+    public function wpcom_update_notice() {
+        $this->set_notice(
+            $this->get_wpcom_update_notice_message(),
+            FacebookPluginConfig::ADMIN_DISMISS_WPCOM_UPDATE_NOTICE,
+            'warning'
+        );
+    }
+
+    /**
      * Displays a notice indicating that the Facebook
      * Business Extension is not installed.
      *
@@ -868,6 +921,15 @@ class FacebookWordpressSettingsPage {
             update_user_meta(
                 $user_id,
                 FacebookPluginConfig::ADMIN_IGNORE_PLUGIN_REVIEW_NOTICE,
+                true
+            );
+        }
+        if ( isset(
+            $_GET[ FacebookPluginConfig::ADMIN_DISMISS_WPCOM_UPDATE_NOTICE ] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        ) ) {
+            update_user_meta(
+                $user_id,
+                FacebookPluginConfig::ADMIN_IGNORE_WPCOM_UPDATE_NOTICE,
                 true
             );
         }

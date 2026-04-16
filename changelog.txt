@@ -1,4 +1,7 @@
 *** Meta Pixel for WordPress Changelog ***
+= 5.0.1 - 2026-04-07 =
+
+
 = 2026-01-15 version 5.0.0 =
 - Optimize detection of wordpress.com websites, by @ukilla, in #115
 - Add the proper email to pixel init code, instead of admin email, by @rishijd in #114
