@@ -173,7 +173,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         }
 
         $product = wc_get_product( $post->ID );
-        if ( ! $product ) {
+        if ( ! ( $product instanceof \WC_Product ) ) {
             return;
         }
 
@@ -252,6 +252,11 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
             return;
         }
 
+        $order = wc_get_order( $order_id );
+        if ( ! ( $order instanceof \WC_Order ) ) {
+            return;
+        }
+
         $server_event = ServerEventFactory::safe_create_event(
             'Purchase',
             array( __CLASS__, 'createPurchaseEvent' ),
@@ -290,12 +295,19 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 
         foreach ( $order->get_items() as $item ) {
             $product = wc_get_product( $item->get_product_id() );
+            if ( ! ( $product instanceof \WC_Product ) ) {
+                continue;
+            }
+
             if ( 'product_group' !== $content_type
             && $product->is_type( 'variable' ) ) {
             $content_type = 'product_group';
             }
 
-            $quantity   = $item->get_quantity();
+            $quantity = (int) $item->get_quantity();
+            if ( $quantity <= 0 ) {
+                continue;
+            }
             $product_id = self::getProductId( $product );
 
             $content = new Content();
@@ -427,7 +439,9 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         $event_data['currency']     = \get_woocommerce_currency();
 
         $cart_item = self::getCartItem( $cart_item_key );
-        if ( ! empty( $cart_item_key ) ) {
+        if ( ! empty( $cart_item_key )
+            && ! empty( $cart_item['data'] )
+            && $cart_item['data'] instanceof \WC_Product ) {
             $event_data['content_ids'] = array(
                 self::getProductId(
                     $cart_item['data']
@@ -597,8 +611,9 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     private static function getContentIds( $cart ) {
         $product_ids = array();
         foreach ( $cart->get_cart() as $item ) {
-            if ( ! empty( $item['data'] ) ) {
-            $product_ids[] = self::getProductId( $item['data'] );
+            if ( ! empty( $item['data'] )
+                && $item['data'] instanceof \WC_Product ) {
+                $product_ids[] = self::getProductId( $item['data'] );
             }
         }
 
@@ -622,13 +637,15 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     private static function getContents( $cart ) {
         $contents = array();
         foreach ( $cart->get_cart() as $item ) {
-            if ( ! empty( $item['data'] ) && ! empty( $item['quantity'] ) ) {
-            $content = new Content();
-            $content->setProductId( self::getProductId( $item['data'] ) );
-            $content->setQuantity( $item['quantity'] );
-            $content->setItemPrice( $item['line_total'] / $item['quantity'] );
+            if ( ! empty( $item['data'] )
+                && $item['data'] instanceof \WC_Product
+                && ! empty( $item['quantity'] ) ) {
+                $content = new Content();
+                $content->setProductId( self::getProductId( $item['data'] ) );
+                $content->setQuantity( $item['quantity'] );
+                $content->setItemPrice( $item['line_total'] / $item['quantity'] );
 
-            $contents[] = $content;
+                $contents[] = $content;
             }
         }
 
