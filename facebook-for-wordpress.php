@@ -41,7 +41,6 @@ use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
 use FacebookPixelPlugin\Core\ServerEventAsyncTask;
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
 
-
 // HPOS compatibility declaration.
 add_action(
 	'before_woocommerce_init',
