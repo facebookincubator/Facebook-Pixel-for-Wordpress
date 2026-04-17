@@ -39,14 +39,12 @@ use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
 use FacebookPixelPlugin\Core\ServerEventAsyncTask;
-use Automattic\WooCommerce\Utilities\FeaturesUtil;
-
 // HPOS compatibility declaration.
 add_action(
 	'before_woocommerce_init',
 	function() {
-		if ( class_exists( FeaturesUtil::class ) ) {
-			FeaturesUtil::declare_compatibility(
+		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
 				'custom_order_tables',
 				plugin_basename( __FILE__ ),
 				true
