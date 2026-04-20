@@ -345,6 +345,10 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
       'delete_option',
       array( 'return' => true )
     );
+    \WP_Mock::userFunction(
+      'delete_transient',
+      array( 'return' => true )
+    );
 
     $result = $settings_recorder->delete_fbl4b_settings();
 
