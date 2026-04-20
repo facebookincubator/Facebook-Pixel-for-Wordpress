@@ -78,15 +78,15 @@ class FacebookPluginConfig {
     const IS_FBE_INSTALLED_KEY     = 'facebook_is_fbe_installed';
     const AAM_SETTINGS_KEY         = 'facebook_pixel_aam_settings';
 
-    // FBL4B (Facebook Login for Business) storage keys
-    const FBL4B_SETTINGS_KEY       = 'facebook_fbl4b_config';
-    const FBL4B_ACCESS_TOKEN_KEY   = 'fbl4b_access_token';
-    const FBL4B_PIXEL_ID_KEY       = 'fbl4b_pixel_id';
-    const FBL4B_PIXEL_NAME_KEY     = 'fbl4b_pixel_name';
-    const FBL4B_BUSINESS_ID_KEY    = 'fbl4b_business_id';
-    const FBL4B_API_VERSION        = 'v25.0';
+    // FBL4B (Facebook Login for Business) storage keys.
+    const FBL4B_SETTINGS_KEY     = 'facebook_fbl4b_config';
+    const FBL4B_ACCESS_TOKEN_KEY = 'fbl4b_access_token';
+    const FBL4B_PIXEL_ID_KEY     = 'fbl4b_pixel_id';
+    const FBL4B_PIXEL_NAME_KEY   = 'fbl4b_pixel_name';
+    const FBL4B_BUSINESS_ID_KEY  = 'fbl4b_business_id';
+    const FBL4B_API_VERSION      = 'v25.0';
 
-    // FBL4B OAuth configuration (public values, like OAuth client_id)
+    // FBL4B OAuth configuration (public values, like OAuth client_id).
     const FBL4B_APP_ID    = '221646389321681';
     const FBL4B_CONFIG_ID = '1509863200530691';
 

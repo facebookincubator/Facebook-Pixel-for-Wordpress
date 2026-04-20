@@ -643,7 +643,7 @@ class FacebookWordpressOptions {
      */
     private static function set_aam_settings() {
         self::$aam_settings = null;
-        $active_pixel = self::get_active_pixel_id();
+        $active_pixel       = self::get_active_pixel_id();
         if ( empty( $active_pixel ) ) {
             return;
         }
@@ -728,7 +728,7 @@ class FacebookWordpressOptions {
             FacebookPluginConfig::FBL4B_SETTINGS_KEY,
             array()
         );
-        $stored = isset(
+        $stored         = isset(
             $fbl4b_settings[ FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY ]
         ) ? $fbl4b_settings[ FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY ]
         : '';

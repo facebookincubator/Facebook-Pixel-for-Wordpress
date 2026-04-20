@@ -58,7 +58,7 @@ class FacebookWordpressSettingsRecorder {
                 'save_capi_pii_caching_status',
             )
         );
-        // FBL4B AJAX actions
+        // FBL4B AJAX actions.
         add_action(
             'wp_ajax_save_fbl4b_settings',
             array( $this, 'save_fbl4b_settings' )
@@ -369,18 +369,18 @@ class FacebookWordpressSettingsRecorder {
         check_admin_referer( 'save_fbl4b_settings' );
 
         $access_token = '';
-        // Read access token from Authorization: Bearer header
+        // Read access token from Authorization: Bearer header.
         $auth_header = isset( $_SERVER['HTTP_AUTHORIZATION'] )
             ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) )
             : '';
         if ( 0 === strpos( $auth_header, 'Bearer ' ) ) {
             $access_token = substr( $auth_header, 7 );
         }
-        $pixel_id = sanitize_text_field(
+        $pixel_id    = sanitize_text_field(
             isset( $_POST['pixelId'] ) ?
             wp_unslash( $_POST['pixelId'] ) : ''
         );
-        $pixel_name = sanitize_text_field(
+        $pixel_name  = sanitize_text_field(
             isset( $_POST['pixelName'] ) ?
             wp_unslash( $_POST['pixelName'] ) : ''
         );
@@ -390,7 +390,7 @@ class FacebookWordpressSettingsRecorder {
         );
 
         if ( empty( $access_token ) ) {
-            // Partial update (e.g., pixel selection after initial save)
+            // Partial update (e.g., pixel selection after initial save).
             $existing = \get_option(
                 FacebookPluginConfig::FBL4B_SETTINGS_KEY,
                 array()
@@ -414,7 +414,7 @@ class FacebookWordpressSettingsRecorder {
                 $existing
             );
             // If FBL4B now has a pixel, mark MBE as not installed so
-            // connection doesn't fall back to MBE after FBL4B disconnect
+            // Connection doesn't fall back to MBE after FBL4B disconnect.
             if ( ! empty( $pixel_id ) ) {
                 $mbe_settings = \get_option(
                     FacebookPluginConfig::SETTINGS_KEY,
@@ -431,13 +431,13 @@ class FacebookWordpressSettingsRecorder {
             return $this->handle_success_request( $existing );
         }
 
-        // Initial save — encrypt and store the access token
+        // Initial save — encrypt and store the access token.
         $fbl4b_settings = array(
             FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY =>
                 FacebookWordpressOptions::encrypt_token( $access_token ),
-            FacebookPluginConfig::FBL4B_PIXEL_ID_KEY   => $pixel_id,
-            FacebookPluginConfig::FBL4B_PIXEL_NAME_KEY => $pixel_name,
-            FacebookPluginConfig::FBL4B_BUSINESS_ID_KEY => $business_id,
+            FacebookPluginConfig::FBL4B_PIXEL_ID_KEY     => $pixel_id,
+            FacebookPluginConfig::FBL4B_PIXEL_NAME_KEY   => $pixel_name,
+            FacebookPluginConfig::FBL4B_BUSINESS_ID_KEY  => $business_id,
         );
         \update_option(
             FacebookPluginConfig::FBL4B_SETTINGS_KEY,
@@ -605,11 +605,17 @@ class FacebookWordpressSettingsRecorder {
 
         $owned_response  = wp_remote_get(
             $owned_url,
-            array( 'headers' => $headers, 'timeout' => 15 )
+            array(
+            'headers' => $headers,
+            'timeout' => 15,
+            )
         );
         $client_response = wp_remote_get(
             $client_url,
-            array( 'headers' => $headers, 'timeout' => 15 )
+            array(
+            'headers' => $headers,
+            'timeout' => 15,
+            )
         );
 
         $pixels   = array();

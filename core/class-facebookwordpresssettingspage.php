@@ -418,7 +418,7 @@ class FacebookWordpressSettingsPage {
     <div id="meta-ads-plugin">
     <div id="ad-creation-plugin" class="
     <?php
-    // Ads Creation only available for MBE connections (requires MBE scopes)
+    // Ads Creation only available for MBE connections (requires MBE scopes).
     echo ( 'mbe' !== FacebookWordpressOptions::get_connection_type()
         || empty( FacebookWordpressOptions::get_access_token() ) ) ?
     'hidden' : '';
@@ -439,7 +439,7 @@ class FacebookWordpressSettingsPage {
     </div>
     <div id="ad-insights-plugin" class="
     <?php
-    // Ads Insights only available for MBE connections (requires MBE scopes)
+    // Ads Insights only available for MBE connections (requires MBE scopes).
     echo ( 'mbe' !== FacebookWordpressOptions::get_connection_type()
         || empty( FacebookWordpressOptions::get_access_token() ) ) ?
     'hidden' : '';
@@ -596,31 +596,31 @@ class FacebookWordpressSettingsPage {
      */
     private function get_meta_wc_params() {
         $params = array(
-            'ajax_url'                              =>
+            'ajax_url'                               =>
                 admin_url( 'admin-ajax.php' ),
-            'send_capi_event_nonce'                 =>
+            'send_capi_event_nonce'                  =>
                 wp_create_nonce( 'send_capi_event_nonce' ),
-            'pixelId'                               =>
+            'pixelId'                                =>
                 FacebookWordpressOptions::get_pixel_id(),
             'setSaveSettingsRoute'                   =>
                 $this->get_fbe_save_settings_ajax_route(),
-            'externalBusinessId'                    =>
+            'externalBusinessId'                     =>
                 esc_html( FacebookWordpressOptions::get_external_business_id() ),
-            'deleteConfigKeys'                      =>
+            'deleteConfigKeys'                       =>
                 $this->get_delete_fbe_settings_ajax_route(),
-            'installed'                             =>
+            'installed'                              =>
                 FacebookWordpressOptions::get_is_fbe_installed(),
-            'connectionType'                        =>
+            'connectionType'                         =>
                 FacebookWordpressOptions::get_connection_type(),
-            'systemUserName'                        =>
+            'systemUserName'                         =>
                 esc_html( FacebookWordpressOptions::get_external_business_id() ),
-            'pixelString'                           =>
+            'pixelString'                            =>
                 esc_html( FacebookWordpressOptions::get_pixel_id() ),
-            'piiCachingStatus'                      =>
+            'piiCachingStatus'                       =>
                 FacebookWordpressOptions::get_capi_pii_caching_status(),
-            'fbAdvConfTop'                          =>
+            'fbAdvConfTop'                           =>
                 FacebookPluginConfig::CAPI_INTEGRATION_DIV_TOP,
-            'capiIntegrationPageViewFiltered'       =>
+            'capiIntegrationPageViewFiltered'        =>
                 wp_json_encode(
                     FacebookWordpressOptions::get_capi_integration_page_view_filtered()
                 ),
@@ -638,8 +638,8 @@ class FacebookWordpressSettingsPage {
                 FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_UPDATE_ERROR,
         );
 
-        // FBL4B config — only included if app_id is provisioned
-        $fbl4b_app_id = defined( 'FB_FBL4B_APP_ID' )
+        // FBL4B config — only included if app_id is provisioned.
+        $fbl4b_app_id    = defined( 'FB_FBL4B_APP_ID' )
             ? FB_FBL4B_APP_ID
             : FacebookPluginConfig::FBL4B_APP_ID;
         $fbl4b_config_id = defined( 'FB_FBL4B_CONFIG_ID' )
@@ -647,27 +647,27 @@ class FacebookWordpressSettingsPage {
             : FacebookPluginConfig::FBL4B_CONFIG_ID;
 
         if ( ! empty( $fbl4b_app_id ) ) {
-            $params['fbl4bAppId']               = $fbl4b_app_id;
-            $params['fbl4bConfigId']            = $fbl4b_config_id;
-            $params['fbl4bPopupOrigin']         =
+            $params['fbl4bAppId']                = $fbl4b_app_id;
+            $params['fbl4bConfigId']             = $fbl4b_config_id;
+            $params['fbl4bPopupOrigin']          =
                 $this->get_fbl4b_popup_origin();
-            $params['fbl4bIframeUrl']           =
+            $params['fbl4bIframeUrl']            =
                 $this->get_fbl4b_iframe_url( $fbl4b_app_id, $fbl4b_config_id );
-            $params['fbl4bSaveSettingsRoute']   =
+            $params['fbl4bSaveSettingsRoute']    =
                 $this->get_fbl4b_save_settings_ajax_route();
-            $params['fbl4bDeleteSettingsRoute'] =
+            $params['fbl4bDeleteSettingsRoute']  =
                 $this->get_fbl4b_delete_settings_ajax_route();
             $params['fbl4bFetchBusinessIdRoute'] =
                 $this->get_fbl4b_fetch_business_id_route();
-            $params['fbl4bFetchPixelsRoute']    =
+            $params['fbl4bFetchPixelsRoute']     =
                 $this->get_fbl4b_fetch_pixels_route();
-            $params['fbl4bValidateTokenRoute']  =
+            $params['fbl4bValidateTokenRoute']   =
                 $this->get_fbl4b_validate_token_route();
-            $params['fbl4bPixelId']             =
+            $params['fbl4bPixelId']              =
                 FacebookWordpressOptions::get_fbl4b_pixel_id();
-            $params['fbl4bPixelName']           =
+            $params['fbl4bPixelName']            =
                 FacebookWordpressOptions::get_fbl4b_pixel_name();
-            $params['fbl4bBusinessId']          =
+            $params['fbl4bBusinessId']           =
                 FacebookWordpressOptions::get_fbl4b_business_id();
         } else {
             $params['fbl4bAppId'] = '';
@@ -700,7 +700,7 @@ class FacebookWordpressSettingsPage {
             ? 'https://business.' . META_PIXEL_BASE_DOMAIN
             : 'https://business.facebook.com';
         return $base . '/fbl4b-iframe-get-started/?app_id='
-            . urlencode( $app_id ) . '&config_id=' . urlencode( $config_id );
+            . rawurlencode( $app_id ) . '&config_id=' . rawurlencode( $config_id );
     }
 
     /**
@@ -858,7 +858,7 @@ class FacebookWordpressSettingsPage {
             }
         }
 
-        // Show FBL4B upgrade banner on dashboard, plugins, AND settings page
+        // Show FBL4B upgrade banner on dashboard, plugins, AND settings page.
         $fbl4b_screens = array(
             'dashboard',
             'plugins',
