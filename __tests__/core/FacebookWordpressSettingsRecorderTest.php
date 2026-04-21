@@ -252,6 +252,14 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
       'update_option',
       array( 'return' => true )
     );
+    \WP_Mock::userFunction(
+      'get_current_user_id',
+      array( 'return' => 1 )
+    );
+    \WP_Mock::userFunction(
+      'update_user_meta',
+      array( 'return' => true )
+    );
 
     $result = $settings_recorder->save_fbl4b_settings();
 

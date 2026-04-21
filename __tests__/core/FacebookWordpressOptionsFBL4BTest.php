@@ -420,6 +420,14 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
       )
     );
 
+    // set_aam_settings is private; invoke via reflection.
+    $reflection = new \ReflectionMethod(
+      FacebookWordpressOptions::class,
+      'set_aam_settings'
+    );
+    $reflection->setAccessible( true );
+    $reflection->invoke( null );
+
     $aam_settings = FacebookWordpressOptions::get_aam_settings();
 
     $this->assertNotNull( $aam_settings );
@@ -462,8 +470,17 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
       array( 'return' => true )
     );
 
-    // The fallback will call AdsPixelSettings::buildFromPixelId, which
-    // returns null in test environments (no real Graph API).
+    if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+      define( 'MINUTE_IN_SECONDS', 60 );
+    }
+
+    $reflection = new \ReflectionMethod(
+      FacebookWordpressOptions::class,
+      'set_aam_settings'
+    );
+    $reflection->setAccessible( true );
+    $reflection->invoke( null );
+
     $aam_settings = FacebookWordpressOptions::get_aam_settings();
 
     // With no API available and mismatched cache, settings should be null.
