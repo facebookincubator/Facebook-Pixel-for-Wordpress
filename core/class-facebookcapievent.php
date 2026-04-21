@@ -135,6 +135,27 @@ class FacebookCapiEvent {
             wp_die();
         }
 
+        if ( isset( $_POST['test_event_code'] ) ) {
+            $raw_test_event_code = sanitize_text_field(
+                wp_unslash( $_POST['test_event_code'] )
+            );
+            if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $raw_test_event_code ) ) {
+                wp_send_json_error(
+                    wp_json_encode(
+                        array(
+                            'error' => array(
+                                'message'        => 'Invalid test event code',
+                                'error_user_msg' =>
+                                'Test event code must contain only'
+                                . ' letters, numbers, and underscores.',
+                            ),
+                        )
+                    )
+                );
+                wp_die();
+            }
+        }
+
         $api_version  = ApiConfig::APIVersion;
         $pixel_id     = FacebookWordpressOptions::get_pixel_id();
         $access_token = FacebookWordpressOptions::get_access_token();

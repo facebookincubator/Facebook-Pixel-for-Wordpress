@@ -1,7 +1,11 @@
 function escapeHtml(str) {
     var div = document.createElement("div");
-    div.appendChild(document.createTextNode(str));
+    div.appendChild(document.createTextNode(String(str)));
     return div.innerHTML;
+}
+
+function isValidTestEventCode(code) {
+    return /^[A-Za-z0-9_]+$/.test(code);
 }
 
 window.fbAsyncInit = function () {
@@ -173,6 +177,11 @@ function sendTestEvent(e) {
 
     if (!testEventCode) {
         alert("You must enter test event code.");
+        return;
+    }
+
+    if (!isValidTestEventCode(testEventCode)) {
+        alert("Test event code must contain only letters, numbers, and underscores.");
         return;
     }
 
