@@ -52,7 +52,7 @@ For local development or staging environments, you can override plugin constants
 **Create the file:**
 
 ```bash
-cp local-config.sample.php local-config.php
+cp local-config-sample.php local-config.php
 ```
 
 Or create it manually:
