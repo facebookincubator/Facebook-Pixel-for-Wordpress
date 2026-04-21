@@ -230,6 +230,8 @@ var FBEFlowContainer = React.createClass({
   /**
    * Fetch pixels for a business using client_business_id.
    * If multiple pixels found, show selection UI.
+   */
+
   /**
    * Save the FBL4B access token to the server.
    * This is called ONCE during initial onboarding when the token
@@ -323,7 +325,7 @@ var FBEFlowContainer = React.createClass({
     var _this = this;
 
     jQuery.ajax({
-      type: 'delete',
+      type: 'post',
       url: window.fbl4bConfig.deleteConfigKeys,
       success: function onSuccess(data, _textStatus, _jqXHR) {
         // Clear local config
@@ -958,6 +960,7 @@ var FBEFlowContainer = React.createClass({
       ? window.fbl4bConfig.debug
       : window.facebookBusinessExtensionConfig.debug;
     if(debug) {
+      console.log(message);
     }
   },
 
@@ -1178,8 +1181,9 @@ var FBEFlowContainer = React.createClass({
     jQuery("#fb-adv-conf").show();
     jQuery(".events-manager-wrapper input#pixel-id").val(pixelId);
     // Update Events Manager link with the correct pixel ID
+    var sanitizedPixelId = String(pixelId).replace(/[^0-9]/g, '');
     jQuery(".meta-event-manager a").attr("href",
-      "https://business.facebook.com/events_manager2/list/pixel/" + pixelId
+      "https://business.facebook.com/events_manager2/list/pixel/" + sanitizedPixelId
     );
   }
 });
