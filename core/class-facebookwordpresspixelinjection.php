@@ -71,11 +71,6 @@ class FacebookWordpressPixelInjection {
                 'wp_body_open',
                 array( $this, 'inject_pixel_noscript_code' )
             );
-            // Enqueue CAPI ParamBuilder client-side JS.
-            add_action(
-                'wp_enqueue_scripts',
-                array( 'FacebookPixelPlugin\Core\FacebookParamBuilder', 'client_setup' )
-            );
             foreach (
                 FacebookPluginConfig::integration_config() as $key => $value
                 ) {
@@ -139,6 +134,7 @@ class FacebookWordpressPixelInjection {
         }
 
         self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] = true;
+        echo FacebookParamBuilder::get_client_script_tag(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         echo FacebookPixel::get_pixel_base_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         $capi_integration_status =
         FacebookWordpressOptions::get_capi_integration_status();

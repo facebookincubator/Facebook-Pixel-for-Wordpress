@@ -212,9 +212,9 @@ final class FacebookParamBuilderTest extends FacebookWordpressTestBase {
 	}
 
 	/**
-	 * Tests that client_setup does nothing when pixel ID is not set.
+	 * Tests that get_client_script_tag returns empty when pixel ID is not set.
 	 */
-	public function testClientSetupDoesNothingWithoutPixelId() {
+	public function testClientScriptTagEmptyWithoutPixelId() {
 		$mocked_options = \Mockery::mock(
 			'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
 		);
@@ -228,19 +228,14 @@ final class FacebookParamBuilderTest extends FacebookWordpressTestBase {
 			->with( '' )
 			->andReturn( false );
 
-		// wp_enqueue_script should NOT be called.
-		\WP_Mock::userFunction(
-			'wp_enqueue_script',
-			array( 'times' => 0 )
-		);
-
-		FacebookParamBuilder::client_setup();
+		$tag = FacebookParamBuilder::get_client_script_tag();
+		$this->assertEmpty( $tag );
 	}
 
 	/**
-	 * Tests that client_setup enqueues the script when pixel ID is set.
+	 * Tests that get_client_script_tag returns script HTML when pixel ID is set.
 	 */
-	public function testClientSetupEnqueuesScriptWithPixelId() {
+	public function testClientScriptTagContainsScriptWhenPixelIdSet() {
 		$mocked_options = \Mockery::mock(
 			'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
 		);
@@ -255,31 +250,19 @@ final class FacebookParamBuilderTest extends FacebookWordpressTestBase {
 			->andReturn( true );
 
 		\WP_Mock::userFunction(
-			'wp_enqueue_script',
+			'esc_url',
 			array(
-				'times' => 1,
-				'args'  => array(
-					FacebookParamBuilder::CLIENT_JS_HANDLE,
-					FacebookParamBuilder::CLIENT_JS_URL,
-					array(),
-					null,
-					true,
-				),
+				'args'   => array( \Mockery::any() ),
+				'return' => function ( $input ) {
+					return $input;
+				},
 			)
 		);
 
-		\WP_Mock::userFunction(
-			'wp_add_inline_script',
-			array(
-				'times' => 1,
-				'args'  => array(
-					FacebookParamBuilder::CLIENT_JS_HANDLE,
-					\Mockery::type( 'string' ),
-				),
-			)
-		);
-
-		FacebookParamBuilder::client_setup();
+		$tag = FacebookParamBuilder::get_client_script_tag();
+		$this->assertStringContainsString( 'meta-capi-param-builder-clientjs', $tag );
+		$this->assertStringContainsString( 'processAndCollectAllParams', $tag );
+		$this->assertStringContainsString( '<script', $tag );
 	}
 
 	/**

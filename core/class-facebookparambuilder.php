@@ -139,30 +139,27 @@ class FacebookParamBuilder {
 	}
 
 	/**
-	 * Client-side setup: enqueues the ParamBuilder JS script.
+	 * Returns the client-side ParamBuilder script tag for inline injection.
 	 *
-	 * Should be hooked to wp_enqueue_scripts.
+	 * This script loads BEFORE fbevents.js so that ParamBuilder takes
+	 * priority for _fbc/_fbp cookie management on the client side.
+	 *
+	 * @return string The script HTML, or empty string if pixel is not configured.
 	 */
-	public static function client_setup() {
+	public static function get_client_script_tag() {
 		$pixel_id = FacebookWordpressOptions::get_pixel_id();
 		if ( ! FacebookPluginUtils::is_positive_integer( $pixel_id ) ) {
-			return;
+			return '';
 		}
 
-		wp_enqueue_script(
-			self::CLIENT_JS_HANDLE,
-			self::CLIENT_JS_URL,
-			array(),
-			null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
-			true
-		);
-
-		wp_add_inline_script(
-			self::CLIENT_JS_HANDLE,
-			'if (typeof clientParamBuilder !== "undefined") {' .
-				'clientParamBuilder.processAndCollectAllParams(window.location.href);' .
-			'}'
-		);
+		$url = esc_url( self::CLIENT_JS_URL );
+		return "<!-- Meta CAPI Param Builder -->\n"
+			. "<script type='text/javascript' src='{$url}'></script>\n"
+			. "<script type='text/javascript'>\n"
+			. "if (typeof clientParamBuilder !== 'undefined') {\n"
+			. "  clientParamBuilder.processAndCollectAllParams(window.location.href);\n"
+			. "}\n"
+			. "</script>\n";
 	}
 
 	/**
