@@ -786,4 +786,121 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
       )
     );
   }
+
+  // =========================================
+  // Nonce Rejection Tests
+  // =========================================
+
+  /**
+   * Tests that save_fbl4b_settings dies when nonce is invalid.
+   * WordPress's check_admin_referer() calls wp_nonce_ays() then die()
+   * on failure, which we simulate by throwing an exception.
+   */
+  public function testSaveFBL4BSettingsRejectsInvalidNonce() {
+    $settings_recorder = new FacebookWordpressSettingsRecorder();
+
+    \WP_Mock::userFunction(
+      'current_user_can',
+      array( 'return' => true )
+    );
+    \WP_Mock::userFunction(
+      'check_admin_referer',
+      array(
+        'return' => function () {
+          throw new \Exception( 'Nonce verification failed' );
+        },
+      )
+    );
+
+    $this->expectException( \Exception::class );
+    $this->expectExceptionMessage( 'Nonce verification failed' );
+
+    $settings_recorder->save_fbl4b_settings();
+  }
+
+  /**
+   * Tests that delete_fbl4b_settings dies when nonce is invalid.
+   */
+  public function testDeleteFBL4BSettingsRejectsInvalidNonce() {
+    $settings_recorder = new FacebookWordpressSettingsRecorder();
+
+    \WP_Mock::userFunction(
+      'current_user_can',
+      array( 'return' => true )
+    );
+    \WP_Mock::userFunction(
+      'check_admin_referer',
+      array(
+        'return' => function () {
+          throw new \Exception( 'Nonce verification failed' );
+        },
+      )
+    );
+
+    $this->expectException( \Exception::class );
+    $this->expectExceptionMessage( 'Nonce verification failed' );
+
+    $settings_recorder->delete_fbl4b_settings();
+  }
+
+  // =========================================
+  // Auto-Dismiss Upgrade Notice Tests
+  // =========================================
+
+  /**
+   * Tests that save_fbl4b_settings sets the upgrade notice dismiss flag
+   * on initial save (when access token is present).
+   */
+  public function testSaveFBL4BSettingsDismissesUpgradeNotice() {
+    $settings_recorder = new FacebookWordpressSettingsRecorder();
+    self::mockWordPressFunctions();
+    self::mockSanitizeAndUnslash();
+
+    \WP_Mock::userFunction(
+      'wp_salt',
+      array(
+        'args'   => array( 'auth' ),
+        'return' => 'test-salt-key',
+      )
+    );
+
+    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer EAABsbCS1iBABO0TestToken';
+
+    global $_POST;
+    $_POST['pixelId']    = '12345';
+    $_POST['pixelName']  = 'Test Pixel';
+    $_POST['businessId'] = '67890';
+
+    \WP_Mock::userFunction(
+      'update_option',
+      array( 'return' => true )
+    );
+
+    $dismiss_called = false;
+    \WP_Mock::userFunction(
+      'get_current_user_id',
+      array( 'return' => 42 )
+    );
+    \WP_Mock::userFunction(
+      'update_user_meta',
+      array(
+        'return' => function ( $user_id, $meta_key, $meta_value )
+          use ( &$dismiss_called ) {
+          if ( FacebookPluginConfig::ADMIN_IGNORE_FBL4B_UPGRADE_NOTICE
+            === $meta_key && 42 === $user_id && true === $meta_value ) {
+            $dismiss_called = true;
+          }
+          return true;
+        },
+      )
+    );
+
+    $result = $settings_recorder->save_fbl4b_settings();
+
+    $this->assertTrue( $result['success'] );
+    $this->assertTrue(
+      $dismiss_called,
+      'Expected update_user_meta to be called with dismiss flag'
+    );
+  }
 }

@@ -348,6 +348,83 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
   }
 
   /**
+   * Tests that get_meta_wc_params includes FBL4B app_id and config_id
+   * when the FBL4B constants resolve to non-empty values.
+   */
+  public function testGetMetaWcParamsIncludesFBL4BAppIdAndConfigId() {
+    $this->mockFacebookWordpressOptions();
+
+    \WP_Mock::userFunction(
+      'admin_url',
+      array( 'return' => 'https://example.com/wp-admin/admin-ajax.php' )
+    );
+    \WP_Mock::userFunction(
+      'wp_create_nonce',
+      array( 'return' => 'test_nonce' )
+    );
+    \WP_Mock::userFunction(
+      'esc_html',
+      array(
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'return' => function ( $input ) {
+          return json_encode( $input );
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'add_query_arg',
+      array(
+        'return' => function ( $args, $url ) {
+          return $url . '?' . http_build_query( $args );
+        },
+      )
+    );
+
+    // Mock FBL4B-specific option getters on the options mock.
+    $this->mocked_options->shouldReceive( 'get_fbl4b_pixel_id' )
+      ->andReturn( '99999' );
+    $this->mocked_options->shouldReceive( 'get_fbl4b_pixel_name' )
+      ->andReturn( 'Test Pixel' );
+    $this->mocked_options->shouldReceive( 'get_fbl4b_business_id' )
+      ->andReturn( '88888' );
+    $this->mocked_options->shouldReceive( 'get_external_business_id' )
+      ->andReturn( 'fbe_wordpress_test' );
+    $this->mocked_options->shouldReceive(
+      'get_capi_integration_page_view_filtered'
+    )->andReturn( array() );
+
+    $settings_page = new FacebookWordpressSettingsPage(
+      'facebook_for_wordpress'
+    );
+
+    $reflection = new \ReflectionMethod( $settings_page, 'get_meta_wc_params' );
+    $reflection->setAccessible( true );
+    $params = $reflection->invoke( $settings_page );
+
+    // FBL4B_APP_ID and FBL4B_CONFIG_ID are non-empty class constants,
+    // so the params should include FBL4B config.
+    $this->assertArrayHasKey( 'fbl4bAppId', $params );
+    $this->assertArrayHasKey( 'fbl4bConfigId', $params );
+    $this->assertEquals(
+      FacebookPluginConfig::FBL4B_APP_ID,
+      $params['fbl4bAppId']
+    );
+    $this->assertEquals(
+      FacebookPluginConfig::FBL4B_CONFIG_ID,
+      $params['fbl4bConfigId']
+    );
+    $this->assertArrayHasKey( 'fbl4bSaveSettingsRoute', $params );
+    $this->assertArrayHasKey( 'fbl4bDeleteSettingsRoute', $params );
+  }
+
+  /**
    * Mocks translation functions used by notice generation.
    *
    * @return void

@@ -388,6 +388,124 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
   }
 
   // =========================================
+  // AAM Settings Tests
+  // =========================================
+
+  /**
+   * Tests that set_fbl4b_based_aam_settings uses the FBL4B pixel when cached.
+   */
+  public function testSetFBL4BBasedAAMSettingsUsesCachedTransient() {
+    $this->mockWpSalt();
+    $encrypted_token = FacebookWordpressOptions::encrypt_token( 'test_token' );
+
+    \WP_Mock::userFunction(
+      'get_option',
+      array(
+        'return' => array(
+          FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY => $encrypted_token,
+          FacebookPluginConfig::FBL4B_PIXEL_ID_KEY     => '55555',
+        ),
+      )
+    );
+
+    \WP_Mock::userFunction(
+      'get_transient',
+      array(
+        'args'   => array( FacebookPluginConfig::AAM_SETTINGS_KEY ),
+        'return' => array(
+          'pixelId'                        => '55555',
+          'enableAutomaticMatching'        => true,
+          'enabledAutomaticMatchingFields' => array( 'em', 'fn', 'ln' ),
+        ),
+      )
+    );
+
+    $aam_settings = FacebookWordpressOptions::get_aam_settings();
+
+    $this->assertNotNull( $aam_settings );
+    $this->assertEquals( '55555', $aam_settings->getPixelId() );
+    $this->assertTrue( $aam_settings->getEnableAutomaticMatching() );
+  }
+
+  /**
+   * Tests that set_fbl4b_based_aam_settings ignores cached transient
+   * when pixel ID doesn't match the installed FBL4B pixel.
+   */
+  public function testSetFBL4BBasedAAMSettingsIgnoresMismatchedCache() {
+    $this->mockWpSalt();
+    $encrypted_token = FacebookWordpressOptions::encrypt_token( 'test_token' );
+
+    \WP_Mock::userFunction(
+      'get_option',
+      array(
+        'return' => array(
+          FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY => $encrypted_token,
+          FacebookPluginConfig::FBL4B_PIXEL_ID_KEY     => '55555',
+        ),
+      )
+    );
+
+    // Cached transient has a different pixel ID.
+    \WP_Mock::userFunction(
+      'get_transient',
+      array(
+        'args'   => array( FacebookPluginConfig::AAM_SETTINGS_KEY ),
+        'return' => array(
+          'pixelId'                        => '99999',
+          'enableAutomaticMatching'        => true,
+          'enabledAutomaticMatchingFields' => array( 'em' ),
+        ),
+      )
+    );
+    \WP_Mock::userFunction(
+      'set_transient',
+      array( 'return' => true )
+    );
+
+    // The fallback will call AdsPixelSettings::buildFromPixelId, which
+    // returns null in test environments (no real Graph API).
+    $aam_settings = FacebookWordpressOptions::get_aam_settings();
+
+    // With no API available and mismatched cache, settings should be null.
+    $this->assertNull( $aam_settings );
+  }
+
+  // =========================================
+  // MBE & FBL4B Pixel Coexistence Tests
+  // =========================================
+
+  /**
+   * Tests that when both MBE and FBL4B have pixel IDs configured,
+   * the active pixel ID is the FBL4B one (FBL4B takes priority).
+   */
+  public function testActivePixelIdFBL4BTakesPriorityOverMBE() {
+    $this->mockWpSalt();
+    $encrypted_token = FacebookWordpressOptions::encrypt_token( 'test_token' );
+
+    // get_option returns different values for different keys.
+    \WP_Mock::userFunction(
+      'get_option',
+      array(
+        'return_in_order' => array(
+          // First call: FBL4B settings (for get_connection_type)
+          array(
+            FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY => $encrypted_token,
+            FacebookPluginConfig::FBL4B_PIXEL_ID_KEY     => '77777',
+          ),
+          // Second call: FBL4B settings again (for get_fbl4b_pixel_id)
+          array(
+            FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY => $encrypted_token,
+            FacebookPluginConfig::FBL4B_PIXEL_ID_KEY     => '77777',
+          ),
+        ),
+      )
+    );
+
+    $active_pixel = FacebookWordpressOptions::get_active_pixel_id();
+    $this->assertEquals( '77777', $active_pixel );
+  }
+
+  // =========================================
   // Helper Methods
   // =========================================
 
