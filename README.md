@@ -45,6 +45,38 @@ You can reference to integration/FacebookWordpressContactForm7.php and tests/Fac
 
 See the CONTRIBUTING file for how to help out
 
+# Local Development Configuration
+
+For local development or staging environments, you can override plugin constants by creating a `local-config.php` file in the plugin root directory. This file is gitignored and loaded automatically before any other plugin code.
+
+**Create the file:**
+
+```bash
+cp local-config.sample.php local-config.php
+```
+
+Or create it manually:
+
+```php
+<?php
+// local-config.php — Local development overrides (gitignored).
+
+// Point FBL4B at a staging Meta App and config.
+define( 'FB_FBL4B_APP_ID', 'your_staging_app_id' );
+define( 'FB_FBL4B_CONFIG_ID', 'your_staging_config_id' );
+
+// Redirect FBL4B iframe and popup origin to a staging domain.
+define( 'META_PIXEL_BASE_DOMAIN', 'your.staging.domain' );
+```
+
+**Available constants:**
+
+| Constant | Description | Default |
+|---|---|---|
+| `FB_FBL4B_APP_ID` | Meta App ID for FBL4B authentication | Production app ID from `FacebookPluginConfig` |
+| `FB_FBL4B_CONFIG_ID` | FBL4B SUAT configuration ID | Production config ID from `FacebookPluginConfig` |
+| `META_PIXEL_BASE_DOMAIN` | Base domain for FBL4B iframe and popup origin (e.g. `facebook.com`) | `facebook.com` |
+
 # License
 
 Facebook for WordPress is GPLv2-licensed
