@@ -6,26 +6,6 @@
 <project name="pixel-plugins" basedir="." default="main">
     <property file="./build.properties" />
 
-    <!-- Fileset for all files -->
-    <fileset dir="${basedir}" id="sourcedir">
-        <exclude name=".editorconfig" />
-        <exclude name=".gitignore" />
-        <exclude name=".prettierrc" />
-        <exclude name="package.json" />
-        <exclude name="package-lock.json" />
-        <exclude name="phpcs.xml" />
-        <exclude name="build.properties" />
-        <exclude name="build.xml" />
-        <exclude name="README.md" />
-        <exclude name="vendor/**" />
-        <exclude name="task/**" />
-        <exclude name="__tests__/**" />
-		<exclude name="__tests_sdk__/**" />
-        <exclude name="js/lib/**" />
-        <exclude name=".githooks/**" />
-        <exclude name=".github/**" />
-    </fileset>
-
     <!-- ============================================  -->
     <!-- Target: Clean                                 -->
     <!-- ============================================  -->
