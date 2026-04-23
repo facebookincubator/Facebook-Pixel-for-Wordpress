@@ -76,21 +76,21 @@ class FacebookWordpressSettingsPage {
             'fbe_allinone_script',
             plugins_url( '../js/fbe_allinone.js', __FILE__ ),
             array(),
-            '1.0.0',
+            FacebookPluginConfig::PLUGIN_VERSION,
             false
         );
         wp_register_script(
             'meta_settings_page_script',
             plugins_url( '../js/settings_page.js', __FILE__ ),
             array(),
-            '1.0.0',
+            FacebookPluginConfig::PLUGIN_VERSION,
             false
         );
         wp_register_style(
             'official-facebook-pixel',
             plugins_url( '../css/admin.css', __FILE__ ),
             array(),
-            '1.0.0'
+            FacebookPluginConfig::PLUGIN_VERSION
         );
         wp_enqueue_style( 'official-facebook-pixel' );
     }
