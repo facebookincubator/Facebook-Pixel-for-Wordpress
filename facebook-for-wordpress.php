@@ -39,19 +39,6 @@ use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
 use FacebookPixelPlugin\Core\ServerEventAsyncTask;
-// HPOS compatibility declaration.
-add_action(
-	'before_woocommerce_init',
-	function() {
-		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
-				'custom_order_tables',
-				plugin_basename( __FILE__ ),
-				true
-			);
-		}
-	}
-);
 
 /**
  * FacebookForWordpress root class.
@@ -160,6 +147,27 @@ class FacebookForWordpress {
         }
     }
     }
+
+    /**
+     * Declare WooCommerce HPOS (custom order tables) compatibility.
+     *
+     * @return void
+     */
+    public static function declare_hpos_compatibility() {
+    if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+        'custom_order_tables',
+        plugin_basename( __FILE__ ),
+        true
+        );
+    }
+    }
 }
+
+// HPOS compatibility declaration.
+add_action(
+    'before_woocommerce_init',
+    array( '\\FacebookPixelPlugin\\FacebookForWordpress', 'declare_hpos_compatibility' )
+);
 
 new FacebookForWordpress();

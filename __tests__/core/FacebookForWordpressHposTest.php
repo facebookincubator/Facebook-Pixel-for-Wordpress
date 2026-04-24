@@ -33,16 +33,60 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 final class FacebookForWordpressHposTest extends FacebookWordpressTestBase {
 
     /**
+     * Load the plugin entrypoint with minimal mocks needed for this test.
+     *
+     * @return void
+     */
+    private function bootstrapPluginEntrypoint() {
+        if ( ! defined( 'ABSPATH' ) ) {
+            define( 'ABSPATH', __DIR__ );
+        }
+
+        if ( ! defined( 'WEEK_IN_SECONDS' ) ) {
+            define( 'WEEK_IN_SECONDS', 604800 );
+        }
+
+        \WP_Mock::userFunction(
+            'plugin_dir_path',
+            array( 'return' => dirname( __DIR__, 2 ) . '/' )
+        );
+        \WP_Mock::userFunction(
+            'plugin_basename',
+            array( 'return' => 'facebook-pixel-for-wordpress/facebook-for-wordpress.php' )
+        );
+        \WP_Mock::userFunction( 'load_plugin_textdomain', array( 'return' => true ) );
+        \WP_Mock::userFunction( 'get_transient', array( 'return' => false ) );
+        \WP_Mock::userFunction( 'update_option', array( 'return' => true ) );
+        \WP_Mock::userFunction( 'set_transient', array( 'return' => true ) );
+        \WP_Mock::userFunction( 'is_admin', array( 'return' => false ) );
+
+        $mocked_options = \Mockery::mock( 'alias:FacebookPixelPlugin\\Core\\FacebookWordpressOptions' );
+        $mocked_options->shouldReceive( 'initialize' )->once();
+        $mocked_options->shouldReceive( 'get_options' )->andReturn( array() );
+        $mocked_options->shouldReceive( 'get_pixel_id' )->andReturn( '1234' );
+        $mocked_options->shouldReceive( 'is_wordpress_com_hosted' )->andReturn( false );
+
+        $mocked_pixel = \Mockery::mock( 'alias:FacebookPixelPlugin\\Core\\FacebookPixel' );
+        $mocked_pixel->shouldReceive( 'initialize' )->once();
+
+        \Mockery::mock( 'overload:FacebookPixelPlugin\\Core\\ServerEventAsyncTask' );
+
+        require_once dirname( __DIR__, 2 ) . '/facebook-for-wordpress.php';
+    }
+
+    /**
      * Tests that the HPOS compatibility action is registered on
      * before_woocommerce_init.
      *
      * @return void
      */
     public function testHposActionIsRegistered() {
-        $this->assertNotFalse(
-            has_action( 'before_woocommerce_init' ),
-            'before_woocommerce_init action should be registered'
+        \WP_Mock::expectActionAdded(
+            'before_woocommerce_init',
+            array( '\\FacebookPixelPlugin\\FacebookForWordpress', 'declare_hpos_compatibility' )
         );
+
+        $this->bootstrapPluginEntrypoint();
     }
 
     /**
@@ -51,40 +95,19 @@ final class FacebookForWordpressHposTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testDeclareCompatibilityCalledWhenFeaturesUtilExists() {
-        $called_with = null;
-
-        if ( ! class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-            // Create a stub so we can assert the call.
-            eval( // phpcs:ignore Squiz.PHP.Eval
-                'namespace Automattic\WooCommerce\Utilities;
-                class FeaturesUtil {
-                    public static $last_call = null;
-                    public static function declare_compatibility(
-                        $feature_id,
-                        $plugin_file,
-                        $is_compatible
-                    ) {
-                        self::$last_call = compact(
-                            "feature_id",
-                            "plugin_file",
-                            "is_compatible"
-                        );
-                    }
-                }'
-            );
-        }
-
-        do_action( 'before_woocommerce_init' );
-
-        $last_call = \Automattic\WooCommerce\Utilities\FeaturesUtil::$last_call;
-
-        $this->assertNotNull( $last_call );
-        $this->assertSame( 'custom_order_tables', $last_call['feature_id'] );
-        $this->assertTrue( $last_call['is_compatible'] );
-        $this->assertStringEndsWith(
-            'facebook-for-wordpress.php',
-            $last_call['plugin_file']
+        $mocked_features_util = \Mockery::mock(
+            'alias:Automattic\\WooCommerce\\Utilities\\FeaturesUtil'
         );
+        $mocked_features_util->shouldReceive( 'declare_compatibility' )
+            ->once()
+            ->with(
+                'custom_order_tables',
+                'facebook-pixel-for-wordpress/facebook-for-wordpress.php',
+                true
+            );
+
+        $this->bootstrapPluginEntrypoint();
+        \FacebookPixelPlugin\FacebookForWordpress::declare_hpos_compatibility();
     }
 
     /**
@@ -94,14 +117,8 @@ final class FacebookForWordpressHposTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testNoErrorWhenFeaturesUtilAbsent() {
-        // If FeaturesUtil is not loaded, firing the action must not throw.
-        if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-            $this->markTestSkipped(
-                'FeaturesUtil is already loaded; cannot test the absent-WooCommerce path.'
-            );
-        }
-
-        $this->expectNotToPerformAssertions();
-        do_action( 'before_woocommerce_init' );
+        $this->bootstrapPluginEntrypoint();
+        \FacebookPixelPlugin\FacebookForWordpress::declare_hpos_compatibility();
+        $this->assertTrue( true );
     }
 }
