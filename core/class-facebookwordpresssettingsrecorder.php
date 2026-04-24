@@ -79,6 +79,10 @@ class FacebookWordpressSettingsRecorder {
             'wp_ajax_fbl4b_fetch_pixels',
             array( $this, 'fbl4b_fetch_pixels' )
         );
+        add_action(
+            'wp_ajax_fbl4b_clear_pixel',
+            array( $this, 'fbl4b_clear_pixel' )
+        );
     }
 
     /**
@@ -468,6 +472,38 @@ class FacebookWordpressSettingsRecorder {
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
 
         return $this->handle_success_request( 'FBL4B settings deleted' );
+    }
+
+    /**
+     * Clears the stored pixel ID and pixel name from FBL4B settings.
+     * Keeps the access token and business ID intact so the user can
+     * re-select a different pixel without re-authenticating.
+     *
+     * @return array Response data.
+     */
+    public function fbl4b_clear_pixel() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer( 'fbl4b_clear_pixel' );
+
+        $existing = \get_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            array()
+        );
+        if ( empty( $existing ) ) {
+            return $this->handle_invalid_request();
+        }
+
+        unset( $existing[ FacebookPluginConfig::FBL4B_PIXEL_ID_KEY ] );
+        unset( $existing[ FacebookPluginConfig::FBL4B_PIXEL_NAME_KEY ] );
+        \update_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            $existing
+        );
+        \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
+
+        return $this->handle_success_request( 'Pixel cleared' );
     }
 
     /**

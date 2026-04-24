@@ -663,6 +663,8 @@ class FacebookWordpressSettingsPage {
                 $this->get_fbl4b_fetch_pixels_route();
             $params['fbl4bValidateTokenRoute']   =
                 $this->get_fbl4b_validate_token_route();
+            $params['fbl4bClearPixelRoute']      =
+                $this->get_fbl4b_clear_pixel_route();
             $params['fbl4bPixelId']              =
                 FacebookWordpressOptions::get_fbl4b_pixel_id();
             $params['fbl4bPixelName']            =
@@ -773,6 +775,21 @@ class FacebookWordpressSettingsPage {
             array(
                 'action'   => 'fbl4b_validate_token',
                 '_wpnonce' => wp_create_nonce( 'fbl4b_validate_token' ),
+            ),
+            admin_url( 'admin-ajax.php' )
+        );
+    }
+
+    /**
+     * Generates AJAX route for clearing FBL4B pixel selection.
+     *
+     * @return string The URL with query arguments.
+     */
+    public function get_fbl4b_clear_pixel_route() {
+        return add_query_arg(
+            array(
+                'action'   => 'fbl4b_clear_pixel',
+                '_wpnonce' => wp_create_nonce( 'fbl4b_clear_pixel' ),
             ),
             admin_url( 'admin-ajax.php' )
         );

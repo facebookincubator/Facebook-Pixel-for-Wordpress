@@ -129,6 +129,7 @@ window.fbl4bConfig = {
     fetchBusinessIdRoute: meta_wc_params.fbl4bFetchBusinessIdRoute || '',
     fetchPixelsRoute: meta_wc_params.fbl4bFetchPixelsRoute || '',
     validateTokenRoute: meta_wc_params.fbl4bValidateTokenRoute || '',
+    clearPixelRoute: meta_wc_params.fbl4bClearPixelRoute || '',
     pixelId: meta_wc_params.fbl4bPixelId || '',
     pixelName: meta_wc_params.fbl4bPixelName || '',
     businessId: meta_wc_params.fbl4bBusinessId || '',

@@ -366,8 +366,23 @@ var FBEFlowContainer = React.createClass({
   },
 
   /**
+   * Clear the stored pixel ID and pixel name from the server.
+   * Used when the selected pixel is no longer accessible.
+   */
+  clearStoredPixel: function clearStoredPixel() {
+    jQuery.ajax({
+      type: 'post',
+      url: window.fbl4bConfig.clearPixelRoute,
+      success: function() {},
+      error: function() {}
+    });
+  },
+
+  /**
    * Fetch pixels for a business using client_business_id.
    * If multiple pixels found, show selection UI.
+   */
+
   /**
    * Save the FBL4B access token to the server.
    * This is called ONCE during initial onboarding when the token
@@ -461,7 +476,7 @@ var FBEFlowContainer = React.createClass({
     var _this = this;
 
     jQuery.ajax({
-      type: 'delete',
+      type: 'post',
       url: window.fbl4bConfig.deleteConfigKeys,
       success: function onSuccess(data, _textStatus, _jqXHR) {
         // Clear local config
@@ -665,8 +680,9 @@ var FBEFlowContainer = React.createClass({
         return;
       }
 
-      // If we already have a pixel selected, we're done - don't fetch anything
+      // If we already have a pixel selected, verify it's still accessible
       if (config.pixelId) {
+        _this.verifyPixelValidity(config.businessId, config.pixelId);
         return;
       }
 
@@ -717,6 +733,44 @@ var FBEFlowContainer = React.createClass({
         _this.consoleLog("FBL4B: Token validation failed - " + textStatus);
         _this.consoleLog('FBL4B: Token validation error: ' + errorThrown);
         callback(false);
+      }
+    });
+  },
+
+  /**
+   * Verify the stored pixel is still accessible via the business's pixel list.
+   * If the pixel was removed from the connected app on Meta's side,
+   * it won't appear in the fetch results. Disconnects if no pixels remain,
+   * otherwise prompts re-selection.
+   */
+  verifyPixelValidity: function verifyPixelStillAccessible(businessId, pixelId) {
+    var _this = this;
+
+    if (!businessId) {
+      return;
+    }
+
+    jQuery.ajax({
+      type: 'post',
+      url: window.fbl4bConfig.fetchPixelsRoute,
+      data: { businessId: businessId },
+      timeout: 15000,
+      success: function(response) {
+        if (response.success && response.data && response.data.data) {
+          var pixels = response.data.data;
+          var found = pixels.some(function(p) { return p.id === pixelId; });
+          if (!found) {
+              _this.clearStoredPixel();
+              window.fbl4bConfig.pixelId = '';
+              window.fbl4bConfig.pixelName = '';
+              window.fbl4bConfig.pendingPixels = pixels;
+              _this.setState({ fbl4bPixelId: '' });
+          }
+        } else if (!response.success && response.data && response.data.code === 'no_pixels') {
+          _this.clearFBL4BData();
+        }
+      },
+      error: function() {
       }
     });
   },
@@ -1096,6 +1150,7 @@ var FBEFlowContainer = React.createClass({
       ? window.fbl4bConfig.debug
       : window.facebookBusinessExtensionConfig.debug;
     if(debug) {
+      console.log(message);
     }
   },
 
@@ -1316,8 +1371,9 @@ var FBEFlowContainer = React.createClass({
     jQuery("#fb-adv-conf").show();
     jQuery(".events-manager-wrapper input#pixel-id").val(pixelId);
     // Update Events Manager link with the correct pixel ID
+    var sanitizedPixelId = String(pixelId).replace(/[^0-9]/g, '');
     jQuery(".meta-event-manager a").attr("href",
-      "https://business.facebook.com/events_manager2/list/pixel/" + pixelId
+      "https://business.facebook.com/events_manager2/list/pixel/" + sanitizedPixelId
     );
   }
 });
