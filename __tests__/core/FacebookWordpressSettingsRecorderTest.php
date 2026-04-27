@@ -252,14 +252,6 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
       'update_option',
       array( 'return' => true )
     );
-    \WP_Mock::userFunction(
-      'get_current_user_id',
-      array( 'return' => 1 )
-    );
-    \WP_Mock::userFunction(
-      'update_user_meta',
-      array( 'return' => true )
-    );
 
     $result = $settings_recorder->save_fbl4b_settings();
 
@@ -355,6 +347,14 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
     );
     \WP_Mock::userFunction(
       'delete_transient',
+      array( 'return' => true )
+    );
+    \WP_Mock::userFunction(
+      'get_current_user_id',
+      array( 'return' => 1 )
+    );
+    \WP_Mock::userFunction(
+      'delete_user_meta',
       array( 'return' => true )
     );
 
@@ -852,63 +852,51 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
   }
 
   // =========================================
-  // Auto-Dismiss Upgrade Notice Tests
+  // Upgrade Notice Flag Tests
   // =========================================
 
   /**
-   * Tests that save_fbl4b_settings sets the upgrade notice dismiss flag
-   * on initial save (when access token is present).
+   * Tests that delete_fbl4b_settings clears the upgrade notice dismiss flag
+   * so the banner reappears when the user falls back to MBE.
    */
-  public function testSaveFBL4BSettingsDismissesUpgradeNotice() {
+  public function testDeleteFBL4BSettingsClearsDismissFlag() {
     $settings_recorder = new FacebookWordpressSettingsRecorder();
     self::mockWordPressFunctions();
-    self::mockSanitizeAndUnslash();
 
     \WP_Mock::userFunction(
-      'wp_salt',
-      array(
-        'args'   => array( 'auth' ),
-        'return' => 'test-salt-key',
-      )
+      'delete_option',
+      array( 'return' => true )
     );
-
-    $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer EAABsbCS1iBABO0TestToken';
-
-    global $_POST;
-    $_POST['pixelId']    = '12345';
-    $_POST['pixelName']  = 'Test Pixel';
-    $_POST['businessId'] = '67890';
-
     \WP_Mock::userFunction(
-      'update_option',
+      'delete_transient',
       array( 'return' => true )
     );
 
-    $dismiss_called = false;
+    $flag_cleared = false;
     \WP_Mock::userFunction(
       'get_current_user_id',
       array( 'return' => 42 )
     );
     \WP_Mock::userFunction(
-      'update_user_meta',
+      'delete_user_meta',
       array(
-        'return' => function ( $user_id, $meta_key, $meta_value )
-          use ( &$dismiss_called ) {
+        'return' => function ( $user_id, $meta_key )
+          use ( &$flag_cleared ) {
           if ( FacebookPluginConfig::ADMIN_IGNORE_FBL4B_UPGRADE_NOTICE
-            === $meta_key && 42 === $user_id && true === $meta_value ) {
-            $dismiss_called = true;
+            === $meta_key && 42 === $user_id ) {
+            $flag_cleared = true;
           }
           return true;
         },
       )
     );
 
-    $result = $settings_recorder->save_fbl4b_settings();
+    $result = $settings_recorder->delete_fbl4b_settings();
 
     $this->assertTrue( $result['success'] );
     $this->assertTrue(
-      $dismiss_called,
-      'Expected update_user_meta to be called with dismiss flag'
+      $flag_cleared,
+      'Expected delete_user_meta to clear the dismiss flag'
     );
   }
 }

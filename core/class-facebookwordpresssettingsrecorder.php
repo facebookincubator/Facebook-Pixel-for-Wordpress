@@ -448,12 +448,6 @@ class FacebookWordpressSettingsRecorder {
             $fbl4b_settings
         );
 
-        \update_user_meta(
-            get_current_user_id(),
-            FacebookPluginConfig::ADMIN_IGNORE_FBL4B_UPGRADE_NOTICE,
-            true
-        );
-
         return $this->handle_success_request( 'FBL4B settings saved' );
     }
 
@@ -470,6 +464,10 @@ class FacebookWordpressSettingsRecorder {
 
         \delete_option( FacebookPluginConfig::FBL4B_SETTINGS_KEY );
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
+        \delete_user_meta(
+            get_current_user_id(),
+            FacebookPluginConfig::ADMIN_IGNORE_FBL4B_UPGRADE_NOTICE
+        );
 
         return $this->handle_success_request( 'FBL4B settings deleted' );
     }
