@@ -127,7 +127,8 @@ class ResumeTrackingAjax {
         }
 
         $event_name = sanitize_text_field( $event_data['event_name'] );
-        if ( ! in_array( $event_name, self::$allowed_events, true ) ) {
+        if ( ! in_array( $event_name, self::$allowed_events, true )
+            && ! preg_match( '/^[A-Za-z][A-Za-z0-9_]{0,49}$/', $event_name ) ) {
             return false;
         }
 

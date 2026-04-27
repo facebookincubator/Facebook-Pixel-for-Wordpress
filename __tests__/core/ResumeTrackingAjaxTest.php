@@ -46,7 +46,7 @@ final class ResumeTrackingAjaxTest extends FacebookWordpressTestBase {
       $method->invoke(
         $handler,
         array(
-          'event_name' => 'UnknownEvent',
+          'event_name' => 'Bad Name!',
           'event_time' => time(),
         ),
         time()
