@@ -148,15 +148,24 @@ class PixelRenderer {
                 $fb_integration_tracking;
         }
 
+        $is_custom = ( new ReflectionClass(
+            'FacebookPixelPlugin\Core\FacebookPixel'
+        ) )->getConstant( strtoupper( $event->getEventName() ) ) === false;
+
         $payload = array(
             'event_name'  => $event->getEventName(),
             'custom_data' => $normalized_custom_data,
             'event_id'    => $event->getEventId(),
             'event_time'  => $event->getEventTime(),
+            'is_custom'   => $is_custom,
         );
 
         return 'FacebookSignal.queueEvent(' .
-            wp_json_encode( $payload, JSON_PRETTY_PRINT ) .
+            wp_json_encode(
+                $payload,
+                JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP |
+                    JSON_HEX_APOS | JSON_HEX_QUOT
+            ) .
             ');';
     }
 }

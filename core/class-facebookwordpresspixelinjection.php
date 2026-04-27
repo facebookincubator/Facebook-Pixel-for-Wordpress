@@ -310,10 +310,11 @@ window.FacebookSignal = window.FacebookSignal || {
         for (var i = 0; i < this._queue.length; i++) {
             var queuedEvent = this._queue[i];
             var customData = queuedEvent.custom_data || {};
+            var trackMethod = queuedEvent.is_custom ? 'trackCustom' : 'track';
             if (queuedEvent.event_id) {
-                fbq('track', queuedEvent.event_name, customData, { eventID: queuedEvent.event_id });
+                fbq(trackMethod, queuedEvent.event_name, customData, { eventID: queuedEvent.event_id });
             } else {
-                fbq('track', queuedEvent.event_name, customData);
+                fbq(trackMethod, queuedEvent.event_name, customData);
             }
         }
 
@@ -424,7 +425,10 @@ JS;
         );
 
         return "<script type='text/javascript'>FacebookSignal.init(" .
-            wp_json_encode( $config ) .
+            wp_json_encode(
+                $config,
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+            ) .
             ');</script>';
     }
 }

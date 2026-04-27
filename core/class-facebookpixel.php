@@ -269,10 +269,37 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $tracking_name,
         $with_script_tag
     ) {
-        $payload = self::build_queue_payload( $event, $param, $tracking_name );
-        $code    = 'FacebookSignal.queueEvent(' .
-            wp_json_encode( $payload, JSON_PRETTY_PRINT ) .
-            ');';
+        $is_custom = ( new ReflectionClass( __CLASS__ ) )
+            ->getConstant( strtoupper( $event ) ) === false;
+
+        if ( is_array( $param ) ) {
+            $payload = self::build_queue_payload(
+                $event,
+                $param,
+                $tracking_name,
+                $is_custom
+            );
+            $code    = 'FacebookSignal.queueEvent(' .
+                wp_json_encode(
+                    $payload,
+                    JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP |
+                        JSON_HEX_APOS | JSON_HEX_QUOT
+                ) .
+                ');';
+        } else {
+            $code = sprintf(
+                'FacebookSignal.queueEvent({"event_name":%s,'
+                . '"custom_data":%s,"event_id":null,"event_time":%d,'
+                . '"is_custom":%s});',
+                wp_json_encode(
+                    $event,
+                    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+                ),
+                (string) $param,
+                time(),
+                $is_custom ? 'true' : 'false'
+            );
+        }
 
         if ( ! $with_script_tag ) {
             return $code;
@@ -287,13 +314,16 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
      * @param string       $event         Event name.
      * @param array|string $param         Event params.
      * @param string       $tracking_name Integration tracking name.
+     * @param bool|null    $is_custom     Whether the event is a custom event;
+     *                                    null = auto-detect.
      *
      * @return array
      */
     public static function build_queue_payload(
         $event,
         $param = array(),
-        $tracking_name = ''
+        $tracking_name = '',
+        $is_custom = null
     ) {
         $custom_data = is_array( $param ) ? $param : array();
         $event_id    = null;
@@ -307,11 +337,17 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
             $custom_data[ self::FB_INTEGRATION_TRACKING_KEY ] = $tracking_name;
         }
 
+        if ( null === $is_custom ) {
+            $is_custom = ( new ReflectionClass( __CLASS__ ) )
+                ->getConstant( strtoupper( $event ) ) === false;
+        }
+
         return array(
             'event_name'  => $event,
             'custom_data' => $custom_data,
             'event_id'    => $event_id,
             'event_time'  => time(),
+            'is_custom'   => (bool) $is_custom,
         );
     }
 
