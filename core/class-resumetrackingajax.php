@@ -82,6 +82,10 @@ class ResumeTrackingAjax {
             wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
         }
 
+        if ( ! empty( $body['fbclid'] ) && empty( $_GET['fbclid'] ) ) {
+            $_GET['fbclid'] = sanitize_text_field( $body['fbclid'] );
+        }
+
         $events = isset( $body['events'] ) && is_array( $body['events'] ) ?
             array_slice( $body['events'], 0, self::MAX_EVENTS ) :
             array();
