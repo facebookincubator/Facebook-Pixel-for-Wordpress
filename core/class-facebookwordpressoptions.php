@@ -514,6 +514,11 @@ class FacebookWordpressOptions {
             $source .= '_1';
         }
 
+        if ( self::get_is_fbl4b_installed()
+            && ! empty( self::get_fbl4b_pixel_id() ) ) {
+            $source .= '_fbl4b';
+        }
+
         return sprintf(
             '%s-%s-%s',
             $source,

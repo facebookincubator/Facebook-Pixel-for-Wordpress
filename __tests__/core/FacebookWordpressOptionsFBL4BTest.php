@@ -523,6 +523,58 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
   }
 
   // =========================================
+  // Agent String Tests
+  // =========================================
+
+  /**
+   * Tests that agent string includes _fbl4b suffix when FBL4B is connected.
+   */
+  public function testAgentStringIncludesFBL4BSuffix() {
+    $this->mockWpSalt();
+    $encrypted_token = FacebookWordpressOptions::encrypt_token( 'test_token' );
+
+    \WP_Mock::userFunction(
+      'get_option',
+      array(
+        'return' => array(
+          FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY => $encrypted_token,
+          FacebookPluginConfig::FBL4B_PIXEL_ID_KEY     => '12345',
+        ),
+      )
+    );
+
+    $GLOBALS['wp_version'] = '6.9';
+    FacebookWordpressOptions::set_version_info();
+    $agent_string = FacebookWordpressOptions::get_agent_string();
+
+    $this->assertStringContainsString( '_fbl4b', $agent_string );
+    $this->assertEquals(
+      FacebookPluginConfig::SOURCE . '_fbl4b-6.9-' . FacebookPluginConfig::PLUGIN_VERSION,
+      $agent_string
+    );
+  }
+
+  /**
+   * Tests that agent string does NOT include _fbl4b when using MBE.
+   */
+  public function testAgentStringExcludesFBL4BWhenMBE() {
+    \WP_Mock::userFunction(
+      'get_option',
+      array( 'return' => array() )
+    );
+
+    $GLOBALS['wp_version'] = '6.9';
+    FacebookWordpressOptions::set_version_info();
+    $agent_string = FacebookWordpressOptions::get_agent_string();
+
+    $this->assertStringNotContainsString( '_fbl4b', $agent_string );
+    $this->assertEquals(
+      FacebookPluginConfig::SOURCE . '-6.9-' . FacebookPluginConfig::PLUGIN_VERSION,
+      $agent_string
+    );
+  }
+
+  // =========================================
   // Helper Methods
   // =========================================
 
