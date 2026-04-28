@@ -83,6 +83,9 @@ class FacebookForWordpress {
      * so MBE users see the upgrade prompt again after each plugin update.
      */
     public function maybe_reset_upgrade_notice() {
+        if ( 'mbe' !== FacebookWordpressOptions::get_connection_type() ) {
+            return;
+        }
         $stored_version = get_option( 'fb_pixel_plugin_version', '0' );
         $current_version = FacebookPluginConfig::PLUGIN_VERSION;
         if ( version_compare( $stored_version, $current_version, '<' ) ) {
