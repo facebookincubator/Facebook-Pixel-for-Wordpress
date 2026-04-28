@@ -356,7 +356,7 @@ class FacebookWordpressSettingsRecorder {
      * @return string The Graph API base URL.
      */
     private function get_graph_api_base_url() {
-        return 'https://graph.facebook.com/' . FacebookPluginConfig::FBL4B_API_VERSION;
+        return 'https://graph.facebook.com/' . FacebookPluginConfig::GRAPH_API_VERSION;
     }
 
     /**

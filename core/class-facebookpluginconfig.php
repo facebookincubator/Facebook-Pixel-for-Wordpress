@@ -84,7 +84,7 @@ class FacebookPluginConfig {
     const FBL4B_PIXEL_ID_KEY     = 'fbl4b_pixel_id';
     const FBL4B_PIXEL_NAME_KEY   = 'fbl4b_pixel_name';
     const FBL4B_BUSINESS_ID_KEY  = 'fbl4b_business_id';
-    const FBL4B_API_VERSION      = 'v25.0';
+    const GRAPH_API_VERSION      = 'v25.0';
 
     // FBL4B OAuth configuration (public values, like OAuth client_id).
     const FBL4B_APP_ID    = '221646389321681';
