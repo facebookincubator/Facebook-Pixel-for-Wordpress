@@ -15,6 +15,8 @@
 
 namespace FacebookPixelPlugin\Core;
 
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
+
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 /**
@@ -27,6 +29,13 @@ class FacebookSignalState {
      * @var bool
      */
     private static $paused = false;
+
+    /**
+     * CAPI events queued while paused, keyed by event_id.
+     *
+     * @var array<string, Event>
+     */
+    private static $queued_events = array();
 
     /**
      * Pause tracking for this request.
@@ -56,5 +65,40 @@ class FacebookSignalState {
             'facebook_tracking_paused',
             self::$paused
         );
+    }
+
+    /**
+     * Queue a CAPI event so it can be enriched on resume.
+     *
+     * @param Event $event Event to queue.
+     * @return void
+     */
+    public static function queue_event( Event $event ) {
+        $event_id = $event->getEventId();
+        if ( empty( $event_id ) ) {
+            return;
+        }
+        self::$queued_events[ $event_id ] = $event;
+    }
+
+    /**
+     * Get a queued CAPI event by event_id.
+     *
+     * @param string $event_id Event identifier.
+     * @return Event|null
+     */
+    public static function get_queued_event( $event_id ) {
+        return isset( self::$queued_events[ $event_id ] )
+            ? self::$queued_events[ $event_id ]
+            : null;
+    }
+
+    /**
+     * Reset the queued events store. Intended for tests.
+     *
+     * @return void
+     */
+    public static function reset_queue() {
+        self::$queued_events = array();
     }
 }

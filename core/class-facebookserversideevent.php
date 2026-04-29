@@ -94,6 +94,7 @@ class FacebookServerSideEvent {
         $this->tracked_events[] = $event;
         if ( $send_now ) {
             if ( self::should_suppress_frontend_send() ) {
+                FacebookSignalState::queue_event( $event );
                 return;
             }
             do_action(
@@ -177,6 +178,9 @@ class FacebookServerSideEvent {
         }
 
         if ( self::should_suppress_frontend_send() ) {
+            foreach ( $events as $queued_event ) {
+                FacebookSignalState::queue_event( $queued_event );
+            }
             return;
         }
 
