@@ -94,6 +94,38 @@ class FacebookSignalState {
     }
 
     /**
+     * Get the safe-to-forward normalized user_data for a queued event.
+     *
+     * Strips fields that the resume request will derive from its own context
+     * (client_ip_address, client_user_agent, fbp, fbc) so the resume can build
+     * those from cookies/headers it actually sees.
+     *
+     * @param string $event_id Event identifier.
+     * @return array|null
+     */
+    public static function get_queued_user_data( $event_id ) {
+        $event = self::get_queued_event( $event_id );
+        if ( null === $event ) {
+            return null;
+        }
+
+        $user_data = $event->getUserData();
+        if ( null === $user_data ) {
+            return null;
+        }
+
+        $normalized = $user_data->normalize();
+        unset(
+            $normalized['client_ip_address'],
+            $normalized['client_user_agent'],
+            $normalized['fbp'],
+            $normalized['fbc']
+        );
+
+        return ! empty( $normalized ) ? $normalized : null;
+    }
+
+    /**
      * Reset the queued events store. Intended for tests.
      *
      * @return void

@@ -18,6 +18,7 @@ namespace FacebookPixelPlugin\Core;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -216,6 +217,24 @@ class ResumeTrackingAjax {
         $event->setCustomData( $custom_data );
         $event->setActionSource( 'website' );
 
+        if ( ! empty( $event_data['user_data'] ) && is_array( $event_data['user_data'] ) ) {
+            $forwarded = $this->build_user_data_from_payload( $event_data['user_data'] );
+            if ( null !== $forwarded ) {
+                $existing = $event->getUserData();
+                if ( null !== $existing ) {
+                    $forwarded->setFbp( $existing->getFbp() );
+                    $forwarded->setFbc( $existing->getFbc() );
+                    $forwarded->setClientIpAddress(
+                        $existing->getClientIpAddress()
+                    );
+                    $forwarded->setClientUserAgent(
+                        $existing->getClientUserAgent()
+                    );
+                }
+                $event->setUserData( $forwarded );
+            }
+        }
+
         return $event;
     }
 
@@ -292,6 +311,90 @@ class ResumeTrackingAjax {
         }
 
         return $event_custom_data;
+    }
+
+    /**
+     * Build a UserData object from a forwarded resume payload.
+     *
+     * Accepts the normalized short-key shape produced by UserData::normalize()
+     * (em, ph, ln, fn, ct, st, zp, country, external_id, etc.). Hashable PII
+     * keys are expected to already be SHA256 hashes; the SDK's normalize() at
+     * send time skips hashing for already-hashed values.
+     *
+     * @param array $user_data Forwarded user_data payload.
+     *
+     * @return UserData|null
+     */
+    private function build_user_data_from_payload( array $user_data ) {
+        $array_setters = array(
+            'em'          => 'setEmails',
+            'ph'          => 'setPhones',
+            'ge'          => 'setGenders',
+            'db'          => 'setDatesOfBirth',
+            'ln'          => 'setLastNames',
+            'fn'          => 'setFirstNames',
+            'ct'          => 'setCities',
+            'st'          => 'setStates',
+            'zp'          => 'setZipCodes',
+            'country'     => 'setCountryCodes',
+            'external_id' => 'setExternalIds',
+        );
+
+        $scalar_setters = array(
+            'subscription_id' => 'setSubscriptionId',
+            'fb_login_id'     => 'setFbLoginId',
+            'lead_id'         => 'setLeadId',
+            'f5first'         => 'setF5first',
+            'f5last'          => 'setF5last',
+            'fi'              => 'setFi',
+            'dobd'            => 'setDobd',
+            'dobm'            => 'setDobm',
+            'doby'            => 'setDoby',
+            'madid'           => 'setMadid',
+            'anon_id'         => 'setAnonId',
+            'ctwa_clid'       => 'setCtwaClid',
+            'page_id'         => 'setPageId',
+        );
+
+        $ud      = new UserData();
+        $applied = false;
+
+        foreach ( $array_setters as $key => $setter ) {
+            if ( empty( $user_data[ $key ] ) || ! is_array( $user_data[ $key ] ) ) {
+                continue;
+            }
+            $values = array();
+            foreach ( $user_data[ $key ] as $value ) {
+                if ( is_array( $value ) || is_object( $value ) ) {
+                    continue;
+                }
+                $clean = sanitize_text_field( (string) $value );
+                if ( '' !== $clean ) {
+                    $values[] = $clean;
+                }
+            }
+            if ( ! empty( $values ) ) {
+                $ud->{$setter}( $values );
+                $applied = true;
+            }
+        }
+
+        foreach ( $scalar_setters as $key => $setter ) {
+            if ( ! isset( $user_data[ $key ] ) ) {
+                continue;
+            }
+            if ( is_array( $user_data[ $key ] ) || is_object( $user_data[ $key ] ) ) {
+                continue;
+            }
+            $clean = sanitize_text_field( (string) $user_data[ $key ] );
+            if ( '' === $clean ) {
+                continue;
+            }
+            $ud->{$setter}( $clean );
+            $applied = true;
+        }
+
+        return $applied ? $ud : null;
     }
 
     /**

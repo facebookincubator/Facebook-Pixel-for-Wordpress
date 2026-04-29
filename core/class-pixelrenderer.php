@@ -160,6 +160,13 @@ class PixelRenderer {
             'is_custom'   => $is_custom,
         );
 
+        $queued_user_data = FacebookSignalState::get_queued_user_data(
+            $event->getEventId()
+        );
+        if ( null !== $queued_user_data ) {
+            $payload['user_data'] = $queued_user_data;
+        }
+
         return 'FacebookSignal.queueEvent(' .
             wp_json_encode(
                 $payload,

@@ -342,13 +342,22 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
                 ->getConstant( strtoupper( $event ) ) === false;
         }
 
-        return array(
+        $payload = array(
             'event_name'  => $event,
             'custom_data' => $custom_data,
             'event_id'    => $event_id,
             'event_time'  => time(),
             'is_custom'   => (bool) $is_custom,
         );
+
+        if ( ! empty( $event_id ) ) {
+            $queued_user_data = FacebookSignalState::get_queued_user_data( $event_id );
+            if ( null !== $queued_user_data ) {
+                $payload['user_data'] = $queued_user_data;
+            }
+        }
+
+        return $payload;
     }
 
     /**
