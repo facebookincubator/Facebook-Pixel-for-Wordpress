@@ -188,6 +188,19 @@ window.FacebookSignal = window.FacebookSignal || {
         }
     })(),
 
+    _readCookie: function(name) {
+        try {
+            var pairs = (document.cookie || '').split(';');
+            for (var i = 0; i < pairs.length; i++) {
+                var pair = pairs[i].replace(/^\s+/, '');
+                if (pair.indexOf(name + '=') === 0) {
+                    return decodeURIComponent(pair.substring(name.length + 1));
+                }
+            }
+        } catch (e) {}
+        return null;
+    },
+
     init: function(config) {
         this._config = config || {};
         this._paused = !!this._config.paused;
@@ -291,7 +304,9 @@ window.FacebookSignal = window.FacebookSignal || {
             xhr.send(JSON.stringify({
                 security: self._config.resumeNonce,
                 events: self._queue,
-                fbclid: self._fbclid
+                fbclid: self._fbclid,
+                fbp: self._readCookie('_fbp'),
+                fbc: self._readCookie('_fbc')
             }));
         });
     },
