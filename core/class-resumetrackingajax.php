@@ -45,6 +45,13 @@ class ResumeTrackingAjax {
     const RATE_LIMIT_MAX_EVENTS = 80;
 
     /**
+     * Object-cache group used by atomic rate-limit counters.
+     *
+     * @var string
+     */
+    const RATE_LIMIT_GROUP = 'fbpix_resume_tracking_rl';
+
+    /**
      * Allowed replayed event names.
      *
      * @var string[]
@@ -367,14 +374,15 @@ class ResumeTrackingAjax {
             return false;
         }
 
-        $key   = $this->get_rate_limit_key();
-        $count = (int) get_transient( $key );
-
-        return $count >= $max;
+        return $this->get_rate_limit_count() >= $max;
     }
 
     /**
      * Records that the current client just had N events accepted.
+     *
+     * Uses wp_cache_incr when a persistent object cache is available so the
+     * counter increments atomically; falls back to a transient read+write for
+     * single-process / no-object-cache installs.
      *
      * @param int $accepted_event_count Number of events accepted in this request.
      *
@@ -394,9 +402,47 @@ class ResumeTrackingAjax {
         }
 
         $key   = $this->get_rate_limit_key();
-        $count = (int) get_transient( $key );
+        $delta = (int) $accepted_event_count;
 
-        set_transient( $key, $count + (int) $accepted_event_count, $window );
+        if ( $this->using_atomic_cache() ) {
+            wp_cache_add( $key, 0, self::RATE_LIMIT_GROUP, $window );
+            if ( false === wp_cache_incr( $key, $delta, self::RATE_LIMIT_GROUP ) ) {
+                wp_cache_set( $key, $delta, self::RATE_LIMIT_GROUP, $window );
+            }
+            return;
+        }
+
+        $current = (int) get_transient( $key );
+        set_transient( $key, $current + $delta, $window );
+    }
+
+    /**
+     * Reads the current rate-limit counter for this client.
+     *
+     * @return int
+     */
+    private function get_rate_limit_count() {
+        $key = $this->get_rate_limit_key();
+
+        if ( $this->using_atomic_cache() ) {
+            $count = wp_cache_get( $key, self::RATE_LIMIT_GROUP );
+            if ( false !== $count ) {
+                return (int) $count;
+            }
+        }
+
+        return (int) get_transient( $key );
+    }
+
+    /**
+     * Whether wp_cache_incr-backed atomic increments are available.
+     *
+     * @return bool
+     */
+    private function using_atomic_cache() {
+        return function_exists( 'wp_cache_incr' )
+            && function_exists( 'wp_using_ext_object_cache' )
+            && wp_using_ext_object_cache();
     }
 
     /**
