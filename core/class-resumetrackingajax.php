@@ -31,6 +31,20 @@ class ResumeTrackingAjax {
     const MAX_EVENT_AGE = 1800;
 
     /**
+     * Default rate-limit window in seconds (5 minutes).
+     *
+     * @var int
+     */
+    const RATE_LIMIT_WINDOW = 300;
+
+    /**
+     * Default maximum accepted events per IP per window.
+     *
+     * @var int
+     */
+    const RATE_LIMIT_MAX_EVENTS = 80;
+
+    /**
      * Allowed replayed event names.
      *
      * @var string[]
@@ -82,6 +96,10 @@ class ResumeTrackingAjax {
             wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
         }
 
+        if ( $this->is_rate_limited() ) {
+            wp_send_json_error( array( 'message' => 'Rate limit exceeded.' ), 429 );
+        }
+
         if ( ! empty( $body['fbclid'] ) && empty( $_GET['fbclid'] ) ) {
             $_GET['fbclid'] = sanitize_text_field( $body['fbclid'] );
         }
@@ -101,6 +119,7 @@ class ResumeTrackingAjax {
         }
 
         if ( ! empty( $events_to_send ) ) {
+            $this->record_rate_limit_usage( count( $events_to_send ) );
             FacebookServerSideEvent::send( $events_to_send );
         }
 
@@ -275,5 +294,67 @@ class ResumeTrackingAjax {
         }
 
         return sanitize_text_field( (string) $value );
+    }
+
+    /**
+     * Whether the current client is over its resume-tracking rate limit.
+     *
+     * Counts accepted events (not requests) per IP per window. Both the
+     * window length and the cap are filterable.
+     *
+     * @return bool
+     */
+    private function is_rate_limited() {
+        $max = (int) apply_filters(
+            'fbpix_resume_tracking_rate_limit_max',
+            self::RATE_LIMIT_MAX_EVENTS
+        );
+
+        if ( $max <= 0 ) {
+            return false;
+        }
+
+        $key   = $this->get_rate_limit_key();
+        $count = (int) get_transient( $key );
+
+        return $count >= $max;
+    }
+
+    /**
+     * Records that the current client just had N events accepted.
+     *
+     * @param int $accepted_event_count Number of events accepted in this request.
+     *
+     * @return void
+     */
+    private function record_rate_limit_usage( $accepted_event_count ) {
+        if ( $accepted_event_count <= 0 ) {
+            return;
+        }
+
+        $window = (int) apply_filters(
+            'fbpix_resume_tracking_rate_limit_window',
+            self::RATE_LIMIT_WINDOW
+        );
+        if ( $window <= 0 ) {
+            return;
+        }
+
+        $key   = $this->get_rate_limit_key();
+        $count = (int) get_transient( $key );
+
+        set_transient( $key, $count + (int) $accepted_event_count, $window );
+    }
+
+    /**
+     * Builds a transient key scoped to the requesting client IP.
+     *
+     * @return string
+     */
+    private function get_rate_limit_key() {
+        $ip = isset( $_SERVER['REMOTE_ADDR'] ) ?
+            sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) :
+            '';
+        return 'fbpix_resume_tracking_rl_' . md5( $ip );
     }
 }
