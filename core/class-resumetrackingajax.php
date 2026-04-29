@@ -100,9 +100,18 @@ class ResumeTrackingAjax {
             wp_send_json_error( array( 'message' => 'Rate limit exceeded.' ), 429 );
         }
 
-        if ( ! empty( $body['fbclid'] ) && empty( $_GET['fbclid'] ) ) {
-            $_GET['fbclid'] = sanitize_text_field( $body['fbclid'] );
-        }
+        $fbclid = ! empty( $body['fbclid'] ) ?
+            sanitize_text_field( $body['fbclid'] ) : '';
+        $fbp    = ! empty( $body['fbp'] ) ?
+            sanitize_text_field( $body['fbp'] ) : '';
+        $fbc    = ! empty( $body['fbc'] ) ?
+            sanitize_text_field( $body['fbc'] ) : '';
+
+        // Expose queued attribution to ServerEventFactory so resumed events
+        // share the same attribution path as normal CAPI events.
+        $restore_get_fbclid = $this->temporarily_set_superglobal_value( '_GET', 'fbclid', $fbclid );
+        $restore_cookie_fbp = $this->temporarily_set_superglobal_value( '_COOKIE', '_fbp', $fbp );
+        $restore_cookie_fbc = $this->temporarily_set_superglobal_value( '_COOKIE', '_fbc', $fbc );
 
         $events = isset( $body['events'] ) && is_array( $body['events'] ) ?
             array_slice( $body['events'], 0, self::MAX_EVENTS ) :
@@ -117,6 +126,10 @@ class ResumeTrackingAjax {
 
             $events_to_send[] = $this->build_event( $event_data );
         }
+
+        $this->restore_superglobal_value( '_GET', 'fbclid', $restore_get_fbclid );
+        $this->restore_superglobal_value( '_COOKIE', '_fbp', $restore_cookie_fbp );
+        $this->restore_superglobal_value( '_COOKIE', '_fbc', $restore_cookie_fbc );
 
         if ( ! empty( $events_to_send ) ) {
             $this->record_rate_limit_usage( count( $events_to_send ) );
@@ -294,6 +307,46 @@ class ResumeTrackingAjax {
         }
 
         return sanitize_text_field( (string) $value );
+    }
+
+    /**
+     * Temporarily sets a superglobal value and returns data needed to restore it.
+     *
+     * @param string $superglobal Superglobal name without dollar sign.
+     * @param string $key         Key to set.
+     * @param string $value       Value to set; empty string is a no-op.
+     *
+     * @return array
+     */
+    private function temporarily_set_superglobal_value( $superglobal, $key, $value ) {
+        $had_value = isset( $GLOBALS[ $superglobal ][ $key ] );
+        $original  = $had_value ? $GLOBALS[ $superglobal ][ $key ] : null;
+
+        if ( '' !== $value && null !== $value ) {
+            $GLOBALS[ $superglobal ][ $key ] = $value;
+        }
+
+        return array(
+            'had_value' => $had_value,
+            'original'  => $original,
+        );
+    }
+
+    /**
+     * Restores a superglobal value saved by temporarily_set_superglobal_value().
+     *
+     * @param string $superglobal Superglobal name without dollar sign.
+     * @param string $key         Key to restore.
+     * @param array  $restore     Restore data.
+     *
+     * @return void
+     */
+    private function restore_superglobal_value( $superglobal, $key, $restore ) {
+        if ( ! empty( $restore['had_value'] ) ) {
+            $GLOBALS[ $superglobal ][ $key ] = $restore['original'];
+        } else {
+            unset( $GLOBALS[ $superglobal ][ $key ] );
+        }
     }
 
     /**
