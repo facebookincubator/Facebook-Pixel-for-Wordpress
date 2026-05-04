@@ -1161,11 +1161,12 @@ class FacebookWordpressSettingsPage {
         ?>
         <div class="notice notice-info fbl4b-upgrade-notice">
             <div class="fbl4b-upgrade-notice-content">
-                <p><strong>Upgrade Available: Facebook Login for Business</strong></p>
+                <p><strong>Important Update: Meta Pixel for WordPress</strong></p>
                 <p>
-                    A simplified, more secure connection method is now available.
-                    Your current connection will continue working during the upgrade.
-                    If anything goes wrong, your existing connection remains active.
+                    We are transitioning to a more secure connection method,
+                    and the previous method will soon be deprecated.
+                    Upgrade to Facebook Login for Business now to avoid future interruptions.
+                    Your current setup will not be affected during the upgrade.
                 </p>
                 <p>
                     <a href="<?php echo esc_url( $upgrade_url ); ?>"
