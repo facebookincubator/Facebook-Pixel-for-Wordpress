@@ -52,6 +52,11 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
    * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
    */
   public function testPixelRenderForStandardEvent() {
+    \WP_Mock::userFunction(
+      'get_option',
+      array( 'return' => array() )
+    );
+
     FacebookWordpressOptions::set_version_info();
     $agent_string = FacebookWordpressOptions::get_agent_string();
 
@@ -106,6 +111,11 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
    */
   public function testPixelRenderForCustomEvent() {
     \WP_Mock::userFunction(
+      'get_option',
+      array( 'return' => array() )
+    );
+
+    \WP_Mock::userFunction(
       'wp_json_encode',
       array(
         'args'   => array(
@@ -147,6 +157,11 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
    * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
    */
   public function testPixelRenderForCustomData() {
+    \WP_Mock::userFunction(
+      'get_option',
+      array( 'return' => array() )
+    );
+
     \WP_Mock::userFunction(
       'wp_json_encode',
       array(
@@ -194,6 +209,11 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
    * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
    */
   public function testPixelRenderForMultipleEvents() {
+    \WP_Mock::userFunction(
+      'get_option',
+      array( 'return' => array() )
+    );
+
     \WP_Mock::userFunction(
       'wp_json_encode',
       array(

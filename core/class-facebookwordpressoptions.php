@@ -514,6 +514,11 @@ class FacebookWordpressOptions {
             $source .= '_1';
         }
 
+        if ( self::get_is_fbl4b_installed()
+            && ! empty( self::get_fbl4b_pixel_id() ) ) {
+            $source .= '_fbl4b';
+        }
+
         return sprintf(
             '%s-%s-%s',
             $source,
@@ -643,13 +648,228 @@ class FacebookWordpressOptions {
      */
     private static function set_aam_settings() {
         self::$aam_settings = null;
-        if ( empty( self::get_pixel_id() ) ) {
+        $active_pixel       = self::get_active_pixel_id();
+        if ( empty( $active_pixel ) ) {
             return;
         }
-        if ( self::get_is_fbe_installed() ) {
+        if ( self::get_is_fbl4b_installed()
+            && ! empty( self::get_fbl4b_pixel_id() ) ) {
+            self::set_fbl4b_based_aam_settings();
+        } elseif ( self::get_is_fbe_installed() ) {
             self::set_fbe_based_aam_settings();
         } else {
             self::set_old_aam_settings();
         }
+    }
+
+    /**
+     * Sets AAM settings based on the FBL4B pixel.
+     * Uses the same transient cache as FBE but reads from the active pixel.
+     */
+    private static function set_fbl4b_based_aam_settings() {
+        $installed_pixel   = self::get_fbl4b_pixel_id();
+        $settings_as_array =
+        get_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
+        if ( false !== $settings_as_array ) {
+            $aam_settings = new AdsPixelSettings();
+            $aam_settings->setPixelId( $settings_as_array['pixelId'] );
+            $aam_settings->setEnableAutomaticMatching(
+                $settings_as_array['enableAutomaticMatching']
+            );
+            $aam_settings->setEnabledAutomaticMatchingFields(
+                $settings_as_array['enabledAutomaticMatchingFields']
+            );
+            if ( $installed_pixel == $aam_settings->getPixelId() ) { // phpcs:ignore Universal.Operators.StrictComparisons
+                self::$aam_settings = $aam_settings;
+            }
+        }
+        if ( ! self::$aam_settings ) {
+            $refresh_interval =
+            self::AAM_SETTINGS_REFRESH_IN_MINUTES * MINUTE_IN_SECONDS;
+            $aam_settings     =
+            AdsPixelSettings::buildFromPixelId( $installed_pixel );
+            if ( $aam_settings ) {
+                $settings_as_array = array(
+                    'pixelId'                        => $aam_settings->getPixelId(),
+                    'enableAutomaticMatching'        =>
+                    $aam_settings->getEnableAutomaticMatching(),
+                    'enabledAutomaticMatchingFields' =>
+                    $aam_settings->getEnabledAutomaticMatchingFields(),
+                );
+                set_transient(
+                    FacebookPluginConfig::AAM_SETTINGS_KEY,
+                    $settings_as_array,
+                    $refresh_interval
+                );
+                self::$aam_settings = $aam_settings;
+            }
+        }
+    }
+
+    /**
+     * Checks if FBL4B (Facebook Login for Business) is installed.
+     *
+     * FBL4B is considered installed if we have an encrypted access token stored.
+     *
+     * @return bool True if FBL4B is installed, false otherwise.
+     */
+    public static function get_is_fbl4b_installed() {
+        $fbl4b_settings = \get_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            array()
+        );
+        return ! empty(
+            $fbl4b_settings[ FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY ]
+        );
+    }
+
+    /**
+     * Retrieves the FBL4B access token (decrypted).
+     *
+     * @return string The FBL4B access token, or empty string if not set.
+     */
+    public static function get_fbl4b_access_token() {
+        $fbl4b_settings = \get_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            array()
+        );
+        $stored         = isset(
+            $fbl4b_settings[ FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY ]
+        ) ? $fbl4b_settings[ FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY ]
+        : '';
+        if ( empty( $stored ) ) {
+            return '';
+        }
+        $decrypted = self::decrypt_token( $stored );
+        return false !== $decrypted ? $decrypted : '';
+    }
+
+    /**
+     * Retrieves the FBL4B pixel ID.
+     *
+     * @return string The FBL4B pixel ID, or empty string if not set.
+     */
+    public static function get_fbl4b_pixel_id() {
+        $fbl4b_settings = \get_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            array()
+        );
+        return isset(
+            $fbl4b_settings[ FacebookPluginConfig::FBL4B_PIXEL_ID_KEY ]
+        ) ? $fbl4b_settings[ FacebookPluginConfig::FBL4B_PIXEL_ID_KEY ]
+        : '';
+    }
+
+    /**
+     * Retrieves the FBL4B business ID.
+     *
+     * @return string The FBL4B business ID, or empty string if not set.
+     */
+    public static function get_fbl4b_business_id() {
+        $fbl4b_settings = \get_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            array()
+        );
+        return isset(
+            $fbl4b_settings[ FacebookPluginConfig::FBL4B_BUSINESS_ID_KEY ]
+        ) ? $fbl4b_settings[ FacebookPluginConfig::FBL4B_BUSINESS_ID_KEY ]
+        : '';
+    }
+
+    /**
+     * Retrieves the FBL4B pixel name.
+     *
+     * @return string The FBL4B pixel name, or empty string if not set.
+     */
+    public static function get_fbl4b_pixel_name() {
+        $fbl4b_settings = \get_option(
+            FacebookPluginConfig::FBL4B_SETTINGS_KEY,
+            array()
+        );
+        return isset(
+            $fbl4b_settings[ FacebookPluginConfig::FBL4B_PIXEL_NAME_KEY ]
+        ) ? $fbl4b_settings[ FacebookPluginConfig::FBL4B_PIXEL_NAME_KEY ]
+        : '';
+    }
+
+    /**
+     * Returns the active connection type.
+     *
+     * FBL4B takes priority when fully configured (token + pixel).
+     * During upgrade from MBE, if FBL4B has a token but no pixel yet,
+     * MBE stays active to avoid disrupting live traffic.
+     * For fresh installs (no MBE), FBL4B is active immediately.
+     *
+     * @return string 'fbl4b', 'mbe', or 'none'.
+     */
+    public static function get_connection_type() {
+        if ( self::get_is_fbl4b_installed() ) {
+            if ( ! empty( self::get_fbl4b_pixel_id() ) ) {
+                return 'fbl4b';
+            }
+            if ( self::get_is_fbe_installed() ) {
+                return 'mbe';
+            }
+            return 'fbl4b';
+        }
+        if ( self::get_is_fbe_installed() ) {
+            return 'mbe';
+        }
+        return 'none';
+    }
+
+    /**
+     * Retrieves the active pixel ID based on connection type.
+     *
+     * Returns FBL4B pixel ID if connected via FBL4B, otherwise MBE.
+     *
+     * @return string The active pixel ID.
+     */
+    public static function get_active_pixel_id() {
+        if ( 'fbl4b' === self::get_connection_type() ) {
+            return self::get_fbl4b_pixel_id();
+        }
+        return self::get_pixel_id();
+    }
+
+    /**
+     * Retrieves the active access token based on connection type.
+     *
+     * Returns FBL4B BISU token if connected via FBL4B, otherwise MBE.
+     *
+     * @return string The active access token.
+     */
+    public static function get_active_access_token() {
+        if ( 'fbl4b' === self::get_connection_type() ) {
+            return self::get_fbl4b_access_token();
+        }
+        return self::get_access_token();
+    }
+
+    /**
+     * Encrypts a token using AES-256-CBC with a random IV.
+     *
+     * @param string $token The plaintext token to encrypt.
+     * @return string The base64-encoded IV + ciphertext.
+     */
+    public static function encrypt_token( $token ) {
+        $key       = hash( 'sha256', \wp_salt( 'auth' ), true );
+        $iv        = openssl_random_pseudo_bytes( 16 );
+        $encrypted = openssl_encrypt( $token, 'aes-256-cbc', $key, 0, $iv );
+        return base64_encode( $iv . base64_decode( $encrypted ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode,WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+    }
+
+    /**
+     * Decrypts a token encrypted by encrypt_token().
+     *
+     * @param string $stored The base64-encoded IV + ciphertext.
+     * @return string|false The decrypted token, or false on failure.
+     */
+    public static function decrypt_token( $stored ) {
+        $key       = hash( 'sha256', \wp_salt( 'auth' ), true );
+        $raw       = base64_decode( $stored ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+        $iv        = substr( $raw, 0, 16 );
+        $encrypted = base64_encode( substr( $raw, 16 ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+        return openssl_decrypt( $encrypted, 'aes-256-cbc', $key, 0, $iv );
     }
 }

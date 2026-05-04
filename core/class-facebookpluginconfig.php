@@ -57,6 +57,10 @@ class FacebookPluginConfig {
     'dismiss_wpcom_update_notice';
     const ADMIN_IGNORE_WPCOM_UPDATE_NOTICE       =
     'ignore_wpcom_update_notice';
+    const ADMIN_DISMISS_FBL4B_UPGRADE_NOTICE     =
+        'dismiss_fbl4b_upgrade_notice';
+    const ADMIN_IGNORE_FBL4B_UPGRADE_NOTICE      =
+        'ignore_fbl4b_upgrade_notice';
     const ADMIN_MENU_SLUG                        = 'facebook_pixel_options';
     const ADMIN_MENU_TITLE                       = 'Meta';
     const ADMIN_OPTION_GROUP                     = 'facebook_option_group';
@@ -73,6 +77,18 @@ class FacebookPluginConfig {
     const EXTERNAL_BUSINESS_ID_KEY = 'facebook_external_business_id';
     const IS_FBE_INSTALLED_KEY     = 'facebook_is_fbe_installed';
     const AAM_SETTINGS_KEY         = 'facebook_pixel_aam_settings';
+
+    // FBL4B (Facebook Login for Business) storage keys.
+    const FBL4B_SETTINGS_KEY     = 'facebook_fbl4b_config';
+    const FBL4B_ACCESS_TOKEN_KEY = 'fbl4b_access_token';
+    const FBL4B_PIXEL_ID_KEY     = 'fbl4b_pixel_id';
+    const FBL4B_PIXEL_NAME_KEY   = 'fbl4b_pixel_name';
+    const FBL4B_BUSINESS_ID_KEY  = 'fbl4b_business_id';
+    const GRAPH_API_VERSION      = 'v25.0';
+
+    // FBL4B OAuth configuration (public values, like OAuth client_id).
+    const FBL4B_APP_ID    = '221646389321681';
+    const FBL4B_CONFIG_ID = '1509863200530691';
 
     const DELETE_FBE_SETTINGS_ACTION_NAME = 'delete_fbe_settings';
     const SAVE_FBE_SETTINGS_ACTION_NAME   = 'save_fbe_settings';

@@ -26,7 +26,7 @@ window.facebookBusinessExtensionConfig = {
     deleteConfigKeys: meta_wc_params.deleteConfigKeys,
     appId: "221646389321681",
     timeZone: "America/Los_Angeles",
-    installed: meta_wc_params.installed,
+    installed: meta_wc_params.connectionType === 'mbe',
     systemUserName: meta_wc_params.systemUserName + "_system_user",
     businessVertical: "ECOMMERCE",
     version: "v8.0",
@@ -115,7 +115,31 @@ if ("false" == hasAccessToken) {
             });
     }
 }
-var currentFBEInstalledStatus = meta_wc_params.installed;
+// FBL4B (Facebook Login for Business) configuration
+// All values come from PHP via meta_wc_params
+window.fbl4bConfig = {
+    enabled: meta_wc_params.fbl4bAppId !== ''
+             && meta_wc_params.connectionType !== 'mbe',
+    upgradeFromMBE: new URLSearchParams(window.location.search).get('upgrade_to_fbl4b') === '1',
+    popupOrigin: meta_wc_params.fbl4bPopupOrigin || '',
+    iframeUrl: meta_wc_params.fbl4bIframeUrl || '',
+    configId: meta_wc_params.fbl4bConfigId || '',
+    appId: meta_wc_params.fbl4bAppId || '',
+    version: "v25.0",
+    debug: typeof META_PIXEL_DEBUG !== 'undefined' ? META_PIXEL_DEBUG : false,
+    installed: meta_wc_params.connectionType === 'fbl4b',
+    setSaveSettingsRoute: meta_wc_params.fbl4bSaveSettingsRoute || '',
+    deleteConfigKeys: meta_wc_params.fbl4bDeleteSettingsRoute || '',
+    fetchBusinessIdRoute: meta_wc_params.fbl4bFetchBusinessIdRoute || '',
+    fetchPixelsRoute: meta_wc_params.fbl4bFetchPixelsRoute || '',
+    validateTokenRoute: meta_wc_params.fbl4bValidateTokenRoute || '',
+    clearPixelRoute: meta_wc_params.fbl4bClearPixelRoute || '',
+    pixelId: meta_wc_params.fbl4bPixelId || '',
+    pixelName: meta_wc_params.fbl4bPixelName || '',
+    businessId: meta_wc_params.fbl4bBusinessId || '',
+};
+
+var currentFBEInstalledStatus = meta_wc_params.connectionType === 'mbe';
 jQuery("#ad-creation-plugin-iframe").attr("data-fbe-extras", getFBEExtras());
 jQuery("#ad-insights-plugin-iframe").attr("data-fbe-extras", getFBEExtras());
 updateAdInsightsPlugin(currentFBEInstalledStatus);

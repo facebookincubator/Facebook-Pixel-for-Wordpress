@@ -8,3 +8,4 @@
 .vscode
 composer.phar
 .phpunit.result.cache
+local-config.php

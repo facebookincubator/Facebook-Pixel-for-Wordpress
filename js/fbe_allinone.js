@@ -166,6 +166,13 @@ var jQuery = (function (jQuery) {
   }
 })(window.jQuery);
 
+// FBL4B Constants
+var FBL4B_DISCONNECT_URL = 'https://business.facebook.com/latest/settings/connected_apps';
+var FBL4B_BUSINESS_MANAGER_URL = 'https://business.facebook.com/latest/settings/events_dataset_and_pixel';
+
+// Dedup guard for OAuth postMessage
+var _processingOAuth = false;
+
 var ajaxParam = function (params) {
   if (window.FORM_KEY) {
     params.form_key = window.FORM_KEY;
@@ -176,14 +183,42 @@ var ajaxParam = function (params) {
 var FBEFlowContainer = React.createClass({
 
     getDefaultProps: function() {
-        console.log("init props installed "+window.facebookBusinessExtensionConfig.installed);
+        // For FBL4B, use FBL4B-specific installed state
+        var isFBL4B = window.fbl4bConfig && window.fbl4bConfig.enabled === true;
+        var installedState = isFBL4B
+          ? window.fbl4bConfig.installed
+          : window.facebookBusinessExtensionConfig.installed;
         return {
-            installed: window.facebookBusinessExtensionConfig.installed
+            installed: installedState
         };
     },
     getInitialState: function() {
-        console.log("change state");
-        return {installed: this.props.installed};
+        var config = window.fbl4bConfig;
+        return {
+          installed: this.props.installed,
+          // FBL4B states
+          fbl4bLoading: false,
+          fbl4bNeedsPixelSelection: false,
+          fbl4bPixels: [],
+          fbl4bBusinessId: config ? config.businessId : null,
+          fbl4bPixelId: config ? config.pixelId : null,
+          // Reconnect flow state
+          showReconnectIframe: false,
+          showReconnectConfirm: false,
+          showDisconnectWarning: false,
+          showConnectionSettings: false,
+        };
+    },
+
+    /**
+     * Check if FBL4B (Facebook Login for Business) is enabled.
+     * FBL4B is a simplified OAuth flow that replaces the traditional MBE flow.
+     */
+    isFBL4BEnabled: function() {
+      var config = window.fbl4bConfig;
+      if (!config) return false;
+      if (config.upgradeFromMBE) return true;
+      return config.enabled && config.appId !== '';
     },
 
   bindMessageEvents: function bindMessageEvents() {
@@ -193,19 +228,77 @@ var FBEFlowContainer = React.createClass({
     } else {
       window.addEventListener('message', function (event) {
         var origin = event.origin || event.originalEvent.origin;
+
+        // FBL4B origin validation — strict equality only
+        if (_this.isFBL4BEnabled()) {
+          var config = window.fbl4bConfig;
+          var isValid = (origin === config.popupOrigin)
+            || origin === 'https://www.facebook.com'
+            || origin === 'https://business.facebook.com'
+            || origin === 'https://m.facebook.com';
+          if (isValid) {
+            _this.saveFBLoginData(event.data);
+            return;
+          }
+        }
+
+        // MBE origin validation
         if (FBUtils.urlFromSameDomain(origin, window.facebookBusinessExtensionConfig.popupOrigin)) {
-          // Make ajax calls to store data from fblogin and fb installs
-          _this.consoleLog("Message from fblogin ");
           _this.saveFBLoginData(event.data);
         }
       }, false);
     }
   },
+
   saveFBLoginData: function saveFBLoginData(data) {
     var _this = this;
     if (data) {
-      var responseObj = JSON.parse(data);
-      _this.consoleLog("Response from fb login -- " + data);
+      var responseObj;
+      try {
+        responseObj = JSON.parse(data);
+      } catch (e) {
+        return;
+      }
+
+      // Handle FBL4B messages — single type, three outcomes
+      if (_this.isFBL4BEnabled() && responseObj.type === 'FBL4B_ONBOARDING_COMPLETE') {
+        // Dedup guard — don't process the same message twice
+        if (_processingOAuth) {
+          return;
+        }
+
+        if (responseObj.success && responseObj.accessToken) {
+          _processingOAuth = true;
+          _this.consoleLog("FBL4B: Token received: ****" + responseObj.accessToken.slice(-4));
+          _this.setState({showReconnectIframe: false});
+          window.fbl4bConfig.pixelId = '';
+          // Hide back button once token is received
+          var backBtn = document.getElementById('fbl4b-back-btn');
+          if (backBtn) { backBtn.style.display = 'none'; }
+          // Save token first, then fetch business ID in the callback
+          _this.saveAccessTokenToServer(responseObj.accessToken);
+        } else if (responseObj.error && responseObj.error.code === 'CANCELLED') {
+          _processingOAuth = false;
+          if (_this.state.showReconnectIframe) {
+            // Return to connected state
+            _this.setState({showReconnectIframe: false});
+          } else {
+            // Initial auth cancelled — reload page to reset iframe to GET_STARTED state
+            window.location.reload();
+          }
+        } else {
+          _this.consoleLog('[FBL4B] Connection failed');
+          _processingOAuth = false;
+          if (_this.state.showReconnectIframe) {
+            _this.setState({showReconnectIframe: false});
+          } else {
+            _this.showFBL4BNotice('Connection failed. Please try again.', 'error');
+          }
+        }
+        return;
+      }
+
+      // Handle legacy MBE message format
       var accessToken = responseObj.access_token;
       var success = responseObj.success;
       var pixelId = responseObj.pixel_id;
@@ -214,7 +307,6 @@ var FBEFlowContainer = React.createClass({
         let action = responseObj.action;
         if(action != null && action === 'delete') {
           // Delete asset ids stored in db instance.
-          _this.consoleLog("Successfully uninstalled FBE");
           _this.deleteFBAssets();
           _this.hideAdsPlugin();
         }else if(action != null && action === 'create') {
@@ -223,10 +315,256 @@ var FBEFlowContainer = React.createClass({
           _this.showAdsPlugin();
         }
       }else {
-        _this.consoleLog("No response received after setup");
       }
     }
   },
+
+  /**
+   * Fetch pixel ID from Graph API using the access token.
+   * FBL4B doesn't return pixel_id directly, so we need to fetch it.
+   *
+   * Flow:
+   * 1. Fetch /me?fields=client_business_id to get the business ID
+   * 2. Fetch pixels via /{client_business_id}/owned_pixels
+   * 3. If multiple pixels, show selection UI
+   * 4. Save selected pixel and reload iframe
+   * Fetches the client_business_id and pixels via server-side proxy.
+   * The access token is already saved to the server by saveAccessTokenToServer()
+   * before this function is called.
+   */
+  fetchPixelIdAndSave: function fetchPixelIdAndSave() {
+    var _this = this;
+
+    jQuery.ajax({
+      type: 'post',
+      url: window.fbl4bConfig.fetchBusinessIdRoute,
+      timeout: 30000,
+      success: function onSuccess(response) {
+        if (!response.success || !response.data) {
+          _this.consoleLog('FBL4B: Failed to fetch business ID from proxy');
+          return;
+        }
+
+        var businessId = response.data.client_business_id;
+
+        if (!businessId) {
+          return;
+        }
+
+        // Save businessId (token already saved above)
+        _this.saveSettingsFBL4B(null, businessId);
+
+        window.fbl4bConfig.businessId = businessId;
+
+        // Now fetch pixels
+        _this.fetchPixelsForBusiness(businessId);
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        _this.consoleLog('FBL4B: Failed to fetch business ID: ' + errorThrown);
+      }
+    });
+  },
+
+  /**
+   * Clear the stored pixel ID and pixel name from the server.
+   * Used when the selected pixel is no longer accessible.
+   */
+  clearStoredPixel: function clearStoredPixel() {
+    jQuery.ajax({
+      type: 'post',
+      url: window.fbl4bConfig.clearPixelRoute,
+      success: function() {},
+      error: function() {}
+    });
+  },
+
+  /**
+   * Fetch pixels for a business using client_business_id.
+   * If multiple pixels found, show selection UI.
+   */
+
+  /**
+   * Save the FBL4B access token to the server.
+   * This is called ONCE during initial onboarding when the token
+   * arrives from the iframe postMessage. After this save, the token
+   * is only on the server — never on the window object.
+   */
+  saveAccessTokenToServer: function saveAccessTokenToServer(accessToken) {
+    var _this = this;
+
+    if (!accessToken) {
+      return;
+    }
+
+    jQuery.ajax({
+      type: 'post',
+      url: window.fbl4bConfig.setSaveSettingsRoute,
+      headers: {
+        'Authorization': 'Bearer ' + accessToken
+      },
+      data: ajaxParam({
+        pixelId: '',
+        businessId: '',
+      }),
+      success: function onSuccess(data) {
+        if (data && data.success) {
+          // Mark as installed so render() transitions to connected/loading state
+          window.fbl4bConfig.installed = true;
+          _this.setState({installed: 'true'});
+          _processingOAuth = false;
+          _this.fetchPixelIdAndSave();
+        } else {
+          _this.consoleLog("FBL4B: Failed to save access token");
+          _this.showFBL4BNotice('Failed to save connection. Please try again.', 'error');
+          _processingOAuth = false;
+        }
+      },
+      error: function() {
+        _this.consoleLog('FBL4B: Error saving access token to server');
+        _this.showFBL4BNotice('Failed to save connection. Please try again.', 'error');
+        _processingOAuth = false;
+      }
+    });
+  },
+
+  /**
+   * Save FBL4B settings (pixelId and/or businessId) to the server.
+   * Does NOT handle the access token — use saveAccessTokenToServer() for that.
+   */
+  fetchPixelsForBusiness: function fetchPixelsForBusiness(businessId) {
+    var _this = this;
+
+    jQuery.ajax({
+      type: 'post',
+      url: window.fbl4bConfig.fetchPixelsRoute,
+      data: { businessId: businessId },
+      timeout: 30000,
+      success: function onSuccess(response) {
+        if (response.success && response.data && response.data.data && response.data.data.length > 0) {
+
+          if (response.data.data.length === 1) {
+            // Auto-select single pixel
+            var pixelId = response.data.data[0].id;
+            var pixelName = response.data.data[0].name || '';
+            _this.saveSettingsFBL4B(pixelId, businessId, pixelName);
+          } else {
+            // Multiple pixels — store on config for renderConnectedState to use
+            window.fbl4bConfig.pendingPixels = response.data.data;
+            // Force re-render with meaningful state change
+            _this.setState({fbl4bPixels: response.data.data});
+          }
+        } else {
+          // Store empty array so renderConnectedState shows "no pixels" state
+          window.fbl4bConfig.pendingPixels = [];
+          _this.setState({fbl4bPixels: []});
+        }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        _this.consoleLog('FBL4B: Failed to fetch pixels: ' + errorThrown);
+        // Store empty array so renderConnectedState shows "no pixels" state
+        window.fbl4bConfig.pendingPixels = [];
+        _this.setState({fbl4bPixels: []});
+      }
+    });
+  },
+
+  /**
+   * Clear all FBL4B stored data when user disconnects.
+   * Calls the delete endpoint and reloads the page.
+   */
+  clearFBL4BData: function clearFBL4BData() {
+    var _this = this;
+
+    jQuery.ajax({
+      type: 'post',
+      url: window.fbl4bConfig.deleteConfigKeys,
+      success: function onSuccess(data, _textStatus, _jqXHR) {
+        // Clear local config
+        window.fbl4bConfig.businessId = null;
+        window.fbl4bConfig.pixelId = null;
+        window.fbl4bConfig.installed = false;
+        // Reload page to show fresh onboarding state
+        window.location.reload();
+      },
+      error: function() {
+        _this.consoleLog('FBL4B: Failed to clear stored data');
+        // Still reload to show onboarding
+        window.location.reload();
+      }
+    });
+  },
+
+  /**
+   * Save settings for FBL4B flow.
+   *
+   * @param pixelId - The pixel ID to save
+   * @param businessId - The client_business_id to save
+   */
+  saveSettingsFBL4B: function saveSettingsFBL4B(pixelId, businessId, pixelName) {
+    var _this = this;
+
+    jQuery.ajax({
+      type: 'post',
+      url: window.fbl4bConfig.setSaveSettingsRoute,
+      data: ajaxParam({
+        pixelId: pixelId || '',
+        businessId: businessId || '',
+        pixelName: pixelName || '',
+      }),
+      success: function onSuccess(data, _textStatus, _jqXHR) {
+        var response = data;
+        if (response.success) {
+          window.fbl4bConfig.businessId = businessId;
+          window.fbl4bConfig.pixelId = pixelId;
+          window.fbl4bConfig.pixelName = pixelName || '';
+
+          if (pixelId) {
+            // Pixel selected — update config and re-render inline
+            window.fbl4bConfig.installed = true;
+            window.fbl4bConfig.pendingPixels = null;
+            _this.setState({pixelId: pixelId, installed: 'true', businessId: businessId});
+            _this.showEventsManagerSection(pixelId);
+            // Hide Ads sections for FBL4B (they require MBE scopes)
+            _this.hideAdsPlugin();
+          } else {
+          }
+        } else {
+        }
+      },
+      error: function () {
+        _this.consoleLog('FBL4B: There was a problem saving the settings');
+        _this.showFBL4BNotice('Failed to save connection. Please try again.', 'error');
+      }
+    });
+  },
+
+  /**
+   * Reload the FBL4B iframe with updated parameters.
+   * Called after settings are saved to show the "connected" state.
+   * Uses displayBusinessId (the id field) which is what the iframe expects.
+   */
+  reloadFBL4BIframe: function reloadFBL4BIframe(pixelId, displayBusinessId) {
+    var _this = this;
+
+    var baseUrl = window.fbl4bConfig.iframeUrl;
+    var params = 'app_id=' + window.fbl4bConfig.appId +
+                 '&config_id=' + window.fbl4bConfig.configId +
+                 '&installed=true' +
+                 '&version=' + window.fbl4bConfig.version;
+
+    if (displayBusinessId) {
+      params += '&business_id=' + displayBusinessId;
+    }
+    if (pixelId) {
+      params += '&pixel_id=' + pixelId;
+    }
+
+    var newIframeUrl = baseUrl + params;
+
+    // Update the iframe src
+    jQuery('#fbe-iframe iframe').attr('src', newIframeUrl);
+  },
+
   saveSettings: function saveSettings( pixelId, accessToken, externalBusinessId ){
     var _this = this;
     if(!pixelId){
@@ -260,7 +598,6 @@ var FBEFlowContainer = React.createClass({
         } else {
           msg = "There was a problem saving the pixel. Please try again";
         }
-        _this.consoleLog(msg);
       },
       error: function () {
         console.error('There was a problem saving the pixel with id', pixelId);
@@ -280,7 +617,6 @@ var FBEFlowContainer = React.createClass({
         }else {
           msg = data.error_message;
         }
-        _this.consoleLog(msg);
         _this.setState({installed: 'false'});
       },
       error: function() {
@@ -296,12 +632,554 @@ var FBEFlowContainer = React.createClass({
   },
   componentDidMount: function componentDidMount() {
     this.bindMessageEvents();
+
+    // For FBL4B: If we have an access token but missing business_id or pixel_id,
+    // fetch the missing data before rendering the iframe
+    if (this.isFBL4BEnabled()) {
+      this.initFBL4BData();
+
+      // Show the cancel link after 5s delay — only if still in loading state
+      setTimeout(function() {
+        var cancelLink = document.getElementById('fbl4b-cancel-link');
+        if (cancelLink) {
+          cancelLink.style.display = 'block';
+        }
+      }, 5000);
+
+      // Handle inline pixel selection dropdown changes
+      jQuery(document).on('change', '#fbl4b-pixel-select-inline', function() {
+        var btn = jQuery('#fbl4b-select-pixel-inline-btn');
+        if (jQuery(this).val()) {
+          btn.prop('disabled', false).removeClass('fbl4b-btn-disabled');
+        } else {
+          btn.prop('disabled', true).addClass('fbl4b-btn-disabled');
+        }
+      });
+    }
   },
+
+  /**
+   * Initialize FBL4B data on page load.
+   * Always validates the access token by calling /me API.
+   * If token is revoked (user disconnected), clears all FBL4B data.
+   */
+  initFBL4BData: function initFBL4BData() {
+    var _this = this;
+    var config = window.fbl4bConfig;
+
+    // Check if FBL4B is connected (installed flag comes from connectionType)
+    if (!config.installed) {
+      return;
+    }
+
+    // Always validate the access token by calling /me API
+    _this.validateFBL4BConnection(function(isValid) {
+      if (!isValid) {
+        _this.consoleLog("FBL4B: Access token is invalid/revoked, clearing stored data...");
+        _this.clearFBL4BData();
+        return;
+      }
+
+      // If we already have a pixel selected, verify it's still accessible
+      if (config.pixelId) {
+        _this.verifyPixelValidity(config.businessId, config.pixelId);
+        return;
+      }
+
+      // If we have business_id but no pixel_id, fetch pixels
+      // This only happens if user abandoned pixel selection
+      if (config.businessId && !config.pixelId) {
+        _this.fetchPixelsForBusiness(config.businessId);
+        return;
+      }
+
+      // If we're missing business_id entirely, fetch it first
+      if (!config.businessId) {
+        _this.fetchPixelIdAndSave();
+      }
+    });
+  },
+
+  /**
+   * Validate the FBL4B connection by calling /me API.
+   * If the access token is revoked, the API will return an error.
+   *
+   * @param callback - Callback function that receives a boolean (valid/invalid)
+   */
+  validateFBL4BConnection: function validateFBL4BConnection(callback) {
+    var _this = this;
+
+    jQuery.ajax({
+      type: 'post',
+      url: window.fbl4bConfig.validateTokenRoute,
+      timeout: 30000,
+      success: function onSuccess(response) {
+        if (response.success && response.data && response.data.valid) {
+
+            // Check if businessId is missing from stored config
+            var storedBusinessId = window.fbl4bConfig.businessId;
+            if (!storedBusinessId || storedBusinessId === '') {
+              window.fbl4bConfig.businessId = response.data.client_business_id;
+              // Save businessId to backend (partial update), then continue validation
+              _this.saveSettingsFBL4B(null, response.data.client_business_id);
+            }
+
+            callback(true);
+          } else {
+            callback(false);
+          }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        _this.consoleLog("FBL4B: Token validation failed - " + textStatus);
+        _this.consoleLog('FBL4B: Token validation error: ' + errorThrown);
+        callback(false);
+      }
+    });
+  },
+
+  /**
+   * Verify the stored pixel is still accessible via the business's pixel list.
+   * If the pixel was removed from the connected app on Meta's side,
+   * it won't appear in the fetch results. Disconnects if no pixels remain,
+   * otherwise prompts re-selection.
+   */
+  verifyPixelValidity: function verifyPixelStillAccessible(businessId, pixelId) {
+    var _this = this;
+
+    if (!businessId) {
+      return;
+    }
+
+    jQuery.ajax({
+      type: 'post',
+      url: window.fbl4bConfig.fetchPixelsRoute,
+      data: { businessId: businessId },
+      timeout: 15000,
+      success: function(response) {
+        if (response.success && response.data && response.data.data) {
+          var pixels = response.data.data;
+          var found = pixels.some(function(p) { return p.id === pixelId; });
+          if (!found) {
+              _this.clearStoredPixel();
+              window.fbl4bConfig.pixelId = '';
+              window.fbl4bConfig.pixelName = '';
+              window.fbl4bConfig.pendingPixels = pixels;
+              _this.setState({ fbl4bPixelId: '' });
+          }
+        } else if (!response.success && response.data && response.data.code === 'no_pixels') {
+          _this.clearFBL4BData();
+        }
+      },
+      error: function() {
+      }
+    });
+  },
+
+  /**
+   * Save the businessId to backend and reload page.
+   * Used when businessId was missing from stored config but token is valid.
+   */
+  saveBusinessIdAndReload: function saveBusinessIdAndReload(businessId) {
+    var _this = this;
+    var config = window.fbl4bConfig;
+
+    jQuery.ajax({
+      type: 'post',
+      url: config.setSaveSettingsRoute,
+      data: {
+        pixelId: config.pixelId,
+        businessId: businessId
+      },
+      success: function onSuccess(data, _textStatus, _jqXHR) {
+        window.location.reload();
+      },
+      error: function() {
+        // Continue anyway with updated local config
+      }
+    });
+  },
+
+  /**
+   * Render the connected state UI (plugin-side, not iframe).
+   * Shows Business ID, Pixel ID with Reconnect and Disconnect options.
+   */
+  renderConnectedState: function renderConnectedState(config, pixels) {
+    var _this = this;
+    var disconnectUrl = FBL4B_DISCONNECT_URL + '?business_id=' + (config.businessId || '');
+    var hasPixel = config.pixelId && config.pixelId !== '';
+    var needsPixelSelection = !hasPixel && pixels && pixels.length > 0;
+    var noPixelsAvailable = !hasPixel && pixels && pixels.length === 0;
+
+    // Hide the fbe-iframe and render connected state in a sibling container
+    var iframeEl = document.getElementById('fbe-iframe');
+    if (iframeEl) {
+      iframeEl.style.display = 'none';
+      // Hide the back button if it exists
+      var backBtnEl = document.getElementById('fbl4b-back-btn');
+      if (backBtnEl) { backBtnEl.style.display = 'none'; }
+      // Hide the upgrade banner if it exists (server-rendered, stays after JS transition)
+      var upgradeBanner = document.querySelector('.fbl4b-upgrade-notice');
+      if (upgradeBanner) { upgradeBanner.style.display = 'none'; }
+      // Create or reuse a sibling container for the connected state
+      var connectedEl = document.getElementById('fbl4b-connected');
+      if (!connectedEl) {
+        connectedEl = document.createElement('div');
+        connectedEl.id = 'fbl4b-connected';
+        iframeEl.parentNode.insertBefore(connectedEl, iframeEl);
+      }
+      connectedEl.style.display = '';
+      // Render connected state into the sibling container
+      ReactDOM.render(this._buildConnectedState(config, pixels, hasPixel, needsPixelSelection, noPixelsAvailable, disconnectUrl), connectedEl);
+      return React.createElement('div', {style: {display: 'none'}});
+    }
+
+    return this._buildConnectedState(config, pixels, hasPixel, needsPixelSelection, noPixelsAvailable, disconnectUrl);
+  },
+
+  _buildConnectedState: function _buildConnectedState(config, pixels, hasPixel, needsPixelSelection, noPixelsAvailable, disconnectUrl) {
+    var _this = this;
+
+    return React.createElement(
+      'div',
+      {className: 'fbl4b-connected-container'},
+      // Header
+      React.createElement(
+        'div',
+        {className: 'fbl4b-connected-header'},
+        React.createElement(
+          'div',
+          {className: 'fbl4b-connected-header-left'},
+          React.createElement('span', {
+              className: 'fbl4b-connected-logo',
+              dangerouslySetInnerHTML: {__html: '<svg width="24" height="24" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><mask id="meta-logo-mask" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="url(#meta-logo-pattern)"/></mask><g mask="url(#meta-logo-mask)"><rect width="64" height="64" fill="#0866FF"/></g><defs><pattern id="meta-logo-pattern" patternContentUnits="objectBoundingBox" width="1" height="1"><use xlink:href="#meta-logo-img" transform="scale(0.0078125)"/></pattern><image id="meta-logo-img" width="128" height="128" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAACXBIWXMAAAsTAAALEwEAmpwYAAAI+klEQVR4nO2deWxXRRDHv9ByFTkUuURQoYrlUBS0BAVEOZSjHsiRqAHF+0RBxBvQeCWSGNGI4kUUjJKAgIrBMx4gKYonUhVUtKCIgtAi0PaZjftLfjZtfzt7t8wnmX9Ieb95u/t2Z2dnZgGGYRiGYRiGYRiGYRiGYRiGYRiGYRiGYRiGYRiGYRiGYRiGYRiGYRibtAfQE8AZAM4DMAjACfLfY6YdgP4ARgIoANAPwNEAGodWLHYOBXApgBcBbAGQ1CDFAJYAmAqgQ2C9swEMAfAIgI016LwPwIcA7gXQN7DOUXEcgHkA9mTo9OqkDMAbAM4BUM9zx08A8J2m3msBXAKgEQ5Q2smvPbEoH8sp1zWnG3R8ZfkewAgcQIiv9EoAf1nu/JRUAJgPoLkD3RsDmC1/w7berwJogzpODoCFjjq+sogvtI9F3Q8HsM6xzpvrsn1wJIDPPHV+SvYCuMKC7j1l5/jSeRLqGLkAfvHc+elyl4Hu/QHs8KyvWGKuRR2hE4BNATs/JXMA1Cfq3suhraIyCCajlnMYgB8j6PyUzCVsFbsB2BZYXzEILkQtRexvV0XQ6ZVFOGIy0V5zyRJG4n0ALgdwvlzLZwB4H8B+TX2FfyQftZCnIujs6uS6DFu9VcTnLQbQPUN7tAIwS9OeKI7A40liksXO+hvAr9I6tvXMcvmFVsVzhOf8Lt3AFMRAeEVD57c8ezqNjL6dhuue+KLGAmhRxV5cuF+Xyk40GQS7APSo9PxrCP+/EEBHg3a6TGNZEPpFjRihKww6RUy9JxGMtCWGg6AIQEv5vOMJ5xGrqxicOowCUErQd7fcUkfLRIPOEKdpDTR+c4LhjLMcQDMA3yj+/RpLnZ9iuDzQUtX3TUSKaMStmp1gut/tYeho+kHx7zY7ikegLD2JHDTRMUuz8cWZvi3bY73BIEgySAmA3nDH8wRdvpbH0dHQQTYQtVHnOdDjJ0cDYBLc0oLoNBO+hmh4XKNBCx2FSeUB+MNy5y+CHwYT4wiyEAGtiZaskH+kFe+KU2UIlo3O3wzgEPhjMUG3cYiAGRqNeqcHva63NABGwi9d5AeiGlYWPMCDemAiAicbetLPNPhkIcLwBEHHgQjIxRqNeoFH/Q4CsEGz87cDaIswdCH4BoTrOhjvERv1C40zeVPyNU/iii07fKi8RPAOCh9MkBCvioi/flM7JZHeyVAMJOgpwsu9czexMX/WdPXaIFu6cKkDoAzAiQHPVYoU9Xw7hIKqvvOUTEdYlmvOAqsDLFsppivquC/tUMubkUL9ksRRbijO1ez8RIqNyGLdZVZVx/E+FbuR2ICvIexW1TQo9c+ASRuquQgiy8obK2uJ8Sd40LDzEynPRm7Abve1VOUQw7O8r09pdLfoEq6QOQK+OZmgo0hgcc4gYsOJCKFQVvQ7ljo/kbIuwAFMNiHgReRcOuc2YqPdgDBcZLnzEymihoFvXlfUTSTFRredEvn/vmlpEJ2UZJCtjjKPbWwHxRGx82l1O6GxtgXaQz9GWNfLNQbBA57fZwjhfZwOzo7EhhJRu77pQ+jURZoJLCJ6+CjPMRequjnNIhpGbKjb4Zf60nOn6pzKk/t7nWydlz2/m2rQq4jMdsbkyKNXryYmiqa4WWMAJJ63har5Fg+5VGIusYFEHSBftCWkcpfIzOUUDTVr/hR6tHFU4y5F1pQz3iU0jphWfTKfoJvI4K1MgeYs4HTKTWNqDGFiG4hfhy/6E2IThF//4GqesyLibeFoRX1EIq0zdhEaRkS0+PIUfU7Qa0oNz8rTjB66x8N75hOM2yxX8XWURnFqjKRxC0EnYUk3sRiQmUgRYfGdHb9nZ4I+TmIZc4mNMg3u6SRj4lR1EkGsmWijmWy6zPG7NifoUjnt3Qq9IzSOlhL0+YowNU7XGACJNCRdonoKq5piT+KUyBIqxjjsnMaaQSQbFZYYE1RT3gaEzltLZJl3V7QgpoOv1iivMk5zFpgJdxQr6jDUxY+PJDaEyM+LxSGlq8sHGgNApHV1hRs2hVyKVPehKRGRLKH3/Kaesb6ahaFF+XoXfKv4++KCDesURDADNCIWgdivUL4tEws0lwIXnaCaJzAihpPAMyPI8BH+cxtbzRKNASAKVTSFXVTtHmGvWWcAsQGqq8OnSx4hbTqRB0PiHD1EFlRSw5mDCaqHXU5KzucRX17kDtiivoZBdpPF32+iuS3ca9Epk0OwR0TijnVaEV8+/bzddyJKkYMaBKM1Z4E1lgo69SD8ppPDqXrEtfAjS7/bizj1u/TIrdQcBOK8wtcAFMuEMz4lWuCmtXWaapR+EzV1XdFNM9Fkj4WaSI8SZhxnLPCcEkYJ8khk5zg5CEljtuYs8KVcx13HYrwAh1DX4kKDCte3Rnoun0OoLGorgZNSLGKy65DrxMOh0BiNeP31Hi9hHKo5ADLdVWCaGZTIQztnZMuQKsoLbyFedjBRIyqn3PHZg+m9AulSQTwqp9y9sNvHR0Bdl1PFoXIVjmDv1/S9iwuhfNMKwG+ag6BM5kxkKcyEpbEl4uhGz+6QHrXKlyy0llmtqn7uqmoPBamShf8utUgMr7odW0XJ3Hz5oVXEGKGcbeESxR3SqtX9glIilorTUPvvRtov/fxFBpdoey0Xd4eFl7YhYqcQmhy5xQvdFk/7fOlmFr5eU1ke0SVKx8jLrUK1RZnDIBRreYI2ZZPnCt6qV9eEag+nzp/qyCJk4tqUnQGLN2ZiZqD2SM9z9EpXwwubqFISqFAThTmeB0CIkjX/4yzirVe6skfjksYQ1DcII6PKM4iE8RbLsVUlpQEubjChgbTKXXb+Mo/3LigxnFg/SFU2O76tyyXTDC6NrkkWeDz3IHGEPI+3+aKxWftU+lr0E+yWV+FEz9kAPjF0kYb28Nn2nl4lU8cSzdjC+TJCuVbRR0bGrs1gI5TLyxAfdpXYGNFAGAbgSYUkj1JZkWVKyG2ebcPoWFlqtkAadf3kVlLUHjgQaS4LaQ6WiSSjZPBHbsA7ChiGYRiGYRiGYRiGYRiGYRiGYRiGYRiGYRiGYRiGYRiGYRiGYRiGiZ5/AZbnAkDPHPlxAAAAAElFTkSuQmCC"/></defs></svg>'}
+            }),
+          React.createElement('span', {className: 'fbl4b-connected-logo-text'}, 'Meta'),
+          React.createElement('span', {className: 'fbl4b-connected-title'}, 'Your Business is Connected to Meta'),
+          React.createElement(
+            'span',
+            {className: hasPixel ? 'fbl4b-connected-badge' : 'fbl4b-connected-badge fbl4b-connected-badge-setup'},
+            hasPixel ? '✓ Active' : '⚠ Setup Required'
+          )
+        )
+      ),
+      // Connection details
+      React.createElement(
+        'div',
+        {className: 'fbl4b-connected-details'},
+        // Business ID row
+        React.createElement(
+          'div',
+          {className: 'fbl4b-connected-row fbl4b-connected-row-border'},
+          React.createElement(
+            'div',
+            {className: 'fbl4b-connected-label'},
+            React.createElement('span', null, 'Business ID')
+          ),
+          React.createElement('span', {className: 'fbl4b-connected-value'}, config.businessId)
+        ),
+        // Pixel row — shows ID when selected, or inline selection when pending
+          React.createElement(
+            'div',
+            {className: needsPixelSelection ? 'fbl4b-connected-row fbl4b-pixel-row-selection' : 'fbl4b-connected-row'},
+            React.createElement(
+              'div',
+              {className: 'fbl4b-connected-label'},
+              React.createElement('span', null, 'Meta Pixel'),
+              !hasPixel ? React.createElement(
+                'span',
+                {className: 'fbl4b-selection-badge'},
+                '⚠ Selection required'
+              ) : null
+            ),
+            hasPixel
+              ? React.createElement('span', {className: 'fbl4b-connected-value'},
+                  config.pixelName ? config.pixelName + ' (' + config.pixelId + ')' : config.pixelId)
+              : needsPixelSelection
+                ? React.createElement(
+                    'div',
+                    {className: 'fbl4b-pixel-inline-select'},
+                    React.createElement(
+                      'select',
+                      {
+                        id: 'fbl4b-pixel-select-inline',
+                        className: 'fbl4b-pixel-select',
+                        onChange: function(e) {
+                          var btn = document.getElementById('fbl4b-select-pixel-inline-btn');
+                          var selectEl = e.target;
+                          if (e.target.value) {
+                            if (btn) {
+                              btn.disabled = false;
+                              btn.className = 'fbl4b-btn-confirm';
+                            }
+                            selectEl.style.borderColor = '#d1d5db';
+                            selectEl.style.color = '#1c2b33';
+                          } else {
+                            if (btn) {
+                              btn.disabled = true;
+                              btn.className = 'fbl4b-btn-confirm fbl4b-btn-disabled';
+                            }
+                            selectEl.style.borderColor = '#dc2626';
+                            selectEl.style.color = '#dc2626';
+                          }
+                        }
+                      },
+                      React.createElement('option', {value: ''}, 'Select Pixel'),
+                      pixels.map(function(pixel) {
+                        return React.createElement('option', {key: pixel.id, value: pixel.id, 'data-name': pixel.name || ''}, pixel.name + ' (' + pixel.id + ')');
+                      })
+                    ),
+                    React.createElement(
+                      'button',
+                      {
+                        id: 'fbl4b-select-pixel-inline-btn',
+                        className: 'fbl4b-btn-confirm fbl4b-btn-disabled',
+                        onClick: function() {
+                          var selectEl = document.getElementById('fbl4b-pixel-select-inline');
+                          var selectedPixelId = selectEl ? selectEl.value : '';
+                          if (selectedPixelId) {
+                            var selectedOption = selectEl.options[selectEl.selectedIndex];
+                            var selectedPixelName = selectedOption ? selectedOption.getAttribute('data-name') || '' : '';
+                            _this.saveSettingsFBL4B(selectedPixelId, config.businessId, selectedPixelName);
+                          }
+                        }
+                      },
+                      'Confirm'
+                    )
+                  )
+                : null
+          ),
+          // Helper text below pixel row
+          needsPixelSelection ? React.createElement(
+            'p',
+            {className: 'fbl4b-pixel-helper-text'},
+            'Select a pixel to use on this WordPress site to start tracking conversions.'
+          ) : null,
+          // No pixels alert
+          noPixelsAvailable ? React.createElement(
+            'div',
+            {className: 'fbl4b-pixel-alert', style: {marginTop: '8px'}},
+            React.createElement('p', {className: 'fbl4b-pixel-alert-text'},
+              '⚠️ No Meta Pixels were found for your business. Please create a pixel in ',
+              React.createElement('a', {href: 'https://business.facebook.com/events_manager', target: '_blank', className: 'fbl4b-link'}, 'Events Manager'),
+              ', then click Refresh.'
+            ),
+            React.createElement(
+              'button',
+              {
+                onClick: function() {
+                  _this.fetchPixelsForBusiness(config.businessId);
+                },
+                className: 'fbl4b-btn-primary',
+                style: {marginRight: '10px'}
+              },
+              'Refresh Pixels'
+            )
+          ) : null
+        ),
+      // Connection Settings accordion — collapses Reconnect & Disconnect
+      React.createElement(
+        'div',
+        {className: 'fbl4b-connected-section-last fbl4b-connection-settings'},
+        React.createElement(
+          'div',
+          {
+            className: 'fbl4b-connection-settings-header',
+            onClick: function() {
+              _this.setState({showConnectionSettings: !_this.state.showConnectionSettings});
+            }
+          },
+          React.createElement('span', {className: 'fbl4b-connection-settings-title'}, 'Connection Settings'),
+          React.createElement('span', {className: 'fbl4b-connection-settings-arrow'}, _this.state.showConnectionSettings ? '▴' : '▾')
+        ),
+        _this.state.showConnectionSettings ? React.createElement(
+          'div',
+          {className: 'fbl4b-connection-settings-body'},
+          // Reconnect — only when fully connected
+          hasPixel ? React.createElement(
+            'div',
+            {className: 'fbl4b-connection-settings-item'},
+            React.createElement('h4', {className: 'fbl4b-connected-section-title'}, 'Reconnect'),
+            React.createElement('p', {className: 'fbl4b-connected-section-desc'},
+              'Re-run the connection flow to update your linked assets.'
+            ),
+            !_this.state.showReconnectConfirm
+              ? React.createElement(
+                  'button',
+                  {
+                    onClick: function() {
+                      _this.setState({showReconnectConfirm: true});
+                    },
+                    className: 'fbl4b-btn-primary'
+                  },
+                  'Reconnect'
+                )
+              : React.createElement(
+                  'div',
+                  {className: 'fbl4b-reconnect-confirm'},
+                  React.createElement('p', {style: {margin: '0 0 12px 0', fontSize: '14px', color: '#1c2b33', lineHeight: '1.5'}},
+                    'This will start a new authentication flow. Your current pixel configuration will be preserved until you complete the new connection.'
+                  ),
+                  React.createElement(
+                    'div',
+                    {style: {display: 'flex', gap: '8px'}},
+                    React.createElement(
+                      'button',
+                      {
+                        onClick: function() {
+                          _this.setState({showReconnectConfirm: false, showReconnectIframe: true});
+                        },
+                        className: 'fbl4b-btn-primary'
+                      },
+                      'Continue'
+                    ),
+                    React.createElement(
+                      'button',
+                      {
+                        onClick: function() {
+                          _this.setState({showReconnectConfirm: false});
+                        },
+                        className: 'fbl4b-btn-secondary'
+                      },
+                      'Cancel'
+                    )
+                  )
+                )
+          ) : null,
+          // Disconnect
+          React.createElement(
+            'div',
+            {className: 'fbl4b-connection-settings-item'},
+            React.createElement('h4', {className: 'fbl4b-connected-section-title'}, 'Disconnect'),
+            React.createElement(
+              'p',
+              {className: 'fbl4b-connected-section-desc'},
+              'This will remove the connection between this WordPress site and your Meta Business Portfolio. Your Pixel and other assets will remain accessible in ',
+              React.createElement('a', {href: FBL4B_BUSINESS_MANAGER_URL + '?business_id=' + (config.businessId || ''), target: '_blank', className: 'fbl4b-link'}, 'Meta Business Manager'),
+              '.'
+            ),
+            !_this.state.showDisconnectWarning
+              ? React.createElement(
+                  'button',
+                  {
+                    onClick: function() {
+                      _this.setState({showDisconnectWarning: true});
+                    },
+                    className: 'fbl4b-btn-danger'
+                  },
+                  'Disconnect from Meta'
+                )
+              : React.createElement(
+                  'div',
+                  {className: 'fbl4b-reconnect-confirm'},
+                  React.createElement('p', {className: 'fbl4b-disconnect-warning-title'}, '⚠️ To complete disconnection:'),
+                  React.createElement(
+                    'ol',
+                    {className: 'fbl4b-disconnect-warning-steps'},
+                    React.createElement('li', null, 'Click "Continue" below to open Meta Business Settings'),
+                    React.createElement('li', null, 'Find and remove this WordPress integration'),
+                    React.createElement('li', null, 'Return here and refresh this page')
+                  ),
+                  React.createElement(
+                    'div',
+                    {style: {display: 'flex', gap: '8px', marginTop: '12px'}},
+                    React.createElement(
+                      'button',
+                      {
+                        onClick: function() {
+                          window.open(disconnectUrl, '_blank');
+                        },
+                        className: 'fbl4b-btn-danger'
+                      },
+                      'Continue to Meta Business Settings'
+                    ),
+                    React.createElement(
+                      'button',
+                      {
+                        onClick: function() {
+                          _this.setState({showDisconnectWarning: false});
+                        },
+                        className: 'fbl4b-btn-secondary'
+                      },
+                      'Cancel'
+                    )
+                  )
+                )
+          )
+        ) : null
+      )
+    );
+  },
+
+  /**
+   * Show a WordPress-style admin notice for FBL4B events.
+   * @param {string} message - The message to display
+   * @param {string} type - 'error', 'success', or 'warning'
+   */
+  showFBL4BNotice: function showFBL4BNotice(message, type) {
+    // Remove any existing FBL4B notices
+    var existing = document.querySelectorAll('.fbl4b-notice');
+    existing.forEach(function(el) { el.remove(); });
+
+    var notice = document.createElement('div');
+    notice.className = 'fbl4b-notice fbl4b-notice-' + type;
+
+    var messageEl = document.createElement('p');
+    messageEl.textContent = message;
+    notice.appendChild(messageEl);
+
+    var dismissBtn = document.createElement('button');
+    dismissBtn.className = 'fbl4b-notice-dismiss';
+    dismissBtn.textContent = '×';
+    dismissBtn.onclick = function() { notice.remove(); };
+    notice.appendChild(dismissBtn);
+
+    // Insert before the iframe container
+    var iframeContainer = document.getElementById('fbe-iframe');
+    if (iframeContainer && iframeContainer.parentNode) {
+      iframeContainer.parentNode.insertBefore(notice, iframeContainer);
+    }
+
+    // Auto-dismiss after 10 seconds
+    setTimeout(function() {
+      if (notice.parentNode) { notice.remove(); }
+    }, 10000);
+  },
+
   consoleLog: function consoleLog(message) {
-    if(window.facebookBusinessExtensionConfig.debug) {
+    var debug = this.isFBL4BEnabled()
+      ? window.fbl4bConfig.debug
+      : window.facebookBusinessExtensionConfig.debug;
+    if(debug) {
       console.log(message);
     }
   },
+
+  /**
+   * Build query params for FBL4B iframe.
+   * FBL4B uses a simplified set of params compared to MBE.
+   * When we have pixelId, include business_id and pixel_id.
+   */
+  queryParamsFBL4B: function queryParamsFBL4B() {
+    var config = window.fbl4bConfig;
+    // app_id and config_id are already in the iframe URL from PHP
+    var params = '&version=' + config.version;
+
+    if (config.pixelId) {
+      params += '&installed=true';
+      if (config.businessId) {
+        params += '&business_id=' + config.businessId;
+      }
+      params += '&pixel_id=' + config.pixelId;
+    } else {
+      params += '&installed=false';
+    }
+
+    return params;
+  },
+
+  /**
+   * Build query params for legacy MBE iframe.
+   */
   queryParams: function queryParams() {
     return 'app_id='+window.facebookBusinessExtensionConfig.appId +
             '&timezone='+window.facebookBusinessExtensionConfig.timeZone+
@@ -315,15 +1193,164 @@ var FBEFlowContainer = React.createClass({
             '&channel=' + window.facebookBusinessExtensionConfig.channel +
             '&hide_create_ad_button=' + true;
   },
+
   render: function render() {
     var _this = this;
     try {
-      _this.consoleLog("query params --"+_this.queryParams());
+      // For FBL4B: Check if we need to show pixel selection instead of iframe
+      if (_this.isFBL4BEnabled()) {
+        var config = window.fbl4bConfig;
+
+        // Debug: Log all config values
+
+        // If we have access token but missing pixel_id, check if we have
+        // pending pixels to show for selection. If pendingPixels is set,
+        // fall through to the connected state which renders the pixel selection UI.
+        // If still fetching (pendingPixels not set), show loading placeholder.
+        if (config.installed && !config.pixelId) {
+
+          // If pendingPixels is set (including empty array), the pixel fetch
+          // is complete — fall through to renderConnectedState which handles
+          // pixel selection, no-pixels, and connected states.
+          if (config.pendingPixels !== undefined && config.pendingPixels !== null) {
+            return _this.renderConnectedState(config, config.pendingPixels);
+          }
+
+          // Still fetching pixels — show loading placeholder
+          return React.createElement(
+            'div',
+            {
+              id: 'fbl4b-loading',
+              className: 'fbl4b-loading-container'
+            },
+            React.createElement('p', {className: 'fbl4b-loading-text'},
+              'Configuring your Meta Business connection...'
+            ),
+            React.createElement(
+              'div',
+              {
+                id: 'fbl4b-cancel-link',
+                style: {display: 'none'}
+              },
+              React.createElement(
+                'button',
+                {
+                  onClick: function() {
+                    if (confirm('This will disconnect your Meta Business connection. Continue?')) {
+                      _this.clearFBL4BData();
+                    }
+                  },
+                  className: 'fbl4b-link',
+                  style: {background: 'none', border: 'none', cursor: 'pointer', marginTop: '12px', fontSize: '13px'}
+                },
+                'Cancel and start over'
+              )
+            )
+          );
+        }
+
+        // If user clicked Reconnect, show the iframe for re-authentication
+        if (_this.state.showReconnectIframe) {
+          // Show the main container and hide the connected state
+          var iframeEl = document.getElementById('fbe-iframe');
+          var connectedEl = document.getElementById('fbl4b-connected');
+          if (iframeEl) { iframeEl.style.display = ''; }
+          if (connectedEl) { connectedEl.style.display = 'none'; }
+
+          var iframeUrl = config.iframeUrl;
+          // iframeUrl already includes app_id and config_id from PHP
+          var reconnectParams = '&version=' + config.version + '&installed=false';
+
+          // Render back button outside fbe-iframe
+          var backBtnEl = document.getElementById('fbl4b-back-btn');
+          if (!backBtnEl) {
+            backBtnEl = document.createElement('div');
+            backBtnEl.id = 'fbl4b-back-btn';
+            backBtnEl.style.margin = '20px 20px 12px 0';
+            iframeEl.parentNode.insertBefore(backBtnEl, iframeEl);
+          }
+          backBtnEl.style.display = '';
+          ReactDOM.render(
+            React.createElement(
+              'button',
+              {
+                onClick: function() {
+                  _this.setState({showReconnectIframe: false});
+                },
+                className: 'fbl4b-btn-secondary'
+              },
+              '← Back to Connection Status'
+            ),
+            backBtnEl
+          );
+
+          // Render just the iframe inside fbe-iframe
+          return React.createElement(
+            'iframe',
+            {
+              src: iframeUrl + reconnectParams,
+              className: 'fbl4b-iframe-full'
+            }
+          );
+        }
+
+        // Connected state — show when we have businessId (with or without pixel)
+        if (config.businessId) {
+          var pendingPixels = config.pendingPixels || null;
+          return _this.renderConnectedState(config, pendingPixels);
+        }
+
+        // Onboarding state - show iframe for initial setup
+        var iframeUrl = config.iframeUrl;
+        var queryParams = _this.queryParamsFBL4B();
+
+        // If upgrading from MBE, show a back button to return to MBE connected state
+        if (config.upgradeFromMBE) {
+          return React.createElement(
+            'div',
+            null,
+            React.createElement(
+              'button',
+              {
+                onClick: function() {
+                  // Clear upgrade flag and redirect back without the param
+                  var url = new URL(window.location.href);
+                  url.searchParams.delete('upgrade_to_fbl4b');
+                  window.location.href = url.toString();
+                },
+                style: { marginBottom: '16px' },
+                className: 'fbl4b-btn-secondary'
+              },
+              '← Back to Current Connection'
+            ),
+            React.createElement(
+              'iframe',
+              {
+                src: iframeUrl + queryParams,
+                className: 'fbl4b-iframe-full'
+              }
+            )
+          );
+        }
+
+        return React.createElement(
+          'iframe',
+          {
+            src: iframeUrl + queryParams,
+            className: 'fbl4b-iframe-full'
+          }
+        );
+      }
+
+      // Legacy MBE flow
+      var iframeUrl = window.facebookBusinessExtensionConfig.fbeLoginUrl;
+      var queryParams = _this.queryParams();
+
       return React.createElement(
         'iframe',
         {
-          src:window.facebookBusinessExtensionConfig.fbeLoginUrl + _this.queryParams(),
-          style: {border:'none',width:'1100px',height:'700px'}
+          src: iframeUrl + queryParams,
+          className: 'fbl4b-iframe-full'
         }
       );
     } catch (err) {
@@ -343,6 +1370,11 @@ var FBEFlowContainer = React.createClass({
     jQuery('#ad-insights-plugin').show();
     jQuery("#fb-adv-conf").show();
     jQuery(".events-manager-wrapper input#pixel-id").val(pixelId);
+    // Update Events Manager link with the correct pixel ID
+    var sanitizedPixelId = String(pixelId).replace(/[^0-9]/g, '');
+    jQuery(".meta-event-manager a").attr("href",
+      "https://business.facebook.com/events_manager2/list/pixel/" + sanitizedPixelId
+    );
   }
 });
 
@@ -380,7 +1412,7 @@ var displayFBModal = function displayFBModal() {
 },{"./IEOverlay":1,"./Modal":2,"./utils":191,"react":190,"react-dom":35}],4:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1388,7 +2420,7 @@ module.exports = factory;
 'use strict';
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1462,7 +2494,7 @@ module.exports = EventListener;
 }).call(this)}).call(this,require('_process'))
 },{"./emptyFunction":12,"_process":29}],6:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1498,7 +2530,7 @@ module.exports = ExecutionEnvironment;
 "use strict";
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1526,7 +2558,7 @@ function camelize(string) {
 module.exports = camelize;
 },{}],8:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1566,7 +2598,7 @@ module.exports = camelizeStyleName;
 'use strict';
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1605,7 +2637,7 @@ module.exports = containsNode;
 'use strict';
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1732,7 +2764,7 @@ module.exports = createArrayFromMixed;
 'use strict';
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1815,7 +2847,7 @@ module.exports = createNodesFromMarkup;
 "use strict";
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1851,7 +2883,7 @@ module.exports = emptyFunction;
 },{}],13:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1870,7 +2902,7 @@ module.exports = emptyObject;
 }).call(this)}).call(this,require('_process'))
 },{"_process":29}],14:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1897,7 +2929,7 @@ module.exports = focusNode;
 'use strict';
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1935,7 +2967,7 @@ module.exports = getActiveElement;
 'use strict';
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2027,7 +3059,7 @@ module.exports = getMarkupWrap;
 }).call(this)}).call(this,require('_process'))
 },{"./ExecutionEnvironment":6,"./invariant":20,"_process":29}],17:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2066,7 +3098,7 @@ module.exports = getUnboundedScrollPosition;
 'use strict';
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2095,7 +3127,7 @@ function hyphenate(string) {
 module.exports = hyphenate;
 },{}],19:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2133,7 +3165,7 @@ module.exports = hyphenateStyleName;
 },{"./hyphenate":18}],20:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2190,7 +3222,7 @@ module.exports = invariant;
 'use strict';
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2213,7 +3245,7 @@ module.exports = isNode;
 'use strict';
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2234,7 +3266,7 @@ function isTextNode(object) {
 module.exports = isTextNode;
 },{"./isNode":21}],23:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2262,7 +3294,7 @@ function memoizeStringOnly(callback) {
 module.exports = memoizeStringOnly;
 },{}],24:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2285,7 +3317,7 @@ module.exports = performance || {};
 'use strict';
 
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2315,7 +3347,7 @@ if (performance.now) {
 module.exports = performanceNow;
 },{"./performance":24}],26:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2382,7 +3414,7 @@ module.exports = shallowEqual;
 },{}],27:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2458,82 +3490,82 @@ var hasOwnProperty = Object.prototype.hasOwnProperty;
 var propIsEnumerable = Object.prototype.propertyIsEnumerable;
 
 function toObject(val) {
-    if (val === null || val === undefined) {
-        throw new TypeError('Object.assign cannot be called with null or undefined');
-    }
+	if (val === null || val === undefined) {
+		throw new TypeError('Object.assign cannot be called with null or undefined');
+	}
 
-    return Object(val);
+	return Object(val);
 }
 
 function shouldUseNative() {
-    try {
-        if (!Object.assign) {
-            return false;
-        }
+	try {
+		if (!Object.assign) {
+			return false;
+		}
 
-        // Detect buggy property enumeration order in older V8 versions.
+		// Detect buggy property enumeration order in older V8 versions.
 
-        // https://bugs.chromium.org/p/v8/issues/detail?id=4118
-        var test1 = new String('abc');  // eslint-disable-line no-new-wrappers
-        test1[5] = 'de';
-        if (Object.getOwnPropertyNames(test1)[0] === '5') {
-            return false;
-        }
+		// https://bugs.chromium.org/p/v8/issues/detail?id=4118
+		var test1 = new String('abc');  // eslint-disable-line no-new-wrappers
+		test1[5] = 'de';
+		if (Object.getOwnPropertyNames(test1)[0] === '5') {
+			return false;
+		}
 
-        // https://bugs.chromium.org/p/v8/issues/detail?id=3056
-        var test2 = {};
-        for (var i = 0; i < 10; i++) {
-            test2['_' + String.fromCharCode(i)] = i;
-        }
-        var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
-            return test2[n];
-        });
-        if (order2.join('') !== '0123456789') {
-            return false;
-        }
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test2 = {};
+		for (var i = 0; i < 10; i++) {
+			test2['_' + String.fromCharCode(i)] = i;
+		}
+		var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
+			return test2[n];
+		});
+		if (order2.join('') !== '0123456789') {
+			return false;
+		}
 
-        // https://bugs.chromium.org/p/v8/issues/detail?id=3056
-        var test3 = {};
-        'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
-            test3[letter] = letter;
-        });
-        if (Object.keys(Object.assign({}, test3)).join('') !==
-                'abcdefghijklmnopqrst') {
-            return false;
-        }
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test3 = {};
+		'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
+			test3[letter] = letter;
+		});
+		if (Object.keys(Object.assign({}, test3)).join('') !==
+				'abcdefghijklmnopqrst') {
+			return false;
+		}
 
-        return true;
-    } catch (err) {
-        // We don't expect any of the above to throw, but better to be safe.
-        return false;
-    }
+		return true;
+	} catch (err) {
+		// We don't expect any of the above to throw, but better to be safe.
+		return false;
+	}
 }
 
 module.exports = shouldUseNative() ? Object.assign : function (target, source) {
-    var from;
-    var to = toObject(target);
-    var symbols;
+	var from;
+	var to = toObject(target);
+	var symbols;
 
-    for (var s = 1; s < arguments.length; s++) {
-        from = Object(arguments[s]);
+	for (var s = 1; s < arguments.length; s++) {
+		from = Object(arguments[s]);
 
-        for (var key in from) {
-            if (hasOwnProperty.call(from, key)) {
-                to[key] = from[key];
-            }
-        }
+		for (var key in from) {
+			if (hasOwnProperty.call(from, key)) {
+				to[key] = from[key];
+			}
+		}
 
-        if (getOwnPropertySymbols) {
-            symbols = getOwnPropertySymbols(from);
-            for (var i = 0; i < symbols.length; i++) {
-                if (propIsEnumerable.call(from, symbols[i])) {
-                    to[symbols[i]] = from[symbols[i]];
-                }
-            }
-        }
-    }
+		if (getOwnPropertySymbols) {
+			symbols = getOwnPropertySymbols(from);
+			for (var i = 0; i < symbols.length; i++) {
+				if (propIsEnumerable.call(from, symbols[i])) {
+					to[symbols[i]] = from[symbols[i]];
+				}
+			}
+		}
+	}
 
-    return to;
+	return to;
 };
 
 },{}],29:[function(require,module,exports){
@@ -2725,7 +3757,7 @@ process.umask = function() { return 0; };
 },{}],30:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2831,7 +3863,7 @@ module.exports = checkPropTypes;
 }).call(this)}).call(this,require('_process'))
 },{"./lib/ReactPropTypesSecret":33,"./lib/has":34,"_process":29}],31:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2853,7 +3885,7 @@ module.exports = function(isValidElement) {
 },{"./factoryWithTypeCheckers":32}],32:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -3466,7 +4498,7 @@ module.exports = function(isValidElement, throwOnDirectAccess) {
 }).call(this)}).call(this,require('_process'))
 },{"./checkPropTypes":30,"./lib/ReactPropTypesSecret":33,"./lib/has":34,"_process":29,"object-assign":28,"react-is":164}],33:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -3488,7 +4520,7 @@ module.exports = require('./lib/ReactDOM');
 
 },{"./lib/ReactDOM":65}],36:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -3560,7 +4592,7 @@ var ARIADOMPropertyConfig = {
 module.exports = ARIADOMPropertyConfig;
 },{}],37:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -3582,7 +4614,7 @@ var AutoFocusUtils = {
 module.exports = AutoFocusUtils;
 },{"./ReactDOMComponentTree":68,"fbjs/lib/focusNode":14}],38:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -3964,7 +4996,7 @@ var BeforeInputEventPlugin = {
 module.exports = BeforeInputEventPlugin;
 },{"./EventPropagators":54,"./FallbackCompositionState":55,"./SyntheticCompositionEvent":119,"./SyntheticInputEvent":123,"fbjs/lib/ExecutionEnvironment":6}],39:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -4118,7 +5150,7 @@ module.exports = CSSProperty;
 },{}],40:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -4333,7 +5365,7 @@ module.exports = CSSPropertyOperations;
 },{"./CSSProperty":39,"./ReactInstrumentation":97,"./dangerousStyleValue":136,"_process":29,"fbjs/lib/ExecutionEnvironment":6,"fbjs/lib/camelizeStyleName":8,"fbjs/lib/hyphenateStyleName":19,"fbjs/lib/memoizeStringOnly":23,"fbjs/lib/warning":27}],41:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -4451,7 +5483,7 @@ module.exports = PooledClass.addPoolingTo(CallbackQueue);
 }).call(this)}).call(this,require('_process'))
 },{"./PooledClass":59,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],42:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -4762,7 +5794,7 @@ module.exports = ChangeEventPlugin;
 },{"./EventPluginHub":51,"./EventPropagators":54,"./ReactDOMComponentTree":68,"./ReactUpdates":112,"./SyntheticEvent":121,"./getEventTarget":144,"./inputValueTracking":150,"./isEventSupported":152,"./isTextInputElement":153,"fbjs/lib/ExecutionEnvironment":6}],43:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -4987,7 +6019,7 @@ module.exports = DOMChildrenOperations;
 }).call(this)}).call(this,require('_process'))
 },{"./DOMLazyTree":44,"./Danger":48,"./ReactDOMComponentTree":68,"./ReactInstrumentation":97,"./createMicrosoftUnsafeLocalFunction":135,"./setInnerHTML":157,"./setTextContent":158,"_process":29}],44:[function(require,module,exports){
 /**
- * Copyright (c) 2015-present, Meta, Inc.
+ * Copyright (c) 2015-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -5103,7 +6135,7 @@ DOMLazyTree.queueText = queueText;
 module.exports = DOMLazyTree;
 },{"./DOMNamespaces":45,"./createMicrosoftUnsafeLocalFunction":135,"./setInnerHTML":157,"./setTextContent":158}],45:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -5122,7 +6154,7 @@ module.exports = DOMNamespaces;
 },{}],46:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -5331,7 +6363,7 @@ module.exports = DOMProperty;
 },{"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],47:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -5566,7 +6598,7 @@ module.exports = DOMPropertyOperations;
 },{"./DOMProperty":46,"./ReactDOMComponentTree":68,"./ReactInstrumentation":97,"./quoteAttributeValueForBrowser":154,"_process":29,"fbjs/lib/warning":27}],48:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -5611,7 +6643,7 @@ module.exports = Danger;
 }).call(this)}).call(this,require('_process'))
 },{"./DOMLazyTree":44,"./reactProdInvariant":155,"_process":29,"fbjs/lib/ExecutionEnvironment":6,"fbjs/lib/createNodesFromMarkup":11,"fbjs/lib/emptyFunction":12,"fbjs/lib/invariant":20}],49:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -5635,7 +6667,7 @@ var DefaultEventPluginOrder = ['ResponderEventPlugin', 'SimpleEventPlugin', 'Tap
 module.exports = DefaultEventPluginOrder;
 },{}],50:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -5732,7 +6764,7 @@ module.exports = EnterLeaveEventPlugin;
 },{"./EventPropagators":54,"./ReactDOMComponentTree":68,"./SyntheticMouseEvent":125}],51:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -6006,7 +7038,7 @@ module.exports = EventPluginHub;
 },{"./EventPluginRegistry":52,"./EventPluginUtils":53,"./ReactErrorUtils":88,"./accumulateInto":132,"./forEachAccumulated":140,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],52:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -6259,7 +7291,7 @@ module.exports = EventPluginRegistry;
 },{"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],53:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -6485,7 +7517,7 @@ module.exports = EventPluginUtils;
 },{"./ReactErrorUtils":88,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20,"fbjs/lib/warning":27}],54:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -6618,7 +7650,7 @@ module.exports = EventPropagators;
 }).call(this)}).call(this,require('_process'))
 },{"./EventPluginHub":51,"./EventPluginUtils":53,"./accumulateInto":132,"./forEachAccumulated":140,"_process":29,"fbjs/lib/warning":27}],55:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -6711,7 +7743,7 @@ PooledClass.addPoolingTo(FallbackCompositionState);
 module.exports = FallbackCompositionState;
 },{"./PooledClass":59,"./getTextContentAccessor":148,"object-assign":28}],56:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -6946,7 +7978,7 @@ var HTMLDOMPropertyConfig = {
 module.exports = HTMLDOMPropertyConfig;
 },{"./DOMProperty":46}],57:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7004,7 +8036,7 @@ module.exports = KeyEscapeUtils;
 },{}],58:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7142,7 +8174,7 @@ module.exports = LinkedValueUtils;
 },{"./ReactPropTypesSecret":105,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20,"fbjs/lib/warning":27,"prop-types/factory":31,"react/lib/React":167}],59:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7253,7 +8285,7 @@ module.exports = PooledClass;
 }).call(this)}).call(this,require('_process'))
 },{"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],60:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7576,7 +8608,7 @@ module.exports = ReactBrowserEventEmitter;
 },{"./EventPluginRegistry":52,"./ReactEventEmitterMixin":89,"./ViewportMetrics":131,"./getVendorPrefixedEventName":149,"./isEventSupported":152,"object-assign":28}],61:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7728,7 +8760,7 @@ module.exports = ReactChildReconciler;
 }).call(this)}).call(this,require('_process'))
 },{"./KeyEscapeUtils":57,"./ReactReconciler":107,"./instantiateReactComponent":151,"./shouldUpdateReactComponent":159,"./traverseAllChildren":160,"_process":29,"fbjs/lib/warning":27,"react/lib/ReactComponentTreeHook":170}],62:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7755,7 +8787,7 @@ module.exports = ReactComponentBrowserEnvironment;
 },{"./DOMChildrenOperations":43,"./ReactDOMIDOperations":72}],63:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7799,7 +8831,7 @@ module.exports = ReactComponentEnvironment;
 },{"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],64:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8699,7 +9731,7 @@ module.exports = ReactCompositeComponent;
 },{"./ReactComponentEnvironment":63,"./ReactErrorUtils":88,"./ReactInstanceMap":96,"./ReactInstrumentation":97,"./ReactNodeTypes":102,"./ReactReconciler":107,"./checkReactTypeSpec":134,"./reactProdInvariant":155,"./shouldUpdateReactComponent":159,"_process":29,"fbjs/lib/emptyObject":13,"fbjs/lib/invariant":20,"fbjs/lib/shallowEqual":26,"fbjs/lib/warning":27,"object-assign":28,"react/lib/React":167,"react/lib/ReactCurrentOwner":171}],65:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8810,7 +9842,7 @@ module.exports = ReactDOM;
 },{"./ReactDOMComponentTree":68,"./ReactDOMInvalidARIAHook":74,"./ReactDOMNullInputValuePropHook":75,"./ReactDOMUnknownPropertyHook":82,"./ReactDefaultInjection":85,"./ReactInstrumentation":97,"./ReactMount":100,"./ReactReconciler":107,"./ReactUpdates":112,"./ReactVersion":113,"./findDOMNode":138,"./getHostComponentFromComposite":145,"./renderSubtreeIntoContainer":156,"_process":29,"fbjs/lib/ExecutionEnvironment":6,"fbjs/lib/warning":27}],66:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9823,7 +10855,7 @@ module.exports = ReactDOMComponent;
 }).call(this)}).call(this,require('_process'))
 },{"./AutoFocusUtils":37,"./CSSPropertyOperations":40,"./DOMLazyTree":44,"./DOMNamespaces":45,"./DOMProperty":46,"./DOMPropertyOperations":47,"./EventPluginHub":51,"./EventPluginRegistry":52,"./ReactBrowserEventEmitter":60,"./ReactDOMComponentFlags":67,"./ReactDOMComponentTree":68,"./ReactDOMInput":73,"./ReactDOMOption":76,"./ReactDOMSelect":77,"./ReactDOMTextarea":80,"./ReactInstrumentation":97,"./ReactMultiChild":101,"./ReactServerRenderingTransaction":109,"./escapeTextContentForBrowser":137,"./inputValueTracking":150,"./isEventSupported":152,"./reactProdInvariant":155,"./validateDOMNesting":161,"_process":29,"fbjs/lib/emptyFunction":12,"fbjs/lib/invariant":20,"fbjs/lib/shallowEqual":26,"fbjs/lib/warning":27,"object-assign":28}],67:[function(require,module,exports){
 /**
- * Copyright (c) 2015-present, Meta, Inc.
+ * Copyright (c) 2015-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9840,7 +10872,7 @@ module.exports = ReactDOMComponentFlags;
 },{}],68:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10035,7 +11067,7 @@ module.exports = ReactDOMComponentTree;
 },{"./DOMProperty":46,"./ReactDOMComponentFlags":67,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],69:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10067,7 +11099,7 @@ module.exports = ReactDOMContainerInfo;
 }).call(this)}).call(this,require('_process'))
 },{"./validateDOMNesting":161,"_process":29}],70:[function(require,module,exports){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10125,7 +11157,7 @@ _assign(ReactDOMEmptyComponent.prototype, {
 module.exports = ReactDOMEmptyComponent;
 },{"./DOMLazyTree":44,"./ReactDOMComponentTree":68,"object-assign":28}],71:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10142,7 +11174,7 @@ var ReactDOMFeatureFlags = {
 module.exports = ReactDOMFeatureFlags;
 },{}],72:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10174,7 +11206,7 @@ module.exports = ReactDOMIDOperations;
 },{"./DOMChildrenOperations":43,"./ReactDOMComponentTree":68}],73:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10461,7 +11493,7 @@ module.exports = ReactDOMInput;
 },{"./DOMPropertyOperations":47,"./LinkedValueUtils":58,"./ReactDOMComponentTree":68,"./ReactUpdates":112,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20,"fbjs/lib/warning":27,"object-assign":28}],74:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10554,7 +11586,7 @@ module.exports = ReactDOMInvalidARIAHook;
 },{"./DOMProperty":46,"_process":29,"fbjs/lib/warning":27,"react/lib/ReactComponentTreeHook":170}],75:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10597,7 +11629,7 @@ module.exports = ReactDOMNullInputValuePropHook;
 },{"_process":29,"fbjs/lib/warning":27,"react/lib/ReactComponentTreeHook":170}],76:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10719,7 +11751,7 @@ module.exports = ReactDOMOption;
 },{"./ReactDOMComponentTree":68,"./ReactDOMSelect":77,"_process":29,"fbjs/lib/warning":27,"object-assign":28,"react/lib/React":167}],77:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10918,7 +11950,7 @@ module.exports = ReactDOMSelect;
 }).call(this)}).call(this,require('_process'))
 },{"./LinkedValueUtils":58,"./ReactDOMComponentTree":68,"./ReactUpdates":112,"_process":29,"fbjs/lib/warning":27,"object-assign":28}],78:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11129,7 +12161,7 @@ module.exports = ReactDOMSelection;
 },{"./getNodeForCharacterOffset":147,"./getTextContentAccessor":148,"fbjs/lib/ExecutionEnvironment":6}],79:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11291,7 +12323,7 @@ module.exports = ReactDOMTextComponent;
 },{"./DOMChildrenOperations":43,"./DOMLazyTree":44,"./ReactDOMComponentTree":68,"./escapeTextContentForBrowser":137,"./reactProdInvariant":155,"./validateDOMNesting":161,"_process":29,"fbjs/lib/invariant":20,"object-assign":28}],80:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11451,7 +12483,7 @@ module.exports = ReactDOMTextarea;
 },{"./LinkedValueUtils":58,"./ReactDOMComponentTree":68,"./ReactUpdates":112,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20,"fbjs/lib/warning":27,"object-assign":28}],81:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2015-present, Meta, Inc.
+ * Copyright (c) 2015-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11587,7 +12619,7 @@ module.exports = {
 },{"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],82:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11699,7 +12731,7 @@ module.exports = ReactDOMUnknownPropertyHook;
 },{"./DOMProperty":46,"./EventPluginRegistry":52,"_process":29,"fbjs/lib/warning":27,"react/lib/ReactComponentTreeHook":170}],83:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2016-present, Meta, Inc.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12059,7 +13091,7 @@ module.exports = ReactDebugTool;
 }).call(this)}).call(this,require('_process'))
 },{"./ReactHostOperationHistoryHook":93,"./ReactInvalidSetStateWarningHook":98,"_process":29,"fbjs/lib/ExecutionEnvironment":6,"fbjs/lib/performanceNow":25,"fbjs/lib/warning":27,"react/lib/ReactComponentTreeHook":170}],84:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12125,7 +13157,7 @@ var ReactDefaultBatchingStrategy = {
 module.exports = ReactDefaultBatchingStrategy;
 },{"./ReactUpdates":112,"./Transaction":130,"fbjs/lib/emptyFunction":12,"object-assign":28}],85:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12209,7 +13241,7 @@ module.exports = {
 };
 },{"./ARIADOMPropertyConfig":36,"./BeforeInputEventPlugin":38,"./ChangeEventPlugin":42,"./DefaultEventPluginOrder":49,"./EnterLeaveEventPlugin":50,"./HTMLDOMPropertyConfig":56,"./ReactComponentBrowserEnvironment":62,"./ReactDOMComponent":66,"./ReactDOMComponentTree":68,"./ReactDOMEmptyComponent":70,"./ReactDOMTextComponent":79,"./ReactDOMTreeTraversal":81,"./ReactDefaultBatchingStrategy":84,"./ReactEventListener":90,"./ReactInjection":94,"./ReactReconcileTransaction":106,"./SVGDOMPropertyConfig":114,"./SelectEventPlugin":115,"./SimpleEventPlugin":116}],86:[function(require,module,exports){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12227,7 +13259,7 @@ var REACT_ELEMENT_TYPE = typeof Symbol === 'function' && Symbol['for'] && Symbol
 module.exports = REACT_ELEMENT_TYPE;
 },{}],87:[function(require,module,exports){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12256,7 +13288,7 @@ module.exports = ReactEmptyComponent;
 },{}],88:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12333,7 +13365,7 @@ module.exports = ReactErrorUtils;
 }).call(this)}).call(this,require('_process'))
 },{"_process":29}],89:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12363,7 +13395,7 @@ var ReactEventEmitterMixin = {
 module.exports = ReactEventEmitterMixin;
 },{"./EventPluginHub":51}],90:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12516,7 +13548,7 @@ var ReactEventListener = {
 module.exports = ReactEventListener;
 },{"./PooledClass":59,"./ReactDOMComponentTree":68,"./ReactUpdates":112,"./getEventTarget":144,"fbjs/lib/EventListener":5,"fbjs/lib/ExecutionEnvironment":6,"fbjs/lib/getUnboundedScrollPosition":17,"object-assign":28}],91:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12537,7 +13569,7 @@ module.exports = ReactFeatureFlags;
 },{}],92:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12604,7 +13636,7 @@ module.exports = ReactHostComponent;
 }).call(this)}).call(this,require('_process'))
 },{"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],93:[function(require,module,exports){
 /**
- * Copyright (c) 2016-present, Meta, Inc.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12636,7 +13668,7 @@ var ReactHostOperationHistoryHook = {
 module.exports = ReactHostOperationHistoryHook;
 },{}],94:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12668,7 +13700,7 @@ var ReactInjection = {
 module.exports = ReactInjection;
 },{"./DOMProperty":46,"./EventPluginHub":51,"./EventPluginUtils":53,"./ReactBrowserEventEmitter":60,"./ReactComponentEnvironment":63,"./ReactEmptyComponent":87,"./ReactHostComponent":92,"./ReactUpdates":112}],95:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12789,7 +13821,7 @@ var ReactInputSelection = {
 module.exports = ReactInputSelection;
 },{"./ReactDOMSelection":78,"fbjs/lib/containsNode":9,"fbjs/lib/focusNode":14,"fbjs/lib/getActiveElement":15}],96:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12834,7 +13866,7 @@ module.exports = ReactInstanceMap;
 },{}],97:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2016-present, Meta, Inc.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12858,7 +13890,7 @@ module.exports = { debugTool: debugTool };
 },{"./ReactDebugTool":83,"_process":29}],98:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2016-present, Meta, Inc.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12894,7 +13926,7 @@ module.exports = ReactInvalidSetStateWarningHook;
 }).call(this)}).call(this,require('_process'))
 },{"_process":29,"fbjs/lib/warning":27}],99:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12943,7 +13975,7 @@ module.exports = ReactMarkupChecksum;
 },{"./adler32":133}],100:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -13481,7 +14513,7 @@ module.exports = ReactMount;
 },{"./DOMLazyTree":44,"./DOMProperty":46,"./ReactBrowserEventEmitter":60,"./ReactDOMComponentTree":68,"./ReactDOMContainerInfo":69,"./ReactDOMFeatureFlags":71,"./ReactFeatureFlags":91,"./ReactInstanceMap":96,"./ReactInstrumentation":97,"./ReactMarkupChecksum":99,"./ReactReconciler":107,"./ReactUpdateQueue":111,"./ReactUpdates":112,"./instantiateReactComponent":151,"./reactProdInvariant":155,"./setInnerHTML":157,"./shouldUpdateReactComponent":159,"_process":29,"fbjs/lib/emptyObject":13,"fbjs/lib/invariant":20,"fbjs/lib/warning":27,"react/lib/React":167,"react/lib/ReactCurrentOwner":171}],101:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -13927,7 +14959,7 @@ module.exports = ReactMultiChild;
 },{"./ReactChildReconciler":61,"./ReactComponentEnvironment":63,"./ReactInstanceMap":96,"./ReactInstrumentation":97,"./ReactReconciler":107,"./flattenChildren":139,"./reactProdInvariant":155,"_process":29,"fbjs/lib/emptyFunction":12,"fbjs/lib/invariant":20,"react/lib/ReactCurrentOwner":171}],102:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -13967,7 +14999,7 @@ module.exports = ReactNodeTypes;
 },{"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20,"react/lib/React":167}],103:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14060,7 +15092,7 @@ module.exports = ReactOwner;
 },{"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],104:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14084,7 +15116,7 @@ module.exports = ReactPropTypeLocationNames;
 }).call(this)}).call(this,require('_process'))
 },{"_process":29}],105:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14100,7 +15132,7 @@ module.exports = ReactPropTypesSecret;
 },{}],106:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14278,7 +15310,7 @@ module.exports = ReactReconcileTransaction;
 },{"./CallbackQueue":41,"./PooledClass":59,"./ReactBrowserEventEmitter":60,"./ReactInputSelection":95,"./ReactInstrumentation":97,"./ReactUpdateQueue":111,"./Transaction":130,"_process":29,"object-assign":28}],107:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14443,7 +15475,7 @@ module.exports = ReactReconciler;
 }).call(this)}).call(this,require('_process'))
 },{"./ReactInstrumentation":97,"./ReactRef":108,"_process":29,"fbjs/lib/warning":27}],108:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14531,7 +15563,7 @@ module.exports = ReactRef;
 },{"./ReactOwner":103}],109:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14621,7 +15653,7 @@ module.exports = ReactServerRenderingTransaction;
 },{"./PooledClass":59,"./ReactInstrumentation":97,"./ReactServerUpdateQueue":110,"./Transaction":130,"_process":29,"object-assign":28}],110:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2015-present, Meta, Inc.
+ * Copyright (c) 2015-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14760,7 +15792,7 @@ module.exports = ReactServerUpdateQueue;
 },{"./ReactUpdateQueue":111,"_process":29,"fbjs/lib/warning":27}],111:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2015-present, Meta, Inc.
+ * Copyright (c) 2015-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14994,7 +16026,7 @@ module.exports = ReactUpdateQueue;
 },{"./ReactInstanceMap":96,"./ReactInstrumentation":97,"./ReactUpdates":112,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20,"fbjs/lib/warning":27,"react/lib/ReactCurrentOwner":171}],112:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15244,7 +16276,7 @@ module.exports = ReactUpdates;
 }).call(this)}).call(this,require('_process'))
 },{"./CallbackQueue":41,"./PooledClass":59,"./ReactFeatureFlags":91,"./ReactReconciler":107,"./Transaction":130,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20,"object-assign":28}],113:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15256,7 +16288,7 @@ module.exports = ReactUpdates;
 module.exports = '15.6.2';
 },{}],114:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15556,7 +16588,7 @@ Object.keys(ATTRS).forEach(function (key) {
 module.exports = SVGDOMPropertyConfig;
 },{}],115:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15743,7 +16775,7 @@ module.exports = SelectEventPlugin;
 },{"./EventPropagators":54,"./ReactDOMComponentTree":68,"./ReactInputSelection":95,"./SyntheticEvent":121,"./isTextInputElement":153,"fbjs/lib/ExecutionEnvironment":6,"fbjs/lib/getActiveElement":15,"fbjs/lib/shallowEqual":26}],116:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15968,7 +17000,7 @@ module.exports = SimpleEventPlugin;
 }).call(this)}).call(this,require('_process'))
 },{"./EventPropagators":54,"./ReactDOMComponentTree":68,"./SyntheticAnimationEvent":117,"./SyntheticClipboardEvent":118,"./SyntheticDragEvent":120,"./SyntheticEvent":121,"./SyntheticFocusEvent":122,"./SyntheticKeyboardEvent":124,"./SyntheticMouseEvent":125,"./SyntheticTouchEvent":126,"./SyntheticTransitionEvent":127,"./SyntheticUIEvent":128,"./SyntheticWheelEvent":129,"./getEventCharCode":141,"./reactProdInvariant":155,"_process":29,"fbjs/lib/EventListener":5,"fbjs/lib/emptyFunction":12,"fbjs/lib/invariant":20}],117:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16005,7 +17037,7 @@ SyntheticEvent.augmentClass(SyntheticAnimationEvent, AnimationEventInterface);
 module.exports = SyntheticAnimationEvent;
 },{"./SyntheticEvent":121}],118:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16041,7 +17073,7 @@ SyntheticEvent.augmentClass(SyntheticClipboardEvent, ClipboardEventInterface);
 module.exports = SyntheticClipboardEvent;
 },{"./SyntheticEvent":121}],119:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16075,7 +17107,7 @@ SyntheticEvent.augmentClass(SyntheticCompositionEvent, CompositionEventInterface
 module.exports = SyntheticCompositionEvent;
 },{"./SyntheticEvent":121}],120:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16110,7 +17142,7 @@ module.exports = SyntheticDragEvent;
 },{"./SyntheticMouseEvent":125}],121:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16380,7 +17412,7 @@ function getPooledWarningPropertyDefinition(propName, getVal) {
 }).call(this)}).call(this,require('_process'))
 },{"./PooledClass":59,"_process":29,"fbjs/lib/emptyFunction":12,"fbjs/lib/warning":27,"object-assign":28}],122:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16414,7 +17446,7 @@ SyntheticUIEvent.augmentClass(SyntheticFocusEvent, FocusEventInterface);
 module.exports = SyntheticFocusEvent;
 },{"./SyntheticUIEvent":128}],123:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16449,7 +17481,7 @@ SyntheticEvent.augmentClass(SyntheticInputEvent, InputEventInterface);
 module.exports = SyntheticInputEvent;
 },{"./SyntheticEvent":121}],124:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16531,7 +17563,7 @@ SyntheticUIEvent.augmentClass(SyntheticKeyboardEvent, KeyboardEventInterface);
 module.exports = SyntheticKeyboardEvent;
 },{"./SyntheticUIEvent":128,"./getEventCharCode":141,"./getEventKey":142,"./getEventModifierState":143}],125:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16601,7 +17633,7 @@ SyntheticUIEvent.augmentClass(SyntheticMouseEvent, MouseEventInterface);
 module.exports = SyntheticMouseEvent;
 },{"./SyntheticUIEvent":128,"./ViewportMetrics":131,"./getEventModifierState":143}],126:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16644,7 +17676,7 @@ SyntheticUIEvent.augmentClass(SyntheticTouchEvent, TouchEventInterface);
 module.exports = SyntheticTouchEvent;
 },{"./SyntheticUIEvent":128,"./getEventModifierState":143}],127:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16681,7 +17713,7 @@ SyntheticEvent.augmentClass(SyntheticTransitionEvent, TransitionEventInterface);
 module.exports = SyntheticTransitionEvent;
 },{"./SyntheticEvent":121}],128:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16738,7 +17770,7 @@ SyntheticEvent.augmentClass(SyntheticUIEvent, UIEventInterface);
 module.exports = SyntheticUIEvent;
 },{"./SyntheticEvent":121,"./getEventTarget":144}],129:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16788,7 +17820,7 @@ module.exports = SyntheticWheelEvent;
 },{"./SyntheticMouseEvent":125}],130:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17015,7 +18047,7 @@ module.exports = TransactionImpl;
 }).call(this)}).call(this,require('_process'))
 },{"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],131:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17039,7 +18071,7 @@ module.exports = ViewportMetrics;
 },{}],132:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17096,7 +18128,7 @@ module.exports = accumulateInto;
 }).call(this)}).call(this,require('_process'))
 },{"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20}],133:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17139,7 +18171,7 @@ module.exports = adler32;
 },{}],134:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17225,7 +18257,7 @@ module.exports = checkReactTypeSpec;
 }).call(this)}).call(this,require('_process'))
 },{"./ReactPropTypeLocationNames":104,"./ReactPropTypesSecret":105,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20,"fbjs/lib/warning":27,"react/lib/ReactComponentTreeHook":170}],135:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17256,7 +18288,7 @@ module.exports = createMicrosoftUnsafeLocalFunction;
 },{}],136:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17334,7 +18366,7 @@ module.exports = dangerousStyleValue;
 }).call(this)}).call(this,require('_process'))
 },{"./CSSProperty":39,"_process":29,"fbjs/lib/warning":27}],137:[function(require,module,exports){
 /**
- * Copyright (c) 2016-present, Meta, Inc.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17455,7 +18487,7 @@ module.exports = escapeTextContentForBrowser;
 },{}],138:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17515,7 +18547,7 @@ module.exports = findDOMNode;
 },{"./ReactDOMComponentTree":68,"./ReactInstanceMap":96,"./getHostComponentFromComposite":145,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20,"fbjs/lib/warning":27,"react/lib/ReactCurrentOwner":171}],139:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17590,7 +18622,7 @@ module.exports = flattenChildren;
 }).call(this)}).call(this,require('_process'))
 },{"./KeyEscapeUtils":57,"./traverseAllChildren":160,"_process":29,"fbjs/lib/warning":27,"react/lib/ReactComponentTreeHook":170}],140:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17619,7 +18651,7 @@ function forEachAccumulated(arr, cb, scope) {
 module.exports = forEachAccumulated;
 },{}],141:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17667,7 +18699,7 @@ function getEventCharCode(nativeEvent) {
 module.exports = getEventCharCode;
 },{}],142:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17777,7 +18809,7 @@ function getEventKey(nativeEvent) {
 module.exports = getEventKey;
 },{"./getEventCharCode":141}],143:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17818,7 +18850,7 @@ function getEventModifierState(nativeEvent) {
 module.exports = getEventModifierState;
 },{}],144:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17851,7 +18883,7 @@ function getEventTarget(nativeEvent) {
 module.exports = getEventTarget;
 },{}],145:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17879,7 +18911,7 @@ function getHostComponentFromComposite(inst) {
 module.exports = getHostComponentFromComposite;
 },{"./ReactNodeTypes":102}],146:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17918,7 +18950,7 @@ function getIteratorFn(maybeIterable) {
 module.exports = getIteratorFn;
 },{}],147:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17990,7 +19022,7 @@ function getNodeForCharacterOffset(root, offset) {
 module.exports = getNodeForCharacterOffset;
 },{}],148:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18021,7 +19053,7 @@ function getTextContentAccessor() {
 module.exports = getTextContentAccessor;
 },{"fbjs/lib/ExecutionEnvironment":6}],149:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18120,7 +19152,7 @@ function getVendorPrefixedEventName(eventName) {
 module.exports = getVendorPrefixedEventName;
 },{"fbjs/lib/ExecutionEnvironment":6}],150:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18242,7 +19274,7 @@ module.exports = inputValueTracking;
 },{"./ReactDOMComponentTree":68}],151:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18370,7 +19402,7 @@ module.exports = instantiateReactComponent;
 }).call(this)}).call(this,require('_process'))
 },{"./ReactCompositeComponent":64,"./ReactEmptyComponent":87,"./ReactHostComponent":92,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20,"fbjs/lib/warning":27,"object-assign":28,"react/lib/getNextDebugID":185}],152:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18428,7 +19460,7 @@ function isEventSupported(eventNameSuffix, capture) {
 module.exports = isEventSupported;
 },{"fbjs/lib/ExecutionEnvironment":6}],153:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18477,7 +19509,7 @@ function isTextInputElement(elem) {
 module.exports = isTextInputElement;
 },{}],154:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18501,7 +19533,7 @@ function quoteAttributeValueForBrowser(value) {
 module.exports = quoteAttributeValueForBrowser;
 },{"./escapeTextContentForBrowser":137}],155:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18538,7 +19570,7 @@ function reactProdInvariant(code) {
 module.exports = reactProdInvariant;
 },{}],156:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18552,7 +19584,7 @@ var ReactMount = require('./ReactMount');
 module.exports = ReactMount.renderSubtreeIntoContainer;
 },{"./ReactMount":100}],157:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18648,7 +19680,7 @@ if (ExecutionEnvironment.canUseDOM) {
 module.exports = setInnerHTML;
 },{"./DOMNamespaces":45,"./createMicrosoftUnsafeLocalFunction":135,"fbjs/lib/ExecutionEnvironment":6}],158:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18698,7 +19730,7 @@ if (ExecutionEnvironment.canUseDOM) {
 module.exports = setTextContent;
 },{"./escapeTextContentForBrowser":137,"./setInnerHTML":157,"fbjs/lib/ExecutionEnvironment":6}],159:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18739,7 +19771,7 @@ module.exports = shouldUpdateReactComponent;
 },{}],160:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18915,7 +19947,7 @@ module.exports = traverseAllChildren;
 },{"./KeyEscapeUtils":57,"./ReactElementSymbol":86,"./getIteratorFn":146,"./reactProdInvariant":155,"_process":29,"fbjs/lib/invariant":20,"fbjs/lib/warning":27,"react/lib/ReactCurrentOwner":171}],161:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2015-present, Meta, Inc.
+ * Copyright (c) 2015-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19288,7 +20320,7 @@ module.exports = validateDOMNesting;
 /** @license React v16.13.1
  * react-is.development.js
  *
- * Copyright (c) Meta, Inc. and its affiliates.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19472,7 +20504,7 @@ exports.typeOf = typeOf;
 /** @license React v16.13.1
  * react-is.production.min.js
  *
- * Copyright (c) Meta, Inc. and its affiliates.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19503,7 +20535,7 @@ arguments[4][59][0].apply(exports,arguments)
 },{"./reactProdInvariant":188,"_process":29,"dup":59,"fbjs/lib/invariant":20}],167:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19635,7 +20667,7 @@ module.exports = React;
 },{"./ReactBaseClasses":168,"./ReactChildren":169,"./ReactDOMFactories":172,"./ReactElement":173,"./ReactElementValidator":175,"./ReactPropTypes":178,"./ReactVersion":180,"./canDefineProperty":181,"./createClass":183,"./lowPriorityWarning":186,"./onlyChild":187,"_process":29,"object-assign":28}],168:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19777,7 +20809,7 @@ module.exports = {
 }).call(this)}).call(this,require('_process'))
 },{"./ReactNoopUpdateQueue":176,"./canDefineProperty":181,"./lowPriorityWarning":186,"./reactProdInvariant":188,"_process":29,"fbjs/lib/emptyObject":13,"fbjs/lib/invariant":20,"object-assign":28}],169:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19967,7 +20999,7 @@ module.exports = ReactChildren;
 },{"./PooledClass":166,"./ReactElement":173,"./traverseAllChildren":189,"fbjs/lib/emptyFunction":12}],170:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2016-present, Meta, Inc.
+ * Copyright (c) 2016-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20345,7 +21377,7 @@ module.exports = ReactComponentTreeHook;
 }).call(this)}).call(this,require('_process'))
 },{"./ReactCurrentOwner":171,"./reactProdInvariant":188,"_process":29,"fbjs/lib/invariant":20,"fbjs/lib/warning":27}],171:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20373,7 +21405,7 @@ module.exports = ReactCurrentOwner;
 },{}],172:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20542,7 +21574,7 @@ module.exports = ReactDOMFactories;
 },{"./ReactElement":173,"./ReactElementValidator":175,"_process":29}],173:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20885,7 +21917,7 @@ arguments[4][86][0].apply(exports,arguments)
 },{"dup":86}],175:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21140,7 +22172,7 @@ module.exports = ReactElementValidator;
 },{"./ReactComponentTreeHook":170,"./ReactCurrentOwner":171,"./ReactElement":173,"./canDefineProperty":181,"./checkReactTypeSpec":182,"./getIteratorFn":184,"./lowPriorityWarning":186,"_process":29,"fbjs/lib/warning":27}],176:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2015-present, Meta, Inc.
+ * Copyright (c) 2015-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21236,7 +22268,7 @@ module.exports = ReactNoopUpdateQueue;
 arguments[4][104][0].apply(exports,arguments)
 },{"_process":29,"dup":104}],178:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21255,7 +22287,7 @@ module.exports = factory(isValidElement);
 arguments[4][105][0].apply(exports,arguments)
 },{"dup":105}],180:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21269,7 +22301,7 @@ module.exports = '15.7.0';
 },{}],181:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21295,7 +22327,7 @@ module.exports = canDefineProperty;
 },{"_process":29}],182:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21381,7 +22413,7 @@ module.exports = checkReactTypeSpec;
 }).call(this)}).call(this,require('_process'))
 },{"./ReactComponentTreeHook":170,"./ReactPropTypeLocationNames":177,"./ReactPropTypesSecret":179,"./reactProdInvariant":188,"_process":29,"fbjs/lib/invariant":20,"fbjs/lib/warning":27}],183:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21404,7 +22436,7 @@ module.exports = factory(Component, isValidElement, ReactNoopUpdateQueue);
 arguments[4][146][0].apply(exports,arguments)
 },{"dup":146}],185:[function(require,module,exports){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21424,7 +22456,7 @@ module.exports = getNextDebugID;
 },{}],186:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2014-present, Meta, Inc.
+ * Copyright (c) 2014-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21489,7 +22521,7 @@ module.exports = lowPriorityWarning;
 },{"_process":29}],187:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21529,7 +22561,7 @@ arguments[4][155][0].apply(exports,arguments)
 },{"dup":155}],189:[function(require,module,exports){
 (function (process){(function (){
 /**
- * Copyright (c) 2013-present, Meta, Inc.
+ * Copyright (c) 2013-present, Facebook, Inc.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.

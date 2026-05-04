@@ -207,6 +207,11 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
     $GLOBALS['wp_version'] = '1.1';
     FacebookWordpressOptions::set_version_info();
 
+    \WP_Mock::userFunction(
+      'get_option',
+      array( 'return' => array() )
+    );
+
     $version_info = FacebookWordpressOptions::get_version_info();
     $this->assertEquals(
       $version_info['pluginVersion'],

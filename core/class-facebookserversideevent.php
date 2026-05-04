@@ -173,8 +173,8 @@ class FacebookServerSideEvent {
             return;
         }
 
-        $pixel_id     = FacebookWordpressOptions::get_pixel_id();
-        $access_token = FacebookWordpressOptions::get_access_token();
+        $pixel_id     = FacebookWordpressOptions::get_active_pixel_id();
+        $access_token = FacebookWordpressOptions::get_active_access_token();
         $agent        = FacebookWordpressOptions::get_agent_string();
 
         if ( self::is_open_bridge_event( $events ) ) {

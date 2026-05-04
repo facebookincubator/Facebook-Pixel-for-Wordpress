@@ -150,6 +150,20 @@ abstract class FacebookWordpressTestBase extends TestCase {
     }
         $this->mocked_options->shouldReceive( 'get_capi_pii_caching_status' )
                             ->andReturn( 0 );
+
+    // FBL4B bridge methods — delegate to MBE values by default
+    $active_pixel = array_key_exists( 'pixel_id', $options )
+        ? $options['pixel_id'] : '1234';
+    $active_token = array_key_exists( 'access_token', $options )
+        ? $options['access_token'] : 'abcd';
+    $this->mocked_options->shouldReceive( 'get_active_pixel_id' )
+        ->andReturn( $active_pixel );
+    $this->mocked_options->shouldReceive( 'get_active_access_token' )
+        ->andReturn( $active_token );
+    $this->mocked_options->shouldReceive( 'get_is_fbl4b_installed' )
+        ->andReturn( false );
+    $this->mocked_options->shouldReceive( 'get_connection_type' )
+        ->andReturn( 'mbe' );
     }
 
 

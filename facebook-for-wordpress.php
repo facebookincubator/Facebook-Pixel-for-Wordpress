@@ -28,6 +28,12 @@ namespace FacebookPixelPlugin;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
+// Load local dev overrides (gitignored) for staging/development environments
+$local_config = plugin_dir_path( __FILE__ ) . 'local-config.php';
+if ( file_exists( $local_config ) ) {
+    require_once $local_config;
+}
+
 require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
 
 use FacebookPixelPlugin\Core\FacebookPixel;
@@ -59,16 +65,39 @@ class FacebookForWordpress {
     );
 
     $options = FacebookWordpressOptions::get_options();
-    FacebookPixel::initialize( FacebookWordpressOptions::get_pixel_id() );
+    FacebookPixel::initialize( FacebookWordpressOptions::get_active_pixel_id() );
 
     add_action( 'init', array( $this, 'register_pixel_injection' ), 0 );
     add_action( 'parse_request', array( $this, 'handle_events_request' ), 0 );
 
     $this->register_settings_page();
+    add_action( 'admin_init', array( $this, 'maybe_reset_upgrade_notice' ) );
 
     new ServerEventAsyncTask();
 
     self::update_db_for_wpcom();
+    }
+
+    /**
+     * Resets the FBL4B upgrade notice dismiss flag when the plugin is updated,
+     * so MBE users see the upgrade prompt again after each plugin update.
+     */
+    public function maybe_reset_upgrade_notice() {
+        if ( 'mbe' !== FacebookWordpressOptions::get_connection_type() ) {
+            return;
+        }
+        $stored_version = get_option( 'fb_pixel_plugin_version', '0' );
+        $current_version = FacebookPluginConfig::PLUGIN_VERSION;
+        if ( version_compare( $stored_version, $current_version, '<' ) ) {
+            delete_metadata(
+                'user',
+                0,
+                FacebookPluginConfig::ADMIN_IGNORE_FBL4B_UPGRADE_NOTICE,
+                '',
+                true
+            );
+            update_option( 'fb_pixel_plugin_version', $current_version );
+        }
     }
 
     private static function update_db_for_wpcom() {
