@@ -28,8 +28,11 @@ jobs:
           composer install
           vendor/bin/phing
 
+      - name: Extract built plugin for artifact upload
+        run: unzip build/facebook-pixel-for-wordpress-*.zip -d artifact-contents
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
           name: facebook-pixel-for-wordpress
-          path: build/facebook-pixel-for-wordpress-*.zip
+          path: artifact-contents/official-facebook-pixel
