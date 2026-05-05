@@ -24,29 +24,3 @@ jobs:
 
       - name: Run PHPCS
         run: vendor/bin/phpcs --standard=phpcs.xml --extensions=php --ignore=vendor/ .
-
-  build-and-upload:
-    if: startsWith(github.ref, 'refs/heads/release/')
-    needs: test-and-code-style
-    name: Build and Upload Artifact
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout release branch
-        uses: actions/checkout@v6
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '7.4'
-          tools: composer
-
-      - name: Install dependencies and build
-        run: |
-          composer install
-          vendor/bin/phing
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: facebook-pixel-for-wordpress
-          path: build/facebook-pixel-for-wordpress-*.zip

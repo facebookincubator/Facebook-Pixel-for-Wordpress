@@ -48,7 +48,7 @@ jobs:
           # Download GitHub artifact from prepare-release workflow
           RUN_ID=$(gh run list \
             --repo ${{ github.repository }} \
-            --workflow prepare-release.yml \
+            --workflow build-and-upload.yml \
             --status success \
             --limit 100 \
             --json databaseId,displayTitle \
