@@ -512,7 +512,9 @@ class FacebookWordpressOptions {
 
         if ( function_exists( 'get_option' ) && 1 === get_option( 'is_wordpress_com_hosted' ) ) {
             $source .= '_1';
-        }
+        } else {
+			$source .= '_0';
+		}
 
         if ( self::get_is_fbl4b_installed()
             && ! empty( self::get_fbl4b_pixel_id() ) ) {
