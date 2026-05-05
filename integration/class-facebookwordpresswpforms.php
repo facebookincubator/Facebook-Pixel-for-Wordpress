@@ -426,7 +426,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
             return null;
         }
 
-        $normalized_labels = array_map( 'self::normalizeLabel', $labels );
+        $normalized_labels = array_map( array( self::class, 'normalizeLabel' ), $labels );
 
         foreach ( $form_data['fields'] as $field ) {
             if ( 'text' !== $field['type'] || empty( $field['label'] ) ) {
