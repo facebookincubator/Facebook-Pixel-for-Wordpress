@@ -40,5 +40,5 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
-          name: official-facebook-pixel
-          path: artifact-contents
+          name: facebook-pixel-for-wordpress
+          path: artifact-contents/official-facebook-pixel
