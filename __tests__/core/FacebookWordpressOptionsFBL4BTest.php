@@ -549,7 +549,7 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
 
     $this->assertStringContainsString( '_fbl4b', $agent_string );
     $this->assertEquals(
-      FacebookPluginConfig::SOURCE . '_fbl4b-6.9-' . FacebookPluginConfig::PLUGIN_VERSION,
+      FacebookPluginConfig::SOURCE . '_0_fbl4b-6.9-' . FacebookPluginConfig::PLUGIN_VERSION,
       $agent_string
     );
   }
@@ -569,7 +569,7 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
 
     $this->assertStringNotContainsString( '_fbl4b', $agent_string );
     $this->assertEquals(
-      FacebookPluginConfig::SOURCE . '-6.9-' . FacebookPluginConfig::PLUGIN_VERSION,
+      FacebookPluginConfig::SOURCE . '_0-6.9-' . FacebookPluginConfig::PLUGIN_VERSION,
       $agent_string
     );
   }

@@ -227,7 +227,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
     $this->assertEquals(
       $agent_string,
       FacebookPluginConfig::SOURCE .
-        '-1.1-' .
+        '_0-1.1-' .
         FacebookPluginConfig::PLUGIN_VERSION
     );
   }
