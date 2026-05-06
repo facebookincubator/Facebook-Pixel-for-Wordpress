@@ -6,26 +6,6 @@
 <project name="pixel-plugins" basedir="." default="main">
     <property file="./build.properties" />
 
-    <!-- Fileset for all files -->
-    <fileset dir="${basedir}" id="sourcedir">
-        <exclude name=".editorconfig" />
-        <exclude name=".gitignore" />
-        <exclude name=".prettierrc" />
-        <exclude name="package.json" />
-        <exclude name="package-lock.json" />
-        <exclude name="phpcs.xml" />
-        <exclude name="build.properties" />
-        <exclude name="build.xml" />
-        <exclude name="README.md" />
-        <exclude name="vendor/**" />
-        <exclude name="task/**" />
-        <exclude name="__tests__/**" />
-		<exclude name="__tests_sdk__/**" />
-        <exclude name="js/lib/**" />
-        <exclude name=".githooks/**" />
-        <exclude name=".github/**" />
-    </fileset>
-
     <!-- ============================================  -->
     <!-- Target: Clean                                 -->
     <!-- ============================================  -->
@@ -34,6 +14,9 @@
         <echo msg="Cleaning build folder..." />
         <delete dir="${builddir}" />
         <echo msg="Build folder deleted" />
+        <echo msg="Regenerating autoloader..." />
+        <composer command="dump-autoload" />
+        <echo msg="Autoloader regenerated" />
         <echo msg="Prepare complete" />
     </target>
 
@@ -43,9 +26,32 @@
     <target name="Build" description="rebuilds this package" depends="Clean">
         <echo msg="Running Build..." />
         <echo msg="Copy files into build folder..." />
-        <copy todir="${buildsourcedir}">
-            <fileset refid="sourcedir" />
-        </copy>
+        <mkdir dir="${buildsourcedir}" />
+        <exec executable="rsync" passthru="true" checkreturn="true">
+            <arg value="-a" />
+            <arg value="--exclude=.editorconfig" />
+            <arg value="--exclude=.gitignore" />
+            <arg value="--exclude=.prettierrc" />
+            <arg value="--exclude=package.json" />
+            <arg value="--exclude=package-lock.json" />
+            <arg value="--exclude=phpcs.xml" />
+            <arg value="--exclude=build.properties" />
+            <arg value="--exclude=build.xml" />
+            <arg value="--exclude=README.md" />
+            <arg value="--exclude=vendor" />
+            <arg value="--exclude=task" />
+            <arg value="--exclude=__tests__" />
+            <arg value="--exclude=__tests_sdk__" />
+            <arg value="--exclude=js/lib" />
+            <arg value="--exclude=.githooks" />
+            <arg value="--exclude=.github" />
+            <arg value="--exclude=build" />
+            <arg value="--exclude=.git" />
+            <arg value="--exclude=composer.lock" />
+            <arg value="--exclude=FacebookAds/Object/Fields" />
+            <arg value="--exclude=FacebookAds/Object/Values" />
+            <arg line="./ ${buildsourcedir}/" />
+        </exec>
         <echo msg="Copy complete" />
         <echo msg="Run compose install..." />
         <composer command="install">
@@ -96,12 +102,11 @@
         <echo msg="Running Package..." />
             <taskdef name="versionnumbertask" classname="FacebookWordpressGetVersionNumberTask" classpath="${taskdir}" />
             <versionnumbertask versionprop="version.number" />
-            <zip destfile="${builddir}/${packagebasename}-${version.number}.zip">
-                <fileset dir="${builddir}/" defaultexcludes="true">
-                    <include name="**" />
-                    <exclude name="./test" />
-                </fileset>
-            </zip>
+            <exec executable="zip" dir="${builddir}" passthru="true">
+                <arg value="-r" />
+                <arg value="${packagebasename}-${version.number}.zip" />
+                <arg value="official-facebook-pixel" />
+            </exec>
         <echo msg="Package complete" />
     </target>
 

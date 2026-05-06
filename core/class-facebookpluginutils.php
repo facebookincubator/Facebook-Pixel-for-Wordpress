@@ -42,7 +42,7 @@ class FacebookPluginUtils {
      */
     public static function is_positive_integer( $pixel_id ) {
         return isset( $pixel_id )
-        && ctype_digit( $pixel_id ) && '0' !== $pixel_id;
+        && ctype_digit( (string) $pixel_id ) && '0' !== (string) $pixel_id;
     }
 
     /**
