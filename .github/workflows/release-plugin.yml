@@ -5,13 +5,6 @@ on:
   push:
     branches:
       - 'release/p*/publish'
-  workflow_dispatch:
-    inputs:
-      dry-run:
-        description: "Dry run (skip SVN commit and GitHub release creation)"
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -120,7 +113,6 @@ jobs:
           fi
 
       - name: Commit to SVN
-        if: ${{ inputs.dry-run != true }}
         env:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
@@ -145,7 +137,6 @@ jobs:
           svn commit -m "Deploy new version $VERSION" --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --no-auth-cache --non-interactive
 
       - name: Create GitHub Release
-        if: ${{ inputs.dry-run != true }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.package-version.outputs.current-version }}
@@ -159,13 +150,3 @@ jobs:
             --notes "$RELEASE_NOTES" \
             --draft \
             --prerelease
-
-      - name: Dry run summary
-        if: ${{ inputs.dry-run == true }}
-        env:
-          VERSION: ${{ steps.package-version.outputs.current-version }}
-        run: |
-          echo "::notice::Dry run complete. Skipped SVN commit and GitHub release creation."
-          echo "Version: $VERSION"
-          echo "Build artifact: ${{ steps.build-check.outputs.artifact_path }} (${{ steps.build-check.outputs.filesize }})"
-          echo "SVN tag validation: passed (tags/$VERSION does not exist)"

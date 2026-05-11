@@ -133,10 +133,13 @@ jobs:
                 .map(l => l.name)
                 .filter(l => l.startsWith(labelPrefix))
                 .map(l => l.replace(labelPrefix, "").trim());
-              if (labels.length === 0 || labels[0].toLowerCase() === 'none') continue;
+              if (labels.length > 0 && labels[0].toLowerCase() === 'none') continue;
 
-              const category = labels[0];
-              changelog.push(`* ${category.charAt(0).toUpperCase()}${category.slice(1)} - ${pr.title} by @${pr.user.login} in #${pr.number}`);
+              const category = labels.length > 0 ? labels[0] : null;
+              const prefix = category
+                ? `${category.charAt(0).toUpperCase()}${category.slice(1)} - `
+                : '';
+              changelog.push(`* ${prefix}${pr.title} by @${pr.user.login} in #${pr.number}`);
             }
 
             const date = new Date().toISOString().slice(0, 10);
