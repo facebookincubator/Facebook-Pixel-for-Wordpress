@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies and build
         run: |
           composer install
-          vendor/bin/phing
+          vendor/bin/phing Package
 
       - name: Extract built plugin for artifact upload
         run: unzip build/facebook-pixel-for-wordpress-*.zip -d artifact-contents
