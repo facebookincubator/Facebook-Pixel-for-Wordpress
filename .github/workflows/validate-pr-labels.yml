@@ -1,0 +1,26 @@
+name: Validate PR Labels
+
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize]
+
+jobs:
+  validate-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for changelog label
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const labels = context.payload.pull_request.labels.map(l => l.name);
+            const changelogLabels = labels.filter(l => l.startsWith('changelog:'));
+
+            if (changelogLabels.length === 0) {
+              core.setFailed(
+                'Missing changelog label. Please add one of: ' +
+                'changelog:added, changelog:changed, changelog:fixed, ' +
+                'changelog:removed, changelog:security, or changelog:none'
+              );
+            } else {
+              console.log(`Found changelog label: ${changelogLabels[0]}`);
+            }
