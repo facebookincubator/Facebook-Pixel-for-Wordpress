@@ -97,6 +97,16 @@ jobs:
                   if [ -n "$POT_DIFF" ]; then
                       REAL_DIFFS="${REAL_DIFFS}${line}\n"
                   fi
+              elif echo "$line" | grep -q 'installed\.php '; then
+                  FILE_A=$(echo "$line" | sed 's/^Files \(.*\) and .* differ$/\1/')
+                  FILE_B=$(echo "$line" | sed 's/^Files .* and \(.*\) differ$/\1/')
+                  INSTALLED_DIFF=$(diff "$FILE_A" "$FILE_B" \
+                    | grep -v "'reference'" \
+                    | grep -v "'dev' =>" \
+                    | grep "^[<>]" || true)
+                  if [ -n "$INSTALLED_DIFF" ]; then
+                      REAL_DIFFS="${REAL_DIFFS}${line}\n"
+                  fi
               else
                   REAL_DIFFS="${REAL_DIFFS}${line}\n"
               fi
