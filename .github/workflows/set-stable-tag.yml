@@ -54,9 +54,10 @@ jobs:
             --repo ${{ github.repository }} \
             --workflow build-and-upload.yml \
             --status success \
-            --limit 100 \
-            --json databaseId,displayTitle \
-            --jq '[.[] | select(.displayTitle | contains("release/'"$VERSION"'"))] | sort_by(.databaseId) | reverse | .[0].databaseId')
+            --branch "release/$VERSION" \
+            --limit 1 \
+            --json databaseId \
+            --jq '.[0].databaseId')
           if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
               echo "❌ No successful prepare-release build found for release/$VERSION"
               exit 1
