@@ -46,6 +46,8 @@ jobs:
           tools: composer
 
       - name: Build plugin
+        env:
+          COMPOSER_ROOT_VERSION: ${{ steps.package-version.outputs.current-version }}
         run: |
           composer install
           vendor/bin/phing Package
