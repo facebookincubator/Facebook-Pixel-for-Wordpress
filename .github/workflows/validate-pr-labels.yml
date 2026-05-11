@@ -4,6 +4,8 @@ on:
   pull_request:
     types: [opened, labeled, unlabeled, synchronize]
 
+permissions: {}
+
 jobs:
   validate-labels:
     runs-on: ubuntu-latest

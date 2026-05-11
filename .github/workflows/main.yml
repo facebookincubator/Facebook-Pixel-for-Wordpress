@@ -17,6 +17,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer
+
       - name: Install dependencies
         run: composer install --prefer-dist
 
