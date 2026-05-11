@@ -53,7 +53,9 @@ Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can
 == Changelog ==
 
 = 5.1.0 - 2026-05-05 =
-
+* Feature: Facebook Login for Business by @rahulmaddineni in #135
+* Add HPOS compatibility declaration for custom order tables by @bojanaivovic in #140
+* Harden test event code input against XSS by @vahidkay-meta in #138
 
 [See changelog for all versions](https://raw.githubusercontent.com/facebookincubator/Facebook-Pixel-for-Wordpress/refs/heads/main/changelog.txt).
 
