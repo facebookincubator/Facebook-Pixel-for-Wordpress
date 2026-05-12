@@ -255,6 +255,11 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
    */
   public function testPixelRenderQueuesEventsWhenPaused() {
     \WP_Mock::userFunction(
+      'get_option',
+      array( 'return' => array() )
+    );
+
+    \WP_Mock::userFunction(
       'wp_json_encode',
       array(
         'args'   => array(
@@ -293,6 +298,11 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
    * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
    */
   public function testPixelRenderQueuesEventsWhenPausedWithoutScriptTag() {
+    \WP_Mock::userFunction(
+      'get_option',
+      array( 'return' => array() )
+    );
+
     \WP_Mock::userFunction(
       'wp_json_encode',
       array(
