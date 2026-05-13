@@ -106,7 +106,7 @@ class PixelRenderer {
             $fb_integration_tracking;
         }
 
-        $class = new ReflectionClass(
+        $class      = new ReflectionClass(
             'FacebookPixelPlugin\Core\FacebookPixel'
         );
         $const_name = strtoupper( (string) $event->getEventName() );
