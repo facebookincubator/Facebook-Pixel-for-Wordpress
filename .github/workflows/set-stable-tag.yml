@@ -179,6 +179,15 @@ jobs:
         with:
           ref: release/${{ needs.set-stable-tag.outputs.version }}
 
+      - name: Update stable tag in readme.txt
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          sed -i -E "s/^(Stable tag:)[[:space:]]*[0-9.]+/\1 $VERSION/" "readme.txt"
+          git add readme.txt
+          git commit -m "Update stable tag to $VERSION"
+          git push origin HEAD
+
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
