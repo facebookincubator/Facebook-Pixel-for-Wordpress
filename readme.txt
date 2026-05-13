@@ -4,7 +4,7 @@ Tags: Facebook, Meta, Conversions API, Pixel, Meta Ads
 Requires at least: 5.7
 Tested up to: 6.9.4
 Requires PHP: 7.4
-Stable tag: 5.0.0
+Stable tag: 5.0.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,8 +52,10 @@ Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can
 
 == Changelog ==
 
-= 5.0.1 - 2026-04-07 =
-
+= 5.1.0 - 2026-05-05 =
+* Feature: Facebook Login for Business by @rahulmaddineni in #135
+* Add HPOS compatibility declaration for custom order tables by @bojanaivovic in #140
+* Harden test event code input against XSS by @vahidkay-meta in #138
 
 [See changelog for all versions](https://raw.githubusercontent.com/facebookincubator/Facebook-Pixel-for-Wordpress/refs/heads/main/changelog.txt).
 

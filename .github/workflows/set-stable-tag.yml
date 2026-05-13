@@ -7,6 +7,10 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   set-stable-tag:
     runs-on: ubuntu-latest
@@ -48,7 +52,7 @@ jobs:
           # Download GitHub artifact from prepare-release workflow
           RUN_ID=$(gh run list \
             --repo ${{ github.repository }} \
-            --workflow prepare-release.yml \
+            --workflow build-and-upload.yml \
             --status success \
             --limit 100 \
             --json databaseId,displayTitle \
@@ -93,6 +97,30 @@ jobs:
                   if [ -n "$POT_DIFF" ]; then
                       REAL_DIFFS="${REAL_DIFFS}${line}\n"
                   fi
+              elif echo "$line" | grep -q 'installed\.php '; then
+                  FILE_A=$(echo "$line" | sed 's/^Files \(.*\) and .* differ$/\1/')
+                  FILE_B=$(echo "$line" | sed 's/^Files .* and \(.*\) differ$/\1/')
+                  INSTALLED_DIFF=$(php -r '
+                    $a = require $argv[1];
+                    $b = require $argv[2];
+                    $root = $a["root"]["name"];
+                    $diffs = [];
+                    foreach ($a["versions"] as $pkg => $info) {
+                      if ($pkg === $root) continue;
+                      $va = $info["pretty_version"] ?? $info["version"] ?? null;
+                      $vb = $b["versions"][$pkg]["pretty_version"] ?? $b["versions"][$pkg]["version"] ?? null;
+                      if ($va !== $vb) $diffs[] = "$pkg: $va vs $vb";
+                    }
+                    foreach ($b["versions"] as $pkg => $info) {
+                      if ($pkg === $root) continue;
+                      if (!isset($a["versions"][$pkg])) $diffs[] = "$pkg: missing in marketplace";
+                    }
+                    echo implode("\n", $diffs);
+                  ' "$FILE_A" "$FILE_B" || true)
+                  if [ -n "$INSTALLED_DIFF" ]; then
+                      echo "Dependency differences: $INSTALLED_DIFF"
+                      REAL_DIFFS="${REAL_DIFFS}${line}\n"
+                  fi
               else
                   REAL_DIFFS="${REAL_DIFFS}${line}\n"
               fi
@@ -107,14 +135,6 @@ jobs:
           fi
 
           echo "✅ Artifacts match"
-
-      - name: Validate Git tag
-        run: |
-          git fetch --tags
-          if [ -z "$(git tag -l "v${{ steps.package-version.outputs.current-version }}")" ]; then
-            echo "❌ Git tag v${{ steps.package-version.outputs.current-version }} does not exist" 1>&2
-            exit 1
-          fi
 
       - name: Install SVN
         run: sudo apt-get install subversion -y
@@ -159,6 +179,15 @@ jobs:
         with:
           ref: release/${{ needs.set-stable-tag.outputs.version }}
 
+      - name: Update stable tag in readme.txt
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          sed -i -E "s/^(Stable tag:)[[:space:]]*[0-9.]+/\1 $VERSION/" "readme.txt"
+          git add readme.txt
+          git commit -m "Update stable tag to $VERSION"
+          git push origin HEAD
+
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -168,6 +197,14 @@ jobs:
             --draft=false \
             --prerelease=false \
             --latest
+
+      - name: Validate Git tag
+        run: |
+          git fetch --tags
+          if [ -z "$(git tag -l "v$VERSION")" ]; then
+            echo "❌ Git tag v$VERSION does not exist" 1>&2
+            exit 1
+          fi
 
       - name: Create pull request
         env:

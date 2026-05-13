@@ -452,7 +452,7 @@ class Cursor implements \Iterator, \Countable, \ArrayAccess {
   }
 
   public function valid() : bool {
-    return isset($this->objects[$this->position]);
+    return $this->position !== null && isset($this->objects[$this->position]);
   }
 
   public function count() : int {

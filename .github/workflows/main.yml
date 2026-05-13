@@ -3,6 +3,10 @@ name: Unit tests & PHPCS
 on:
   push:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-and-code-style:
     runs-on: ubuntu-22.04
@@ -12,6 +16,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer
 
       - name: Install dependencies
         run: composer install --prefer-dist

@@ -27,7 +27,8 @@
 
 namespace FacebookPixelPlugin\Tests;
 
-use WP_Mock\Tools\TestCase;
+use PHPUnit\Framework\TestCase;
+use WP_Mock\Tools\Constraints\ExpectationsMet;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 
@@ -35,6 +36,9 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
  * FacebookWordpressTestBase class.
  */
 abstract class FacebookWordpressTestBase extends TestCase {
+
+    protected $mocked_fbpixel;
+    protected $mocked_options;
 
     /**
      * Sets up the environment for each test.
@@ -75,6 +79,21 @@ abstract class FacebookWordpressTestBase extends TestCase {
     );
         unset( $GLOBALS['wp_version'] );
         \WP_Mock::tearDown();
+    }
+
+    protected function assertConditionsMet( $message = '' ) {
+        $this->assertThat( null, new ExpectationsMet(), $message );
+    }
+
+    protected function assertHooksAdded() {
+        $hooks_not_added = $expected_hooks = 0;
+        try {
+            \WP_Mock::assertHooksAdded();
+        } catch ( \Exception $e ) {
+            $hooks_not_added = 1;
+            $expected_hooks  = $e->getMessage();
+        }
+        $this->assertEmpty( $hooks_not_added, (string) $expected_hooks );
     }
 
     /**

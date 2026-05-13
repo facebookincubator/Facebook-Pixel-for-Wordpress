@@ -1,4 +1,9 @@
 *** Meta Pixel for WordPress Changelog ***
+= 5.1.0 - 2026-05-05 =
+* Feature: Facebook Login for Business by @rahulmaddineni in #135
+* Add HPOS compatibility declaration for custom order tables by @bojanaivovic in #140
+* Harden test event code input against XSS by @vahidkay-meta in #138
+
 = 5.0.1 - 2026-04-07 =
 
 

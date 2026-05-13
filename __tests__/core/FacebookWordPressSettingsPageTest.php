@@ -62,7 +62,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
     $message = $settings_page->get_wpcom_update_notice_message();
 
     $this->assertStringContainsString(
-      'After April 30th, 2026',
+      'Meta Pixel for WordPress is expected to be removed',
       $message
     );
     $this->assertStringContainsString(
@@ -322,7 +322,9 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
     );
 
     $reflection = new \ReflectionMethod( $settings_page, 'get_fbl4b_popup_origin' );
-    $reflection->setAccessible( true );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $reflection->setAccessible( true );
+    }
     $origin = $reflection->invoke( $settings_page );
 
     $this->assertEquals( 'https://business.facebook.com', $origin );
@@ -339,7 +341,9 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
     );
 
     $reflection = new \ReflectionMethod( $settings_page, 'get_fbl4b_iframe_url' );
-    $reflection->setAccessible( true );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $reflection->setAccessible( true );
+    }
     $url = $reflection->invoke( $settings_page, '12345', '67890' );
 
     $this->assertStringContainsString( 'fbl4b-iframe-get-started', $url );
@@ -405,7 +409,9 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
     );
 
     $reflection = new \ReflectionMethod( $settings_page, 'get_meta_wc_params' );
-    $reflection->setAccessible( true );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $reflection->setAccessible( true );
+    }
     $params = $reflection->invoke( $settings_page );
 
     // FBL4B_APP_ID and FBL4B_CONFIG_ID are non-empty class constants,

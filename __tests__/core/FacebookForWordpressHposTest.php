@@ -64,6 +64,7 @@ final class FacebookForWordpressHposTest extends FacebookWordpressTestBase {
         $mocked_options->shouldReceive( 'initialize' )->once();
         $mocked_options->shouldReceive( 'get_options' )->andReturn( array() );
         $mocked_options->shouldReceive( 'get_pixel_id' )->andReturn( '1234' );
+        $mocked_options->shouldReceive( 'get_active_pixel_id' )->andReturn( '1234' );
         $mocked_options->shouldReceive( 'is_wordpress_com_hosted' )->andReturn( false );
 
         $mocked_pixel = \Mockery::mock( 'alias:FacebookPixelPlugin\\Core\\FacebookPixel' );

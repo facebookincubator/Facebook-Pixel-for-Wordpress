@@ -425,7 +425,9 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
       FacebookWordpressOptions::class,
       'set_aam_settings'
     );
-    $reflection->setAccessible( true );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $reflection->setAccessible( true );
+    }
     $reflection->invoke( null );
 
     $aam_settings = FacebookWordpressOptions::get_aam_settings();
@@ -478,7 +480,9 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
       FacebookWordpressOptions::class,
       'set_aam_settings'
     );
-    $reflection->setAccessible( true );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $reflection->setAccessible( true );
+    }
     $reflection->invoke( null );
 
     $aam_settings = FacebookWordpressOptions::get_aam_settings();
@@ -549,7 +553,7 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
 
     $this->assertStringContainsString( '_fbl4b', $agent_string );
     $this->assertEquals(
-      FacebookPluginConfig::SOURCE . '_fbl4b-6.9-' . FacebookPluginConfig::PLUGIN_VERSION,
+      FacebookPluginConfig::SOURCE . '_0_fbl4b-6.9-' . FacebookPluginConfig::PLUGIN_VERSION,
       $agent_string
     );
   }
@@ -569,7 +573,7 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
 
     $this->assertStringNotContainsString( '_fbl4b', $agent_string );
     $this->assertEquals(
-      FacebookPluginConfig::SOURCE . '-6.9-' . FacebookPluginConfig::PLUGIN_VERSION,
+      FacebookPluginConfig::SOURCE . '_0-6.9-' . FacebookPluginConfig::PLUGIN_VERSION,
       $agent_string
     );
   }

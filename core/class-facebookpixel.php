@@ -233,12 +233,11 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
             }
             $param_str = wp_json_encode( $param, JSON_PRETTY_PRINT );
         }
-        $class = new ReflectionClass( __CLASS__ );
+        $class      = new ReflectionClass( __CLASS__ );
+        $const_name = strtoupper( (string) $event );
         return sprintf(
             $code,
-            $class->getConstant(
-                strtoupper( $event )
-            ) !== false ? 'track' : 'trackCustom',
+            $class->hasConstant( $const_name ) ? 'track' : 'trackCustom',
             $event,
             ', ' . $param_str,
             ''

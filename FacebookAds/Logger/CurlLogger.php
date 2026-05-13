@@ -151,7 +151,8 @@ class CurlLogger implements LoggerInterface {
   protected function processParams(Parameters $params, $method, $is_file) {
     $chunks = array();
     if ($this->isJsonPrettyPrint()) {
-      $params = new JsonAwareParameters($params);
+      $array_copy = $params->getArrayCopy();
+      $params = new JsonAwareParameters($array_copy ? $array_copy : array());
     }
     foreach ($params->export() as $name => $value) {
       if ($is_file && $params->offsetGet($name) instanceof FileParameter) {

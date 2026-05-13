@@ -1,0 +1,44 @@
+name: Build and Upload Artifact
+
+on:
+  push:
+    branches:
+      - 'release/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          tools: composer
+
+      - name: Get version
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+
+      - name: Install dependencies and build
+        env:
+          COMPOSER_ROOT_VERSION: ${{ steps.package-version.outputs.current-version }}
+        run: |
+          composer install
+          vendor/bin/phing Package
+
+      - name: Extract built plugin for artifact upload
+        run: unzip build/facebook-pixel-for-wordpress-*.zip -d artifact-contents
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: official-facebook-pixel
+          path: artifact-contents
