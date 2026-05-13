@@ -319,42 +319,44 @@ class CursorTest extends AbstractUnitTestCase {
 
     Cursor::setDefaultUseImplicitFetch(true);
 
-    $response = $this->createEmptyResponseMock();
-    $cursor = new Cursor($response, $this->objectPrototype);
-    $this->assertTrue(Cursor::getDefaultUseImplicitFetch());
-    $this->assertTrue($cursor->getUseImplicitFetch());
+    try {
+      $response = $this->createEmptyResponseMock();
+      $cursor = new Cursor($response, $this->objectPrototype);
+      $this->assertTrue(Cursor::getDefaultUseImplicitFetch());
+      $this->assertTrue($cursor->getUseImplicitFetch());
 
-    // Test ordered iteration
-    // f() lower interval * min repetition > upper interval
-    // Min repetition > upper interval / lower interval -> f(x): x > 5 / 2 -> 3
-    $response = $this->createResponseChainMock(3);
-    $cursor = new Cursor($response, $this->objectPrototype);
-    while ($cursor->valid()) {
-      $cursor->next();
-    }
+      // Test ordered iteration
+      // f() lower interval * min repetition > upper interval
+      // Min repetition > upper interval / lower interval -> f(x): x > 5 / 2 -> 3
+      $response = $this->createResponseChainMock(3);
+      $cursor = new Cursor($response, $this->objectPrototype);
+      while ($cursor->valid()) {
+        $cursor->next();
+      }
 
-    // Min upper boundary = upper interval + 1 = 5 + 1 = 6
-    $this->assertGreaterThanOrEqual(6, $cursor->count());
+      // Min upper boundary = upper interval + 1 = 5 + 1 = 6
+      $this->assertGreaterThanOrEqual(6, $cursor->count());
 
-    // Test rervese iteration
-    // same f()
-    $response = $this->createResponseChainMock(3);
-    $cursor = new Cursor($response, $this->objectPrototype);
+      // Test rervese iteration
+      // same f()
+      $response = $this->createResponseChainMock(3);
+      $cursor = new Cursor($response, $this->objectPrototype);
 
-    while ($cursor->valid()) {
+      while ($cursor->valid()) {
+        $cursor->prev();
+      }
+
+      $this->assertGreaterThanOrEqual(6, $cursor->count());
+
+      // Force the array out of boundaries
+      $response = $this->createResponseChainMock(1);
+      $cursor = new Cursor($response, $this->objectPrototype);
+      $cursor->setUseImplicitFetch(false);
       $cursor->prev();
+    } finally {
+      // Restore static behaviour
+      Cursor::setDefaultUseImplicitFetch(false);
     }
-
-    $this->assertGreaterThanOrEqual(6, $cursor->count());
-
-    // Force the array out of boundaries
-    $response = $this->createResponseChainMock(1);
-    $cursor = new Cursor($response, $this->objectPrototype);
-    $cursor->setUseImplicitFetch(false);
-    $cursor->prev();
-
-    // Restore static behaviour
-    Cursor::setDefaultUseImplicitFetch(false);
   }
 
   public function testExportability() {

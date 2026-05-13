@@ -80,7 +80,7 @@ trait JsonAwareTestTrait {
         array(),
       ),
       array(
-        new \StdClass(),
+        array(),
       )
     );
   }
