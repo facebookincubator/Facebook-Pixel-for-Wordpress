@@ -425,7 +425,9 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
       FacebookWordpressOptions::class,
       'set_aam_settings'
     );
-    $reflection->setAccessible( true );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $reflection->setAccessible( true );
+    }
     $reflection->invoke( null );
 
     $aam_settings = FacebookWordpressOptions::get_aam_settings();
@@ -478,7 +480,9 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
       FacebookWordpressOptions::class,
       'set_aam_settings'
     );
-    $reflection->setAccessible( true );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $reflection->setAccessible( true );
+    }
     $reflection->invoke( null );
 
     $aam_settings = FacebookWordpressOptions::get_aam_settings();

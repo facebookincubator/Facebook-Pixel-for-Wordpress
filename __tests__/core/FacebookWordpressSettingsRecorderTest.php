@@ -532,7 +532,9 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
   public function testGraphApiBaseUrl() {
     $settings_recorder = new FacebookWordpressSettingsRecorder();
     $reflection = new \ReflectionMethod( $settings_recorder, 'get_graph_api_base_url' );
-    $reflection->setAccessible( true );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $reflection->setAccessible( true );
+    }
     $url = $reflection->invoke( $settings_recorder );
 
     $this->assertEquals( 'https://graph.facebook.com/v25.0', $url );

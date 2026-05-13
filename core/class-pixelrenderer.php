@@ -109,9 +109,10 @@ class PixelRenderer {
         $class = new ReflectionClass(
             'FacebookPixelPlugin\Core\FacebookPixel'
         );
+        $const_name = strtoupper( (string) $event->getEventName() );
         return sprintf(
             self::FBQ_EVENT_CODE,
-            $class->getConstant( strtoupper( $event->getEventName() ) ) !== false ?
+            $class->hasConstant( $const_name ) ?
             self::TRACK : self::TRACK_CUSTOM,
             $event->getEventName(),
             wp_json_encode( $normalized_custom_data, JSON_PRETTY_PRINT ),
