@@ -35,10 +35,16 @@ class Parameters extends \ArrayObject {
     $data = array(),
     $flags = 0,
     $iterator_class = 'ArrayIterator') {
-    if ($data instanceof \ArrayObject) {
+    if ($data instanceof self) {
+      $data = $data->export();
+    } elseif ($data instanceof \ArrayObject) {
       $data = $data->getArrayCopy();
     } elseif (is_object($data)) {
       $data = get_object_vars($data);
+    }
+
+    if (!is_array($data)) {
+      $data = array();
     }
 
     parent::__construct($data, $flags, $iterator_class);
