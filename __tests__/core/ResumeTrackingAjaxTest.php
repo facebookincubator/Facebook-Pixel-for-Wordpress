@@ -40,7 +40,9 @@ final class ResumeTrackingAjaxTest extends FacebookWordpressTestBase {
 
     $handler = new ResumeTrackingAjax();
     $method  = new \ReflectionMethod( ResumeTrackingAjax::class, 'validate_event' );
-    $method->setAccessible( true );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $method->setAccessible( true );
+    }
 
     $this->assertFalse(
       $method->invoke(
@@ -117,7 +119,9 @@ final class ResumeTrackingAjaxTest extends FacebookWordpressTestBase {
 
     $handler = new ResumeTrackingAjax();
     $method  = new \ReflectionMethod( ResumeTrackingAjax::class, 'build_event' );
-    $method->setAccessible( true );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $method->setAccessible( true );
+    }
 
     $event = $method->invoke(
       $handler,
