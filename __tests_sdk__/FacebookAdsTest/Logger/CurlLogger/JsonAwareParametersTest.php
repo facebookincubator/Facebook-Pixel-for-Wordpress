@@ -24,7 +24,9 @@
 
 namespace FacebookPixelPlugin\FacebookAdsTest\Logger\CurlLogger;
 
+use FacebookPixelPlugin\FacebookAds\Http\Parameters;
 use FacebookPixelPlugin\FacebookAds\Logger\CurlLogger\JsonAwareParameters;
+use FacebookPixelPlugin\FacebookAds\Logger\CurlLogger\JsonNode;
 use FacebookPixelPlugin\FacebookAdsTest\AbstractUnitTestCase;
 
 class JsonAwareParametersTest extends AbstractUnitTestCase {
@@ -41,5 +43,20 @@ class JsonAwareParametersTest extends AbstractUnitTestCase {
     foreach ($params as $param) {
       $this->assertTrue(is_scalar($param) || is_null($param));
     }
+  }
+
+  public function testConstructorPreservesJsonAwareExportForParameters() {
+    $params = new Parameters(array(
+      'json_field' => array(
+        'query_field' => str_repeat('x', JsonNode::EXPLOSION_THRESHOLD + 1),
+      ),
+    ));
+
+    $this->assertSame(
+      "{\n  \"query_field\": \""
+        . str_repeat('x', JsonNode::EXPLOSION_THRESHOLD + 1)
+        . "\"\n}",
+      (new JsonAwareParameters($params))->export()['json_field']
+    );
   }
 }

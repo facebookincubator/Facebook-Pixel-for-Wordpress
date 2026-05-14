@@ -38,6 +38,48 @@ class ParametersTest extends AbstractUnitTestCase {
     $this->assertTrue($parameters instanceof \Countable);
   }
 
+  public function testConstructorAcceptsArrayObject() {
+    $parameters = new Parameters(new \ArrayObject(array(
+      'scalar' => 'value',
+      'non_scalar' => array('nested'),
+    )));
+
+    $this->assertSame(array(
+      'scalar' => 'value',
+      'non_scalar' => array('nested'),
+    ), $parameters->getArrayCopy());
+  }
+
+  public function testConstructorAcceptsObject() {
+    $object = new \stdClass();
+    $object->scalar = 'value';
+    $object->non_scalar = array('nested');
+
+    $parameters = new Parameters($object);
+
+    $this->assertSame(array(
+      'scalar' => 'value',
+      'non_scalar' => array('nested'),
+    ), $parameters->getArrayCopy());
+  }
+
+  public function testConstructorIgnoresScalarAndNullInput() {
+    $this->assertSame(array(), (new Parameters('value'))->getArrayCopy());
+    $this->assertSame(array(), (new Parameters(null))->getArrayCopy());
+  }
+
+  public function testConstructorCopiesParametersWithoutExporting() {
+    $parameters = new Parameters(new Parameters(array(
+      'scalar' => 'value',
+      'non_scalar' => array('nested'),
+    )));
+
+    $this->assertSame(array(
+      'scalar' => 'value',
+      'non_scalar' => array('nested'),
+    ), $parameters->getArrayCopy());
+  }
+
   public function testEnhance() {
     $parameters = new Parameters();
     $copy = $parameters->getArrayCopy();

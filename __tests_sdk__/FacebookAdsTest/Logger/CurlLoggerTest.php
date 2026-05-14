@@ -161,6 +161,9 @@ class CurlLoggerTest extends AbstractLoggerTest {
 
     $logger->logRequest(static::VALUE_LOG_LEVEL, $request);
 
+    $this->assertStringContainsString("--data-urlencode 'json_field=[", $this->getBuffer());
+    $this->assertStringContainsString("  \"json_value\"", $this->getBuffer());
+
     $logger->setJsonPrettyPrint(false);
     $this->assertFalse($logger->isJsonPrettyPrint());
   }
