@@ -27,6 +27,24 @@ namespace FacebookPixelPlugin\FacebookAds\Http;
 class Parameters extends \ArrayObject {
 
   /**
+   * @param mixed $data
+   * @param int $flags
+   * @param string $iterator_class
+   */
+  public function __construct(
+    $data = array(),
+    $flags = 0,
+    $iterator_class = 'ArrayIterator') {
+    if ($data instanceof \ArrayObject) {
+      $data = $data->getArrayCopy();
+    } elseif (is_object($data)) {
+      $data = get_object_vars($data);
+    }
+
+    parent::__construct($data, $flags, $iterator_class);
+  }
+
+  /**
    * @param array $data
    */
   public function enhance(array $data) {
