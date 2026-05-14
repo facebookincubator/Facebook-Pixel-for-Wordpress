@@ -28,6 +28,7 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\ServerEventFactory;
+use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
@@ -178,5 +179,37 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
       'Lead',
       $pending_pixel_event->getEventName()
     );
+  }
+
+  /**
+   * Tests that frontend sends are suppressed while tracking is paused.
+   *
+   * @return void
+   */
+  public function testSendSuppressedWhenPausedOnFrontend() {
+    self::mockFacebookWordpressOptions();
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+
+    \WP_Mock::userFunction( 'is_admin', array( 'return' => false ) );
+    \WP_Mock::userFunction( 'wp_doing_cron', array( 'return' => false ) );
+
+    FacebookSignalState::pause();
+
+    $api = \Mockery::mock( 'alias:FacebookPixelPlugin\FacebookAds\Api' );
+    $api->shouldReceive( 'init' )->never();
+
+    $event = ServerEventFactory::new_event( 'Lead' );
+    FacebookServerSideEvent::send( array( $event ) );
+
+    $this->assertTrue( true );
   }
 }

@@ -89,6 +89,10 @@ class FacebookWordpressPixelInjection {
      * @return void
      */
     public function send_pending_events() {
+        if ( FacebookSignalState::is_paused() ) {
+            return;
+        }
+
         $pending_events =
         FacebookServerSideEvent::get_instance()->get_pending_events();
         if ( count( $pending_events ) > 0 ) {
@@ -127,16 +131,21 @@ class FacebookWordpressPixelInjection {
 
         self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] = true;
         echo FacebookPixel::get_pixel_base_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo $this->get_facebook_signal_bootstrap_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         $capi_integration_status =
         FacebookWordpressOptions::get_capi_integration_status();
         // Only include user info for frontend users, not internal/admin users.
         $user_info = FacebookPluginUtils::is_internal_user() ?
             array() : FacebookWordpressOptions::get_user_info();
+        if ( FacebookSignalState::is_paused() ) {
+            echo "<script type='text/javascript'>fbq('consent', 'revoke');</script>"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        }
         echo FacebookPixel::get_pixel_init_code( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             FacebookWordpressOptions::get_agent_string(),
             $user_info, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             '1' === $capi_integration_status // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         );
+        echo $this->get_facebook_signal_init_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         echo FacebookPixel::get_pixel_page_view_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     }
 
@@ -151,5 +160,248 @@ class FacebookWordpressPixelInjection {
      */
     public function inject_pixel_noscript_code() {
         echo FacebookPixel::get_pixel_noscript_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+    }
+
+    /**
+     * Inline FacebookSignal and signals helper.
+     *
+     * @return string
+     */
+    private function get_facebook_signal_bootstrap_code() {
+        $cookie_name    = FacebookPixelSignals::COOKIE_NAME;
+        $signals_nonce  = wp_create_nonce( FacebookPixelSignals::NONCE_ACTION );
+        $ajax_url       = admin_url( 'admin-ajax.php' );
+        $signals_action = FacebookPixelSignals::AJAX_ACTION;
+
+        $javascript = <<<'JS'
+window.FacebookSignal = window.FacebookSignal || {
+    _paused: false,
+    _queue: [],
+    _config: {},
+    _fbclid: (function() {
+        try {
+            var match = window.location.search.match(/[?&]fbclid=([^&]*)/);
+            return match ? decodeURIComponent(match[1]) : null;
+        } catch (e) {
+            return null;
+        }
+    })(),
+
+    init: function(config) {
+        this._config = config || {};
+        this._paused = !!this._config.paused;
+    },
+
+    queueEvent: function(eventData) {
+        if (!eventData || !eventData.event_name) {
+            return;
+        }
+        eventData.event_time = eventData.event_time || Math.floor(Date.now() / 1000);
+        eventData.event_source_url = eventData.event_source_url || window.location.href;
+        this._queue.push(eventData);
+    },
+
+    trackEvent: function(name, params, userData) {
+        var eventParams = params ? Object.assign({}, params) : {};
+        var eventId = eventParams.eventID || null;
+
+        if (eventId) {
+            delete eventParams.eventID;
+        }
+
+        if (this._paused) {
+            this.queueEvent({
+                event_name: name,
+                custom_data: eventParams,
+                user_data: userData || null,
+                event_id: eventId
+            });
+            return;
+        }
+
+        if (eventId) {
+            fbq('track', name, eventParams, { eventID: eventId });
+        } else {
+            fbq('track', name, eventParams);
+        }
+    },
+
+    setPaused: function(paused) {
+        this._paused = !!paused;
+        if (this._paused) {
+            fbq('consent', 'revoke');
+        }
+    },
+
+    resume: function() {
+        var self = this;
+
+        if (!self._paused || !self._config.ajaxUrl) {
+            return Promise.resolve({ success: true, data: { sent_count: 0 } });
+        }
+
+        return new Promise(function(resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            var url = self._config.ajaxUrl +
+                (self._config.ajaxUrl.indexOf('?') === -1 ? '?' : '&') +
+                'action=' + encodeURIComponent(self._config.resumeAction);
+
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onload = function() {
+                if (xhr.status < 200 || xhr.status >= 300) {
+                    reject(new Error('Resume AJAX failed: ' + xhr.status));
+                    return;
+                }
+
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    self._handleResumeResponse(response.data || {});
+                    resolve(response);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            xhr.onerror = function() {
+                reject(new Error('Network error'));
+            };
+            xhr.send(JSON.stringify({
+                security: self._config.resumeNonce,
+                events: self._queue,
+                fbclid: self._fbclid
+            }));
+        });
+    },
+
+    _handleResumeResponse: function(data) {
+        if (data.fbp) {
+            document.cookie = '_fbp=' + encodeURIComponent(data.fbp) + ';path=/;max-age=7776000;SameSite=Lax';
+        }
+
+        if (data.fbc) {
+            document.cookie = '_fbc=' + encodeURIComponent(data.fbc) + ';path=/;max-age=7776000;SameSite=Lax';
+        }
+
+        fbq('consent', 'grant');
+
+        for (var i = 0; i < this._queue.length; i++) {
+            var queuedEvent = this._queue[i];
+            var customData = queuedEvent.custom_data || {};
+            if (queuedEvent.event_id) {
+                fbq('track', queuedEvent.event_name, customData, { eventID: queuedEvent.event_id });
+            } else {
+                fbq('track', queuedEvent.event_name, customData);
+            }
+        }
+
+        this._queue = [];
+        this._paused = false;
+    }
+};
+
+window.fbpix = window.fbpix || {};
+(function(api) {
+    var cookieName = '__COOKIE_NAME__';
+    var ajaxUrl = '__AJAX_URL__';
+    var signalsAction = '__SIGNALS_ACTION__';
+    var signalsNonce = '__SIGNALS_NONCE__';
+
+    function setCookie(value) {
+        var expires = new Date();
+        expires.setTime(expires.getTime() + (365 * 24 * 60 * 60 * 1000));
+        document.cookie = cookieName + '=' + encodeURIComponent(value) + ';expires=' + expires.toUTCString() + ';path=/;SameSite=Lax';
+    }
+
+    function getCookie() {
+        var match = document.cookie.match(new RegExp('(?:^|;\\s*)' + cookieName + '=([^;]*)'));
+        return match ? decodeURIComponent(match[1]) : null;
+    }
+
+    api.setSignals = function(granted) {
+        var value = granted ? '1' : '0';
+        setCookie(value);
+
+        return new Promise(function(resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', ajaxUrl, true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+            xhr.onload = function() {
+                if (xhr.status < 200 || xhr.status >= 300) {
+                    reject(new Error('Signals AJAX failed: ' + xhr.status));
+                    return;
+                }
+
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (!granted) {
+                        window.FacebookSignal.setPaused(true);
+                        resolve(response);
+                        return;
+                    }
+
+                    if (window.FacebookSignal && window.FacebookSignal._paused) {
+                        window.FacebookSignal.resume().then(function() {
+                            resolve(response);
+                        }, function(error) {
+                            reject(error);
+                        });
+                        return;
+                    }
+
+                    resolve(response);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            xhr.onerror = function() {
+                reject(new Error('Network error'));
+            };
+            xhr.send(
+                'action=' + encodeURIComponent(signalsAction) +
+                '&security=' + encodeURIComponent(signalsNonce) +
+                '&granted=' + encodeURIComponent(value)
+            );
+        });
+    };
+
+    api.getSignals = function() {
+        var value = getCookie();
+        if (value === null) {
+            return null;
+        }
+        return value === '1';
+    };
+})(window.fbpix);
+JS;
+
+        $replacements = array(
+            '__COOKIE_NAME__'    => esc_js( $cookie_name ),
+            '__AJAX_URL__'       => esc_js( $ajax_url ),
+            '__SIGNALS_ACTION__' => esc_js( $signals_action ),
+            '__SIGNALS_NONCE__'  => esc_js( $signals_nonce ),
+        );
+
+        return "<script type='text/javascript'>" .
+            strtr( $javascript, $replacements ) .
+            '</script>';
+    }
+
+    /**
+     * Initialize FacebookSignal with current config.
+     *
+     * @return string
+     */
+    private function get_facebook_signal_init_code() {
+        $config = array(
+            'paused'       => FacebookSignalState::is_paused(),
+            'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+            'resumeAction' => ResumeTrackingAjax::ACTION,
+            'resumeNonce'  => wp_create_nonce( ResumeTrackingAjax::NONCE_ACTION ),
+            'pixelId'      => FacebookPixel::get_pixel_id(),
+        );
+
+        return "<script type='text/javascript'>FacebookSignal.init(" .
+            wp_json_encode( $config ) .
+            ');</script>';
     }
 }

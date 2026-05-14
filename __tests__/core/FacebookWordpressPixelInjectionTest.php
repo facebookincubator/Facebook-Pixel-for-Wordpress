@@ -28,6 +28,8 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\AAMSettingsFields;
+use FacebookPixelPlugin\Core\FacebookPixel;
+use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
@@ -72,7 +74,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
    * @return void
    */
   public function testPixelInjection() {
-    self::mockGetOption( 1234 );
+    self::mockGetOption( '1234' );
     $injection_obj = new FacebookWordpressPixelInjection();
     \WP_Mock::expectActionAdded(
       'wp_head',
@@ -117,7 +119,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
    * @return void
    */
   public function testServerEventSendingInjection() {
-    self::mockGetOption( 1234, 'abc' );
+    self::mockGetOption( '1234', 'abc' );
     self::mockGetTransientAAMSettings(
       '1234',
       false,
@@ -187,5 +189,72 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
         ),
       )
     );
+  }
+
+  /**
+   * Tests that paused injection includes the gating bootstrap and paused init.
+   *
+   * @return void
+   */
+  public function testInjectPixelCodeIncludesPausedBootstrap() {
+    FacebookSignalState::pause();
+    FacebookWordpressPixelInjection::$render_cache = array();
+    FacebookPixel::set_pixel_id( '1234' );
+
+    $mocked_options = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
+    );
+    $mocked_options->shouldReceive( 'get_capi_integration_status' )
+      ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_agent_string' )
+      ->andReturn( 'WordPress' );
+    $mocked_options->shouldReceive( 'get_user_info' )
+      ->andReturn( array() );
+
+    $mocked_utils = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookPluginUtils'
+    );
+    $mocked_utils->shouldReceive( 'is_internal_user' )
+      ->andReturn( false );
+
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'return' => function ( $data ) {
+          return json_encode( $data );
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_create_nonce',
+      array(
+        'return' => 'nonce',
+      )
+    );
+    \WP_Mock::userFunction(
+      'admin_url',
+      array(
+        'return' => 'https://www.pikachu.com/wp-admin/admin-ajax.php',
+      )
+    );
+    \WP_Mock::userFunction(
+      'esc_js',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
+
+    $injection_obj = new FacebookWordpressPixelInjection();
+
+    ob_start();
+    $injection_obj->inject_pixel_code();
+    $output = ob_get_clean();
+
+    $this->assertStringContainsString( 'window.FacebookSignal', $output );
+    $this->assertStringContainsString( 'window.fbpix', $output );
+    $this->assertStringContainsString( "fbq('consent', 'revoke');", $output );
+    $this->assertStringContainsString( '"paused":true', $output );
   }
 }

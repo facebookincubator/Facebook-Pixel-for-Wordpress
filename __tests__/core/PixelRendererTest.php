@@ -28,6 +28,7 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
+use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
@@ -245,5 +246,79 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
     );
 
     $this->assertEquals( $expected, $code );
+  }
+
+  /**
+   * Test that paused rendering queues events instead of firing fbq directly.
+   *
+   * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+   */
+  public function testPixelRenderQueuesEventsWhenPaused() {
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'args'   => array(
+          \Mockery::type( 'array' ),
+          \Mockery::type( 'int' ),
+        ),
+        'return' => function ( $data, $options ) {
+          return json_encode( $data );
+        },
+      )
+    );
+
+    FacebookSignalState::pause();
+    FacebookWordpressOptions::set_version_info();
+
+    $event = ( new Event() )
+      ->setEventName( 'Lead' )
+      ->setEventId( 'TestEventId' )
+      ->setEventTime( 1234 );
+
+    $code = PixelRenderer::render( array( $event ), 'Test' );
+
+    $this->assertStringContainsString( 'FacebookSignal.queueEvent(', $code );
+    $this->assertStringContainsString( '"event_name":"Lead"', $code );
+    $this->assertStringContainsString( '"event_id":"TestEventId"', $code );
+    $this->assertStringContainsString(
+      '"fb_integration_tracking":"Test"',
+      $code
+    );
+    $this->assertStringNotContainsString( "fbq('track'", $code );
+  }
+
+  /**
+   * Test that paused raw rendering still returns queue-aware JS.
+   *
+   * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+   */
+  public function testPixelRenderQueuesEventsWhenPausedWithoutScriptTag() {
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'args'   => array(
+          \Mockery::type( 'array' ),
+          \Mockery::type( 'int' ),
+        ),
+        'return' => function ( $data, $options ) {
+          return json_encode( $data );
+        },
+      )
+    );
+
+    FacebookSignalState::pause();
+    FacebookWordpressOptions::set_version_info();
+
+    $event = ( new Event() )
+      ->setEventName( 'Purchase' )
+      ->setEventId( 'TestEventId' )
+      ->setEventTime( 1234 )
+      ->setCustomData( ( new CustomData() )->setValue( '10.00' ) );
+
+    $code = PixelRenderer::render( array( $event ), 'Test', false );
+
+    $this->assertStringContainsString( 'FacebookSignal.queueEvent(', $code );
+    $this->assertStringContainsString( '"event_name":"Purchase"', $code );
+    $this->assertStringNotContainsString( '<script', $code );
   }
 }

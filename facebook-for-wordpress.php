@@ -35,15 +35,21 @@ if ( file_exists( $local_config ) ) {
 }
 
 require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
+require_once plugin_dir_path( __FILE__ ) . 'core/class-facebookpixelsignals.php';
+require_once plugin_dir_path( __FILE__ ) . 'core/class-facebooksignalstate.php';
+require_once plugin_dir_path( __FILE__ ) . 'core/class-resumetrackingajax.php';
 
 use FacebookPixelPlugin\Core\FacebookPixel;
+use FacebookPixelPlugin\Core\FacebookPixelSignals;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\FacebookWordpressOpenBridge;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
+use FacebookPixelPlugin\Core\ResumeTrackingAjax;
 use FacebookPixelPlugin\Core\ServerEventAsyncTask;
 
 /**
@@ -66,6 +72,12 @@ class FacebookForWordpress {
 
     $options = FacebookWordpressOptions::get_options();
     FacebookPixel::initialize( FacebookWordpressOptions::get_active_pixel_id() );
+    new FacebookPixelSignals();
+    new ResumeTrackingAjax();
+
+    if ( FacebookPixelSignals::should_pause_tracking() ) {
+        FacebookSignalState::pause();
+    }
 
     add_action( 'init', array( $this, 'register_pixel_injection' ), 0 );
     add_action( 'parse_request', array( $this, 'handle_events_request' ), 0 );

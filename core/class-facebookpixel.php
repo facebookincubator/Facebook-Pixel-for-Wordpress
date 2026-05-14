@@ -223,6 +223,15 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
             return;
         }
 
+        if ( self::is_tracking_paused() ) {
+            return self::get_pixel_queue_code(
+                $event,
+                $param,
+                $tracking_name,
+                $with_script_tag
+            );
+        }
+
         $code      = $with_script_tag ? "<script type='text/javascript'>" .
         self::$pixel_fbq_code_without_script .
         '</script>' : self::$pixel_fbq_code_without_script;
@@ -242,6 +251,78 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
             ', ' . $param_str,
             ''
         );
+    }
+
+    /**
+     * Gets queueing code for a paused event.
+     *
+     * @param string $event           Event name.
+     * @param array  $param           Event parameters.
+     * @param string $tracking_name   Integration tracking name.
+     * @param bool   $with_script_tag Whether to include a script wrapper.
+     *
+     * @return string
+     */
+    private static function get_pixel_queue_code(
+        $event,
+        $param,
+        $tracking_name,
+        $with_script_tag
+    ) {
+        $payload = self::build_queue_payload( $event, $param, $tracking_name );
+        $code    = 'FacebookSignal.queueEvent(' .
+            wp_json_encode( $payload, JSON_PRETTY_PRINT ) .
+            ');';
+
+        if ( ! $with_script_tag ) {
+            return $code;
+        }
+
+        return "<script type='text/javascript'>{$code}</script>";
+    }
+
+    /**
+     * Build queue payload for a paused event.
+     *
+     * @param string       $event         Event name.
+     * @param array|string $param         Event params.
+     * @param string       $tracking_name Integration tracking name.
+     *
+     * @return array
+     */
+    public static function build_queue_payload(
+        $event,
+        $param = array(),
+        $tracking_name = ''
+    ) {
+        $custom_data = is_array( $param ) ? $param : array();
+        $event_id    = null;
+
+        if ( isset( $custom_data['eventID'] ) ) {
+            $event_id = $custom_data['eventID'];
+            unset( $custom_data['eventID'] );
+        }
+
+        if ( ! empty( $tracking_name ) ) {
+            $custom_data[ self::FB_INTEGRATION_TRACKING_KEY ] = $tracking_name;
+        }
+
+        return array(
+            'event_name'  => $event,
+            'custom_data' => $custom_data,
+            'event_id'    => $event_id,
+            'event_time'  => time(),
+        );
+    }
+
+    /**
+     * Whether the current request is paused.
+     *
+     * @return bool
+     */
+    private static function is_tracking_paused() {
+        return class_exists( '\FacebookPixelPlugin\Core\FacebookSignalState' ) &&
+            FacebookSignalState::is_paused();
     }
 
     /**

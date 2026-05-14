@@ -174,6 +174,15 @@ class ServerEventFactory {
   }
 
     /**
+     * Public wrapper for the current request's FBP value.
+     *
+     * @return string|null
+     */
+    public static function get_fbp_value() {
+        return self::get_fbp();
+    }
+
+    /**
      * Retrieves the Facebook Click ID (FBC) cookie or session variable.
      *
      * This function returns the value of the FBC cookie or session variable,
@@ -211,6 +220,15 @@ class ServerEventFactory {
         }
 
         return $fbc;
+    }
+
+    /**
+     * Public wrapper for the current request's FBC value.
+     *
+     * @return string|null
+     */
+    public static function get_fbc_value() {
+        return self::get_fbc();
     }
 
     /**
