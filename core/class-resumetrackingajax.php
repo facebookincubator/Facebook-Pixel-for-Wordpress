@@ -268,11 +268,6 @@ class ResumeTrackingAjax {
 
         foreach ( $custom_data as $key => $value ) {
             $key = sanitize_text_field( $key );
-            if ( 'contents' === $key && is_array( $value ) ) {
-                $sanitized[ $key ] = $value;
-                continue;
-            }
-
             if ( is_array( $value ) ) {
                 $value = array_map(
                     array( $this, 'sanitize_scalar_or_array_value' ),
