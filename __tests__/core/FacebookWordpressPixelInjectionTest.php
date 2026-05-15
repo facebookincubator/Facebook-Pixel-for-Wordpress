@@ -252,8 +252,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     $injection_obj->inject_pixel_code();
     $output = ob_get_clean();
 
-    $this->assertStringContainsString( 'window.FacebookSignal', $output );
-    $this->assertStringContainsString( 'window.fbpix', $output );
+    $this->assertStringContainsString( 'FacebookSignal.init', $output );
+    $this->assertStringContainsString( 'FacebookSignal.queueEvent', $output );
     $this->assertStringContainsString( "fbq('consent', 'revoke');", $output );
     $this->assertStringContainsString( '"paused":true', $output );
   }
