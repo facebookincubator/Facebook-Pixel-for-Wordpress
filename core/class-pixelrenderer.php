@@ -148,24 +148,17 @@ class PixelRenderer {
                 $fb_integration_tracking;
         }
 
-        $is_custom = ( new ReflectionClass(
-            'FacebookPixelPlugin\Core\FacebookPixel'
-        ) )->getConstant( strtoupper( $event->getEventName() ) ) === false;
-
-        $payload = array(
-            'event_name'  => $event->getEventName(),
-            'custom_data' => $normalized_custom_data,
-            'event_id'    => $event->getEventId(),
-            'event_time'  => $event->getEventTime(),
-            'is_custom'   => $is_custom,
-        );
-
-        $queued_user_data = FacebookSignalState::get_queued_user_data(
-            $event->getEventId()
-        );
-        if ( null !== $queued_user_data ) {
-            $payload['user_data'] = $queued_user_data;
+        if ( ! empty( $event->getEventId() ) ) {
+            $normalized_custom_data[ self::EVENT_ID ] = $event->getEventId();
         }
+
+        $payload               = FacebookPixel::build_queue_payload(
+            $event->getEventName(),
+            $normalized_custom_data,
+            '',
+            null
+        );
+        $payload['event_time'] = $event->getEventTime();
 
         return 'FacebookSignal.queueEvent(' .
             wp_json_encode(
