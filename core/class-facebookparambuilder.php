@@ -62,6 +62,20 @@ class FacebookParamBuilder {
 	private static $server_setup_done = false;
 
 	/**
+	 * Resolved _fbc value for this request. False means not yet resolved.
+	 *
+	 * @var string|null|false
+	 */
+	private static $resolved_fbc = false;
+
+	/**
+	 * Resolved _fbp value for this request. False means not yet resolved.
+	 *
+	 * @var string|null|false
+	 */
+	private static $resolved_fbp = false;
+
+	/**
 	 * Gets or creates the ParamBuilder singleton instance.
 	 *
 	 * Initializes the ParamBuilder with the site URL and processes
@@ -110,6 +124,10 @@ class FacebookParamBuilder {
 			return;
 		}
 		self::$server_setup_done = true;
+
+		if ( FacebookSignalState::is_paused() ) {
+			return;
+		}
 
 		try {
 			$param_builder = self::get_instance();
@@ -168,18 +186,23 @@ class FacebookParamBuilder {
 	 * @return string|null The _fbc value, or null if unavailable.
 	 */
 	public static function get_fbc() {
+		if ( false !== self::$resolved_fbc ) {
+			return self::$resolved_fbc;
+		}
+
+		self::$resolved_fbc = null;
 		try {
 			$param_builder = self::get_instance();
 			if ( null !== $param_builder ) {
 				$fbc = $param_builder->getFbc();
 				if ( ! empty( $fbc ) ) {
-					return $fbc;
+					self::$resolved_fbc = $fbc;
 				}
 			}
 		} catch ( \Exception $exception ) {
 			// Silently fail — fallback to other methods.
 		}
-		return null;
+		return self::$resolved_fbc;
 	}
 
 	/**
@@ -188,17 +211,22 @@ class FacebookParamBuilder {
 	 * @return string|null The _fbp value, or null if unavailable.
 	 */
 	public static function get_fbp() {
+		if ( false !== self::$resolved_fbp ) {
+			return self::$resolved_fbp;
+		}
+
+		self::$resolved_fbp = null;
 		try {
 			$param_builder = self::get_instance();
 			if ( null !== $param_builder ) {
 				$fbp = $param_builder->getFbp();
 				if ( ! empty( $fbp ) ) {
-					return $fbp;
+					self::$resolved_fbp = $fbp;
 				}
 			}
 		} catch ( \Exception $exception ) {
 			// Silently fail — fallback to other methods.
 		}
-		return null;
+		return self::$resolved_fbp;
 	}
 }

@@ -20,6 +20,7 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\FacebookParamBuilder;
+use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
@@ -38,12 +39,24 @@ final class FacebookParamBuilderTest extends FacebookWordpressTestBase {
 		// Reset the static singleton via reflection.
 		$reflection = new \ReflectionClass( FacebookParamBuilder::class );
 		$instance   = $reflection->getProperty( 'instance' );
-		$instance->setAccessible( true );
+		if ( PHP_VERSION_ID < 80100 ) {
+			$instance->setAccessible( true );
+		}
 		$instance->setValue( null, null );
 
 		$setup_done = $reflection->getProperty( 'server_setup_done' );
-		$setup_done->setAccessible( true );
+		if ( PHP_VERSION_ID < 80100 ) {
+			$setup_done->setAccessible( true );
+		}
 		$setup_done->setValue( null, false );
+
+		foreach ( array( 'resolved_fbc', 'resolved_fbp' ) as $cache_prop ) {
+			$prop = $reflection->getProperty( $cache_prop );
+			if ( PHP_VERSION_ID < 80100 ) {
+				$prop->setAccessible( true );
+			}
+			$prop->setValue( null, false );
+		}
 	}
 
 	/**
@@ -263,6 +276,25 @@ final class FacebookParamBuilderTest extends FacebookWordpressTestBase {
 		$this->assertStringContainsString( 'meta-capi-param-builder-clientjs', $tag );
 		$this->assertStringContainsString( 'processAndCollectAllParams', $tag );
 		$this->assertStringContainsString( '<script', $tag );
+	}
+
+	/**
+	 * Tests that server_setup skips cookie-setting when tracking is paused.
+	 */
+	public function testServerSetupSkipsWhenPaused() {
+		FacebookSignalState::pause();
+
+		FacebookParamBuilder::server_setup();
+
+		$reflection = new \ReflectionClass( FacebookParamBuilder::class );
+		$instance   = $reflection->getProperty( 'instance' );
+		if ( PHP_VERSION_ID < 80100 ) {
+			$instance->setAccessible( true );
+		}
+		$this->assertNull(
+			$instance->getValue(),
+			'ParamBuilder instance should not be created when tracking is paused'
+		);
 	}
 
 	/**
