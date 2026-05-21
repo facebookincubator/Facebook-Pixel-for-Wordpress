@@ -249,11 +249,11 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * Test that paused rendering queues events instead of firing fbq directly.
+   * Test that held rendering queues events instead of firing fbq directly.
    *
    * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
    */
-  public function testPixelRenderQueuesEventsWhenPaused() {
+  public function testPixelRenderQueuesEventsWhenHeld() {
     \WP_Mock::userFunction(
       'get_option',
       array( 'return' => array() )
@@ -272,7 +272,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
       )
     );
 
-    FacebookSignalState::pause();
+    FacebookSignalState::hold();
     FacebookWordpressOptions::set_version_info();
 
     $event = ( new Event() )
@@ -293,11 +293,11 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * Test that paused raw rendering still returns queue-aware JS.
+   * Test that held raw rendering still returns queue-aware JS.
    *
    * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
    */
-  public function testPixelRenderQueuesEventsWhenPausedWithoutScriptTag() {
+  public function testPixelRenderQueuesEventsWhenHeldWithoutScriptTag() {
     \WP_Mock::userFunction(
       'get_option',
       array( 'return' => array() )
@@ -316,7 +316,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
       )
     );
 
-    FacebookSignalState::pause();
+    FacebookSignalState::hold();
     FacebookWordpressOptions::set_version_info();
 
     $event = ( new Event() )

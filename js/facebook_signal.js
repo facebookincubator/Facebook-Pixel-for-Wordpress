@@ -1,5 +1,5 @@
 window.FacebookSignal = window.FacebookSignal || {
-  _paused: false,
+  _held: false,
   _queue: [],
   _config: {},
   _seenEventIds: {},
@@ -27,7 +27,7 @@ window.FacebookSignal = window.FacebookSignal || {
 
   init: function (config) {
     this._config = config || {};
-    this._paused = !!this._config.paused;
+    this._held = !!this._config.held;
 
     try {
       var raw = window.sessionStorage.getItem('fbpix_seen_event_ids');
@@ -71,7 +71,7 @@ window.FacebookSignal = window.FacebookSignal || {
       delete eventParams.eventID;
     }
 
-    if (this._paused) {
+    if (this._held) {
       this.queueEvent({
         event_name: name,
         custom_data: eventParams,
@@ -88,17 +88,15 @@ window.FacebookSignal = window.FacebookSignal || {
     }
   },
 
-  setPaused: function (paused) {
-    this._paused = !!paused;
-    if (this._paused) {
-      fbq('consent', 'revoke');
-    }
+  hold: function () {
+    this._held = true;
+    fbq('consent', 'revoke');
   },
 
-  resume: function () {
+  release: function () {
     var self = this;
 
-    if (!self._paused || !self._config.ajaxUrl) {
+    if (!self._held || !self._config.ajaxUrl) {
       return Promise.resolve({ success: true, data: { sent_count: 0 } });
     }
 
@@ -108,19 +106,19 @@ window.FacebookSignal = window.FacebookSignal || {
         self._config.ajaxUrl +
         (self._config.ajaxUrl.indexOf('?') === -1 ? '?' : '&') +
         'action=' +
-        encodeURIComponent(self._config.resumeAction);
+        encodeURIComponent(self._config.releaseAction);
 
       xhr.open('POST', url, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.onload = function () {
         if (xhr.status < 200 || xhr.status >= 300) {
-          reject(new Error('Resume AJAX failed: ' + xhr.status));
+          reject(new Error('Release AJAX failed: ' + xhr.status));
           return;
         }
 
         try {
           var response = JSON.parse(xhr.responseText);
-          self._handleResumeResponse(response.data || {});
+          self._handleReleaseResponse(response.data || {});
           resolve(response);
         } catch (error) {
           reject(error);
@@ -129,19 +127,20 @@ window.FacebookSignal = window.FacebookSignal || {
       xhr.onerror = function () {
         reject(new Error('Network error'));
       };
+      var attribution = self._config.attribution || {};
       xhr.send(
         JSON.stringify({
-          security: self._config.resumeNonce,
+          security: self._config.releaseNonce,
           events: self._queue,
           fbclid: self._fbclid,
-          fbp: self._readCookie('_fbp'),
-          fbc: self._readCookie('_fbc'),
+          fbp: self._readCookie('_fbp') || attribution.fbp || null,
+          fbc: self._readCookie('_fbc') || attribution.fbc || null,
         }),
       );
     });
   },
 
-  _handleResumeResponse: function (data) {
+  _handleReleaseResponse: function (data) {
     if (data.fbp) {
       document.cookie =
         '_fbp=' +
@@ -172,11 +171,11 @@ window.FacebookSignal = window.FacebookSignal || {
     }
 
     this._queue = [];
-    this._paused = false;
+    this._held = false;
   },
 };
 
-window.fbpix = window.fbpix || {};
+window.fbwcsignal = window.fbwcsignal || {};
 (function (api) {
   var signalConfig = window.facebookSignalConfig || {};
   var cookieName = signalConfig.cookieName || '';
@@ -203,9 +202,10 @@ window.fbpix = window.fbpix || {};
     return match ? decodeURIComponent(match[1]) : null;
   }
 
-  api.setSignals = function (granted) {
-    var value = granted ? '1' : '0';
-    setCookie(value);
+  api.setState = function (state) {
+    var granted = state === 'active';
+    var cookieValue = granted ? 'active' : 'held';
+    setCookie(cookieValue);
 
     return new Promise(function (resolve, reject) {
       var xhr = new XMLHttpRequest();
@@ -223,13 +223,13 @@ window.fbpix = window.fbpix || {};
         try {
           var response = JSON.parse(xhr.responseText);
           if (!granted) {
-            window.FacebookSignal.setPaused(true);
+            window.FacebookSignal.hold();
             resolve(response);
             return;
           }
 
-          if (window.FacebookSignal && window.FacebookSignal._paused) {
-            window.FacebookSignal.resume().then(
+          if (window.FacebookSignal && window.FacebookSignal._held) {
+            window.FacebookSignal.release().then(
               function () {
                 resolve(response);
               },
@@ -254,16 +254,24 @@ window.fbpix = window.fbpix || {};
           '&security=' +
           encodeURIComponent(signalsNonce) +
           '&granted=' +
-          encodeURIComponent(value),
+          encodeURIComponent(granted ? '1' : '0'),
       );
     });
   };
 
-  api.getSignals = function () {
+  api.hold = function () {
+    return api.setState('held');
+  };
+
+  api.release = function () {
+    return api.setState('active');
+  };
+
+  api.getState = function () {
     var value = getCookie();
     if (value === null) {
       return null;
     }
-    return value === '1';
+    return value === 'active' ? 'active' : 'held';
   };
-})(window.fbpix);
+})(window.fbwcsignal);

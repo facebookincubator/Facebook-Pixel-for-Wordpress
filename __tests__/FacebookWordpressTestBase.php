@@ -77,7 +77,7 @@ abstract class FacebookWordpressTestBase extends TestCase {
         $_COOKIE                = array();
         $_POST                  = array();
         $_SESSION               = array();
-        FacebookSignalState::resume();
+        FacebookSignalState::release();
     }
 
     /**

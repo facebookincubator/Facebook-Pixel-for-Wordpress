@@ -95,7 +95,7 @@ class PixelRenderer {
         $event,
         $fb_integration_tracking
     ) {
-        if ( FacebookSignalState::is_paused() ) {
+        if ( FacebookSignalState::is_held() ) {
             return self::get_queue_track_code(
                 $event,
                 $fb_integration_tracking
@@ -128,7 +128,7 @@ class PixelRenderer {
     }
 
     /**
-     * Generate queueing code for a paused event.
+     * Generate queueing code for a held event.
      *
      * @param \FacebookPixelPlugin\Core\Event $event Event object.
      * @param bool                            $fb_integration_tracking Tracking label.

@@ -38,16 +38,22 @@ final class FacebookPixelSignalsTest extends FacebookWordpressTestBase {
       )
     );
 
-    $this->assertNull( FacebookPixelSignals::get_signals_state() );
-    $this->assertFalse( FacebookPixelSignals::should_pause_tracking() );
+    $this->assertNull( FacebookPixelSignals::get_signal_state() );
+    $this->assertFalse( FacebookPixelSignals::should_hold_signals() );
 
-    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = '0';
-    $this->assertFalse( FacebookPixelSignals::get_signals_state() );
-    $this->assertTrue( FacebookPixelSignals::should_pause_tracking() );
+    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = FacebookPixelSignals::STATE_HELD;
+    $this->assertSame(
+      FacebookPixelSignals::STATE_HELD,
+      FacebookPixelSignals::get_signal_state()
+    );
+    $this->assertTrue( FacebookPixelSignals::should_hold_signals() );
 
-    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = '1';
-    $this->assertTrue( FacebookPixelSignals::get_signals_state() );
-    $this->assertFalse( FacebookPixelSignals::should_pause_tracking() );
+    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = FacebookPixelSignals::STATE_ACTIVE;
+    $this->assertSame(
+      FacebookPixelSignals::STATE_ACTIVE,
+      FacebookPixelSignals::get_signal_state()
+    );
+    $this->assertFalse( FacebookPixelSignals::should_hold_signals() );
   }
 
   /**
@@ -94,9 +100,12 @@ final class FacebookPixelSignalsTest extends FacebookWordpressTestBase {
     );
 
     $handler = new FacebookPixelSignals();
-    $handler->handle_set_signals();
+    $handler->handle_update_state();
 
-    $this->assertEquals( '1', $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] );
+    $this->assertEquals(
+      FacebookPixelSignals::STATE_ACTIVE,
+      $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ]
+    );
     $this->assertEquals( array( 'granted' => true ), $captured_payload );
   }
 }

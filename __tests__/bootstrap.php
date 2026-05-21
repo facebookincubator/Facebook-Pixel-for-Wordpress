@@ -30,6 +30,6 @@ if ( ! defined( 'YEAR_IN_SECONDS' ) ) {
 
 require_once __DIR__ . '/../core/class-facebookpixelsignals.php';
 require_once __DIR__ . '/../core/class-facebooksignalstate.php';
-require_once __DIR__ . '/../core/class-resumetrackingajax.php';
+require_once __DIR__ . '/../core/class-releasesignalsajax.php';
 
 WP_Mock::bootstrap();

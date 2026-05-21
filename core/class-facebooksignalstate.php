@@ -20,55 +20,62 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 /**
- * Static per-request paused state.
+ * Static per-request state for held signal delivery.
  */
 class FacebookSignalState {
     /**
-     * Whether tracking is paused for the current request.
+     * Whether signals are currently held for this request.
      *
      * @var bool
      */
-    private static $paused = false;
+    private static $held = false;
 
     /**
-     * CAPI events queued while paused, keyed by event_id.
+     * CAPI events queued while signals are held, keyed by event_id.
      *
      * @var array<string, Event>
      */
     private static $queued_events = array();
 
     /**
-     * Pause tracking for this request.
+     * Attribution data captured while signals are held (e.g. fbp, fbc).
+     *
+     * @var array<string, string>
+     */
+    private static $attribution_data = array();
+
+    /**
+     * Hold signals for the current request.
      *
      * @return void
      */
-    public static function pause() {
-        self::$paused = true;
+    public static function hold() {
+        self::$held = true;
     }
 
     /**
-     * Resume tracking for this request.
+     * Release signals for the current request.
      *
      * @return void
      */
-    public static function resume() {
-        self::$paused = false;
+    public static function release() {
+        self::$held = false;
     }
 
     /**
-     * Check whether tracking is paused.
+     * Whether signals are currently held.
      *
      * @return bool
      */
-    public static function is_paused() {
+    public static function is_held() {
         return (bool) apply_filters(
-            'facebook_tracking_paused',
-            self::$paused
+            'facebook_signals_held',
+            self::$held
         );
     }
 
     /**
-     * Queue a CAPI event so it can be enriched on resume.
+     * Queue a CAPI event so it can be enriched on release.
      *
      * @param Event $event Event to queue.
      * @return void
@@ -96,8 +103,8 @@ class FacebookSignalState {
     /**
      * Get the safe-to-forward normalized user_data for a queued event.
      *
-     * Strips fields that the resume request will derive from its own context
-     * (client_ip_address, client_user_agent, fbp, fbc) so the resume can build
+     * Strips fields that the release request will derive from its own context
+     * (client_ip_address, client_user_agent, fbp, fbc) so the release can build
      * those from cookies/headers it actually sees.
      *
      * @param string $event_id Event identifier.
@@ -126,11 +133,35 @@ class FacebookSignalState {
     }
 
     /**
-     * Reset the queued events store. Intended for tests.
+     * Store attribution data captured while signals are held.
+     *
+     * @param string $key   Data key (e.g. 'fbp', 'fbc').
+     * @param string $value Data value.
+     * @return void
+     */
+    public static function set_attribution_data( $key, $value ) {
+        self::$attribution_data[ $key ] = $value;
+    }
+
+    /**
+     * Retrieve stored attribution data.
+     *
+     * @param string $key Data key.
+     * @return string|null
+     */
+    public static function get_attribution_data( $key ) {
+        return isset( self::$attribution_data[ $key ] )
+            ? self::$attribution_data[ $key ]
+            : null;
+    }
+
+    /**
+     * Reset the queued events and attribution stores. Intended for tests.
      *
      * @return void
      */
     public static function reset_queue() {
-        self::$queued_events = array();
+        self::$queued_events    = array();
+        self::$attribution_data = array();
     }
 }

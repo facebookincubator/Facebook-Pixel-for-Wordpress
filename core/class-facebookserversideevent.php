@@ -254,7 +254,7 @@ class FacebookServerSideEvent {
             wp_doing_cron() :
             false;
 
-        return FacebookSignalState::is_paused() &&
+        return FacebookSignalState::is_held() &&
             ! $is_admin_request &&
             ! $is_cron_request;
     }
