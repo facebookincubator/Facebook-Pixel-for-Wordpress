@@ -60,6 +60,10 @@ class FacebookWordpressPixelInjection {
         $pixel_id = FacebookWordpressOptions::get_active_pixel_id();
         if ( FacebookPluginUtils::is_positive_integer( $pixel_id ) ) {
             add_action(
+                'wp_enqueue_scripts',
+                array( $this, 'enqueue_signal_script' )
+            );
+            add_action(
                 'wp_head',
                 array( $this, 'inject_pixel_code' )
             );
@@ -89,6 +93,10 @@ class FacebookWordpressPixelInjection {
      * @return void
      */
     public function send_pending_events() {
+        if ( FacebookSignalState::is_paused() ) {
+            return;
+        }
+
         $pending_events =
         FacebookServerSideEvent::get_instance()->get_pending_events();
         if ( count( $pending_events ) > 0 ) {
@@ -132,11 +140,15 @@ class FacebookWordpressPixelInjection {
         // Only include user info for frontend users, not internal/admin users.
         $user_info = FacebookPluginUtils::is_internal_user() ?
             array() : FacebookWordpressOptions::get_user_info();
+        if ( FacebookSignalState::is_paused() ) {
+            echo "<script type='text/javascript'>fbq('consent', 'revoke');</script>"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        }
         echo FacebookPixel::get_pixel_init_code( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             FacebookWordpressOptions::get_agent_string(),
             $user_info, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             '1' === $capi_integration_status // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         );
+        echo $this->get_facebook_signal_init_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         echo FacebookPixel::get_pixel_page_view_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     }
 
@@ -151,5 +163,53 @@ class FacebookWordpressPixelInjection {
      */
     public function inject_pixel_noscript_code() {
         echo FacebookPixel::get_pixel_noscript_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+    }
+
+    /**
+     * Enqueue FacebookSignal helper script.
+     *
+     * @return void
+     */
+    public function enqueue_signal_script() {
+        wp_enqueue_script(
+            'facebook-signal',
+            plugins_url( '../js/facebook_signal.js', __FILE__ ),
+            array(),
+            FacebookPluginConfig::PLUGIN_VERSION,
+            false
+        );
+
+        wp_localize_script(
+            'facebook-signal',
+            'facebookSignalConfig',
+            array(
+                'cookieName'    => FacebookPixelSignals::COOKIE_NAME,
+                'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+                'signalsAction' => FacebookPixelSignals::AJAX_ACTION,
+                'signalsNonce'  => wp_create_nonce( FacebookPixelSignals::NONCE_ACTION ),
+            )
+        );
+    }
+
+    /**
+     * Initialize FacebookSignal with current config.
+     *
+     * @return string
+     */
+    private function get_facebook_signal_init_code() {
+        $config = array(
+            'paused'       => FacebookSignalState::is_paused(),
+            'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+            'resumeAction' => ResumeTrackingAjax::ACTION,
+            'resumeNonce'  => wp_create_nonce( ResumeTrackingAjax::NONCE_ACTION ),
+            'pixelId'      => FacebookPixel::get_pixel_id(),
+        );
+
+        return "<script type='text/javascript'>FacebookSignal.init(" .
+            wp_json_encode(
+                $config,
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+            ) .
+            ');</script>';
     }
 }

@@ -95,6 +95,13 @@ class PixelRenderer {
         $event,
         $fb_integration_tracking
     ) {
+        if ( FacebookSignalState::is_paused() ) {
+            return self::get_queue_track_code(
+                $event,
+                $fb_integration_tracking
+            );
+        }
+
         $event_data[ self::EVENT_ID ] = $event->getEventId();
 
         $custom_data = $event->getCustomData() !== null ?
@@ -118,5 +125,47 @@ class PixelRenderer {
             wp_json_encode( $normalized_custom_data, JSON_PRETTY_PRINT ),
             wp_json_encode( $event_data, JSON_PRETTY_PRINT )
         );
+    }
+
+    /**
+     * Generate queueing code for a paused event.
+     *
+     * @param \FacebookPixelPlugin\Core\Event $event Event object.
+     * @param bool                            $fb_integration_tracking Tracking label.
+     *
+     * @return string
+     */
+    private static function get_queue_track_code(
+        $event,
+        $fb_integration_tracking
+    ) {
+        $custom_data            = $event->getCustomData() !== null ?
+            $event->getCustomData() : new CustomData();
+        $normalized_custom_data = $custom_data->normalize();
+
+        if ( ! is_null( $fb_integration_tracking ) ) {
+            $normalized_custom_data[ self::FB_INTEGRATION_TRACKING ] =
+                $fb_integration_tracking;
+        }
+
+        if ( ! empty( $event->getEventId() ) ) {
+            $normalized_custom_data[ self::EVENT_ID ] = $event->getEventId();
+        }
+
+        $payload               = FacebookPixel::build_queue_payload(
+            $event->getEventName(),
+            $normalized_custom_data,
+            '',
+            null
+        );
+        $payload['event_time'] = $event->getEventTime();
+
+        return 'FacebookSignal.queueEvent(' .
+            wp_json_encode(
+                $payload,
+                JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP |
+                    JSON_HEX_APOS | JSON_HEX_QUOT
+            ) .
+            ');';
     }
 }

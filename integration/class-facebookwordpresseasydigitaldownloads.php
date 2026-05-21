@@ -36,6 +36,7 @@ use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Core\EventIdGenerator;
+use FacebookPixelPlugin\Core\FacebookSignalState;
 
 /**
  * FacebookWordpressEasyDigitalDownloads class.
@@ -206,6 +207,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
                 'trackingName'     => self::TRACKING_NAME,
                 'agentString'      => FacebookWordpressOptions::get_agent_string(),
                 'pixelId'          => FacebookWordpressOptions::get_active_pixel_id(),
+                'paused'           => FacebookSignalState::is_paused(),
             )
         );
 

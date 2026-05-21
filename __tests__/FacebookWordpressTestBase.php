@@ -31,13 +31,24 @@ use PHPUnit\Framework\TestCase;
 use WP_Mock\Tools\Constraints\ExpectationsMet;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
+use FacebookPixelPlugin\Core\FacebookSignalState;
 
 /**
  * FacebookWordpressTestBase class.
  */
 abstract class FacebookWordpressTestBase extends TestCase {
-
+    /**
+     * Shared alias mock handle.
+     *
+     * @var mixed
+     */
     protected $mocked_fbpixel;
+
+    /**
+     * Shared options alias mock handle.
+     *
+     * @var mixed
+     */
     protected $mocked_options;
 
     /**
@@ -63,6 +74,10 @@ abstract class FacebookWordpressTestBase extends TestCase {
         $_SERVER['HTTPS']       = 'on';
         $_SERVER['HTTP_HOST']   = 'www.pikachu.com';
         $_SERVER['REQUEST_URI'] = '/index.php';
+        $_COOKIE                = array();
+        $_POST                  = array();
+        $_SESSION               = array();
+        FacebookSignalState::resume();
     }
 
     /**
