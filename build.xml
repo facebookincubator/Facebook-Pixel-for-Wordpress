@@ -44,6 +44,8 @@
     <target name="Build" description="rebuilds this package" depends="Clean">
         <echo msg="Running Build..." />
         <echo msg="Copy files into build folder..." />
+        <mkdir dir="${builddir}" />
+        <mkdir dir="${buildsourcedir}" />
         <copy todir="${buildsourcedir}">
             <fileset refid="sourcedir" />
         </copy>
