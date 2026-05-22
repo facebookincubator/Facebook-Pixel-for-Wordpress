@@ -266,7 +266,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
    */
   public function testHeldInitCodeIncludesCapturedAttribution() {
     FacebookSignalState::hold();
-    FacebookSignalState::set_attribution_data( 'fbc', 'fb.1.123.test' );
+    $_COOKIE['_fbp'] = 'fb.1.123.browser';
+    $_COOKIE['_fbc'] = 'fb.1.123.click';
     FacebookWordpressPixelInjection::$render_cache = array();
     FacebookPixel::set_pixel_id( '1234' );
 
@@ -286,6 +287,22 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     $mocked_utils->shouldReceive( 'is_internal_user' )
       ->andReturn( false );
 
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_unslash',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
     \WP_Mock::userFunction(
       'wp_json_encode',
       array(
@@ -322,7 +339,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     $output = ob_get_clean();
 
     $this->assertStringContainsString( '"attribution"', $output );
-    $this->assertStringContainsString( 'fb.1.123.test', $output );
+    $this->assertStringContainsString( 'fb.1.123.browser', $output );
+    $this->assertStringContainsString( 'fb.1.123.click', $output );
   }
 
   /**
