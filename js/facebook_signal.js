@@ -269,9 +269,9 @@ window.fbwcsignal = window.fbwcsignal || {};
 
   api.getState = function () {
     var value = getCookie();
-    if (value === null) {
-      return null;
+    if (value === 'active' || value === 'held') {
+      return value;
     }
-    return value === 'active' ? 'active' : 'held';
+    return null;
   };
 })(window.fbwcsignal);
