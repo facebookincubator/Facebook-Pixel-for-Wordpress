@@ -48,7 +48,7 @@
             <fileset refid="sourcedir" />
         </copy>
         <echo msg="Copy complete" />
-        <echo msg="Run compose install..." />
+        <echo msg="Run composer install..." />
         <composer command="install">
             <arg value="--working-dir=${buildsourcedir}" />
             <arg value="--no-dev" />

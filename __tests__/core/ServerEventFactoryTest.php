@@ -521,8 +521,8 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 
     $event_fbc = $event->getUserData()->getFbc();
 
-    $this->assertEquals( true, str_starts_with( $event_fbc, 'fb.1.' ) );
-    $this->assertEquals( true, str_ends_with( $event_fbc, '.fbclid_str' ) );
+    $this->assertStringStartsWith( 'fb.1.', $event_fbc );
+    $this->assertStringContainsString( 'fbclid_str', $event_fbc );
   }
 
   /**

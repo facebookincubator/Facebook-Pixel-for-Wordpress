@@ -34,20 +34,6 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 class FacebookParamBuilder {
 
 	/**
-	 * URL for the client-side CAPI param builder script.
-	 *
-	 * @var string
-	 */
-	const CLIENT_JS_URL = 'https://unpkg.com/meta-capi-param-builder-clientjs/dist/clientParamBuilder.bundle.js';
-
-	/**
-	 * Script handle for the client-side param builder.
-	 *
-	 * @var string
-	 */
-	const CLIENT_JS_HANDLE = 'meta-capi-param-builder';
-
-	/**
 	 * Shared ParamBuilder instance.
 	 *
 	 * @var \FacebookAds\ParamBuilder|null
@@ -125,7 +111,7 @@ class FacebookParamBuilder {
 		}
 		self::$server_setup_done = true;
 
-		if ( FacebookSignalState::is_paused() ) {
+		if ( FacebookSignalState::is_held() ) {
 			return;
 		}
 
@@ -154,30 +140,6 @@ class FacebookParamBuilder {
 				. $exception->getMessage()
 			);
 		}
-	}
-
-	/**
-	 * Returns the client-side ParamBuilder script tag for inline injection.
-	 *
-	 * This script loads BEFORE fbevents.js so that ParamBuilder takes
-	 * priority for _fbc/_fbp cookie management on the client side.
-	 *
-	 * @return string The script HTML, or empty string if pixel is not configured.
-	 */
-	public static function get_client_script_tag() {
-		$pixel_id = FacebookWordpressOptions::get_pixel_id();
-		if ( ! FacebookPluginUtils::is_positive_integer( $pixel_id ) ) {
-			return '';
-		}
-
-		$url = esc_url( self::CLIENT_JS_URL );
-		return "<!-- Meta CAPI Param Builder -->\n"
-			. "<script type='text/javascript' src='{$url}'></script>\n"
-			. "<script type='text/javascript'>\n"
-			. "if (typeof clientParamBuilder !== 'undefined') {\n"
-			. "  clientParamBuilder.processAndCollectAllParams(window.location.href);\n"
-			. "}\n"
-			. "</script>\n";
 	}
 
 	/**

@@ -134,9 +134,6 @@ class FacebookWordpressPixelInjection {
         }
 
         self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] = true;
-        if ( ! FacebookSignalState::is_paused() ) {
-            echo FacebookParamBuilder::get_client_script_tag(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        }
         echo FacebookPixel::get_pixel_base_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         $capi_integration_status =
         FacebookWordpressOptions::get_capi_integration_status();

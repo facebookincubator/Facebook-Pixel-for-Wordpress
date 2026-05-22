@@ -225,60 +225,6 @@ final class FacebookParamBuilderTest extends FacebookWordpressTestBase {
 	}
 
 	/**
-	 * Tests that get_client_script_tag returns empty when pixel ID is not set.
-	 */
-	public function testClientScriptTagEmptyWithoutPixelId() {
-		$mocked_options = \Mockery::mock(
-			'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
-		);
-		$mocked_options->shouldReceive( 'get_pixel_id' )
-			->andReturn( '' );
-
-		$mocked_utils = \Mockery::mock(
-			'alias:FacebookPixelPlugin\Core\FacebookPluginUtils'
-		);
-		$mocked_utils->shouldReceive( 'is_positive_integer' )
-			->with( '' )
-			->andReturn( false );
-
-		$tag = FacebookParamBuilder::get_client_script_tag();
-		$this->assertEmpty( $tag );
-	}
-
-	/**
-	 * Tests that get_client_script_tag returns script HTML when pixel ID is set.
-	 */
-	public function testClientScriptTagContainsScriptWhenPixelIdSet() {
-		$mocked_options = \Mockery::mock(
-			'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
-		);
-		$mocked_options->shouldReceive( 'get_pixel_id' )
-			->andReturn( '1234' );
-
-		$mocked_utils = \Mockery::mock(
-			'alias:FacebookPixelPlugin\Core\FacebookPluginUtils'
-		);
-		$mocked_utils->shouldReceive( 'is_positive_integer' )
-			->with( '1234' )
-			->andReturn( true );
-
-		\WP_Mock::userFunction(
-			'esc_url',
-			array(
-				'args'   => array( \Mockery::any() ),
-				'return' => function ( $input ) {
-					return $input;
-				},
-			)
-		);
-
-		$tag = FacebookParamBuilder::get_client_script_tag();
-		$this->assertStringContainsString( 'meta-capi-param-builder-clientjs', $tag );
-		$this->assertStringContainsString( 'processAndCollectAllParams', $tag );
-		$this->assertStringContainsString( '<script', $tag );
-	}
-
-	/**
 	 * Tests that server_setup skips cookie-setting when tracking is paused.
 	 */
 	public function testServerSetupSkipsWhenPaused() {
