@@ -222,11 +222,14 @@ class FacebookWordpressPixelInjection {
             'releaseAction' => ReleaseSignalsAjax::ACTION,
             'releaseNonce'  => wp_create_nonce( ReleaseSignalsAjax::NONCE_ACTION ),
             'pixelId'       => FacebookPixel::get_pixel_id(),
-            'attribution'   => array(
+        );
+
+        if ( FacebookSignalState::is_held() ) {
+            $config['attribution'] = array(
                 'fbp' => FacebookSignalState::get_attribution_data( 'fbp' ),
                 'fbc' => FacebookSignalState::get_attribution_data( 'fbc' ),
-            ),
-        );
+            );
+        }
 
         return "<script type='text/javascript'>FacebookSignal.init(" .
             wp_json_encode(
