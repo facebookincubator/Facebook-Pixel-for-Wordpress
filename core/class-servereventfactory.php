@@ -156,20 +156,16 @@ class ServerEventFactory {
      * Retrieves the Facebook Browser ID (FBP).
      *
      * Resolution order:
-     * 1. _fbp cookie (set by fbevents.js or ParamBuilder)
-     * 2. ParamBuilder server-side extraction
+     * 1. ParamBuilder server-side extraction
+     * 2. _fbp cookie (set by fbevents.js)
      *
      * @return string|null The FBP value, or null if unavailable.
      */
     private static function get_fbp() {
-        $fbp = null;
+        $fbp = FacebookParamBuilder::get_fbp();
 
-        if ( ! empty( $_COOKIE['_fbp'] ) ) {
+        if ( ! $fbp && ! empty( $_COOKIE['_fbp'] ) ) {
             $fbp = sanitize_text_field( wp_unslash( $_COOKIE['_fbp'] ) );
-        }
-
-        if ( ! $fbp ) {
-            $fbp = FacebookParamBuilder::get_fbp();
         }
 
         return $fbp;
@@ -188,35 +184,33 @@ class ServerEventFactory {
      * Retrieves the Facebook Click ID (FBC).
      *
      * Resolution order:
-     * 1. If _fbc cookie exists AND fbclid hasn't changed, reuse cookie
-     * 2. ParamBuilder server-side value (always used when fbclid changed
-     *    or no cookie exists)
+     * 1. ParamBuilder server-side extraction
+     * 2. _fbc cookie (if fbclid hasn't changed)
      * 3. Constructed from fbclid query parameter
      * 4. Session fallback
      *
      * @return string|null The FBC value, or null if unavailable.
      */
     private static function get_fbc() {
-        $fbc = null;
-
-        $cookie_fbc  = ! empty( $_COOKIE['_fbc'] )
-            ? sanitize_text_field( wp_unslash( $_COOKIE['_fbc'] ) )
-            : null;
-        $request_fbclid = isset( $_GET['fbclid'] ) // phpcs:ignore WordPress.Security.NonceVerification
-            ? sanitize_text_field( wp_unslash( $_GET['fbclid'] ) ) // phpcs:ignore WordPress.Security.NonceVerification
-            : null;
-
-        if ( $cookie_fbc && ! self::has_fbclid_changed( $cookie_fbc, $request_fbclid ) ) {
-            $fbc = $cookie_fbc;
-        }
+        $fbc = FacebookParamBuilder::get_fbc();
 
         if ( ! $fbc ) {
-            $fbc = FacebookParamBuilder::get_fbc();
-        }
+            $cookie_fbc = ! empty( $_COOKIE['_fbc'] )
+                ? sanitize_text_field( wp_unslash( $_COOKIE['_fbc'] ) )
+                : null;
+				
+            $request_fbclid = isset( $_GET['fbclid'] ) // phpcs:ignore WordPress.Security.NonceVerification
+                ? sanitize_text_field( wp_unslash( $_GET['fbclid'] ) ) // phpcs:ignore WordPress.Security.NonceVerification
+                : null;
 
-        if ( ! $fbc && $request_fbclid ) {
-            $cur_time = (int) ( microtime( true ) * 1000 );
-            $fbc      = 'fb.1.' . $cur_time . '.' . rawurldecode( $request_fbclid );
+            if ( $cookie_fbc && ! self::has_fbclid_changed( $cookie_fbc, $request_fbclid ) ) {
+                $fbc = $cookie_fbc;
+            }
+
+            if ( ! $fbc && $request_fbclid ) {
+                $cur_time = (int) ( microtime( true ) * 1000 );
+                $fbc      = 'fb.1.' . $cur_time . '.' . rawurldecode( $request_fbclid );
+            }
         }
 
         if ( ! $fbc && isset( $_SESSION['_fbc'] ) ) {

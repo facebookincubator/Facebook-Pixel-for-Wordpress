@@ -28,6 +28,7 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\AAMSettingsFields;
+use FacebookPixelPlugin\Core\FacebookParamBuilder;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
@@ -573,16 +574,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $_COOKIE['_fbp'] = '_fbp_value';
 
     \WP_Mock::userFunction(
-      'wp_unslash',
-      array(
-        'args'   => array( \Mockery::any() ),
-        'return' => function ( $input ) {
-          return $input;
-        },
-      )
-    );
-
-    \WP_Mock::userFunction(
       'sanitize_text_field',
       array(
         'args'   => array( \Mockery::any() ),
@@ -594,7 +585,14 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 
     $event = ServerEventFactory::new_event( 'Lead' );
 
-    $this->assertEquals( '_fbp_value', $event->getUserData()->getFbp() );
+    $fbp = $event->getUserData()->getFbp();
+    $this->assertNotNull( $fbp );
+    $param_builder_fbp = FacebookParamBuilder::get_fbp();
+    if ( ! empty( $param_builder_fbp ) ) {
+      $this->assertEquals( $param_builder_fbp, $fbp );
+    } else {
+      $this->assertEquals( '_fbp_value', $fbp );
+    }
   }
 
   /**
