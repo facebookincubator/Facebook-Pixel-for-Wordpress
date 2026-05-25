@@ -57,6 +57,15 @@ final class FacebookParamBuilderTest extends FacebookWordpressTestBase {
 			}
 			$prop->setValue( null, false );
 		}
+
+		\WP_Mock::userFunction(
+			'get_transient',
+			array( 'return' => false )
+		);
+		\WP_Mock::userFunction(
+			'set_transient',
+			array( 'return' => true )
+		);
 	}
 
 	/**

@@ -88,7 +88,8 @@ class FacebookParamBuilder {
 						: null
 				);
 			} catch ( \Throwable $exception ) {
-				error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				FacebookPluginUtils::log_once_daily(
+					'init',
 					'Meta Pixel: Error initializing CAPI Parameter Builder: '
 					. $exception->getMessage()
 				);
@@ -153,7 +154,8 @@ class FacebookParamBuilder {
 				}
 			}
 		} catch ( \Throwable $exception ) {
-			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			FacebookPluginUtils::log_once_daily(
+				'setup',
 				'Meta Pixel: Error setting ParamBuilder cookies: '
 				. $exception->getMessage()
 			);
@@ -180,7 +182,11 @@ class FacebookParamBuilder {
 				}
 			}
 		} catch ( \Throwable $exception ) {
-			// Silently fail — fallback to other methods.
+			FacebookPluginUtils::log_once_daily(
+				'fbc',
+				'Meta Pixel: Error getting FBC from ParamBuilder: '
+				. $exception->getMessage()
+			);
 		}
 		return self::$resolved_fbc;
 	}
@@ -205,7 +211,11 @@ class FacebookParamBuilder {
 				}
 			}
 		} catch ( \Throwable $exception ) {
-			// Silently fail — fallback to other methods.
+			FacebookPluginUtils::log_once_daily(
+				'fbp',
+				'Meta Pixel: Error getting FBP from ParamBuilder: '
+				. $exception->getMessage()
+			);
 		}
 		return self::$resolved_fbp;
 	}

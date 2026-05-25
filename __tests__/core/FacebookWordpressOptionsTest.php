@@ -321,7 +321,9 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
       $enable_aam = false,
       $aam_fields = array()
     ) {
-      define( 'MINUTE_IN_SECONDS', 60 );
+      if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+        define( 'MINUTE_IN_SECONDS', 60 );
+      }
       \WP_Mock::userFunction(
         'get_transient',
         array(
