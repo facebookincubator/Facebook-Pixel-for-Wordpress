@@ -111,10 +111,6 @@ class FacebookParamBuilder {
 		}
 		self::$server_setup_done = true;
 
-		if ( FacebookSignalState::is_held() ) {
-			return;
-		}
-
 		try {
 			$param_builder = self::get_instance();
 			if ( null === $param_builder ) {
@@ -122,6 +118,28 @@ class FacebookParamBuilder {
 			}
 
 			$cookies_to_set = $param_builder->getCookiesToSet();
+
+			if ( FacebookSignalState::is_held() ) {
+				$fbc = self::get_fbc();
+				$fbp = self::get_fbp();
+
+				if ( ! empty( $fbc ) ) {
+					FacebookSignalState::set_attribution_data( 'fbc', $fbc );
+				}
+				if ( ! empty( $fbp ) ) {
+					FacebookSignalState::set_attribution_data( 'fbp', $fbp );
+				}
+
+				foreach ( $cookies_to_set as $cookie ) {
+					if ( '_fbp' === $cookie->name ) {
+						FacebookSignalState::set_attribution_data( 'fbp_domain', $cookie->domain );
+					} elseif ( '_fbc' === $cookie->name ) {
+						FacebookSignalState::set_attribution_data( 'fbc_domain', $cookie->domain );
+					}
+				}
+
+				return;
+			}
 
 			if ( ! headers_sent() ) {
 				foreach ( $cookies_to_set as $cookie ) {

@@ -141,7 +141,6 @@ class FacebookWordpressPixelInjection {
         $user_info = FacebookPluginUtils::is_internal_user() ?
             array() : FacebookWordpressOptions::get_user_info();
         if ( FacebookSignalState::is_held() ) {
-            $this->capture_held_attribution();
             echo "<script type='text/javascript'>fbq('consent', 'revoke');</script>"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         }
         echo FacebookPixel::get_pixel_init_code( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -184,30 +183,12 @@ class FacebookWordpressPixelInjection {
             'facebook-signal',
             'facebookSignalConfig',
             array(
-                'cookieName'    => Signals::COOKIE_NAME,
+                'cookieName'    => FacebookPixelSignals::COOKIE_NAME,
                 'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-                'signalsAction' => Signals::AJAX_ACTION,
-                'signalsNonce'  => wp_create_nonce( Signals::NONCE_ACTION ),
+                'signalsAction' => FacebookPixelSignals::AJAX_ACTION,
+                'signalsNonce'  => wp_create_nonce( FacebookPixelSignals::NONCE_ACTION ),
             )
         );
-    }
-
-    /**
-     * Capture fbp/fbc attribution while signals are held so the release
-     * flow can forward it once signals are released.
-     *
-     * @return void
-     */
-    private function capture_held_attribution() {
-        $fbp = ServerEventFactory::get_fbp_value();
-        if ( ! empty( $fbp ) ) {
-            FacebookSignalState::set_attribution_data( 'fbp', $fbp );
-        }
-
-        $fbc = ServerEventFactory::get_fbc_value();
-        if ( ! empty( $fbc ) ) {
-            FacebookSignalState::set_attribution_data( 'fbc', $fbc );
-        }
     }
 
     /**
@@ -221,14 +202,28 @@ class FacebookWordpressPixelInjection {
             'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
             'releaseAction' => ReleaseSignalsAjax::ACTION,
             'releaseNonce'  => wp_create_nonce( ReleaseSignalsAjax::NONCE_ACTION ),
-            'pixelId'       => FacebookPixel::get_pixel_id(),
+            'pixelId'      => FacebookPixel::get_pixel_id(),
         );
 
-        if ( FacebookSignalState::is_held() ) {
-            $config['attribution'] = array(
-                'fbp' => FacebookSignalState::get_attribution_data( 'fbp' ),
-                'fbc' => FacebookSignalState::get_attribution_data( 'fbc' ),
-            );
+        $attribution = array(
+            'fbp'       => FacebookSignalState::get_attribution_data( 'fbp' ),
+            'fbc'       => FacebookSignalState::get_attribution_data( 'fbc' ),
+            'fbpDomain' => FacebookSignalState::get_attribution_data( 'fbp_domain' ),
+            'fbcDomain' => FacebookSignalState::get_attribution_data( 'fbc_domain' ),
+        );
+
+        if ( ! FacebookSignalState::is_held() ) {
+            if ( empty( $attribution['fbp'] ) ) {
+                $attribution['fbp'] = FacebookParamBuilder::get_fbp();
+            }
+            if ( empty( $attribution['fbc'] ) ) {
+                $attribution['fbc'] = FacebookParamBuilder::get_fbc();
+            }
+        }
+
+        $attribution = array_filter( $attribution );
+        if ( ! empty( $attribution ) ) {
+            $config['attribution'] = $attribution;
         }
 
         return "<script type='text/javascript'>FacebookSignal.init(" .

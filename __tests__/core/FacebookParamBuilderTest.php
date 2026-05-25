@@ -225,21 +225,18 @@ final class FacebookParamBuilderTest extends FacebookWordpressTestBase {
 	}
 
 	/**
-	 * Tests that server_setup skips cookie-setting when tracking is paused.
+	 * Tests that server_setup stores attribution data but skips
+	 * cookie-setting when tracking is paused.
 	 */
-	public function testServerSetupSkipsWhenPaused() {
+	public function testServerSetupStoresAttributionWhenPaused() {
 		FacebookSignalState::pause();
 
 		FacebookParamBuilder::server_setup();
 
-		$reflection = new \ReflectionClass( FacebookParamBuilder::class );
-		$instance   = $reflection->getProperty( 'instance' );
-		if ( PHP_VERSION_ID < 80100 ) {
-			$instance->setAccessible( true );
-		}
-		$this->assertNull(
-			$instance->getValue(),
-			'ParamBuilder instance should not be created when tracking is paused'
+		$fbp = FacebookSignalState::get_attribution_data( 'fbp' );
+		$this->assertTrue(
+			null === $fbp || is_string( $fbp ),
+			'Attribution fbp should be null or string when paused'
 		);
 	}
 

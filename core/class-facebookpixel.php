@@ -478,54 +478,12 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         $tracking_name = '',
         $with_script_tag = true
     ) {
-        $cookie_sync = '';
-        if ( ! empty( self::$pixel_id ) && ! self::is_tracking_paused() ) {
-            $cookie_sync = self::get_cookie_sync_js( '_fbp', FacebookParamBuilder::get_fbp() )
-                . self::get_cookie_sync_js( '_fbc', FacebookParamBuilder::get_fbc() );
-        }
-
-        if ( empty( $cookie_sync ) ) {
-            return self::get_pixel_track_code(
-                self::PAGEVIEW,
-                $param,
-                $tracking_name,
-                $with_script_tag
-            );
-        }
-
-        $track = self::get_pixel_track_code(
+        return self::get_pixel_track_code(
             self::PAGEVIEW,
             $param,
             $tracking_name,
-            false
+            $with_script_tag
         );
-
-        $combined = $cookie_sync . "\n" . $track;
-        return $with_script_tag
-            ? "<script type='text/javascript'>" . $combined . '</script>'
-            : $combined;
-    }
-
-    /**
-     * Generates JS to sync a cookie with a server-side value.
-     *
-     * @param string      $cookie_name  Cookie name (e.g. '_fbp', '_fbc').
-     * @param string|null $server_value Server-resolved value.
-     *
-     * @return string JS snippet, or empty string if no sync needed.
-     */
-    private static function get_cookie_sync_js( $cookie_name, $server_value ) {
-        if ( empty( $server_value ) ) {
-            return '';
-        }
-
-        return "if(typeof fbq!=='undefined'){"
-            . "var _c=(document.cookie.match(/(?:^|;\\s*)"
-            . $cookie_name . "=([^;]*)/)||[])[1];"
-            . "if(_c&&_c!=='" . $server_value . "'){"
-            . "document.cookie='" . $cookie_name . "=" . $server_value
-            . ";path=/;max-age=7776000;SameSite=Lax';"
-            . "}}";
     }
 
     /**

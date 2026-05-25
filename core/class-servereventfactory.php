@@ -164,7 +164,7 @@ class ServerEventFactory {
     private static function get_fbp() {
         $fbp = FacebookParamBuilder::get_fbp();
 
-        if ( ! $fbp && ! empty( $_COOKIE['_fbp'] ) ) {
+        if ( empty( $fbp ) && ! empty( $_COOKIE['_fbp'] ) ) {
             $fbp = sanitize_text_field( wp_unslash( $_COOKIE['_fbp'] ) );
         }
 
@@ -194,30 +194,30 @@ class ServerEventFactory {
     private static function get_fbc() {
         $fbc = FacebookParamBuilder::get_fbc();
 
-        if ( ! $fbc ) {
+        if ( empty( $fbc ) ) {
             $cookie_fbc = ! empty( $_COOKIE['_fbc'] )
                 ? sanitize_text_field( wp_unslash( $_COOKIE['_fbc'] ) )
                 : null;
-				
+
             $request_fbclid = isset( $_GET['fbclid'] ) // phpcs:ignore WordPress.Security.NonceVerification
                 ? sanitize_text_field( wp_unslash( $_GET['fbclid'] ) ) // phpcs:ignore WordPress.Security.NonceVerification
                 : null;
 
-            if ( $cookie_fbc && ! self::has_fbclid_changed( $cookie_fbc, $request_fbclid ) ) {
-                $fbc = $cookie_fbc;
-            }
-
-            if ( ! $fbc && $request_fbclid ) {
+            if ( $request_fbclid && ( empty( $cookie_fbc ) || self::has_fbclid_changed( $cookie_fbc, $request_fbclid ) ) ) {
                 $cur_time = (int) ( microtime( true ) * 1000 );
                 $fbc      = 'fb.1.' . $cur_time . '.' . rawurldecode( $request_fbclid );
             }
+
+            if ( empty( $fbc ) && ! empty( $cookie_fbc ) ) {
+                $fbc = $cookie_fbc;
+            }
+
+            if ( empty( $fbc ) && isset( $_SESSION['_fbc'] ) ) {
+                $fbc = sanitize_text_field( $_SESSION['_fbc'] );
+            }
         }
 
-        if ( ! $fbc && isset( $_SESSION['_fbc'] ) ) {
-            $fbc = sanitize_text_field( $_SESSION['_fbc'] );
-        }
-
-        if ( $fbc ) {
+        if ( ! empty( $fbc ) && ! FacebookSignalState::is_held() ) {
             $_SESSION['_fbc'] = $fbc;
         }
 
