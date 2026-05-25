@@ -108,4 +108,69 @@ final class FacebookPixelSignalsTest extends FacebookWordpressTestBase {
     );
     $this->assertEquals( array( 'state' => 'active' ), $captured_payload );
   }
+
+  /**
+   * Test that an unrecognised cookie value is treated as unset by all predicates.
+   *
+   * @return void
+   */
+  public function testUnrecognisedCookieValueTreatedAsUnset() {
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_unslash',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
+
+    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = 'garbage';
+    $this->assertNull( FacebookPixelSignals::get_signal_state() );
+    $this->assertFalse( FacebookPixelSignals::is_signals_active() );
+    $this->assertFalse( FacebookPixelSignals::should_hold_signals() );
+  }
+
+  /**
+   * Test is_signals_active() mirrors should_hold_signals() inverse.
+   *
+   * @return void
+   */
+  public function testIsSignalsActiveReturnsTrueOnlyWhenActive() {
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_unslash',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
+
+    // Unset cookie — neither active nor held.
+    unset( $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] );
+    $this->assertFalse( FacebookPixelSignals::is_signals_active() );
+
+    // Explicitly held.
+    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = FacebookPixelSignals::STATE_HELD;
+    $this->assertFalse( FacebookPixelSignals::is_signals_active() );
+
+    // Explicitly active.
+    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = FacebookPixelSignals::STATE_ACTIVE;
+    $this->assertTrue( FacebookPixelSignals::is_signals_active() );
+  }
 }

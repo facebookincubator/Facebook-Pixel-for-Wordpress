@@ -63,6 +63,15 @@ class FacebookPixelSignals {
     }
 
     /**
+     * Whether signals are currently active.
+     *
+     * @return bool
+     */
+    public static function is_signals_active() {
+        return self::STATE_ACTIVE === self::get_signal_state();
+    }
+
+    /**
      * Whether signals should be held.
      *
      * @return bool
