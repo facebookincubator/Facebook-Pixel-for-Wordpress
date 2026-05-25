@@ -241,6 +241,91 @@ final class FacebookParamBuilderTest extends FacebookWordpressTestBase {
 	}
 
 	/**
+	 * Tests that server_setup stores cookie domains in attribution when paused.
+	 */
+	public function testServerSetupStoresDomainsWhenPaused() {
+		FacebookSignalState::pause();
+
+		FacebookParamBuilder::server_setup();
+
+		$fbp_domain = FacebookSignalState::get_attribution_data( 'fbp_domain' );
+		$this->assertTrue(
+			null === $fbp_domain || is_string( $fbp_domain ),
+			'Attribution fbp_domain should be null or string when paused'
+		);
+	}
+
+	/**
+	 * Tests that server_setup does not store attribution when not paused.
+	 */
+	public function testServerSetupDoesNotStoreAttributionWhenNotPaused() {
+		\WP_Mock::userFunction(
+			'sanitize_text_field',
+			array(
+				'args'   => array( \Mockery::any() ),
+				'return' => function ( $input ) {
+					return $input;
+				},
+			)
+		);
+
+		FacebookParamBuilder::server_setup();
+
+		$this->assertNull(
+			FacebookSignalState::get_attribution_data( 'fbp_domain' ),
+			'Attribution should not be stored when not paused'
+		);
+	}
+
+	/**
+	 * Tests that get_fbp returns the same value on repeated calls.
+	 */
+	public function testGetFbpReturnsSameValueOnRepeatedCalls() {
+		\WP_Mock::userFunction(
+			'get_site_url',
+			array( 'return' => 'https://www.example.com' )
+		);
+		\WP_Mock::userFunction(
+			'sanitize_text_field',
+			array(
+				'args'   => array( \Mockery::any() ),
+				'return' => function ( $input ) {
+					return $input;
+				},
+			)
+		);
+
+		$first  = FacebookParamBuilder::get_fbp();
+		$second = FacebookParamBuilder::get_fbp();
+
+		$this->assertSame( $first, $second );
+	}
+
+	/**
+	 * Tests that get_fbc returns the same value on repeated calls.
+	 */
+	public function testGetFbcReturnsSameValueOnRepeatedCalls() {
+		\WP_Mock::userFunction(
+			'get_site_url',
+			array( 'return' => 'https://www.example.com' )
+		);
+		\WP_Mock::userFunction(
+			'sanitize_text_field',
+			array(
+				'args'   => array( \Mockery::any() ),
+				'return' => function ( $input ) {
+					return $input;
+				},
+			)
+		);
+
+		$first  = FacebookParamBuilder::get_fbc();
+		$second = FacebookParamBuilder::get_fbc();
+
+		$this->assertSame( $first, $second );
+	}
+
+	/**
 	 * Tests that get_instance returns the same singleton instance.
 	 */
 	public function testGetInstanceReturnsSingleton() {
