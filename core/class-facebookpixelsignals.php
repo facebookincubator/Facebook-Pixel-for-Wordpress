@@ -83,11 +83,11 @@ class FacebookPixelSignals {
     public function handle_update_state() {
         check_ajax_referer( self::NONCE_ACTION, 'security' );
 
-        $raw_state = isset( $_POST['state'] )
-            ? strtolower( sanitize_text_field( wp_unslash( $_POST['state'] ) ) )
-            : self::STATE_HELD;
-
-        $state = self::STATE_ACTIVE === $raw_state ? self::STATE_ACTIVE : self::STATE_HELD;
+        $state = self::normalize_state(
+            isset( $_POST['state'] )
+                ? sanitize_text_field( wp_unslash( $_POST['state'] ) )
+                : null
+        );
 
         $this->set_cookie( $state );
         $_COOKIE[ self::COOKIE_NAME ] = $state;
@@ -97,6 +97,25 @@ class FacebookPixelSignals {
                 'state' => $state,
             )
         );
+    }
+
+    /**
+     * Normalize an incoming state value to a canonical STATE_ACTIVE / STATE_HELD.
+     *
+     * Anything that is not exactly 'active' (case-insensitive) becomes 'held'.
+     *
+     * @param string|null $raw Raw input value.
+     *
+     * @return string
+     */
+    private static function normalize_state( $raw ) {
+        if ( null === $raw ) {
+            return self::STATE_HELD;
+        }
+
+        $candidate = strtolower( $raw );
+
+        return self::STATE_ACTIVE === $candidate ? self::STATE_ACTIVE : self::STATE_HELD;
     }
 
     /**
