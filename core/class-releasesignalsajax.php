@@ -53,13 +53,18 @@ class ReleaseSignalsAjax {
     const RATE_LIMIT_GROUP = 'fbpix_release_signals_rl';
 
     /**
-     * Allowed released event names.
+     * Well-known event names accepted on release.
+     *
+     * Advisory list — the validate_event() regex also passes any camelCase
+     * custom event name. Keep this list in sync with facebook-for-woocommerce
+     * ReleaseSignalsAjax::ALLOWED_EVENTS.
      *
      * @var string[]
      */
     private static $allowed_events = array(
         'PageView',
         'ViewContent',
+        'ViewCategory',
         'Search',
         'AddToCart',
         'AddToWishlist',
