@@ -62,7 +62,7 @@ final class FacebookPixelSignalsTest extends FacebookWordpressTestBase {
    * @return void
    */
   public function testHandleSetSignalsUpdatesCookieState() {
-    $_POST['granted'] = '1';
+    $_POST['state'] = 'active';
 
     \WP_Mock::userFunction(
       'check_ajax_referer',
@@ -106,6 +106,6 @@ final class FacebookPixelSignalsTest extends FacebookWordpressTestBase {
       FacebookPixelSignals::STATE_ACTIVE,
       $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ]
     );
-    $this->assertEquals( array( 'granted' => true ), $captured_payload );
+    $this->assertEquals( array( 'state' => 'active' ), $captured_payload );
   }
 }

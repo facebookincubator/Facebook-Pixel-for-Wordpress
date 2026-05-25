@@ -72,24 +72,29 @@ class FacebookPixelSignals {
     }
 
     /**
-     * Persist the signal grant state via AJAX.
+     * Persist the signal state via AJAX.
+     *
+     * Expected POST params:
+     *  - security : nonce
+     *  - state    : 'active' or 'held'
      *
      * @return void
      */
     public function handle_update_state() {
         check_ajax_referer( self::NONCE_ACTION, 'security' );
 
-        $granted = isset( $_POST['granted'] ) &&
-            '1' === sanitize_text_field( wp_unslash( $_POST['granted'] ) );
+        $raw_state = isset( $_POST['state'] )
+            ? strtolower( sanitize_text_field( wp_unslash( $_POST['state'] ) ) )
+            : self::STATE_HELD;
 
-        $state = $granted ? self::STATE_ACTIVE : self::STATE_HELD;
+        $state = self::STATE_ACTIVE === $raw_state ? self::STATE_ACTIVE : self::STATE_HELD;
 
         $this->set_cookie( $state );
         $_COOKIE[ self::COOKIE_NAME ] = $state;
 
         wp_send_json_success(
             array(
-                'granted' => $granted,
+                'state' => $state,
             )
         );
     }

@@ -253,8 +253,8 @@ window.fbwcsignal = window.fbwcsignal || {};
           encodeURIComponent(signalsAction) +
           '&security=' +
           encodeURIComponent(signalsNonce) +
-          '&granted=' +
-          encodeURIComponent(granted ? '1' : '0'),
+          '&state=' +
+          encodeURIComponent(cookieValue),
       );
     });
   };
