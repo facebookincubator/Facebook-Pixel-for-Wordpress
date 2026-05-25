@@ -202,10 +202,9 @@ window.fbwcsignal = window.fbwcsignal || {};
     return match ? decodeURIComponent(match[1]) : null;
   }
 
-  api.setState = function (state) {
-    var granted = state === 'active';
-    var cookieValue = granted ? 'active' : 'held';
-    setCookie(cookieValue);
+  function updateState(state) {
+    var normalizedState = state === 'active' ? 'active' : 'held';
+    setCookie(normalizedState);
 
     return new Promise(function (resolve, reject) {
       var xhr = new XMLHttpRequest();
@@ -222,7 +221,7 @@ window.fbwcsignal = window.fbwcsignal || {};
 
         try {
           var response = JSON.parse(xhr.responseText);
-          if (!granted) {
+          if (normalizedState === 'held') {
             window.FacebookSignal.hold();
             resolve(response);
             return;
@@ -254,17 +253,17 @@ window.fbwcsignal = window.fbwcsignal || {};
           '&security=' +
           encodeURIComponent(signalsNonce) +
           '&state=' +
-          encodeURIComponent(cookieValue),
+          encodeURIComponent(normalizedState),
       );
     });
-  };
+  }
 
   api.hold = function () {
-    return api.setState('held');
+    return updateState('held');
   };
 
   api.release = function () {
-    return api.setState('active');
+    return updateState('active');
   };
 
   api.getState = function () {
