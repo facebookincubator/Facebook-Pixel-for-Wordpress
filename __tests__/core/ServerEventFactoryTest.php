@@ -711,7 +711,7 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $_GET['fbclid'] = 'test_fbclid';
     $_SESSION       = array();
 
-    FacebookSignalState::pause();
+    FacebookSignalState::hold();
 
     \WP_Mock::userFunction(
       'sanitize_text_field',

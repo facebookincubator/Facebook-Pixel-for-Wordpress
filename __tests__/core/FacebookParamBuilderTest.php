@@ -238,7 +238,7 @@ final class FacebookParamBuilderTest extends FacebookWordpressTestBase {
 	 * cookie-setting when tracking is paused.
 	 */
 	public function testServerSetupStoresAttributionWhenPaused() {
-		FacebookSignalState::pause();
+		FacebookSignalState::hold();
 
 		FacebookParamBuilder::server_setup();
 
@@ -253,7 +253,7 @@ final class FacebookParamBuilderTest extends FacebookWordpressTestBase {
 	 * Tests that server_setup stores cookie domains in attribution when paused.
 	 */
 	public function testServerSetupStoresDomainsWhenPaused() {
-		FacebookSignalState::pause();
+		FacebookSignalState::hold();
 
 		FacebookParamBuilder::server_setup();
 

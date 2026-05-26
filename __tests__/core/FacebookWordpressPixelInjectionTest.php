@@ -248,6 +248,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
       )
     );
 
+    FacebookSignalState::set_attribution_data( 'fbp', 'fb.1.123.test' );
+
     $injection_obj = new FacebookWordpressPixelInjection();
 
     ob_start();
@@ -268,8 +270,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
    */
   public function testHeldInitCodeIncludesCapturedAttribution() {
     FacebookSignalState::hold();
-    $_COOKIE['_fbp'] = 'fb.1.123.browser';
-    $_COOKIE['_fbc'] = 'fb.1.123.click';
+    FacebookSignalState::set_attribution_data( 'fbp', 'fb.1.123.browser' );
+    FacebookSignalState::set_attribution_data( 'fbc', 'fb.1.123.click' );
     FacebookWordpressPixelInjection::$render_cache = array();
     FacebookPixel::set_pixel_id( '1234' );
 

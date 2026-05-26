@@ -73,12 +73,12 @@ final class FacebookSignalStateTest extends FacebookWordpressTestBase {
 	}
 
 	public function testPauseAndResumeToggleState() {
-		$this->assertFalse( FacebookSignalState::is_paused() );
+		$this->assertFalse( FacebookSignalState::is_held() );
 
-		FacebookSignalState::pause();
-		$this->assertTrue( FacebookSignalState::is_paused() );
+		FacebookSignalState::hold();
+		$this->assertTrue( FacebookSignalState::is_held() );
 
-		FacebookSignalState::resume();
-		$this->assertFalse( FacebookSignalState::is_paused() );
+		FacebookSignalState::release();
+		$this->assertFalse( FacebookSignalState::is_held() );
 	}
 }

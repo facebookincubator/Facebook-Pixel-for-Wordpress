@@ -205,25 +205,18 @@ class FacebookWordpressPixelInjection {
             'pixelId'      => FacebookPixel::get_pixel_id(),
         );
 
-        $attribution = array(
-            'fbp'       => FacebookSignalState::get_attribution_data( 'fbp' ),
-            'fbc'       => FacebookSignalState::get_attribution_data( 'fbc' ),
-            'fbpDomain' => FacebookSignalState::get_attribution_data( 'fbp_domain' ),
-            'fbcDomain' => FacebookSignalState::get_attribution_data( 'fbc_domain' ),
-        );
-
-        if ( ! FacebookSignalState::is_held() ) {
-            if ( empty( $attribution['fbp'] ) ) {
-                $attribution['fbp'] = FacebookParamBuilder::get_fbp();
+        if ( FacebookSignalState::is_held() ) {
+            $attribution = array_filter(
+                array(
+                    'fbp'       => FacebookSignalState::get_attribution_data( 'fbp' ),
+                    'fbc'       => FacebookSignalState::get_attribution_data( 'fbc' ),
+                    'fbpDomain' => FacebookSignalState::get_attribution_data( 'fbp_domain' ),
+                    'fbcDomain' => FacebookSignalState::get_attribution_data( 'fbc_domain' ),
+                )
+            );
+            if ( ! empty( $attribution ) ) {
+                $config['attribution'] = $attribution;
             }
-            if ( empty( $attribution['fbc'] ) ) {
-                $attribution['fbc'] = FacebookParamBuilder::get_fbc();
-            }
-        }
-
-        $attribution = array_filter( $attribution );
-        if ( ! empty( $attribution ) ) {
-            $config['attribution'] = $attribution;
         }
 
         return "<script type='text/javascript'>FacebookSignal.init(" .
