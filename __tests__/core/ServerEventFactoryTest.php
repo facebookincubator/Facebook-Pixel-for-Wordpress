@@ -28,6 +28,8 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\AAMSettingsFields;
+use FacebookPixelPlugin\Core\FacebookParamBuilder;
+use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
@@ -521,8 +523,8 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 
     $event_fbc = $event->getUserData()->getFbc();
 
-    $this->assertEquals( true, str_starts_with( $event_fbc, 'fb.1.' ) );
-    $this->assertEquals( true, str_ends_with( $event_fbc, '.fbclid_str' ) );
+    $this->assertStringStartsWith( 'fb.1.', $event_fbc );
+    $this->assertStringContainsString( 'fbclid_str', $event_fbc );
   }
 
   /**
@@ -573,16 +575,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $_COOKIE['_fbp'] = '_fbp_value';
 
     \WP_Mock::userFunction(
-      'wp_unslash',
-      array(
-        'args'   => array( \Mockery::any() ),
-        'return' => function ( $input ) {
-          return $input;
-        },
-      )
-    );
-
-    \WP_Mock::userFunction(
       'sanitize_text_field',
       array(
         'args'   => array( \Mockery::any() ),
@@ -594,7 +586,202 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
 
     $event = ServerEventFactory::new_event( 'Lead' );
 
-    $this->assertEquals( '_fbp_value', $event->getUserData()->getFbp() );
+    $fbp = $event->getUserData()->getFbp();
+    $this->assertNotNull( $fbp );
+    $param_builder_fbp = FacebookParamBuilder::get_fbp();
+    if ( ! empty( $param_builder_fbp ) ) {
+      $this->assertEquals( $param_builder_fbp, $fbp );
+    } else {
+      $this->assertEquals( '_fbp_value', $fbp );
+    }
+  }
+
+  /**
+   * Tests that ParamBuilder fbp takes priority over cookie fbp.
+   */
+  public function testParamBuilderFbpTakesPriorityOverCookie() {
+    $_COOKIE['_fbp'] = 'cookie_fbp_value';
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+
+    $param_builder_fbp = FacebookParamBuilder::get_fbp();
+
+    $event     = ServerEventFactory::new_event( 'PageView' );
+    $event_fbp = $event->getUserData()->getFbp();
+
+    if ( ! empty( $param_builder_fbp ) ) {
+      $this->assertEquals( $param_builder_fbp, $event_fbp );
+    } else {
+      $this->assertEquals( 'cookie_fbp_value', $event_fbp );
+    }
+  }
+
+  /**
+   * Tests that ParamBuilder fbc takes priority over cookie fbc.
+   */
+  public function testParamBuilderFbcTakesPriorityOverCookie() {
+    $_COOKIE['_fbc'] = 'fb.1.100.old_fbclid';
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+
+    $param_builder_fbc = FacebookParamBuilder::get_fbc();
+
+    $event     = ServerEventFactory::new_event( 'PageView' );
+    $event_fbc = $event->getUserData()->getFbc();
+
+    if ( ! empty( $param_builder_fbc ) ) {
+      $this->assertEquals( $param_builder_fbc, $event_fbc );
+    } else {
+      $this->assertEquals( 'fb.1.100.old_fbclid', $event_fbc );
+    }
+  }
+
+  /**
+   * Tests that fbc is constructed from fbclid when cookie fbclid changed.
+   */
+  public function testFbcReconstructedWhenCookieFbclidChanged() {
+    $_COOKIE['_fbc'] = 'fb.1.100.old_fbclid';
+    $_GET['fbclid']  = 'new_fbclid';
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+
+    $event     = ServerEventFactory::new_event( 'Lead' );
+    $event_fbc = $event->getUserData()->getFbc();
+
+    $this->assertNotNull( $event_fbc );
+    $this->assertStringContainsString( 'new_fbclid', $event_fbc );
+  }
+
+  /**
+   * Tests that fbc cookie is used when fbclid has not changed.
+   */
+  public function testFbcCookieUsedWhenFbclidUnchanged() {
+    $_COOKIE['_fbc'] = 'fb.1.100.same_fbclid';
+    $_GET['fbclid']  = 'same_fbclid';
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+
+    $param_builder_fbc = FacebookParamBuilder::get_fbc();
+    $event             = ServerEventFactory::new_event( 'Lead' );
+    $event_fbc         = $event->getUserData()->getFbc();
+
+    if ( ! empty( $param_builder_fbc ) ) {
+      $this->assertEquals( $param_builder_fbc, $event_fbc );
+    } else {
+      $this->assertEquals( 'fb.1.100.same_fbclid', $event_fbc );
+    }
+  }
+
+  /**
+   * Tests that fbc is not written to session when paused.
+   */
+  public function testFbcNotSavedToSessionWhenPaused() {
+    $_GET['fbclid'] = 'test_fbclid';
+    $_SESSION       = array();
+
+    FacebookSignalState::hold();
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+
+    ServerEventFactory::new_event( 'Lead' );
+
+    $this->assertArrayNotHasKey( '_fbc', $_SESSION );
+  }
+
+  /**
+   * Tests that fbc is saved to session when not paused.
+   */
+  public function testFbcSavedToSessionWhenNotPaused() {
+    $_GET['fbclid'] = 'test_fbclid';
+    $_SESSION       = array();
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+
+    $event     = ServerEventFactory::new_event( 'Lead' );
+    $event_fbc = $event->getUserData()->getFbc();
+
+    if ( ! empty( $event_fbc ) ) {
+      $this->assertArrayHasKey( '_fbc', $_SESSION );
+      $this->assertEquals( $event_fbc, $_SESSION['_fbc'] );
+    } else {
+      $this->assertArrayNotHasKey( '_fbc', $_SESSION );
+    }
+  }
+
+  /**
+   * Tests that fbc falls back to session when no other source is available.
+   */
+  public function testFbcFallsBackToSession() {
+    $_SESSION['_fbc'] = 'fb.1.999.session_fbclid';
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+
+    $param_builder_fbc = FacebookParamBuilder::get_fbc();
+
+    $event     = ServerEventFactory::new_event( 'Lead' );
+    $event_fbc = $event->getUserData()->getFbc();
+
+    if ( ! empty( $param_builder_fbc ) ) {
+      $this->assertEquals( $param_builder_fbc, $event_fbc );
+    } else {
+      $this->assertEquals( 'fb.1.999.session_fbclid', $event_fbc );
+    }
   }
 
   /**

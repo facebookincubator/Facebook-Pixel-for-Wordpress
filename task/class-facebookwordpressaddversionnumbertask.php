@@ -52,10 +52,12 @@ class FacebookWordpressAddVersionNumberTask extends BaseTask {
      */
     public function main() {
         $this->setABSPATH();
-        $version = FacebookPluginConfig::PLUGIN_VERSION;
+        $version   = FacebookPluginConfig::PLUGIN_VERSION;
+        $base_dir  = $this->getProject()->getBasedir();
+        $full_path = $base_dir . DIRECTORY_SEPARATOR . $this->path;
         echo 'The current version is ' . $version . " \n";
-        $file_contents = file_get_contents( $this->path );
+        $file_contents = file_get_contents( $full_path );
         $file_contents = str_replace( '{*VERSION_NUMBER*}', $version, $file_contents );
-        file_put_contents( $this->path, $file_contents );
+        file_put_contents( $full_path, $file_contents );
     }
 }

@@ -153,25 +153,23 @@ class ServerEventFactory {
     }
 
     /**
-     * Retrieves the Facebook Browser ID (FBP) cookie.
+     * Retrieves the Facebook Browser ID (FBP).
      *
-     * This function returns the value of the FBP cookie, which
-     * is a unique identifier assigned to a user by Facebook.
-     * The FBP cookie is used by the Facebook pixel to track
-     * user behavior across multiple sites and sessions.
+     * Resolution order:
+     * 1. ParamBuilder server-side extraction
+     * 2. _fbp cookie (set by fbevents.js)
      *
-     * @return string|null The value of the FBP cookie, or
-     * null if the cookie is not present.
+     * @return string|null The FBP value, or null if unavailable.
      */
     private static function get_fbp() {
-      $fbp = null;
+        $fbp = FacebookParamBuilder::get_fbp();
 
-      if ( ! empty( $_COOKIE['_fbp'] ) ) {
-          $fbp = sanitize_text_field( wp_unslash( $_COOKIE['_fbp'] ) );
-      }
+        if ( empty( $fbp ) && ! empty( $_COOKIE['_fbp'] ) ) {
+            $fbp = sanitize_text_field( wp_unslash( $_COOKIE['_fbp'] ) );
+        }
 
-      return $fbp;
-  }
+        return $fbp;
+    }
 
     /**
      * Public wrapper for the current request's FBP value.
@@ -183,39 +181,45 @@ class ServerEventFactory {
     }
 
     /**
-     * Retrieves the Facebook Click ID (FBC) cookie or session variable.
+     * Retrieves the Facebook Click ID (FBC).
      *
-     * This function returns the value of the FBC cookie or session variable,
-     * which is a unique identifier assigned to a user by Facebook. The FBC
-     * cookie is used by the Facebook pixel to track user behavior across
-     * multiple sites and sessions. If the FBC cookie is not present, the
-     * function will attempt to generate an FBC value from the fbclid query
-     * parameter, if present.
+     * Resolution order:
+     * 1. ParamBuilder server-side extraction
+     * 2. _fbc cookie (if fbclid hasn't changed)
+     * 3. Constructed from fbclid query parameter
+     * 4. Session fallback
      *
-     * @return string|null The value of the FBC cookie or session variable, or
-     *                     null if neither is present.
+     * @return string|null The FBC value, or null if unavailable.
      */
     private static function get_fbc() {
-        $fbc = null;
+        $fbc = FacebookParamBuilder::get_fbc();
 
-        if ( ! empty( $_COOKIE['_fbc'] ) ) {
-            $fbc              = sanitize_text_field(
-                wp_unslash( $_COOKIE['_fbc'] )
-            );
-            $_SESSION['_fbc'] = $fbc;
+        if ( empty( $fbc ) ) {
+            $cookie_fbc = ! empty( $_COOKIE['_fbc'] )
+                ? sanitize_text_field( wp_unslash( $_COOKIE['_fbc'] ) )
+                : null;
+
+            $request_fbclid = isset( $_GET['fbclid'] ) // phpcs:ignore WordPress.Security.NonceVerification
+                ? self::sanitize_fbclid(
+                    wp_unslash( $_GET['fbclid'] ) // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                )
+                : null;
+
+            if ( $request_fbclid && ( empty( $cookie_fbc ) || self::has_fbclid_changed( $cookie_fbc, $request_fbclid ) ) ) {
+                $cur_time = (int) ( microtime( true ) * 1000 );
+                $fbc      = 'fb.1.' . $cur_time . '.' . $request_fbclid;
+            }
+
+            if ( empty( $fbc ) && ! empty( $cookie_fbc ) ) {
+                $fbc = $cookie_fbc;
+            }
+
+            if ( empty( $fbc ) && isset( $_SESSION['_fbc'] ) ) {
+                $fbc = sanitize_text_field( $_SESSION['_fbc'] );
+            }
         }
 
-        if ( ! $fbc && isset( $_GET['fbclid'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
-            $fbclid   = sanitize_text_field( wp_unslash( $_GET['fbclid'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
-            $cur_time = (int) ( microtime( true ) * 1000 );
-            $fbc      = 'fb.1.' . $cur_time . '.' . rawurldecode( $fbclid );
-        }
-
-        if ( ! $fbc && isset( $_SESSION['_fbc'] ) ) {
-            $fbc = sanitize_text_field( $_SESSION['_fbc'] );
-        }
-
-        if ( $fbc ) {
+        if ( ! empty( $fbc ) && ! FacebookSignalState::is_held() ) {
             $_SESSION['_fbc'] = $fbc;
         }
 
@@ -229,6 +233,50 @@ class ServerEventFactory {
      */
     public static function get_fbc_value() {
         return self::get_fbc();
+    }
+
+    /**
+     * Checks whether the fbclid in the current request differs from
+     * the one stored in the existing _fbc cookie.
+     *
+     * @param string      $cookie_fbc The current _fbc cookie value
+     *                                (format: fb.{subdomain}.{timestamp}.{fbclid}).
+     * @param string|null $request_fbclid The fbclid from the current request,
+     *                                    or null if not present.
+     *
+     * @return bool True if fbclid has changed, false otherwise.
+     */
+    private static function has_fbclid_changed( $cookie_fbc, $request_fbclid ) {
+        if ( null === $request_fbclid ) {
+            return false;
+        }
+
+        $parts = explode( '.', $cookie_fbc );
+        if ( count( $parts ) < 4 ) {
+            return true;
+        }
+
+        $cookie_fbclid = implode( '.', array_slice( $parts, 3 ) );
+        return $cookie_fbclid !== $request_fbclid;
+    }
+
+    /**
+     * Decodes and validates an fbclid value.
+     *
+     * Decodes URL encoding first, then validates against an
+     * allowlist of safe characters. Returns null if the value
+     * contains unexpected characters.
+     *
+     * @param string $raw_fbclid The raw fbclid from the query string.
+     *
+     * @return string|null The sanitized fbclid, or null if invalid.
+     */
+    private static function sanitize_fbclid( $raw_fbclid ) {
+        $decoded = rawurldecode( $raw_fbclid );
+        if ( preg_match( '/^[A-Za-z0-9_-]+$/', $decoded ) ) {
+            return $decoded;
+        }
+        return null;
     }
 
     /**

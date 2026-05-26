@@ -29,11 +29,36 @@ window.FacebookSignal = window.FacebookSignal || {
     this._config = config || {};
     this._held = !!this._config.held;
 
+    var attr = this._config.attribution || {};
+    if (!this._held && typeof fbq !== 'undefined') {
+      this._syncCookie('_fbp', attr.fbp, attr.fbpDomain);
+      this._syncCookie('_fbc', attr.fbc, attr.fbcDomain);
+    }
+
     try {
       var raw = window.sessionStorage.getItem('fbpix_seen_event_ids');
       this._seenEventIds = raw ? JSON.parse(raw) : {};
     } catch (e) {
       this._seenEventIds = this._seenEventIds || {};
+    }
+  },
+
+  _syncCookie: function (name, serverValue, domain) {
+    if (!serverValue) {
+      return;
+    }
+    var encoded = encodeURIComponent(serverValue);
+    var match = document.cookie.match(
+      new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'),
+    );
+    var current = match ? match[1] : null;
+    if (current && current !== encoded) {
+      var cookie =
+        name + '=' + encoded + ';path=/;max-age=7776000;SameSite=Lax';
+      if (domain) {
+        cookie += ';domain=' + domain;
+      }
+      document.cookie = cookie;
     }
   },
 
@@ -141,18 +166,26 @@ window.FacebookSignal = window.FacebookSignal || {
   },
 
   _handleReleaseResponse: function (data) {
-    if (data.fbp) {
-      document.cookie =
-        '_fbp=' +
-        encodeURIComponent(data.fbp) +
-        ';path=/;max-age=7776000;SameSite=Lax';
+    var attr = this._config.attribution || {};
+    var fbpValue = data.fbp || attr.fbp;
+    var fbcValue = data.fbc || attr.fbc;
+
+    if (fbpValue) {
+      var fbpCookie =
+        '_fbp=' + encodeURIComponent(fbpValue) + ';path=/;max-age=7776000;SameSite=Lax';
+      if (attr.fbpDomain) {
+        fbpCookie += ';domain=' + attr.fbpDomain;
+      }
+      document.cookie = fbpCookie;
     }
 
-    if (data.fbc) {
-      document.cookie =
-        '_fbc=' +
-        encodeURIComponent(data.fbc) +
-        ';path=/;max-age=7776000;SameSite=Lax';
+    if (fbcValue) {
+      var fbcCookie =
+        '_fbc=' + encodeURIComponent(fbcValue) + ';path=/;max-age=7776000;SameSite=Lax';
+      if (attr.fbcDomain) {
+        fbcCookie += ';domain=' + attr.fbcDomain;
+      }
+      document.cookie = fbcCookie;
     }
 
     fbq('consent', 'grant');

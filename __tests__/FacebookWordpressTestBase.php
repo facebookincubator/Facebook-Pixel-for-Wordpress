@@ -78,6 +78,23 @@ abstract class FacebookWordpressTestBase extends TestCase {
         $_POST                  = array();
         $_SESSION               = array();
         FacebookSignalState::release();
+
+        \WP_Mock::userFunction(
+            'get_site_url',
+            array( 'return' => 'https://www.pikachu.com' )
+        );
+        \WP_Mock::userFunction(
+            'wp_unslash',
+            array(
+                'return' => function ( $input ) {
+                    return $input;
+                },
+            )
+        );
+        \WP_Mock::userFunction(
+            'is_ssl',
+            array( 'return' => true )
+        );
     }
 
     /**

@@ -28,7 +28,7 @@ use FacebookPixelPlugin\FacebookAdsTest\AbstractUnitTestCase;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 
 
-class ServerSideNormalizeTest extends AbstractUnitTestCase {
+class ServerSideEventTest extends AbstractUnitTestCase {
 
   public function testEventData(){
     $testName = 'Test123Event';
