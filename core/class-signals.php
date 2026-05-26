@@ -19,8 +19,16 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 /**
  * Cookie-backed signals state for frontend event gating.
+ *
+ * Mirrors WooCommerce\Facebook\Signals in the facebook-for-woocommerce plugin
+ * and the frontend FacebookSignal JS API. These implementations share the
+ * cookie name, state values, AJAX payload, and hold/release semantics; keep
+ * them behaviorally in sync when making changes here.
+ *
+ * @see https://github.com/woocommerce/facebook-for-woocommerce/blob/trunk/includes/Signals.php
+ * @see ../../js/facebook_signal.js
  */
-class FacebookPixelSignals {
+class Signals {
     const COOKIE_NAME  = 'wc_facebook_signals_state';
     const AJAX_ACTION  = 'fbpix_set_pixel_signals';
     const NONCE_ACTION = 'fbpix_pixel_signals_nonce';

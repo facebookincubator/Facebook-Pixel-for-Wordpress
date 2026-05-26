@@ -5,16 +5,16 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\FacebookPixelSignals;
+use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
- * FacebookPixelSignalsTest class.
+ * SignalsTest class.
  *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
-final class FacebookPixelSignalsTest extends FacebookWordpressTestBase {
+final class SignalsTest extends FacebookWordpressTestBase {
   /**
    * Test tri-state cookie reads.
    *
@@ -38,22 +38,22 @@ final class FacebookPixelSignalsTest extends FacebookWordpressTestBase {
       )
     );
 
-    $this->assertNull( FacebookPixelSignals::get_signal_state() );
-    $this->assertFalse( FacebookPixelSignals::should_hold_signals() );
+    $this->assertNull( Signals::get_signal_state() );
+    $this->assertFalse( Signals::should_hold_signals() );
 
-    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = FacebookPixelSignals::STATE_HELD;
+    $_COOKIE[ Signals::COOKIE_NAME ] = Signals::STATE_HELD;
     $this->assertSame(
-      FacebookPixelSignals::STATE_HELD,
-      FacebookPixelSignals::get_signal_state()
+      Signals::STATE_HELD,
+      Signals::get_signal_state()
     );
-    $this->assertTrue( FacebookPixelSignals::should_hold_signals() );
+    $this->assertTrue( Signals::should_hold_signals() );
 
-    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = FacebookPixelSignals::STATE_ACTIVE;
+    $_COOKIE[ Signals::COOKIE_NAME ] = Signals::STATE_ACTIVE;
     $this->assertSame(
-      FacebookPixelSignals::STATE_ACTIVE,
-      FacebookPixelSignals::get_signal_state()
+      Signals::STATE_ACTIVE,
+      Signals::get_signal_state()
     );
-    $this->assertFalse( FacebookPixelSignals::should_hold_signals() );
+    $this->assertFalse( Signals::should_hold_signals() );
   }
 
   /**
@@ -67,7 +67,7 @@ final class FacebookPixelSignalsTest extends FacebookWordpressTestBase {
     \WP_Mock::userFunction(
       'check_ajax_referer',
       array(
-        'args' => array( FacebookPixelSignals::NONCE_ACTION, 'security' ),
+        'args' => array( Signals::NONCE_ACTION, 'security' ),
       )
     );
     \WP_Mock::userFunction(
@@ -99,12 +99,12 @@ final class FacebookPixelSignalsTest extends FacebookWordpressTestBase {
       )
     );
 
-    $handler = new FacebookPixelSignals();
+    $handler = new Signals();
     $handler->handle_update_state();
 
     $this->assertEquals(
-      FacebookPixelSignals::STATE_ACTIVE,
-      $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ]
+      Signals::STATE_ACTIVE,
+      $_COOKIE[ Signals::COOKIE_NAME ]
     );
     $this->assertEquals( array( 'state' => 'active' ), $captured_payload );
   }
@@ -132,10 +132,10 @@ final class FacebookPixelSignalsTest extends FacebookWordpressTestBase {
       )
     );
 
-    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = 'garbage';
-    $this->assertNull( FacebookPixelSignals::get_signal_state() );
-    $this->assertFalse( FacebookPixelSignals::is_signals_active() );
-    $this->assertFalse( FacebookPixelSignals::should_hold_signals() );
+    $_COOKIE[ Signals::COOKIE_NAME ] = 'garbage';
+    $this->assertNull( Signals::get_signal_state() );
+    $this->assertFalse( Signals::is_signals_active() );
+    $this->assertFalse( Signals::should_hold_signals() );
   }
 
   /**
@@ -162,15 +162,15 @@ final class FacebookPixelSignalsTest extends FacebookWordpressTestBase {
     );
 
     // Unset cookie — neither active nor held.
-    unset( $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] );
-    $this->assertFalse( FacebookPixelSignals::is_signals_active() );
+    unset( $_COOKIE[ Signals::COOKIE_NAME ] );
+    $this->assertFalse( Signals::is_signals_active() );
 
     // Explicitly held.
-    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = FacebookPixelSignals::STATE_HELD;
-    $this->assertFalse( FacebookPixelSignals::is_signals_active() );
+    $_COOKIE[ Signals::COOKIE_NAME ] = Signals::STATE_HELD;
+    $this->assertFalse( Signals::is_signals_active() );
 
     // Explicitly active.
-    $_COOKIE[ FacebookPixelSignals::COOKIE_NAME ] = FacebookPixelSignals::STATE_ACTIVE;
-    $this->assertTrue( FacebookPixelSignals::is_signals_active() );
+    $_COOKIE[ Signals::COOKIE_NAME ] = Signals::STATE_ACTIVE;
+    $this->assertTrue( Signals::is_signals_active() );
   }
 }
