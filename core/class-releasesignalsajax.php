@@ -23,11 +23,11 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 /**
- * AJAX endpoint for replaying queued events after signals grant.
+ * AJAX endpoint for releasing held signals.
  */
-class ResumeTrackingAjax {
-    const ACTION        = 'fbpix_resume_tracking';
-    const NONCE_ACTION  = 'fbpix_resume_tracking';
+class ReleaseSignalsAjax {
+    const ACTION        = 'fbpix_release_signals';
+    const NONCE_ACTION  = 'fbpix_release_signals';
     const MAX_EVENTS    = 20;
     const MAX_EVENT_AGE = 1800;
 
@@ -50,16 +50,21 @@ class ResumeTrackingAjax {
      *
      * @var string
      */
-    const RATE_LIMIT_GROUP = 'fbpix_resume_tracking_rl';
+    const RATE_LIMIT_GROUP = 'fbpix_release_signals_rl';
 
     /**
-     * Allowed replayed event names.
+     * Well-known event names accepted on release.
+     *
+     * Advisory list — the validate_event() regex also passes any camelCase
+     * custom event name. Keep this list in sync with facebook-for-woocommerce
+     * ReleaseSignalsAjax::ALLOWED_EVENTS.
      *
      * @var string[]
      */
     private static $allowed_events = array(
         'PageView',
         'ViewContent',
+        'ViewCategory',
         'Search',
         'AddToCart',
         'AddToWishlist',
@@ -87,7 +92,7 @@ class ResumeTrackingAjax {
     }
 
     /**
-     * Process queued event replay.
+     * Process queued event release.
      *
      * @return void
      */
@@ -115,7 +120,7 @@ class ResumeTrackingAjax {
         $fbc    = ! empty( $body['fbc'] ) ?
             sanitize_text_field( $body['fbc'] ) : '';
 
-        // Expose queued attribution to ServerEventFactory so resumed events
+        // Expose queued attribution to ServerEventFactory so released events
         // share the same attribution path as normal CAPI events.
         $restore_get_fbclid = $this->temporarily_set_superglobal_value( '_GET', 'fbclid', $fbclid );
         $restore_cookie_fbp = $this->temporarily_set_superglobal_value( '_COOKIE', '_fbp', $fbp );
@@ -183,7 +188,7 @@ class ResumeTrackingAjax {
     }
 
     /**
-     * Build replay event from queue payload.
+     * Build released event from queue payload.
      *
      * @param array $event_data Event payload.
      *
@@ -309,7 +314,7 @@ class ResumeTrackingAjax {
     }
 
     /**
-     * Build a UserData object from a forwarded resume payload.
+     * Build a UserData object from a forwarded release payload.
      *
      * Accepts the normalized short-key shape produced by UserData::normalize()
      * (em, ph, ln, fn, ct, st, zp, country, external_id, etc.). Hashable PII
@@ -455,7 +460,7 @@ class ResumeTrackingAjax {
     }
 
     /**
-     * Whether the current client is over its resume-tracking rate limit.
+     * Whether the current client is over its release-tracking rate limit.
      *
      * Counts accepted events (not requests) per IP per window. Both the
      * window length and the cap are filterable.
@@ -464,7 +469,7 @@ class ResumeTrackingAjax {
      */
     private function is_rate_limited() {
         $max = (int) apply_filters(
-            'fbpix_resume_tracking_rate_limit_max',
+            'fbpix_release_signals_rate_limit_max',
             self::RATE_LIMIT_MAX_EVENTS
         );
 
@@ -492,7 +497,7 @@ class ResumeTrackingAjax {
         }
 
         $window = (int) apply_filters(
-            'fbpix_resume_tracking_rate_limit_window',
+            'fbpix_release_signals_rate_limit_window',
             self::RATE_LIMIT_WINDOW
         );
         if ( $window <= 0 ) {
@@ -552,6 +557,6 @@ class ResumeTrackingAjax {
         $ip = isset( $_SERVER['REMOTE_ADDR'] ) ?
             sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) :
             '';
-        return 'fbpix_resume_tracking_rl_' . md5( $ip );
+        return 'fbpix_release_signals_rl_' . md5( $ip );
     }
 }

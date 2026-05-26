@@ -41,7 +41,7 @@ jQuery(document).ready(function ($) {
       value: value,
     };
 
-    if (window.FacebookSignal && window.FacebookSignal._paused) {
+    if (window.FacebookSignal && window.FacebookSignal._held) {
       if (event_id) {
         param.eventID = event_id;
       }

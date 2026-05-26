@@ -192,12 +192,12 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
   }
 
   /**
-   * Tests that paused injection includes the gating bootstrap and paused init.
+   * Tests that held injection includes the gating bootstrap and held init.
    *
    * @return void
    */
-  public function testInjectPixelCodeIncludesPausedBootstrap() {
-    FacebookSignalState::pause();
+  public function testInjectPixelCodeIncludesHeldBootstrap() {
+    FacebookSignalState::hold();
     FacebookWordpressPixelInjection::$render_cache = array();
     FacebookPixel::set_pixel_id( '1234' );
 
@@ -255,6 +255,160 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     $this->assertStringContainsString( 'FacebookSignal.init', $output );
     $this->assertStringContainsString( 'FacebookSignal.queueEvent', $output );
     $this->assertStringContainsString( "fbq('consent', 'revoke');", $output );
-    $this->assertStringContainsString( '"paused":true', $output );
+    $this->assertStringContainsString( '"held":true', $output );
+    $this->assertStringContainsString( '"attribution"', $output );
+  }
+
+  /**
+   * Tests that attribution captured while held is forwarded via init config.
+   *
+   * @return void
+   */
+  public function testHeldInitCodeIncludesCapturedAttribution() {
+    FacebookSignalState::hold();
+    $_COOKIE['_fbp'] = 'fb.1.123.browser';
+    $_COOKIE['_fbc'] = 'fb.1.123.click';
+    FacebookWordpressPixelInjection::$render_cache = array();
+    FacebookPixel::set_pixel_id( '1234' );
+
+    $mocked_options = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
+    );
+    $mocked_options->shouldReceive( 'get_capi_integration_status' )
+      ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_agent_string' )
+      ->andReturn( 'WordPress' );
+    $mocked_options->shouldReceive( 'get_user_info' )
+      ->andReturn( array() );
+
+    $mocked_utils = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookPluginUtils'
+    );
+    $mocked_utils->shouldReceive( 'is_internal_user' )
+      ->andReturn( false );
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_unslash',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'return' => function ( $data ) {
+          return json_encode( $data );
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_create_nonce',
+      array(
+        'return' => 'nonce',
+      )
+    );
+    \WP_Mock::userFunction(
+      'admin_url',
+      array(
+        'return' => 'https://www.pikachu.com/wp-admin/admin-ajax.php',
+      )
+    );
+    \WP_Mock::userFunction(
+      'esc_js',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
+
+    $injection_obj = new FacebookWordpressPixelInjection();
+
+    ob_start();
+    $injection_obj->inject_pixel_code();
+    $output = ob_get_clean();
+
+    $this->assertStringContainsString( '"attribution"', $output );
+    $this->assertStringContainsString( 'fb.1.123.browser', $output );
+    $this->assertStringContainsString( 'fb.1.123.click', $output );
+  }
+
+  /**
+   * Tests that attribution is omitted from init config while not held.
+   *
+   * @return void
+   */
+  public function testActiveInitCodeOmitsAttribution() {
+    FacebookSignalState::set_attribution_data( 'fbp', 'fb.1.123.browser' );
+    FacebookSignalState::set_attribution_data( 'fbc', 'fb.1.123.click' );
+    FacebookWordpressPixelInjection::$render_cache = array();
+    FacebookPixel::set_pixel_id( '1234' );
+
+    $mocked_options = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
+    );
+    $mocked_options->shouldReceive( 'get_capi_integration_status' )
+      ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_agent_string' )
+      ->andReturn( 'WordPress' );
+    $mocked_options->shouldReceive( 'get_user_info' )
+      ->andReturn( array() );
+
+    $mocked_utils = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookPluginUtils'
+    );
+    $mocked_utils->shouldReceive( 'is_internal_user' )
+      ->andReturn( false );
+
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'return' => function ( $data ) {
+          return json_encode( $data );
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_create_nonce',
+      array(
+        'return' => 'nonce',
+      )
+    );
+    \WP_Mock::userFunction(
+      'admin_url',
+      array(
+        'return' => 'https://www.pikachu.com/wp-admin/admin-ajax.php',
+      )
+    );
+    \WP_Mock::userFunction(
+      'esc_js',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
+
+    $injection_obj = new FacebookWordpressPixelInjection();
+
+    ob_start();
+    $injection_obj->inject_pixel_code();
+    $output = ob_get_clean();
+
+    $this->assertStringContainsString( 'FacebookSignal.init', $output );
+    $this->assertStringContainsString( '"held":false', $output );
+    $this->assertStringNotContainsString( '"attribution"', $output );
+    $this->assertStringNotContainsString( 'fb.1.123.browser', $output );
+    $this->assertStringNotContainsString( 'fb.1.123.click', $output );
   }
 }

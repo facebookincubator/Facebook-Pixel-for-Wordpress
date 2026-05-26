@@ -5,16 +5,16 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\ResumeTrackingAjax;
+use FacebookPixelPlugin\Core\ReleaseSignalsAjax;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
- * ResumeTrackingAjaxTest class.
+ * ReleaseSignalsAjaxTest class.
  *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
-final class ResumeTrackingAjaxTest extends FacebookWordpressTestBase {
+final class ReleaseSignalsAjaxTest extends FacebookWordpressTestBase {
   /**
    * Test queued event validation rules.
    *
@@ -38,8 +38,8 @@ final class ResumeTrackingAjaxTest extends FacebookWordpressTestBase {
       )
     );
 
-    $handler = new ResumeTrackingAjax();
-    $method  = new \ReflectionMethod( ResumeTrackingAjax::class, 'validate_event' );
+    $handler = new ReleaseSignalsAjax();
+    $method  = new \ReflectionMethod( ReleaseSignalsAjax::class, 'validate_event' );
     if ( PHP_VERSION_ID < 80100 ) {
       $method->setAccessible( true );
     }
@@ -79,7 +79,7 @@ final class ResumeTrackingAjaxTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * Test replay event construction keeps source URL and event metadata.
+   * Test released event construction keeps source URL and event metadata.
    *
    * @return void
    */
@@ -117,8 +117,8 @@ final class ResumeTrackingAjaxTest extends FacebookWordpressTestBase {
       )
     );
 
-    $handler = new ResumeTrackingAjax();
-    $method  = new \ReflectionMethod( ResumeTrackingAjax::class, 'build_event' );
+    $handler = new ReleaseSignalsAjax();
+    $method  = new \ReflectionMethod( ReleaseSignalsAjax::class, 'build_event' );
     if ( PHP_VERSION_ID < 80100 ) {
       $method->setAccessible( true );
     }

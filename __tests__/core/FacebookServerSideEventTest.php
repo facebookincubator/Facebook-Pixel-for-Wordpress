@@ -182,11 +182,11 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * Tests that frontend sends are suppressed while tracking is paused.
+   * Tests that frontend sends are suppressed while signals are held.
    *
    * @return void
    */
-  public function testSendSuppressedWhenPausedOnFrontend() {
+  public function testSendSuppressedWhenHeldOnFrontend() {
     self::mockFacebookWordpressOptions();
 
     \WP_Mock::userFunction(
@@ -202,7 +202,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     \WP_Mock::userFunction( 'is_admin', array( 'return' => false ) );
     \WP_Mock::userFunction( 'wp_doing_cron', array( 'return' => false ) );
 
-    FacebookSignalState::pause();
+    FacebookSignalState::hold();
 
     $api = \Mockery::mock( 'alias:FacebookPixelPlugin\FacebookAds\Api' );
     $api->shouldReceive( 'init' )->never();

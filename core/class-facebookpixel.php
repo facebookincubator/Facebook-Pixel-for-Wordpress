@@ -223,7 +223,7 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
             return;
         }
 
-        if ( self::is_tracking_paused() ) {
+        if ( self::are_signals_held() ) {
             return self::get_pixel_queue_code(
                 $event,
                 $param,
@@ -254,7 +254,7 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
     }
 
     /**
-     * Gets queueing code for a paused event.
+     * Gets queueing code for a held event.
      *
      * @param string $event           Event name.
      * @param array  $param           Event parameters.
@@ -309,7 +309,7 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
     }
 
     /**
-     * Build queue payload for a paused event.
+     * Build queue payload for a held event.
      *
      * @param string       $event         Event name.
      * @param array|string $param         Event params.
@@ -361,13 +361,13 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
     }
 
     /**
-     * Whether the current request is paused.
+     * Whether signals are held for the current request.
      *
      * @return bool
      */
-    private static function is_tracking_paused() {
+    private static function are_signals_held() {
         return class_exists( '\FacebookPixelPlugin\Core\FacebookSignalState' ) &&
-            FacebookSignalState::is_paused();
+            FacebookSignalState::is_held();
     }
 
     /**

@@ -207,7 +207,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
                 'trackingName'     => self::TRACKING_NAME,
                 'agentString'      => FacebookWordpressOptions::get_agent_string(),
                 'pixelId'          => FacebookWordpressOptions::get_active_pixel_id(),
-                'paused'           => FacebookSignalState::is_paused(),
+                'held'             => FacebookSignalState::is_held(),
             )
         );
 
