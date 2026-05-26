@@ -30,55 +30,55 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class FacebookSignalStateTest extends FacebookWordpressTestBase {
 
-	public function setUp(): void {
-		parent::setUp();
-		FacebookSignalState::reset_queue();
-	}
+    public function setUp(): void {
+        parent::setUp();
+        FacebookSignalState::reset_queue();
+    }
 
-	public function testSetAndGetAttributionData() {
-		FacebookSignalState::set_attribution_data( 'fbc', 'fb.1.123.abc' );
-		FacebookSignalState::set_attribution_data( 'fbp', 'fb.1.456.def' );
+    public function testSetAndGetAttributionData() {
+        FacebookSignalState::set_attribution_data( 'fbc', 'fb.1.123.abc' );
+        FacebookSignalState::set_attribution_data( 'fbp', 'fb.1.456.def' );
 
-		$this->assertEquals( 'fb.1.123.abc', FacebookSignalState::get_attribution_data( 'fbc' ) );
-		$this->assertEquals( 'fb.1.456.def', FacebookSignalState::get_attribution_data( 'fbp' ) );
-	}
+        $this->assertEquals( 'fb.1.123.abc', FacebookSignalState::get_attribution_data( 'fbc' ) );
+        $this->assertEquals( 'fb.1.456.def', FacebookSignalState::get_attribution_data( 'fbp' ) );
+    }
 
-	public function testGetAttributionDataReturnsNullForMissingKey() {
-		$this->assertNull( FacebookSignalState::get_attribution_data( 'nonexistent' ) );
-	}
+    public function testGetAttributionDataReturnsNullForMissingKey() {
+        $this->assertNull( FacebookSignalState::get_attribution_data( 'nonexistent' ) );
+    }
 
-	public function testSetAttributionDataOverwritesPreviousValue() {
-		FacebookSignalState::set_attribution_data( 'fbc', 'old_value' );
-		FacebookSignalState::set_attribution_data( 'fbc', 'new_value' );
+    public function testSetAttributionDataOverwritesPreviousValue() {
+        FacebookSignalState::set_attribution_data( 'fbc', 'old_value' );
+        FacebookSignalState::set_attribution_data( 'fbc', 'new_value' );
 
-		$this->assertEquals( 'new_value', FacebookSignalState::get_attribution_data( 'fbc' ) );
-	}
+        $this->assertEquals( 'new_value', FacebookSignalState::get_attribution_data( 'fbc' ) );
+    }
 
-	public function testResetQueueClearsAttributionData() {
-		FacebookSignalState::set_attribution_data( 'fbc', 'fb.1.123.abc' );
-		FacebookSignalState::set_attribution_data( 'fbp', 'fb.1.456.def' );
+    public function testResetQueueClearsAttributionData() {
+        FacebookSignalState::set_attribution_data( 'fbc', 'fb.1.123.abc' );
+        FacebookSignalState::set_attribution_data( 'fbp', 'fb.1.456.def' );
 
-		FacebookSignalState::reset_queue();
+        FacebookSignalState::reset_queue();
 
-		$this->assertNull( FacebookSignalState::get_attribution_data( 'fbc' ) );
-		$this->assertNull( FacebookSignalState::get_attribution_data( 'fbp' ) );
-	}
+        $this->assertNull( FacebookSignalState::get_attribution_data( 'fbc' ) );
+        $this->assertNull( FacebookSignalState::get_attribution_data( 'fbp' ) );
+    }
 
-	public function testAttributionDataStoresDomains() {
-		FacebookSignalState::set_attribution_data( 'fbp_domain', 'example.com' );
-		FacebookSignalState::set_attribution_data( 'fbc_domain', 'example.com' );
+    public function testAttributionDataStoresDomains() {
+        FacebookSignalState::set_attribution_data( 'fbp_domain', 'example.com' );
+        FacebookSignalState::set_attribution_data( 'fbc_domain', 'example.com' );
 
-		$this->assertEquals( 'example.com', FacebookSignalState::get_attribution_data( 'fbp_domain' ) );
-		$this->assertEquals( 'example.com', FacebookSignalState::get_attribution_data( 'fbc_domain' ) );
-	}
+        $this->assertEquals( 'example.com', FacebookSignalState::get_attribution_data( 'fbp_domain' ) );
+        $this->assertEquals( 'example.com', FacebookSignalState::get_attribution_data( 'fbc_domain' ) );
+    }
 
-	public function testPauseAndResumeToggleState() {
-		$this->assertFalse( FacebookSignalState::is_held() );
+    public function testPauseAndResumeToggleState() {
+        $this->assertFalse( FacebookSignalState::is_held() );
 
-		FacebookSignalState::hold();
-		$this->assertTrue( FacebookSignalState::is_held() );
+        FacebookSignalState::hold();
+        $this->assertTrue( FacebookSignalState::is_held() );
 
-		FacebookSignalState::release();
-		$this->assertFalse( FacebookSignalState::is_held() );
-	}
+        FacebookSignalState::release();
+        $this->assertFalse( FacebookSignalState::is_held() );
+    }
 }

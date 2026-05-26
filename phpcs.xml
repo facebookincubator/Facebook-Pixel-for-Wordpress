@@ -6,9 +6,9 @@
     <rule ref="WordPress">
         <!-- Exclude conflicting indentation rules from WordPress -->
         <exclude name="Generic.WhiteSpace.ScopeIndent" />
-        <exclude name="Generic.WhiteSpace.DisallowTabIndent" />
         <exclude name="Universal.WhiteSpace.PrecisionAlignment" />
         <exclude name="WordPress.Arrays.ArrayIndentation" />
+        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent" />
     </rule>
 
     <!-- Force 4 spaces for indentation -->
@@ -26,11 +26,6 @@
 
     <!-- Ensure no tabs are used for indentation -->
     <rule ref="Generic.WhiteSpace.DisallowTabIndent" />
-
-    <!-- Explicitly allow spaces for indentation -->
-    <rule ref="Generic.WhiteSpace.DisallowSpaceIndent">
-        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed" />
-    </rule>
 
     <!-- Enforce a max line length of 80 characters -->
     <rule ref="Generic.Files.LineLength">
