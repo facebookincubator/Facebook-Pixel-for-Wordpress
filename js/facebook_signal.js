@@ -53,7 +53,7 @@ window.FacebookSignal = window.FacebookSignal || {
     var current = match ? match[1] : null;
     if (current && current !== serverValue) {
       var cookie =
-        name + '=' + serverValue + ';path=/;max-age=7776000;SameSite=Lax';
+        name + '=' + encodeURIComponent(serverValue) + ';path=/;max-age=7776000;SameSite=Lax';
       if (domain) {
         cookie += ';domain=' + domain;
       }
@@ -171,7 +171,7 @@ window.FacebookSignal = window.FacebookSignal || {
 
     if (fbpValue) {
       var fbpCookie =
-        '_fbp=' + fbpValue + ';path=/;max-age=7776000;SameSite=Lax';
+        '_fbp=' + encodeURIComponent(fbpValue) + ';path=/;max-age=7776000;SameSite=Lax';
       if (attr.fbpDomain) {
         fbpCookie += ';domain=' + attr.fbpDomain;
       }
@@ -180,7 +180,7 @@ window.FacebookSignal = window.FacebookSignal || {
 
     if (fbcValue) {
       var fbcCookie =
-        '_fbc=' + fbcValue + ';path=/;max-age=7776000;SameSite=Lax';
+        '_fbc=' + encodeURIComponent(fbcValue) + ';path=/;max-age=7776000;SameSite=Lax';
       if (attr.fbcDomain) {
         fbcCookie += ';domain=' + attr.fbcDomain;
       }

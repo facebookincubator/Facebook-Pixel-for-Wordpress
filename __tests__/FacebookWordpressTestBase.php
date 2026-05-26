@@ -91,6 +91,10 @@ abstract class FacebookWordpressTestBase extends TestCase {
                 },
             )
         );
+        \WP_Mock::userFunction(
+            'is_ssl',
+            array( 'return' => true )
+        );
     }
 
     /**

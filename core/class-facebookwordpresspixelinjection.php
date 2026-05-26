@@ -202,7 +202,7 @@ class FacebookWordpressPixelInjection {
             'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
             'releaseAction' => ReleaseSignalsAjax::ACTION,
             'releaseNonce'  => wp_create_nonce( ReleaseSignalsAjax::NONCE_ACTION ),
-            'pixelId'      => FacebookPixel::get_pixel_id(),
+            'pixelId'       => FacebookPixel::get_pixel_id(),
         );
 
         if ( FacebookSignalState::is_held() ) {

@@ -200,12 +200,14 @@ class ServerEventFactory {
                 : null;
 
             $request_fbclid = isset( $_GET['fbclid'] ) // phpcs:ignore WordPress.Security.NonceVerification
-                ? sanitize_text_field( wp_unslash( $_GET['fbclid'] ) ) // phpcs:ignore WordPress.Security.NonceVerification
+                ? self::sanitize_fbclid(
+                    wp_unslash( $_GET['fbclid'] ) // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+                )
                 : null;
 
             if ( $request_fbclid && ( empty( $cookie_fbc ) || self::has_fbclid_changed( $cookie_fbc, $request_fbclid ) ) ) {
                 $cur_time = (int) ( microtime( true ) * 1000 );
-                $fbc      = 'fb.1.' . $cur_time . '.' . rawurldecode( $request_fbclid );
+                $fbc      = 'fb.1.' . $cur_time . '.' . $request_fbclid;
             }
 
             if ( empty( $fbc ) && ! empty( $cookie_fbc ) ) {
@@ -256,6 +258,25 @@ class ServerEventFactory {
 
         $cookie_fbclid = implode( '.', array_slice( $parts, 3 ) );
         return $cookie_fbclid !== $request_fbclid;
+    }
+
+    /**
+     * Decodes and validates an fbclid value.
+     *
+     * Decodes URL encoding first, then validates against an
+     * allowlist of safe characters. Returns null if the value
+     * contains unexpected characters.
+     *
+     * @param string $raw_fbclid The raw fbclid from the query string.
+     *
+     * @return string|null The sanitized fbclid, or null if invalid.
+     */
+    private static function sanitize_fbclid( $raw_fbclid ) {
+        $decoded = rawurldecode( $raw_fbclid );
+        if ( preg_match( '/^[A-Za-z0-9_-]+$/', $decoded ) ) {
+            return $decoded;
+        }
+        return null;
     }
 
     /**

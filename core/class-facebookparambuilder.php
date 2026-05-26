@@ -147,9 +147,14 @@ class FacebookParamBuilder {
 					setcookie(
 						$cookie->name,
 						$cookie->value,
-						time() + $cookie->max_age,
-						'/',
-						$cookie->domain
+						array(
+							'expires'  => time() + $cookie->max_age,
+							'path'     => '/',
+							'domain'   => $cookie->domain,
+							'secure'   => is_ssl(),
+							'httponly' => false,
+							'samesite' => 'Lax',
+						)
 					);
 				}
 			}
