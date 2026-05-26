@@ -47,13 +47,14 @@ window.FacebookSignal = window.FacebookSignal || {
     if (!serverValue) {
       return;
     }
+    var encoded = encodeURIComponent(serverValue);
     var match = document.cookie.match(
       new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'),
     );
     var current = match ? match[1] : null;
-    if (current && current !== serverValue) {
+    if (current && current !== encoded) {
       var cookie =
-        name + '=' + encodeURIComponent(serverValue) + ';path=/;max-age=7776000;SameSite=Lax';
+        name + '=' + encoded + ';path=/;max-age=7776000;SameSite=Lax';
       if (domain) {
         cookie += ';domain=' + domain;
       }
