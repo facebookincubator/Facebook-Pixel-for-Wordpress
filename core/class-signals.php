@@ -31,7 +31,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 class Signals {
     const COOKIE_NAME  = 'wc_facebook_signals_state';
     const AJAX_ACTION  = 'fbpix_set_pixel_signals';
-    const NONCE_ACTION = 'fbpix_pixel_signals_nonce';
+    const NONCE_ACTION = 'fbpix_signals_state_nonce';
     const STATE_ACTIVE = 'active';
     const STATE_HELD   = 'held';
 
