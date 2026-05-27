@@ -30,6 +30,7 @@ namespace FacebookPixelPlugin\Tests\Core;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
@@ -207,9 +208,116 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $api = \Mockery::mock( 'alias:FacebookPixelPlugin\FacebookAds\Api' );
     $api->shouldReceive( 'init' )->never();
 
-    $event = ServerEventFactory::new_event( 'Lead' );
-    FacebookServerSideEvent::send( array( $event ) );
+    $event  = ServerEventFactory::new_event( 'Lead' );
+    $result = FacebookServerSideEvent::send( array( $event ) );
 
-    $this->assertTrue( true );
+    $this->assertNull( $result );
+  }
+
+  /**
+   * Tests that send() returns error when circuit breaker is open.
+   */
+  public function testSendReturnsErrorWhenCircuitOpen() {
+    self::mockFacebookWordpressOptions();
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+    \WP_Mock::userFunction( 'is_admin', array( 'return' => false ) );
+    \WP_Mock::userFunction( 'wp_doing_cron', array( 'return' => false ) );
+
+    \WP_Mock::userFunction(
+      'get_transient',
+      array(
+        'args'   => array(
+          FacebookPluginConfig::CONNECTION_INVALID_TRANSIENT,
+        ),
+        'return' => time() - 60,
+      )
+    );
+
+    $api = \Mockery::mock( 'alias:FacebookPixelPlugin\FacebookAds\Api' );
+    $api->shouldReceive( 'init' )->never();
+
+    $event  = ServerEventFactory::new_event( 'Lead' );
+    $result = FacebookServerSideEvent::send( array( $event ) );
+
+    $this->assertFalse( $result['success'] );
+    $this->assertStringContainsString( 'circuit', $result['error']['message'] );
+  }
+
+  /**
+   * Tests that send() blocks with a circuit-open error only when the
+   * transient is fresh, not when it's stale (half-open).
+   */
+  public function testSendBlocksOnlyWhenTransientFresh() {
+    self::mockFacebookWordpressOptions();
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+    \WP_Mock::userFunction( 'is_admin', array( 'return' => false ) );
+    \WP_Mock::userFunction( 'wp_doing_cron', array( 'return' => false ) );
+
+    // Fresh transient → circuit open → should block.
+    \WP_Mock::userFunction(
+      'get_transient',
+      array(
+        'args'   => array(
+          FacebookPluginConfig::CONNECTION_INVALID_TRANSIENT,
+        ),
+        'return' => time() - 10,
+      )
+    );
+
+    $event  = ServerEventFactory::new_event( 'Lead' );
+    $result = FacebookServerSideEvent::send( array( $event ) );
+
+    $this->assertFalse( $result['success'] );
+    $this->assertStringContainsString(
+      'circuit',
+      $result['error']['message']
+    );
+  }
+
+  /**
+   * Tests that send() returns null when pixel_id or access_token is empty.
+   */
+  public function testSendReturnsNullWhenNoCredentials() {
+    self::mockFacebookWordpressOptions(
+      array(
+        'pixel_id'     => '',
+        'access_token' => '',
+      )
+    );
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+    \WP_Mock::userFunction( 'is_admin', array( 'return' => false ) );
+    \WP_Mock::userFunction( 'wp_doing_cron', array( 'return' => false ) );
+
+    $event  = ServerEventFactory::new_event( 'Lead' );
+    $result = FacebookServerSideEvent::send( array( $event ) );
+
+    $this->assertNull( $result );
   }
 }
