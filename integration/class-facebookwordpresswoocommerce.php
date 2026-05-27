@@ -290,6 +290,10 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 
         foreach ( $order->get_items() as $item ) {
             $product = wc_get_product( $item->get_product_id() );
+            if ( ! is_object( $product ) || ! method_exists( $product, 'get_id' ) ) {
+                continue;
+            }
+
             if ( 'product_group' !== $content_type
             && $product->is_type( 'variable' ) ) {
             $content_type = 'product_group';
@@ -427,7 +431,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         $event_data['currency']     = \get_woocommerce_currency();
 
         $cart_item = self::getCartItem( $cart_item_key );
-        if ( ! empty( $cart_item_key ) ) {
+        if ( ! empty( $cart_item ) && ! empty( $cart_item['data'] ) ) {
             $event_data['content_ids'] = array(
                 self::getProductId(
                     $cart_item['data']
@@ -649,6 +653,10 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
      * @since 1.0.0
      */
     private static function getProductId( $product ) {
+        if ( ! is_object( $product ) || ! method_exists( $product, 'get_id' ) ) {
+            return null;
+        }
+
         $woo_id = $product->get_id();
 
         return $product->get_sku() ? $product->get_sku() . '_' .
