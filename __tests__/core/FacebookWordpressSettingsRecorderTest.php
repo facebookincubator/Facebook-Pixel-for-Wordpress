@@ -98,6 +98,18 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
         'return' => true,
       )
     );
+    \WP_Mock::userFunction(
+      'delete_transient',
+      array(
+        'return' => true,
+      )
+    );
+    \WP_Mock::userFunction(
+      'delete_metadata',
+      array(
+        'return' => true,
+      )
+    );
   }
 
   /**
@@ -793,6 +805,18 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
         'return' => function ( $input ) {
           return $input;
         },
+      )
+    );
+    \WP_Mock::userFunction(
+      'delete_transient',
+      array(
+        'return' => true,
+      )
+    );
+    \WP_Mock::userFunction(
+      'delete_metadata',
+      array(
+        'return' => true,
       )
     );
   }

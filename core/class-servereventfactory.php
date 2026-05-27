@@ -18,6 +18,7 @@ namespace FacebookPixelPlugin\Core;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Normalizer;
 
 use FacebookPixelPlugin\Core\AAMFieldsExtractor;
@@ -539,5 +540,79 @@ class ServerEventFactory {
         }
 
         return array( $first_name, $last_name );
+    }
+
+    /**
+     * Converts a raw event array (Graph API format) into an Event object.
+     *
+     * @param array $event_as_array The event in array form.
+     * @return Event
+     */
+    public static function create_from_array( $event_as_array ) {
+        $event = new Event( $event_as_array );
+        if ( isset( $event_as_array['user_data'] ) ) {
+            $user_data = new UserData(
+                self::map_user_data_keys( $event_as_array['user_data'] )
+            );
+            $event->setUserData( $user_data );
+        }
+        if ( isset( $event_as_array['custom_data'] ) ) {
+            $custom_data = new CustomData( $event_as_array['custom_data'] );
+            if ( isset( $event_as_array['custom_data']['contents'] ) ) {
+                $contents = array();
+                foreach (
+                    $event_as_array['custom_data']['contents']
+                    as $contents_as_array
+                ) {
+                    if ( isset( $contents_as_array['id'] ) ) {
+                        $contents_as_array['product_id'] =
+                            $contents_as_array['id'];
+                    }
+                    $contents[] = new Content( $contents_as_array );
+                }
+                $custom_data->setContents( $contents );
+            }
+            if ( isset(
+                $event_as_array['custom_data']['fb_integration_tracking']
+            ) ) {
+                $custom_data->addCustomProperty(
+                    'fb_integration_tracking',
+                    $event_as_array['custom_data']['fb_integration_tracking']
+                );
+            }
+            $event->setCustomData( $custom_data );
+        }
+        return $event;
+    }
+
+    /**
+     * Maps normalized user-data keys to UserData constructor keys.
+     *
+     * @param array $user_data_normalized Normalized user data.
+     * @return array Mapped user data.
+     */
+    public static function map_user_data_keys( $user_data_normalized ) {
+        $norm_key_to_key = array(
+            AAMSettingsFields::EMAIL         => 'emails',
+            AAMSettingsFields::FIRST_NAME    => 'first_names',
+            AAMSettingsFields::LAST_NAME     => 'last_names',
+            AAMSettingsFields::GENDER        => 'genders',
+            AAMSettingsFields::DATE_OF_BIRTH => 'dates_of_birth',
+            AAMSettingsFields::EXTERNAL_ID   => 'external_ids',
+            AAMSettingsFields::PHONE         => 'phones',
+            AAMSettingsFields::CITY          => 'cities',
+            AAMSettingsFields::STATE         => 'states',
+            AAMSettingsFields::ZIP_CODE      => 'zip_codes',
+            AAMSettingsFields::COUNTRY       => 'country_codes',
+        );
+        $user_data       = array();
+        foreach ( $user_data_normalized as $norm_key => $field ) {
+            if ( isset( $norm_key_to_key[ $norm_key ] ) ) {
+                $user_data[ $norm_key_to_key[ $norm_key ] ] = $field;
+            } else {
+                $user_data[ $norm_key ] = $field;
+            }
+        }
+        return $user_data;
     }
 }

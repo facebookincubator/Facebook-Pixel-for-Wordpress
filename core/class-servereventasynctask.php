@@ -50,28 +50,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
      * @return array The converted user data.
      */
     private function convert_user_data( $user_data_normalized ) {
-        $norm_key_to_key = array(
-            AAMSettingsFields::EMAIL         => 'emails',
-            AAMSettingsFields::FIRST_NAME    => 'first_names',
-            AAMSettingsFields::LAST_NAME     => 'last_names',
-            AAMSettingsFields::GENDER        => 'genders',
-            AAMSettingsFields::DATE_OF_BIRTH => 'dates_of_birth',
-            AAMSettingsFields::EXTERNAL_ID   => 'external_ids',
-            AAMSettingsFields::PHONE         => 'phones',
-            AAMSettingsFields::CITY          => 'cities',
-            AAMSettingsFields::STATE         => 'states',
-            AAMSettingsFields::ZIP_CODE      => 'zip_codes',
-            AAMSettingsFields::COUNTRY       => 'country_codes',
-        );
-        $user_data       = array();
-        foreach ( $user_data_normalized as $norm_key => $field ) {
-            if ( isset( $norm_key_to_key[ $norm_key ] ) ) {
-                $user_data[ $norm_key_to_key[ $norm_key ] ] = $field;
-            } else {
-                $user_data[ $norm_key ] = $field;
-            }
-        }
-        return $user_data;
+        return ServerEventFactory::map_user_data_keys( $user_data_normalized );
     }
 
     /**
@@ -90,40 +69,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
      * @return Event The constructed Event object.
      */
     private function convert_array_to_event( $event_as_array ) {
-        $event = new Event( $event_as_array );
-        if ( isset( $event_as_array['user_data'] ) ) {
-            $user_data = new UserData(
-                $this->convert_user_data(
-                    $event_as_array['user_data']
-                )
-            );
-            $event->setUserData( $user_data );
-        }
-        if ( isset( $event_as_array['custom_data'] ) ) {
-            $custom_data = new CustomData( $event_as_array['custom_data'] );
-            if ( isset( $event_as_array['custom_data']['contents'] ) ) {
-                $contents = array();
-            foreach (
-                $event_as_array['custom_data']['contents'] as $contents_as_array
-                ) {
-                if ( isset( $contents_as_array['id'] ) ) {
-                    $contents_as_array['product_id'] = $contents_as_array['id'];
-                }
-                $contents[] = new Content( $contents_as_array );
-            }
-                $custom_data->setContents( $contents );
-            }
-            if ( isset(
-                $event_as_array['custom_data']['fb_integration_tracking']
-            ) ) {
-            $custom_data->addCustomProperty(
-                'fb_integration_tracking',
-                $event_as_array['custom_data']['fb_integration_tracking']
-            );
-            }
-            $event->setCustomData( $custom_data );
-        }
-        return $event;
+        return ServerEventFactory::create_from_array( $event_as_array );
     }
 
     /**
