@@ -183,10 +183,10 @@ class FacebookWordpressPixelInjection {
             'facebook-signal',
             'facebookSignalConfig',
             array(
-                'cookieName'    => FacebookPixelSignals::COOKIE_NAME,
+                'cookieName'    => Signals::COOKIE_NAME,
                 'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-                'signalsAction' => FacebookPixelSignals::AJAX_ACTION,
-                'signalsNonce'  => wp_create_nonce( FacebookPixelSignals::NONCE_ACTION ),
+                'signalsAction' => Signals::AJAX_ACTION,
+                'signalsNonce'  => wp_create_nonce( Signals::NONCE_ACTION ),
             )
         );
     }
