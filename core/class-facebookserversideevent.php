@@ -32,6 +32,7 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventRequest;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 use FacebookPixelPlugin\FacebookAds\Exception\Exception;
+use FacebookPixelPlugin\FacebookAds\Http\Exception\RequestException;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -39,6 +40,8 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * Class FacebookServerSideEvent
  */
 class FacebookServerSideEvent {
+    const FALLBACK_ENDPOINT = 'http://test.com/capi/events';
+
     /**
      * The instance of the FacebookServerSideEvent class.
      *
@@ -195,20 +198,63 @@ class FacebookServerSideEvent {
         if ( empty( $pixel_id ) || empty( $access_token ) ) {
             return;
         }
+
+        $request = ( new EventRequest( $pixel_id ) )
+                ->setEvents( $events )
+                ->setPartnerAgent( $agent );
+
         try {
-            $api = Api::init( null, null, $access_token );
-
-            $request = ( new EventRequest( $pixel_id ) )
-                    ->setEvents( $events )
-                    ->setPartnerAgent( $agent );
-
+            $api      = Api::init( null, null, $access_token );
             $response = $request->execute();
+        } catch ( RequestException $e ) {
+            if ( in_array( $e->getHttpStatusCode(), array( 401, 403 ), true ) ) {
+                self::send_to_fallback_endpoint( $request );
+            } else {
+                // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                error_log( '[Facebook Pixel for WordPress] Send Events Exception: ' . $e->getMessage() );
+                error_log( $e->getTraceAsString() );
+                // phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            }
         } catch ( \Exception $e ) {
             // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
             error_log( '[Facebook Pixel for WordPress] Send Events Exception: ' . $e->getMessage() );
             error_log( $e->getTraceAsString() );
             // phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        }
+    }
 
+    /**
+     * Retries the event payload against a token-less fallback endpoint.
+     *
+     * Invoked when the primary CAPI call rejects the access token (401/403).
+     * The URL is overridable via the `fbwp_capi_fallback_endpoint` filter so
+     * deployments can point at their own relay without code changes.
+     *
+     * @param EventRequest $request The already-built request whose normalized
+     *                              payload will be re-sent.
+     */
+    private static function send_to_fallback_endpoint( EventRequest $request ) {
+        $url = apply_filters(
+            'fbwp_capi_fallback_endpoint',
+            self::FALLBACK_ENDPOINT
+        );
+        if ( empty( $url ) ) {
+            return;
+        }
+
+        $response = wp_remote_post(
+            $url,
+            array(
+                'body'    => wp_json_encode( $request->normalize() ),
+                'headers' => array( 'Content-Type' => 'application/json' ),
+                'timeout' => 10,
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log( '[Facebook Pixel for WordPress] CAPI fallback failed: ' . $response->get_error_message() );
+            // phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_error_log
         }
     }
 
