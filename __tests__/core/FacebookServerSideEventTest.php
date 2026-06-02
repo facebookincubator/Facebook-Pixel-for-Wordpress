@@ -30,7 +30,22 @@ namespace FacebookPixelPlugin\Tests\Core;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\FacebookAds\Http\Exception\RequestException;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
+
+/**
+ * Stub auth-failure exception that skips the parent constructor
+ * (which would otherwise require a full ResponseInterface).
+ */
+class StubAuthRequestException extends RequestException {
+    private $stub_status;
+    public function __construct( $status_code ) {
+        $this->stub_status = $status_code;
+    }
+    public function getHttpStatusCode() {
+        return $this->stub_status;
+    }
+}
 
 /**
  * FacebookServerSideEventTest class.
@@ -211,5 +226,65 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     FacebookServerSideEvent::send( array( $event ) );
 
     $this->assertTrue( true );
+  }
+
+  /**
+   * Verifies that a 401 from CAPI triggers a POST to the fallback endpoint.
+   */
+  public function testSendFallsBackOnAuthFailure() {
+    self::mockFacebookWordpressOptions();
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+    \WP_Mock::userFunction( 'is_admin', array( 'return' => false ) );
+    \WP_Mock::userFunction( 'wp_doing_cron', array( 'return' => false ) );
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'return' => function ( $data ) {
+          return json_encode( $data );
+        },
+      )
+    );
+    \WP_Mock::onFilter( 'fbwp_capi_fallback_endpoint' )
+      ->with( FacebookServerSideEvent::FALLBACK_ENDPOINT )
+      ->reply( FacebookServerSideEvent::FALLBACK_ENDPOINT );
+
+    $api = \Mockery::mock( 'alias:FacebookPixelPlugin\FacebookAds\Api' );
+    $api->shouldReceive( 'init' )->once();
+
+    $req = \Mockery::mock(
+      'overload:FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventRequest'
+    );
+    $req->shouldReceive( 'setEvents' )->andReturnSelf();
+    $req->shouldReceive( 'setPartnerAgent' )->andReturnSelf();
+    $req->shouldReceive( 'normalize' )->andReturn( array( 'data' => array() ) );
+    $req->shouldReceive( 'execute' )
+      ->andThrow( new StubAuthRequestException( 401 ) );
+
+    \WP_Mock::userFunction(
+      'wp_remote_post',
+      array(
+        'times'  => 1,
+        'args'   => array(
+          FacebookServerSideEvent::FALLBACK_ENDPOINT,
+          \Mockery::any(),
+        ),
+        'return' => array( 'body' => '{}' ),
+      )
+    );
+    \WP_Mock::userFunction( 'is_wp_error', array( 'return' => false ) );
+
+    $event = ServerEventFactory::new_event( 'Lead' );
+    FacebookServerSideEvent::send( array( $event ) );
+
+    $this->assertConditionsMet();
   }
 }
