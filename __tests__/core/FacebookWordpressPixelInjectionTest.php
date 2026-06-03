@@ -199,6 +199,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
    * @return void
    */
   public function testInjectPixelCodeIncludesHeldBootstrap() {
+    \WP_Mock::userFunction( 'is_ssl', array( 'return' => false ) );
+
     FacebookSignalState::hold();
     FacebookWordpressPixelInjection::$render_cache = array();
     FacebookPixel::set_pixel_id( '1234' );
@@ -258,8 +260,9 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 
     $this->assertStringContainsString( 'FacebookSignal.init', $output );
     $this->assertStringContainsString( 'FacebookSignal.queueEvent', $output );
-    $this->assertStringContainsString( "fbq('consent', 'revoke');", $output );
-    $this->assertStringContainsString( '"held":true', $output );
+    $this->assertStringContainsString( 'FacebookSignal.initPixel', $output );
+    $this->assertStringNotContainsString( "fbq('consent', 'revoke');", $output );
+    $this->assertStringContainsString( '"held":false', $output );
     $this->assertStringContainsString( '"attribution"', $output );
   }
 
@@ -269,6 +272,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
    * @return void
    */
   public function testHeldInitCodeIncludesCapturedAttribution() {
+    \WP_Mock::userFunction( 'is_ssl', array( 'return' => false ) );
+
     FacebookSignalState::hold();
     FacebookSignalState::set_attribution_data( 'fbp', 'fb.1.123.browser' );
     FacebookSignalState::set_attribution_data( 'fbc', 'fb.1.123.click' );
@@ -411,7 +416,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 
     $this->assertStringContainsString( 'FacebookSignal.init', $output );
     $this->assertStringContainsString( '"held":false', $output );
-    $this->assertStringNotContainsString( '"attribution"', $output );
+    $this->assertStringContainsString( '"attribution":{}', $output );
     $this->assertStringNotContainsString( 'fb.1.123.browser', $output );
     $this->assertStringNotContainsString( 'fb.1.123.click', $output );
   }

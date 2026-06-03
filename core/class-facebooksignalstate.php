@@ -24,6 +24,13 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  */
 class FacebookSignalState {
     /**
+     * Cookie name for signal state.
+     *
+     * @var string
+     */
+    const COOKIE_NAME = 'wc_facebook_signals_state';
+
+    /**
      * Whether signals are currently held for this request.
      *
      * @var bool
@@ -51,6 +58,7 @@ class FacebookSignalState {
      */
     public static function hold() {
         self::$held = true;
+        self::set_state_cookie( 'held' );
     }
 
     /**
@@ -60,6 +68,7 @@ class FacebookSignalState {
      */
     public static function release() {
         self::$held = false;
+        self::set_state_cookie( 'active' );
     }
 
     /**
@@ -163,5 +172,29 @@ class FacebookSignalState {
     public static function reset_queue() {
         self::$queued_events    = array();
         self::$attribution_data = array();
+    }
+
+    /**
+     * Sets the signal-state cookie so client-side JS can read the current
+     * state on cached pages where PHP cannot determine it at render time.
+     *
+     * @param string $state 'held' or 'active'.
+     */
+    private static function set_state_cookie( $state ) {
+        if ( headers_sent() ) {
+            return;
+        }
+
+        setcookie(
+            self::COOKIE_NAME,
+            $state,
+            time() + YEAR_IN_SECONDS,
+            defined( 'COOKIEPATH' ) ? COOKIEPATH : '/',
+            defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '',
+            is_ssl(),
+            false // httponly=false so JS can read it.
+        );
+
+        $_COOKIE[ self::COOKIE_NAME ] = $state;
     }
 }

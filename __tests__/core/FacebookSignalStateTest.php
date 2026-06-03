@@ -35,6 +35,11 @@ final class FacebookSignalStateTest extends FacebookWordpressTestBase {
         FacebookSignalState::reset_queue();
     }
 
+    public function tearDown(): void {
+        unset( $_COOKIE[ FacebookSignalState::COOKIE_NAME ] );
+        parent::tearDown();
+    }
+
     public function testSetAndGetAttributionData() {
         FacebookSignalState::set_attribution_data( 'fbc', 'fb.1.123.abc' );
         FacebookSignalState::set_attribution_data( 'fbp', 'fb.1.456.def' );
@@ -73,6 +78,8 @@ final class FacebookSignalStateTest extends FacebookWordpressTestBase {
     }
 
     public function testPauseAndResumeToggleState() {
+        \WP_Mock::userFunction( 'is_ssl', array( 'return' => false ) );
+
         $this->assertFalse( FacebookSignalState::is_held() );
 
         FacebookSignalState::hold();
@@ -80,5 +87,22 @@ final class FacebookSignalStateTest extends FacebookWordpressTestBase {
 
         FacebookSignalState::release();
         $this->assertFalse( FacebookSignalState::is_held() );
+    }
+
+    public function testHoldSetsCookie() {
+        \WP_Mock::userFunction( 'is_ssl', array( 'return' => false ) );
+
+        FacebookSignalState::hold();
+
+        $this->assertSame( 'held', $_COOKIE[ FacebookSignalState::COOKIE_NAME ] );
+    }
+
+    public function testReleaseSetsCookie() {
+        \WP_Mock::userFunction( 'is_ssl', array( 'return' => false ) );
+
+        FacebookSignalState::hold();
+        FacebookSignalState::release();
+
+        $this->assertSame( 'active', $_COOKIE[ FacebookSignalState::COOKIE_NAME ] );
     }
 }

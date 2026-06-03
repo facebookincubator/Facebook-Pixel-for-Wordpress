@@ -77,7 +77,6 @@ abstract class FacebookWordpressTestBase extends TestCase {
         $_COOKIE                = array();
         $_POST                  = array();
         $_SESSION               = array();
-        FacebookSignalState::release();
 
         \WP_Mock::userFunction(
             'get_site_url',
@@ -95,6 +94,9 @@ abstract class FacebookWordpressTestBase extends TestCase {
             'is_ssl',
             array( 'return' => true )
         );
+
+        FacebookSignalState::release();
+        unset( $_COOKIE[ FacebookSignalState::COOKIE_NAME ] );
     }
 
     /**

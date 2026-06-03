@@ -106,8 +106,11 @@ class Signals {
                 : null
         );
 
-        $this->set_cookie( $state );
-        $_COOKIE[ self::COOKIE_NAME ] = $state;
+        if ( self::STATE_HELD === $state ) {
+            FacebookSignalState::hold();
+        } else {
+            FacebookSignalState::release();
+        }
 
         wp_send_json_success(
             array(
@@ -133,24 +136,5 @@ class Signals {
         $candidate = strtolower( $raw );
 
         return self::STATE_ACTIVE === $candidate ? self::STATE_ACTIVE : self::STATE_HELD;
-    }
-
-    /**
-     * Set the signal state cookie.
-     *
-     * @param string $state Signal state ('active' or 'held').
-     *
-     * @return void
-     */
-    private function set_cookie( $state ) {
-        setcookie(
-            self::COOKIE_NAME,
-            $state,
-            time() + YEAR_IN_SECONDS,
-            defined( 'COOKIEPATH' ) ? COOKIEPATH : '/',
-            defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '',
-            is_ssl(),
-            false
-        );
     }
 }
