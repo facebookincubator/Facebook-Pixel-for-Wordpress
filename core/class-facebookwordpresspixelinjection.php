@@ -196,6 +196,7 @@ class FacebookWordpressPixelInjection {
             'releaseAction' => ReleaseSignalsAjax::ACTION,
             'pixelId'       => $pixel_id,
             'attribution'   => (object) array(),
+            'addMetaCapi'   => FacebookWordpressOptions::get_add_meta_capi(),
         );
 
         if ( FacebookSignalState::is_held() ) {
