@@ -226,6 +226,18 @@ class FacebookWordpressSettingsPage {
             When turned on, PII will be cached for non logged in users.
         </div>
         </div>
+        <div id="fb-add-meta-capi">
+        <input type="checkbox" id="add-meta-capi" name="add-meta-capi">
+        <label class="fb-capi-title" for="add-meta-capi">
+            Add Meta-enabled Conversions API integration
+        </label>
+        <span id="fb-add-meta-capi-se" class="fb-capi-se"></span>
+        <br/>
+        <div class="fb-capi-desc">
+            When turned on, the Meta-enabled Conversions API integration
+            is added.
+        </div>
+        </div>
     </div>
     </div>
 
@@ -569,6 +581,25 @@ class FacebookWordpressSettingsPage {
     }
 
     /**
+     * Builds the admin-ajax URL for persisting the
+     * "Add Meta-enabled CAPI" toggle.
+     *
+     * @return string
+     */
+    public function get_add_meta_capi_save_url() {
+        $nonce_value = wp_create_nonce(
+            FacebookPluginConfig::SAVE_ADD_META_CAPI_ACTION_NAME
+        );
+        $simple_url  = admin_url( 'admin-ajax.php' );
+        $args        = array(
+            'action'   =>
+            FacebookPluginConfig::SAVE_ADD_META_CAPI_ACTION_NAME,
+            '_wpnonce' => $nonce_value,
+        );
+        return add_query_arg( $args, $simple_url );
+    }
+
+    /**
      * Generates the AJAX route URL for deleting FBE settings.
      *
      * This function creates a nonce for the AJAX action to ensure
@@ -636,6 +667,14 @@ class FacebookWordpressSettingsPage {
                 FacebookPluginConfig::SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME,
             'capiIntegrationEventsFilterUpdateError' =>
                 FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_UPDATE_ERROR,
+            'addMetaCapi'                            =>
+                FacebookWordpressOptions::get_add_meta_capi(),
+            'addMetaCapiSaveUrl'                     =>
+                $this->get_add_meta_capi_save_url(),
+            'addMetaCapiActionName'                  =>
+                FacebookPluginConfig::SAVE_ADD_META_CAPI_ACTION_NAME,
+            'addMetaCapiUpdateError'                 =>
+                FacebookPluginConfig::ADD_META_CAPI_UPDATE_ERROR,
         );
 
         // FBL4B config — only included if app_id is provisioned.

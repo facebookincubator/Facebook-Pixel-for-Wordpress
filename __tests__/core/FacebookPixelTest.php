@@ -158,6 +158,12 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
       )
     );
 
+    $options_mock = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
+    );
+    $options_mock->shouldReceive( 'get_add_meta_capi' )
+      ->andReturn( '0' );
+
     FacebookPixel::set_pixel_id( '' );
     $code = FacebookPixel::get_pixel_init_code(
       'mockAgent',
@@ -205,6 +211,53 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
     );
     $this->assertStringContainsString(
       "fbq('set', 'openbridge', '123', url);",
+      $code
+    );
+    $this->assertStringNotContainsString( 'enableMetaCapi', $code );
+    $this->assertStringContainsString(
+      "fbq('init', '123', {\"key\":\"value\"}, {\"agent\":\"mockAgent\"})",
+      $code
+    );
+  }
+
+  /**
+   * When the "Add Meta-enabled CAPI" admin toggle is on, the
+   * fbq enableMetaCapi command must be emitted alongside the
+   * set openbridge and init lines.
+   */
+  public function testEnableMetaCapiEmittedWhenAdded() {
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'args' => array(
+          \Mockery::type( 'array' ),
+          \Mockery::type( 'int' ),
+        ),
+        'return' => function ( $data, $options ) {
+          return json_encode( $data );
+        },
+      )
+    );
+
+    $options_mock = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
+    );
+    $options_mock->shouldReceive( 'get_add_meta_capi' )
+      ->andReturn( '1' );
+
+    FacebookPixel::set_pixel_id( '123' );
+    $code = FacebookPixel::get_pixel_init_code(
+      'mockAgent',
+      array( 'key' => 'value' ),
+      true
+    );
+
+    $this->assertStringContainsString(
+      "fbq('set', 'openbridge', '123', url);",
+      $code
+    );
+    $this->assertStringContainsString(
+      "fbq('enableMetaCapi', '123');",
       $code
     );
     $this->assertStringContainsString(

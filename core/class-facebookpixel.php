@@ -144,8 +144,13 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
           return;
       }
 
+        $enable_meta_capi_line =
+            '1' === FacebookWordpressOptions::get_add_meta_capi()
+                ? "
+            fbq('enableMetaCapi', '%1\$s');"
+                : '';
         $code = "var url = window.location.origin + '?ob=open-bridge';
-            fbq('set', 'openbridge', '%s', url);";
+            fbq('set', 'openbridge', '%1\$s', url);" . $enable_meta_capi_line;
         return sprintf( $code, self::$pixel_id );
     }
 

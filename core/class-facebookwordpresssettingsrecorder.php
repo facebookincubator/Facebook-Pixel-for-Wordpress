@@ -58,6 +58,13 @@ class FacebookWordpressSettingsRecorder {
                 'save_capi_pii_caching_status',
             )
         );
+        add_action(
+            'wp_ajax_save_add_meta_capi',
+            array(
+                $this,
+                'save_add_meta_capi',
+            )
+        );
         // FBL4B AJAX actions.
         add_action(
             'wp_ajax_save_fbl4b_settings',
@@ -321,6 +328,43 @@ class FacebookWordpressSettingsRecorder {
         }
 
         \update_option( FacebookPluginConfig::CAPI_PII_CACHING_STATUS, $val );
+        return $this->handle_success_request( $val );
+    }
+
+    /**
+     * Persists the "Add Meta-enabled CAPI" admin toggle.
+     *
+     * Accepts '1' (default — fbq enableMetaCapi command is emitted) or
+     * '0' (suppress the command). Admin-only.
+     *
+     * @return array response data
+     */
+    public function save_add_meta_capi() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+
+        if ( empty( FacebookWordpressOptions::get_active_pixel_id() ) ) {
+            \update_option(
+                FacebookPluginConfig::ADD_META_CAPI,
+                FacebookPluginConfig::ADD_META_CAPI_DEFAULT
+            );
+            return $this->handle_invalid_request();
+        }
+
+        check_admin_referer(
+            FacebookPluginConfig::SAVE_ADD_META_CAPI_ACTION_NAME
+        );
+        $val = sanitize_text_field(
+            isset( $_POST['val'] ) ?
+            wp_unslash( $_POST['val'] ) : ''
+        );
+
+        if ( ! ( '0' === $val || '1' === $val ) ) {
+            return $this->handle_invalid_request();
+        }
+
+        \update_option( FacebookPluginConfig::ADD_META_CAPI, $val );
         return $this->handle_success_request( $val );
     }
 

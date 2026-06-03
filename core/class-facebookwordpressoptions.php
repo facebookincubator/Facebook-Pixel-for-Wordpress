@@ -78,6 +78,13 @@ class FacebookWordpressOptions {
      * @var bool|null
      */
     private static $capi_pii_caching_status = null;
+    /**
+     * Whether the admin opted in to emit the Meta-enabled CAPI fbq command
+     * in the pixel init.
+     *
+     * @var string|null
+     */
+    private static $add_meta_capi           = null;
     const AAM_SETTINGS_REFRESH_IN_MINUTES   = 20;
 
     /**
@@ -97,6 +104,7 @@ class FacebookWordpressOptions {
         self::set_capi_integration_status();
         self::set_capi_integration_events_filter();
         self::set_capi_pii_caching_status();
+        self::set_add_meta_capi();
     }
 
     /**
@@ -162,6 +170,36 @@ class FacebookWordpressOptions {
         return is_null( self::$capi_pii_caching_status ) ?
         FacebookPluginConfig::CAPI_PII_CACHING_STATUS_DEFAULT :
         self::$capi_pii_caching_status;
+    }
+
+    /**
+     * Loads the "Add Meta-enabled CAPI" toggle from WordPress options.
+     *
+     * Passes the default to get_option() so fresh installs and upgrades
+     * from versions without this option seed the in-memory value with
+     * the opt-in default rather than `false`.
+     */
+    public static function set_add_meta_capi() {
+        self::$add_meta_capi = \get_option(
+            FacebookPluginConfig::ADD_META_CAPI,
+            FacebookPluginConfig::ADD_META_CAPI_DEFAULT
+        );
+    }
+
+    /**
+     * Returns '1' when the admin has opted in to emit the fbq
+     * enableMetaCapi command, '0' otherwise. Default is '1'
+     * (opt-in by default — fresh installs and upgrades emit the command).
+     *
+     * @return string
+     */
+    public static function get_add_meta_capi() {
+        if ( is_null( self::$add_meta_capi ) ||
+            '' === self::$add_meta_capi ||
+            false === self::$add_meta_capi ) {
+            return FacebookPluginConfig::ADD_META_CAPI_DEFAULT;
+        }
+        return self::$add_meta_capi;
     }
 
     /**

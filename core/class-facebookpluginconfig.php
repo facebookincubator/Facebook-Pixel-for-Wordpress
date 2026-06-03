@@ -132,6 +132,13 @@ class FacebookPluginConfig {
     'save_capi_pii_caching_status';
     const CAPI_PII_CACHING_STATUS_UPDATE_ERROR            =
     'Status could not be saved, please refresh the page and continue.';
+    const ADD_META_CAPI                                   =
+    'facebook_add_meta_capi';
+    const ADD_META_CAPI_DEFAULT                           = '1';
+    const SAVE_ADD_META_CAPI_ACTION_NAME                  =
+    'save_add_meta_capi';
+    const ADD_META_CAPI_UPDATE_ERROR                      =
+    'Status could not be saved, please refresh the page and continue.';
 
     /**
      * Integration config: INTEGRATION_KEY => PLUGIN_CLASS.
