@@ -208,6 +208,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_options->shouldReceive( 'get_capi_integration_status' )
       ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_add_meta_capi' )
+      ->andReturn( '0' );
     $mocked_options->shouldReceive( 'get_agent_string' )
       ->andReturn( 'WordPress' );
     $mocked_options->shouldReceive( 'get_user_info' )
@@ -280,6 +282,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_options->shouldReceive( 'get_capi_integration_status' )
       ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_add_meta_capi' )
+      ->andReturn( '0' );
     $mocked_options->shouldReceive( 'get_agent_string' )
       ->andReturn( 'WordPress' );
     $mocked_options->shouldReceive( 'get_user_info' )
@@ -363,6 +367,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_options->shouldReceive( 'get_capi_integration_status' )
       ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_add_meta_capi' )
+      ->andReturn( '0' );
     $mocked_options->shouldReceive( 'get_agent_string' )
       ->andReturn( 'WordPress' );
     $mocked_options->shouldReceive( 'get_user_info' )
