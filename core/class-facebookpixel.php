@@ -151,53 +151,6 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
 
 
     /**
-     * Gets FB pixel init code
-     *
-     * @param string $agent_string The agent string to be used
-     * in the pixel init code.
-     * @param array  $param        The parameters for the pixel event.
-     * Defaults to an empty array.
-     * @param bool   $include_capi        Whether CAPI injection is
-     * enabled or not.
-     * @param bool   $with_script_tag Whether to include the script tag in
-     * the pixel init code. Defaults to true.
-     */
-    public static function get_pixel_init_code(
-        $agent_string,
-        $param,
-        $include_capi,
-        $with_script_tag = true
-    ) {
-        if ( empty( self::$pixel_id ) ) {
-            return;
-        }
-
-        $capi_integration_injection    = $include_capi ?
-            ( self::get_open_bridge_config_code() . PHP_EOL ) : '';
-        $pixel_fbq_code_without_script = $capi_integration_injection .
-            "fbq('%s', '%s'%s%s)";
-
-        $code      = $with_script_tag ? "<script type='text/javascript'>" .
-        $pixel_fbq_code_without_script .
-        '</script>' : $pixel_fbq_code_without_script;
-        $param_str = $param;
-        if ( is_array( $param ) ) {
-            $param_str = wp_json_encode(
-                $param,
-                JSON_PRETTY_PRINT | JSON_FORCE_OBJECT
-            );
-        }
-        $agent_param = array( 'agent' => $agent_string );
-        return sprintf(
-            $code,
-            'init',
-            self::$pixel_id,
-            ', ' . $param_str,
-            ', ' . wp_json_encode( $agent_param, JSON_PRETTY_PRINT )
-        );
-    }
-
-    /**
      * Gets FB pixel track code
      * $param is the parameter for the pixel event.
      *   If it is an array, FB_INTEGRATION_TRACKING_KEY parameter with

@@ -27,7 +27,6 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  */
 class ReleaseSignalsAjax {
     const ACTION        = 'fbpix_release_signals';
-    const NONCE_ACTION  = 'fbpix_release_signals';
     const MAX_EVENTS    = 20;
     const MAX_EVENT_AGE = 1800;
 
@@ -103,10 +102,15 @@ class ReleaseSignalsAjax {
             wp_send_json_error( array( 'message' => 'Invalid request body.' ), 400 );
         }
 
-        $nonce = isset( $body['security'] ) ?
-            sanitize_text_field( $body['security'] ) : '';
-        if ( ! wp_verify_nonce( $nonce, self::NONCE_ACTION ) ) {
-            wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
+        // On cached pages the nonce in the original render is stale.
+        // Gate on the signal-state cookie instead; only browsers that have been
+        // through the hold/release flow carry this cookie.
+        $signal_state = isset( $_COOKIE[ FacebookSignalState::COOKIE_NAME ] )
+            ? sanitize_text_field( wp_unslash( $_COOKIE[ FacebookSignalState::COOKIE_NAME ] ) )
+            : '';
+
+        if ( empty( $signal_state ) ) {
+            wp_send_json_error( array( 'message' => 'Missing signal state.' ), 403 );
         }
 
         if ( $this->is_rate_limited() ) {
@@ -125,6 +129,18 @@ class ReleaseSignalsAjax {
         $restore_get_fbclid = $this->temporarily_set_superglobal_value( '_GET', 'fbclid', $fbclid );
         $restore_cookie_fbp = $this->temporarily_set_superglobal_value( '_COOKIE', '_fbp', $fbp );
         $restore_cookie_fbc = $this->temporarily_set_superglobal_value( '_COOKIE', '_fbc', $fbc );
+
+        // Resolve missing fbc/fbp via ParamBuilder so released CAPI events carry
+        // correct attribution even when cookies were not yet written during hold.
+        if ( empty( $fbc ) || empty( $fbp ) ) {
+            $this->resolve_attribution_via_param_builder( $fbc, $fbp );
+            if ( ! empty( $fbp ) ) {
+                $_COOKIE['_fbp'] = $fbp;
+            }
+            if ( ! empty( $fbc ) ) {
+                $_COOKIE['_fbc'] = $fbc;
+            }
+        }
 
         $events = isset( $body['events'] ) && is_array( $body['events'] ) ?
             array_slice( $body['events'], 0, self::MAX_EVENTS ) :
@@ -149,11 +165,24 @@ class ReleaseSignalsAjax {
             FacebookServerSideEvent::send( $events_to_send );
         }
 
+        // Return fresh user_info so JS can initialise fbq with correct AAM data
+        // after release, even when the cached page rendered with empty user_info.
+        $user_info = array();
+        try {
+            if ( ! FacebookPluginUtils::is_internal_user() ) {
+                $user_info = FacebookWordpressOptions::get_user_info();
+            }
+        // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+        } catch ( \Exception $e ) {
+            // Best-effort.
+        }
+
         wp_send_json_success(
             array(
                 'fbp'        => ServerEventFactory::get_fbp_value(),
                 'fbc'        => ServerEventFactory::get_fbc_value(),
                 'sent_count' => count( $events_to_send ),
+                'user_info'  => $user_info,
             )
         );
     }
@@ -456,6 +485,32 @@ class ReleaseSignalsAjax {
             $GLOBALS[ $superglobal ][ $key ] = $restore['original'];
         } else {
             unset( $GLOBALS[ $superglobal ][ $key ] );
+        }
+    }
+
+    /**
+     * Fills in missing fbc/fbp using FacebookParamBuilder.
+     *
+     * @param string $fbc Attribution click ID (populated by reference if empty).
+     * @param string $fbp Attribution browser ID (populated by reference if empty).
+     */
+    private function resolve_attribution_via_param_builder( &$fbc, &$fbp ) {
+        try {
+            if ( empty( $fbc ) ) {
+                $resolved = FacebookParamBuilder::get_fbc();
+                if ( ! empty( $resolved ) ) {
+                    $fbc = $resolved;
+                }
+            }
+            if ( empty( $fbp ) ) {
+                $resolved = FacebookParamBuilder::get_fbp();
+                if ( ! empty( $resolved ) ) {
+                    $fbp = $resolved;
+                }
+            }
+        // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+        } catch ( \Exception $e ) {
+            // ParamBuilder is best-effort; proceed without it.
         }
     }
 
