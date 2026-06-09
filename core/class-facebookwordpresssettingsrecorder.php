@@ -178,6 +178,16 @@ class FacebookWordpressSettingsRecorder {
             FacebookPluginConfig::SETTINGS_KEY,
             $settings
         );
+        \delete_transient(
+            FacebookPluginConfig::CONNECTION_INVALID_TRANSIENT
+        );
+        delete_metadata(
+            'user',
+            0,
+            FacebookPluginConfig::ADMIN_IGNORE_CONNECTION_INVALID_NOTICE,
+            '',
+            true
+        );
         return $this->handle_success_request( $settings );
     }
 
@@ -432,6 +442,16 @@ class FacebookWordpressSettingsRecorder {
                     );
                 }
             }
+            \delete_transient(
+                FacebookPluginConfig::CONNECTION_INVALID_TRANSIENT
+            );
+            delete_metadata(
+                'user',
+                0,
+                FacebookPluginConfig::ADMIN_IGNORE_CONNECTION_INVALID_NOTICE,
+                '',
+                true
+            );
             return $this->handle_success_request( $existing );
         }
 
@@ -446,6 +466,16 @@ class FacebookWordpressSettingsRecorder {
         \update_option(
             FacebookPluginConfig::FBL4B_SETTINGS_KEY,
             $fbl4b_settings
+        );
+        \delete_transient(
+            FacebookPluginConfig::CONNECTION_INVALID_TRANSIENT
+        );
+        delete_metadata(
+            'user',
+            0,
+            FacebookPluginConfig::ADMIN_IGNORE_CONNECTION_INVALID_NOTICE,
+            '',
+            true
         );
 
         return $this->handle_success_request( 'FBL4B settings saved' );

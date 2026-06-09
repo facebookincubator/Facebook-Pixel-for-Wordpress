@@ -952,4 +952,97 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $this->mocked_options->shouldReceive( 'get_aam_settings' )
       ->andReturn( $aam_settings );
   }
+
+  /**
+   * Tests that create_from_array builds an Event with scalar fields.
+   */
+  public function testCreateFromArraySetsScalarFields() {
+    $event = ServerEventFactory::create_from_array(
+      array(
+        'event_name'       => 'Purchase',
+        'event_time'       => 1700000000,
+        'event_id'         => 'evt.123',
+        'action_source'    => 'website',
+        'event_source_url' => 'https://example.com',
+      )
+    );
+
+    $this->assertEquals( 'Purchase', $event->getEventName() );
+    $this->assertEquals( 1700000000, $event->getEventTime() );
+    $this->assertEquals( 'evt.123', $event->getEventId() );
+  }
+
+  /**
+   * Tests that create_from_array wraps user_data as UserData object.
+   */
+  public function testCreateFromArrayWrapsUserData() {
+    $event = ServerEventFactory::create_from_array(
+      array(
+        'event_name' => 'Lead',
+        'event_time' => 1700000000,
+        'user_data'  => array(
+          'em' => array( 'abc123hash' ),
+          'ph' => array( 'def456hash' ),
+        ),
+      )
+    );
+
+    $user_data = $event->getUserData();
+    $this->assertInstanceOf(
+      'FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData',
+      $user_data
+    );
+  }
+
+  /**
+   * Tests that create_from_array wraps custom_data as CustomData object.
+   */
+  public function testCreateFromArrayWrapsCustomData() {
+    $event = ServerEventFactory::create_from_array(
+      array(
+        'event_name'  => 'Purchase',
+        'event_time'  => 1700000000,
+        'custom_data' => array(
+          'value'    => 99.99,
+          'currency' => 'USD',
+        ),
+      )
+    );
+
+    $custom_data = $event->getCustomData();
+    $this->assertInstanceOf(
+      'FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData',
+      $custom_data
+    );
+  }
+
+  /**
+   * Tests that map_user_data_keys translates AAM field keys.
+   */
+  public function testMapUserDataKeysTranslatesAamFields() {
+    $result = ServerEventFactory::map_user_data_keys(
+      array(
+        'em' => 'test@example.com',
+        'fn' => 'John',
+        'ln' => 'Doe',
+      )
+    );
+
+    $this->assertEquals( 'test@example.com', $result['emails'] );
+    $this->assertEquals( 'John', $result['first_names'] );
+    $this->assertEquals( 'Doe', $result['last_names'] );
+  }
+
+  /**
+   * Tests that map_user_data_keys passes through unknown keys.
+   */
+  public function testMapUserDataKeysPassesThroughUnknownKeys() {
+    $result = ServerEventFactory::map_user_data_keys(
+      array(
+        'custom_field' => 'value',
+      )
+    );
+
+    $this->assertEquals( 'value', $result['custom_field'] );
+  }
 }

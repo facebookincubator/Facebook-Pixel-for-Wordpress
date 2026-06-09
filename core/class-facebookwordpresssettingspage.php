@@ -875,6 +875,29 @@ class FacebookWordpressSettingsPage {
             }
         }
 
+        // Show connection invalid notice on dashboard, plugins, AND settings page.
+        $connection_screens = array(
+            'dashboard',
+            'plugins',
+            'settings_page_' . FacebookPluginConfig::ADMIN_MENU_SLUG,
+        );
+        if ( current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY )
+            && in_array( $current_screen_id, $connection_screens, true )
+            && get_transient(
+                FacebookPluginConfig::CONNECTION_INVALID_TRANSIENT
+            )
+            && ! get_user_meta(
+                get_current_user_id(),
+                FacebookPluginConfig::ADMIN_IGNORE_CONNECTION_INVALID_NOTICE,
+                true
+            )
+        ) {
+            add_action(
+                'admin_notices',
+                array( $this, 'connection_invalid_notice' )
+            );
+        }
+
         // Show FBL4B upgrade banner on dashboard, plugins, AND settings page.
         $fbl4b_screens = array(
             'dashboard',
@@ -1071,6 +1094,43 @@ class FacebookWordpressSettingsPage {
     }
 
     /**
+     * Displays a notice when the Meta connection is invalid.
+     */
+    public function connection_invalid_notice() {
+        $dismiss_url   = add_query_arg(
+            FacebookPluginConfig::ADMIN_DISMISS_CONNECTION_INVALID_NOTICE,
+            '1'
+        );
+        $settings_url  = admin_url(
+            'options-general.php?page='
+            . FacebookPluginConfig::ADMIN_MENU_SLUG
+        );
+        $reconnect_url = add_query_arg(
+            'upgrade_to_fbl4b',
+            '1',
+            $settings_url
+        );
+        ?>
+        <div class="notice notice-error">
+            <p><strong>Meta Pixel for WordPress</strong></p>
+            <p>
+                Your connection to Meta is no longer valid and Conversions API
+                events have been paused. This can happen when the system user is
+                removed, the password is changed, or the app is deauthorized.
+                Please reconnect using Facebook Login for Business to restore
+                event delivery.
+            </p>
+            <p>
+                <a href="<?php echo esc_url( $reconnect_url ); ?>"
+                   class="button button-primary"
+                   style="margin-right: 8px;">Reconnect</a>
+                <a href="<?php echo esc_url( $dismiss_url ); ?>">Dismiss</a>
+            </p>
+        </div>
+        <?php
+    }
+
+    /**
      * Displays a notice indicating that the Facebook
      * Business Extension is not installed.
      *
@@ -1137,6 +1197,15 @@ class FacebookWordpressSettingsPage {
             update_user_meta(
                 $user_id,
                 FacebookPluginConfig::ADMIN_IGNORE_FBL4B_UPGRADE_NOTICE,
+                true
+            );
+        }
+        if ( isset(
+            $_GET[ FacebookPluginConfig::ADMIN_DISMISS_CONNECTION_INVALID_NOTICE ] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        ) ) {
+            update_user_meta(
+                $user_id,
+                FacebookPluginConfig::ADMIN_IGNORE_CONNECTION_INVALID_NOTICE,
                 true
             );
         }

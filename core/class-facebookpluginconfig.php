@@ -133,6 +133,14 @@ class FacebookPluginConfig {
     const CAPI_PII_CACHING_STATUS_UPDATE_ERROR            =
     'Status could not be saved, please refresh the page and continue.';
 
+    const CONNECTION_INVALID_TRANSIENT            =
+    'facebook_pixel_connection_invalid';
+    const CONNECTION_RETRY_INTERVAL               = 3600;
+    const ADMIN_DISMISS_CONNECTION_INVALID_NOTICE =
+    'dismiss_connection_invalid_notice';
+    const ADMIN_IGNORE_CONNECTION_INVALID_NOTICE  =
+    'ignore_connection_invalid_notice';
+
     /**
      * Integration config: INTEGRATION_KEY => PLUGIN_CLASS.
      *

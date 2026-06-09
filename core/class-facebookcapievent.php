@@ -29,6 +29,7 @@ namespace FacebookPixelPlugin\Core;
 
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventRequest;
 use FacebookPixelPlugin\FacebookAds\ApiConfig;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -135,6 +136,7 @@ class FacebookCapiEvent {
             wp_die();
         }
 
+        $test_event_code = null;
         if ( isset( $_POST['test_event_code'] ) ) {
             $raw_test_event_code = sanitize_text_field(
                 wp_unslash( $_POST['test_event_code'] )
@@ -154,15 +156,8 @@ class FacebookCapiEvent {
                 );
                 wp_die();
             }
+            $test_event_code = $raw_test_event_code;
         }
-
-        $api_version  = ApiConfig::APIVersion;
-        $pixel_id     = FacebookWordpressOptions::get_active_pixel_id();
-        $access_token = FacebookWordpressOptions::get_active_access_token();
-
-        $url = 'https://graph.facebook.com/v' .
-        $api_version . '/' . $pixel_id .
-        '/events?access_token=' . $access_token;
 
         $event_name = isset( $_POST['event_name'] ) ?
         sanitize_text_field( wp_unslash( $_POST['event_name'] ) ) : null;
@@ -188,40 +183,16 @@ class FacebookCapiEvent {
                 )
             );
             wp_die();
-        } else {
-            $event = ServerEventFactory::safe_create_event(
+        }
+
+            $event  = ServerEventFactory::safe_create_event(
                 $event_name,
                 array( $this, 'get_event_custom_data' ),
                 array( $custom_data ),
                 'fb-capi-event',
                 true
             );
-
-            $events = array();
-            array_push( $events, $event );
-
-            $event_request = ( new EventRequest( $pixel_id ) )
-                ->setEvents( $events )
-                ->setTestEventCode(
-                    isset( $_POST['test_event_code'] ) ?
-                    sanitize_text_field(
-                        wp_unslash( $_POST['test_event_code'] )
-                    ) :
-                    null
-                );
-
-            $normalized_event = $event_request->normalize();
-
-            if ( ! empty( $_POST['user_data'] ) ) {
-            foreach ( $normalized_event['data'] as $key => $value ) {
-                $normalized_event['data'][ $key ]['user_data'] +=
-                isset( $_POST['user_data'] ) ?
-                $_POST['user_data'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-            }
-            }
-
-            $payload = wp_json_encode( $normalized_event );
-        }
+            $events = array( $event );
         } else {
             $validated_payload =
             self::validate_payload(
@@ -241,29 +212,49 @@ class FacebookCapiEvent {
                 )
             );
             wp_die();
-        } else {
-            $payload = wp_json_encode(
-                isset( $_POST['payload'] )
-                ? $_POST['payload'] : null // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+        }
+
+            $raw_payload = isset( $_POST['payload'] ) ?
+                $_POST['payload'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+            if ( isset( $raw_payload['test_event_code'] )
+                && empty( $test_event_code ) ) {
+                $test_event_code = sanitize_text_field(
+                    $raw_payload['test_event_code']
+                );
+            }
+            $events = array();
+            if ( isset( $raw_payload['data'] ) ) {
+                foreach ( $raw_payload['data'] as $event_as_array ) {
+                    $events[] = ServerEventFactory::create_from_array(
+                        $event_as_array
+                    );
+                }
+            }
+        }
+
+        $result = FacebookServerSideEvent::send( $events, $test_event_code );
+
+        if ( $result && $result['success'] ) {
+            wp_send_json_success(
+                wp_json_encode(
+                    array(
+                        'events_received' => $result['events_received'],
+                    )
+                )
             );
-        }
-        }
-
-        $args = array(
-            'body'    => $payload,
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'Accept'       => '*/*',
-            ),
-            'method'  => 'POST',
-        );
-
-        $response = wp_remote_post( $url, $args );
-
-        if ( is_wp_error( $response ) ) {
-            wp_send_json_error( $response->get_error_message() );
         } else {
-            wp_send_json_success( wp_remote_retrieve_body( $response ) );
+            $error_msg = isset( $result['error']['message'] )
+                ? $result['error']['message'] : 'Unknown error';
+            wp_send_json_success(
+                wp_json_encode(
+                    array(
+                        'error' => array(
+                            'message'        => $error_msg,
+                            'error_user_msg' => $error_msg,
+                        ),
+                    )
+                )
+            );
         }
         wp_die();
     }
