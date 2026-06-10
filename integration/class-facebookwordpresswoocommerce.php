@@ -290,6 +290,10 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 
         foreach ( $order->get_items() as $item ) {
             $product = wc_get_product( $item->get_product_id() );
+            if ( ! is_object( $product ) || ! method_exists( $product, 'get_id' ) ) {
+                continue;
+            }
+
             if ( 'product_group' !== $content_type
             && $product->is_type( 'variable' ) ) {
             $content_type = 'product_group';
@@ -352,7 +356,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         $server_event = ServerEventFactory::safe_create_event(
             'AddToCart',
             array( __CLASS__, 'createAddToCartEvent' ),
-            array( $cart_item_key, $product_id, $quantity ),
+            array( $cart_item_key, $product_id, $quantity, $variation_id ),
             self::TRACKING_NAME
         );
 
@@ -412,6 +416,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
      * @param string $cart_item_key The cart item key.
      * @param int    $product_id    The product ID.
      * @param int    $quantity      The quantity.
+     * @param int    $variation_id  The variation ID.
      *
      * @return array The event data.
      *
@@ -420,14 +425,15 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     public static function createAddToCartEvent(
         $cart_item_key,
         $product_id,
-        $quantity
+        $quantity,
+        $variation_id = null
     ) {
         $event_data                 = self::getPIIFromSession();
         $event_data['content_type'] = 'product';
         $event_data['currency']     = \get_woocommerce_currency();
 
         $cart_item = self::getCartItem( $cart_item_key );
-        if ( ! empty( $cart_item_key ) ) {
+        if ( ! empty( $cart_item ) && ! empty( $cart_item['data'] ) ) {
             $event_data['content_ids'] = array(
                 self::getProductId(
                     $cart_item['data']
@@ -437,6 +443,22 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
                 $cart_item,
                 $quantity
             );
+
+            return $event_data;
+        }
+
+        // Fallback for integrations that call Woo add_to_cart() on a
+        // temporary/private cart (e.g. subscription cloning flows).
+        $product_lookup_id = ! empty( $variation_id ) ? $variation_id : $product_id;
+        $product           = wc_get_product( $product_lookup_id );
+        $product_fb_id     = self::getProductId( $product );
+
+        if ( ! empty( $product_fb_id ) ) {
+            $event_data['content_ids'] = array( $product_fb_id );
+
+            if ( is_object( $product ) && method_exists( $product, 'get_price' ) ) {
+                $event_data['value'] = (float) $quantity * (float) $product->get_price();
+            }
         }
 
         return $event_data;
@@ -649,6 +671,10 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
      * @since 1.0.0
      */
     private static function getProductId( $product ) {
+        if ( ! is_object( $product ) || ! method_exists( $product, 'get_id' ) ) {
+            return null;
+        }
+
         $woo_id = $product->get_id();
 
         return $product->get_sku() ? $product->get_sku() . '_' .

@@ -179,6 +179,109 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     }
 
     /**
+     * Tests createPurchaseEvent skips items when wc_get_product() returns
+     * false and does not fail.
+     *
+     * @return void
+     */
+    public function testCreatePurchaseEventSkipsMissingProduct() {
+        $order = new MockWCOrder(
+            'Pika',
+            'Chu',
+            'pika.chu@s2s.com',
+            '2062062006',
+            'Springfield',
+            '12345',
+            'Ohio',
+            'US'
+        );
+        $order->add_item( 404, 1, 100 );
+        $order->add_item( 1, 2, 200 );
+
+        \WP_Mock::userFunction(
+            'wc_get_order',
+            array(
+                'return' => $order,
+            )
+        );
+
+        \WP_Mock::userFunction(
+            'wc_get_product',
+            array(
+                'return' => function ( $product_id ) {
+                    if ( 404 === $product_id ) {
+                        return false;
+                    }
+
+                    return new MockWCProduct( $product_id, 'single_product' );
+                },
+            )
+        );
+
+        \WP_Mock::userFunction(
+            'get_woocommerce_currency',
+            array(
+                'return' => 'USD',
+            )
+        );
+
+        $event_data = FacebookWordpressWooCommerce::createPurchaseEvent( 1 );
+
+        $this->assertEquals( array( 'wc_post_id_1' ), $event_data['content_ids'] );
+        $this->assertCount( 1, $event_data['contents'] );
+        $this->assertEquals(
+            'wc_post_id_1',
+            $event_data['contents'][0]->getProductId()
+        );
+    }
+
+    /**
+     * Tests createPurchaseEvent handles all missing products and returns
+     * empty content arrays.
+     *
+     * @return void
+     */
+    public function testCreatePurchaseEventWithAllMissingProducts() {
+        $order = new MockWCOrder(
+            'Pika',
+            'Chu',
+            'pika.chu@s2s.com',
+            '2062062006',
+            'Springfield',
+            '12345',
+            'Ohio',
+            'US'
+        );
+        $order->add_item( 404, 1, 100 );
+
+        \WP_Mock::userFunction(
+            'wc_get_order',
+            array(
+                'return' => $order,
+            )
+        );
+
+        \WP_Mock::userFunction(
+            'wc_get_product',
+            array(
+                'return' => false,
+            )
+        );
+
+        \WP_Mock::userFunction(
+            'get_woocommerce_currency',
+            array(
+                'return' => 'USD',
+            )
+        );
+
+        $event_data = FacebookWordpressWooCommerce::createPurchaseEvent( 1 );
+
+        $this->assertSame( array(), $event_data['content_ids'] );
+        $this->assertSame( array(), $event_data['contents'] );
+    }
+
+    /**
      * Tests that the trackInitiateCheckout method correctly records an
      * 'InitiateCheckout' event when the user is not an internal user.
      *
@@ -335,6 +438,66 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         'woocommerce',
         $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
     );
+    }
+
+    /**
+     * Tests createAddToCartEvent when the cart item key is missing from
+     * WC()->cart (e.g. private cart key from another plugin).
+     *
+     * @return void
+     */
+    public function testCreateAddToCartEventWithMissingCartItemKey() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->setupMocks( false );
+        $this->setupCustomerBillingAddress();
+
+        \WP_Mock::userFunction(
+            'wc_get_product',
+            array(
+                'return' => new MockWCProduct( 1, 'single_product', null, 10 ),
+            )
+        );
+
+        $event_data = FacebookWordpressWooCommerce::createAddToCartEvent(
+            'missing-cart-key',
+            1,
+            3
+        );
+
+        $this->assertEquals( 'USD', $event_data['currency'] );
+        $this->assertEquals( array( 'wc_post_id_1' ), $event_data['content_ids'] );
+        $this->assertEquals( 30.0, $event_data['value'] );
+    }
+
+    /**
+     * Tests createAddToCartEvent fallback returns partial event data when
+     * product lookup also fails.
+     *
+     * @return void
+     */
+    public function testCreateAddToCartEventWithMissingCartItemAndProduct() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->setupMocks( false );
+        $this->setupCustomerBillingAddress();
+
+        \WP_Mock::userFunction(
+            'wc_get_product',
+            array(
+                'return' => false,
+            )
+        );
+
+        $event_data = FacebookWordpressWooCommerce::createAddToCartEvent(
+            'missing-cart-key',
+            404,
+            3
+        );
+
+        $this->assertEquals( 'USD', $event_data['currency'] );
+        $this->assertArrayNotHasKey( 'content_ids', $event_data );
+        $this->assertArrayNotHasKey( 'value', $event_data );
     }
 
     /**
@@ -730,7 +893,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
      *
      * @return void
      */
-    private function setupMocks() {
+    private function setupMocks( $mock_wc_get_product = true ) {
         $this->mocked_fbpixel->shouldReceive( 'get_logged_in_user_info' )
     ->andReturn(
         array(
@@ -776,6 +939,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         )
     );
 
+    if ( $mock_wc_get_product ) {
     \WP_Mock::userFunction(
         'wc_get_product',
         array(
@@ -787,6 +951,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
             ),
         )
     );
+    }
 
     \WP_Mock::userFunction(
         'get_current_user_id',
