@@ -449,12 +449,49 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     public function testCreateAddToCartEventWithMissingCartItemKey() {
         self::mockIsInternalUser( false );
         self::mockFacebookWordpressOptions();
-        $this->setupMocks();
+        $this->setupMocks( false );
         $this->setupCustomerBillingAddress();
+
+        \WP_Mock::userFunction(
+            'wc_get_product',
+            array(
+                'return' => new MockWCProduct( 1, 'single_product', null, 10 ),
+            )
+        );
 
         $event_data = FacebookWordpressWooCommerce::createAddToCartEvent(
             'missing-cart-key',
             1,
+            3
+        );
+
+        $this->assertEquals( 'USD', $event_data['currency'] );
+        $this->assertEquals( array( 'wc_post_id_1' ), $event_data['content_ids'] );
+        $this->assertEquals( 30.0, $event_data['value'] );
+    }
+
+    /**
+     * Tests createAddToCartEvent fallback returns partial event data when
+     * product lookup also fails.
+     *
+     * @return void
+     */
+    public function testCreateAddToCartEventWithMissingCartItemAndProduct() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->setupMocks( false );
+        $this->setupCustomerBillingAddress();
+
+        \WP_Mock::userFunction(
+            'wc_get_product',
+            array(
+                'return' => false,
+            )
+        );
+
+        $event_data = FacebookWordpressWooCommerce::createAddToCartEvent(
+            'missing-cart-key',
+            404,
             3
         );
 
@@ -856,7 +893,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
      *
      * @return void
      */
-    private function setupMocks() {
+    private function setupMocks( $mock_wc_get_product = true ) {
         $this->mocked_fbpixel->shouldReceive( 'get_logged_in_user_info' )
     ->andReturn(
         array(
@@ -902,6 +939,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         )
     );
 
+    if ( $mock_wc_get_product ) {
     \WP_Mock::userFunction(
         'wc_get_product',
         array(
@@ -913,6 +951,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
             ),
         )
     );
+    }
 
     \WP_Mock::userFunction(
         'get_current_user_id',
