@@ -173,7 +173,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         }
 
         $product = wc_get_product( $post->ID );
-        if ( ! $product ) {
+        if ( ! self::isValidProductObject( $product ) ) {
             return;
         }
 
@@ -252,6 +252,11 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
             return;
         }
 
+        $order = wc_get_order( $order_id );
+        if ( ! self::isValidOrderObject( $order ) ) {
+            return;
+        }
+
         $server_event = ServerEventFactory::safe_create_event(
             'Purchase',
             array( __CLASS__, 'createPurchaseEvent' ),
@@ -290,12 +295,19 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 
         foreach ( $order->get_items() as $item ) {
             $product = wc_get_product( $item->get_product_id() );
+            if ( ! self::isValidProductObject( $product ) ) {
+                continue;
+            }
+
             if ( 'product_group' !== $content_type
             && $product->is_type( 'variable' ) ) {
             $content_type = 'product_group';
             }
 
-            $quantity   = $item->get_quantity();
+            $quantity = (int) $item->get_quantity();
+            if ( $quantity <= 0 ) {
+                continue;
+            }
             $product_id = self::getProductId( $product );
 
             $content = new Content();
@@ -427,7 +439,9 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         $event_data['currency']     = \get_woocommerce_currency();
 
         $cart_item = self::getCartItem( $cart_item_key );
-        if ( ! empty( $cart_item_key ) ) {
+        if ( ! empty( $cart_item_key )
+            && ! empty( $cart_item['data'] )
+            && self::isValidProductObject( $cart_item['data'] ) ) {
             $event_data['content_ids'] = array(
                 self::getProductId(
                     $cart_item['data']
@@ -554,12 +568,19 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
      *                    or null if the cart item is empty.
      */
     private static function getAddToCartValue( $cart_item, $quantity ) {
-        if ( ! empty( $cart_item ) ) {
-            $price = $cart_item['line_total'] / $cart_item['quantity'];
-            return $quantity * $price;
+        if ( empty( $cart_item )
+            || ! isset( $cart_item['quantity'] )
+            || ! isset( $cart_item['line_total'] ) ) {
+            return null;
         }
 
-        return null;
+        $item_quantity = (int) $cart_item['quantity'];
+        if ( $item_quantity <= 0 ) {
+            return null;
+        }
+
+        $price = $cart_item['line_total'] / $item_quantity;
+        return $quantity * $price;
     }
 
     /**
@@ -597,8 +618,9 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     private static function getContentIds( $cart ) {
         $product_ids = array();
         foreach ( $cart->get_cart() as $item ) {
-            if ( ! empty( $item['data'] ) ) {
-            $product_ids[] = self::getProductId( $item['data'] );
+            if ( ! empty( $item['data'] )
+                && self::isValidProductObject( $item['data'] ) ) {
+                $product_ids[] = self::getProductId( $item['data'] );
             }
         }
 
@@ -622,17 +644,58 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     private static function getContents( $cart ) {
         $contents = array();
         foreach ( $cart->get_cart() as $item ) {
-            if ( ! empty( $item['data'] ) && ! empty( $item['quantity'] ) ) {
-            $content = new Content();
-            $content->setProductId( self::getProductId( $item['data'] ) );
-            $content->setQuantity( $item['quantity'] );
-            $content->setItemPrice( $item['line_total'] / $item['quantity'] );
+            if ( ! empty( $item['data'] )
+                && self::isValidProductObject( $item['data'] ) ) {
+                $quantity = isset( $item['quantity'] ) ? (int) $item['quantity'] : 0;
+                if ( $quantity <= 0 || ! isset( $item['line_total'] ) ) {
+                    continue;
+                }
 
-            $contents[] = $content;
+                $content = new Content();
+                $content->setProductId( self::getProductId( $item['data'] ) );
+                $content->setQuantity( $quantity );
+                $content->setItemPrice( $item['line_total'] / $quantity );
+
+                $contents[] = $content;
             }
         }
 
         return $contents;
+    }
+
+    /**
+     * Validates that the given value behaves like a WooCommerce product.
+     *
+     * @param mixed $product Product-like value to validate.
+     *
+     * @return bool Whether the value can be safely used as a product.
+     */
+    private static function isValidProductObject( $product ) {
+        return is_object( $product )
+            && method_exists( $product, 'get_id' )
+            && method_exists( $product, 'get_sku' )
+            && method_exists( $product, 'is_type' );
+    }
+
+    /**
+     * Validates that the given value behaves like a WooCommerce order.
+     *
+     * @param mixed $order Order-like value to validate.
+     *
+     * @return bool Whether the value can be safely used as an order.
+     */
+    private static function isValidOrderObject( $order ) {
+        return is_object( $order )
+            && method_exists( $order, 'get_items' )
+            && method_exists( $order, 'get_total' )
+            && method_exists( $order, 'get_billing_first_name' )
+            && method_exists( $order, 'get_billing_last_name' )
+            && method_exists( $order, 'get_billing_email' )
+            && method_exists( $order, 'get_billing_postcode' )
+            && method_exists( $order, 'get_billing_state' )
+            && method_exists( $order, 'get_billing_country' )
+            && method_exists( $order, 'get_billing_city' )
+            && method_exists( $order, 'get_billing_phone' );
     }
 
     /**
