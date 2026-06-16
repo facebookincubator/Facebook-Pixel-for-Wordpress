@@ -1,4 +1,7 @@
 *** Meta Pixel for WordPress Changelog ***
+= 5.2.0 - 2026-06-16 =
+
+
 = 5.1.0 - 2026-05-05 =
 * Feature: Facebook Login for Business by @rahulmaddineni in #135
 * Add HPOS compatibility declaration for custom order tables by @bojanaivovic in #140
