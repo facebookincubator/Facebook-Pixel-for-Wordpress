@@ -243,14 +243,16 @@ class FacebookCapiEvent {
                 )
             );
         } else {
-            $error_msg = isset( $result['error']['message'] )
+            $error_msg      = isset( $result['error']['message'] )
                 ? $result['error']['message'] : 'Unknown error';
+            $error_user_msg = isset( $result['error']['error_user_msg'] )
+                ? $result['error']['error_user_msg'] : $error_msg;
             wp_send_json_success(
                 wp_json_encode(
                     array(
                         'error' => array(
                             'message'        => $error_msg,
-                            'error_user_msg' => $error_msg,
+                            'error_user_msg' => $error_user_msg,
                         ),
                     )
                 )
