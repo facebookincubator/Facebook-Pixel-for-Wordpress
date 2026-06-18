@@ -188,7 +188,10 @@ class FacebookWordpressPixelInjection {
         $user_info = FacebookPluginUtils::is_internal_user()
             ? array()
             : FacebookWordpressOptions::get_user_info();
-        $options   = array( 'agent' => FacebookWordpressOptions::get_agent_string() );
+        $options   = array(
+            'agent'                  => FacebookWordpressOptions::get_agent_string(),
+            'includeCapiIntegration' => '1' === FacebookWordpressOptions::get_capi_integration_status(),
+        );
 
         $config = array(
             'held'          => false,
