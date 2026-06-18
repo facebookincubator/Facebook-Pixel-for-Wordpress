@@ -73,6 +73,12 @@ window.FacebookSignal = window.FacebookSignal || {
       fbq('optinMetaEnabledCapi', this._pixelId);
     }
     fbq('init', this._pixelId, this._pixelUserInfo, this._pixelOptions);
+
+    if (this._pixelOptions && this._pixelOptions.includeCapiIntegration) {
+      var url = window.location.origin + '?ob=open-bridge';
+      fbq('set', 'openbridge', this._pixelId, url);
+    }
+
     this._pixelInitialized = true;
     this._flushPendingPixelEvents();
   },

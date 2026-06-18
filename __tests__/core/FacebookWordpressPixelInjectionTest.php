@@ -263,6 +263,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     $this->assertStringContainsString( 'FacebookSignal.init', $output );
     $this->assertStringContainsString( 'FacebookSignal.queueEvent', $output );
     $this->assertStringContainsString( 'FacebookSignal.initPixel', $output );
+    $this->assertStringContainsString( '"includeCapiIntegration":true', $output );
     $this->assertStringNotContainsString( "fbq('consent', 'revoke');", $output );
     $this->assertStringContainsString( '"held":false', $output );
     $this->assertStringContainsString( '"attribution"', $output );
@@ -421,6 +422,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     $output = ob_get_clean();
 
     $this->assertStringContainsString( 'FacebookSignal.init', $output );
+    $this->assertStringContainsString( '"includeCapiIntegration":true', $output );
     $this->assertStringContainsString( '"held":false', $output );
     $this->assertStringContainsString( '"attribution":{}', $output );
     $this->assertStringContainsString( '"capig":"0"', $output );
