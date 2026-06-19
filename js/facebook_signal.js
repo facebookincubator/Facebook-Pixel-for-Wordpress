@@ -69,7 +69,7 @@ window.FacebookSignal = window.FacebookSignal || {
     if (this._pixelInitialized || !this._pixelId || typeof fbq !== 'function') {
       return;
     }
-    if (this._config.addMetaCapi === '1') {
+    if (this._config.capig === '1') {
       fbq('optinMetaEnabledCapi', this._pixelId);
     }
     fbq('init', this._pixelId, this._pixelUserInfo, this._pixelOptions);

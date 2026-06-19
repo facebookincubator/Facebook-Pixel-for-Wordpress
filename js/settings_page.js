@@ -63,35 +63,35 @@ if ("false" == hasAccessToken) {
         saveCapiIntegrationEventsFilter(this.checked ? "1" : "0");
     });
 
-    var addMetaCapiCheckbox = document.getElementById("add-meta-capi");
-    updateAddMetaCapiCheckbox(meta_wc_params.addMetaCapi);
-    addMetaCapiCheckbox.addEventListener("change", function () {
-        saveAddMetaCapi(this.checked ? "1" : "0");
+    var capigCheckbox = document.getElementById("capig");
+    updateCapigCheckbox(meta_wc_params.capig);
+    capigCheckbox.addEventListener("change", function () {
+        saveCapig(this.checked ? "1" : "0");
     });
-    function updateAddMetaCapiCheckbox(val) {
-        addMetaCapiCheckbox.checked = val === "1";
+    function updateCapigCheckbox(val) {
+        capigCheckbox.checked = val === "1";
     }
-    function saveAddMetaCapi(new_val) {
+    function saveCapig(new_val) {
         jQuery
             .ajax({
                 type: "post",
                 dataType: "json",
-                url: meta_wc_params.addMetaCapiSaveUrl,
+                url: meta_wc_params.capigSaveUrl,
                 data: {
-                    action: meta_wc_params.addMetaCapiActionName,
+                    action: meta_wc_params.capigActionName,
                     val: new_val,
                 },
                 success: function (response) {
-                    updateAddMetaCapiCheckbox(new_val);
+                    updateCapigCheckbox(new_val);
                 },
             })
             .fail(function (jqXHR, textStatus, error) {
-                jQuery("#fb-add-meta-capi-se").text(
-                    meta_wc_params.addMetaCapiUpdateError
+                jQuery("#fb-capig-se").text(
+                    meta_wc_params.capigUpdateError
                 );
-                jQuery("#fb-add-meta-capi-se")
+                jQuery("#fb-capig-se")
                     .show().delay(3000).fadeOut();
-                updateAddMetaCapiCheckbox(new_val === "1" ? "0" : "1");
+                updateCapigCheckbox(new_val === "1" ? "0" : "1");
             });
     }
     function updateCapiPiiCachingCheckbox(val) {

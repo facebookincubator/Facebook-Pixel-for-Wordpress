@@ -210,7 +210,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_options->shouldReceive( 'get_capi_integration_status' )
       ->andReturn( '1' );
-    $mocked_options->shouldReceive( 'get_add_meta_capi' )
+    $mocked_options->shouldReceive( 'get_capig' )
       ->andReturn( '0' );
     $mocked_options->shouldReceive( 'get_agent_string' )
       ->andReturn( 'WordPress' );
@@ -287,7 +287,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_options->shouldReceive( 'get_capi_integration_status' )
       ->andReturn( '1' );
-    $mocked_options->shouldReceive( 'get_add_meta_capi' )
+    $mocked_options->shouldReceive( 'get_capig' )
       ->andReturn( '0' );
     $mocked_options->shouldReceive( 'get_agent_string' )
       ->andReturn( 'WordPress' );
@@ -372,7 +372,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_options->shouldReceive( 'get_capi_integration_status' )
       ->andReturn( '1' );
-    $mocked_options->shouldReceive( 'get_add_meta_capi' )
+    $mocked_options->shouldReceive( 'get_capig' )
       ->andReturn( '0' );
     $mocked_options->shouldReceive( 'get_agent_string' )
       ->andReturn( 'WordPress' );
@@ -423,17 +423,17 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     $this->assertStringContainsString( 'FacebookSignal.init', $output );
     $this->assertStringContainsString( '"held":false', $output );
     $this->assertStringContainsString( '"attribution":{}', $output );
-    $this->assertStringContainsString( '"addMetaCapi":"0"', $output );
+    $this->assertStringContainsString( '"capig":"0"', $output );
     $this->assertStringNotContainsString( 'fb.1.123.browser', $output );
     $this->assertStringNotContainsString( 'fb.1.123.click', $output );
   }
 
   /**
-   * The "Add Meta-enabled CAPI" toggle value is threaded into the
+   * The Conversions API Gateway (CAPIG) toggle value is threaded into the
    * FacebookSignal.init config so the JS init can emit
    * fbq('optinMetaEnabledCapi', ...) before fbq('init', ...).
    */
-  public function testInitConfigIncludesAddMetaCapiWhenEnabled() {
+  public function testInitConfigIncludesCapigWhenEnabled() {
     FacebookWordpressPixelInjection::$render_cache = array();
     FacebookPixel::set_pixel_id( '1234' );
 
@@ -442,7 +442,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_options->shouldReceive( 'get_capi_integration_status' )
       ->andReturn( '1' );
-    $mocked_options->shouldReceive( 'get_add_meta_capi' )
+    $mocked_options->shouldReceive( 'get_capig' )
       ->andReturn( '1' );
     $mocked_options->shouldReceive( 'get_agent_string' )
       ->andReturn( 'WordPress' );
@@ -476,6 +476,6 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     $injection_obj->inject_pixel_code();
     $output = ob_get_clean();
 
-    $this->assertStringContainsString( '"addMetaCapi":"1"', $output );
+    $this->assertStringContainsString( '"capig":"1"', $output );
   }
 }

@@ -59,10 +59,10 @@ class FacebookWordpressSettingsRecorder {
             )
         );
         add_action(
-            'wp_ajax_save_add_meta_capi',
+            'wp_ajax_save_capig',
             array(
                 $this,
-                'save_add_meta_capi',
+                'save_capig',
             )
         );
         // FBL4B AJAX actions.
@@ -342,28 +342,28 @@ class FacebookWordpressSettingsRecorder {
     }
 
     /**
-     * Persists the "Add Meta-enabled CAPI" admin toggle.
+     * Persists the Conversions API Gateway (CAPIG) admin toggle.
      *
      * Accepts '1' (default — fbq optinMetaEnabledCapi command is emitted) or
      * '0' (suppress the command). Admin-only.
      *
      * @return array response data
      */
-    public function save_add_meta_capi() {
+    public function save_capig() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return $this->handle_unauthorized_request();
         }
 
         if ( empty( FacebookWordpressOptions::get_active_pixel_id() ) ) {
             \update_option(
-                FacebookPluginConfig::ADD_META_CAPI,
-                FacebookPluginConfig::ADD_META_CAPI_DEFAULT
+                FacebookPluginConfig::CAPIG,
+                FacebookPluginConfig::CAPIG_DEFAULT
             );
             return $this->handle_invalid_request();
         }
 
         check_admin_referer(
-            FacebookPluginConfig::SAVE_ADD_META_CAPI_ACTION_NAME
+            FacebookPluginConfig::SAVE_CAPIG_ACTION_NAME
         );
         $val = sanitize_text_field(
             isset( $_POST['val'] ) ?
@@ -374,7 +374,7 @@ class FacebookWordpressSettingsRecorder {
             return $this->handle_invalid_request();
         }
 
-        \update_option( FacebookPluginConfig::ADD_META_CAPI, $val );
+        \update_option( FacebookPluginConfig::CAPIG, $val );
         return $this->handle_success_request( $val );
     }
 
