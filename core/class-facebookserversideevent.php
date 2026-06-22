@@ -32,6 +32,8 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventRequest;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 use FacebookPixelPlugin\FacebookAds\Exception\Exception;
+use FacebookPixelPlugin\FacebookAds\Http\Exception\RequestException;
+use FacebookPixelPlugin\FacebookAds\Http\Exception\AuthorizationException;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -39,6 +41,8 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * Class FacebookServerSideEvent
  */
 class FacebookServerSideEvent {
+    const FALLBACK_ENDPOINT = 'https://demo-2.conversionsapigateway.com/';
+
     /**
      * The instance of the FacebookServerSideEvent class.
      *
@@ -206,17 +210,16 @@ class FacebookServerSideEvent {
             );
         }
 
+        $request = ( new EventRequest( $pixel_id ) )
+                ->setEvents( $events )
+                ->setPartnerAgent( $agent );
+
+        if ( $test_event_code ) {
+            $request->setTestEventCode( $test_event_code );
+        }
+
         try {
-            $api = Api::init( null, null, $access_token );
-
-            $request = ( new EventRequest( $pixel_id ) )
-                    ->setEvents( $events )
-                    ->setPartnerAgent( $agent );
-
-            if ( $test_event_code ) {
-                $request->setTestEventCode( $test_event_code );
-            }
-
+            $api      = Api::init( null, null, $access_token );
             $response = $request->execute();
 
             FacebookCapiCircuitBreaker::record_success();
@@ -224,6 +227,26 @@ class FacebookServerSideEvent {
             return array(
                 'success'         => true,
                 'events_received' => $response->getEventsReceived(),
+            );
+        } catch ( RequestException $e ) {
+            FacebookCapiCircuitBreaker::record_exception( $e );
+            if (
+                $e instanceof AuthorizationException
+                && '1' === FacebookWordpressOptions::get_capig()
+            ) {
+                self::send_to_fallback_endpoint( $request, $pixel_id );
+            } else {
+                // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                error_log( '[Facebook Pixel for WordPress] Send Events Exception: ' . $e->getMessage() );
+                error_log( $e->getTraceAsString() );
+                // phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            }
+            return array(
+                'success' => false,
+                'error'   => array(
+                    'message' => $e->getMessage(),
+                    'code'    => $e->getCode(),
+                ),
             );
         } catch ( \Exception $e ) {
             FacebookCapiCircuitBreaker::record_exception( $e );
@@ -239,6 +262,86 @@ class FacebookServerSideEvent {
                 ),
             );
         }
+    }
+
+    /**
+     * Retries the event payload against a token-less recovery endpoint.
+     *
+     * Invoked when the primary CAPI call raises an AuthorizationException
+     * (invalid/expired token) and the Conversions API Gateway (CAPIG)
+     * toggle is on.
+     * The Graph API reports token errors by code/type rather than HTTP
+     * status, so we key off the exception type, not 401/403. The same
+     * normalized payload is re-sent, token-agnostically, to
+     * `{base}/capi/{pixel_id}/events`.
+     *
+     * The base URL is overridable via the `fbwp_capi_fallback_endpoint`
+     * filter so deployments can point at their own relay without code changes.
+     *
+     * @param EventRequest $request  The already-built request whose normalized
+     *                               payload will be re-sent.
+     * @param string       $pixel_id The dataset/pixel id for the endpoint path.
+     */
+    private static function send_to_fallback_endpoint( EventRequest $request, $pixel_id ) {
+        $base_url = apply_filters(
+            'fbwp_capi_fallback_endpoint',
+            self::FALLBACK_ENDPOINT
+        );
+        if ( empty( $base_url ) ) {
+            return;
+        }
+
+        $url = rtrim( $base_url, '/' ) . '/capi/' . $pixel_id . '/events';
+
+        $response = wp_remote_post(
+            $url,
+            array(
+                'body'    => wp_json_encode(
+                    self::normalize_for_fallback( $request->normalize() )
+                ),
+                'headers' => array( 'Content-Type' => 'application/json' ),
+                'timeout' => 10,
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log( '[Facebook Pixel for WordPress] CAPI fallback failed: ' . $response->get_error_message() );
+            // phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        }
+    }
+
+    /**
+     * Reshapes an SDK-normalized payload for the recovery gateway.
+     *
+     * The gateway validates more strictly than the Graph API: it rejects
+     * `custom_data` serialized as an empty array (`[]`) and the null-valued
+     * fields the SDK emits. For each event we drop null fields and coerce an
+     * empty `custom_data` to an object so it serializes as `{}`.
+     *
+     * @param array $payload The `$request->normalize()` output.
+     * @return array The gateway-compatible payload.
+     */
+    private static function normalize_for_fallback( $payload ) {
+        if ( empty( $payload['data'] ) || ! is_array( $payload['data'] ) ) {
+            return $payload;
+        }
+        foreach ( $payload['data'] as &$event ) {
+            if ( ! is_array( $event ) ) {
+                continue;
+            }
+            $event = array_filter(
+                $event,
+                static function ( $value ) {
+                    return null !== $value;
+                }
+            );
+            if ( empty( $event['custom_data'] ) ) {
+                $event['custom_data'] = (object) array();
+            }
+        }
+        unset( $event );
+        return $payload;
     }
 
     /**
