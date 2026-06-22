@@ -226,6 +226,26 @@ class FacebookWordpressSettingsPage {
             When turned on, PII will be cached for non logged in users.
         </div>
         </div>
+        <div id="fb-capig">
+        <input type="checkbox" id="capig" name="capig">
+        <label class="fb-capi-title" for="capig">
+            Opt in to a Meta-enabled Conversions API integration
+        </label>
+        <span id="fb-capig-se" class="fb-capi-se"></span>
+        <br/>
+        <div class="fb-capi-desc">
+            You hereby authorize and instruct Meta to set
+            up a Meta-enabled Conversions API integration on your behalf,
+            and you agree that your use of the integration will be subject
+            to Meta's
+            <a href="https://www.facebook.com/legal/terms"
+                target="_blank" rel="noopener noreferrer">Platform Terms</a>
+            and
+            <a href="https://www.facebook.com/legal/technology_terms"
+                target="_blank" rel="noopener noreferrer">Business Tools
+                Terms</a>.
+        </div>
+        </div>
     </div>
     </div>
 
@@ -569,6 +589,25 @@ class FacebookWordpressSettingsPage {
     }
 
     /**
+     * Builds the admin-ajax URL for persisting the Conversions API Gateway
+     * (CAPIG) toggle.
+     *
+     * @return string
+     */
+    public function get_capig_save_url() {
+        $nonce_value = wp_create_nonce(
+            FacebookPluginConfig::SAVE_CAPIG_ACTION_NAME
+        );
+        $simple_url  = admin_url( 'admin-ajax.php' );
+        $args        = array(
+            'action'   =>
+            FacebookPluginConfig::SAVE_CAPIG_ACTION_NAME,
+            '_wpnonce' => $nonce_value,
+        );
+        return add_query_arg( $args, $simple_url );
+    }
+
+    /**
      * Generates the AJAX route URL for deleting FBE settings.
      *
      * This function creates a nonce for the AJAX action to ensure
@@ -636,6 +675,14 @@ class FacebookWordpressSettingsPage {
                 FacebookPluginConfig::SAVE_CAPI_INTEGRATION_EVENTS_FILTER_ACTION_NAME,
             'capiIntegrationEventsFilterUpdateError' =>
                 FacebookPluginConfig::CAPI_INTEGRATION_EVENTS_FILTER_UPDATE_ERROR,
+            'capig'                                  =>
+                FacebookWordpressOptions::get_capig(),
+            'capigSaveUrl'                           =>
+                $this->get_capig_save_url(),
+            'capigActionName'                        =>
+                FacebookPluginConfig::SAVE_CAPIG_ACTION_NAME,
+            'capigUpdateError'                       =>
+                FacebookPluginConfig::CAPIG_UPDATE_ERROR,
         );
 
         // FBL4B config — only included if app_id is provisioned.

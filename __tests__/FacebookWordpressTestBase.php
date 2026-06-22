@@ -203,6 +203,8 @@ abstract class FacebookWordpressTestBase extends TestCase {
     }
         $this->mocked_options->shouldReceive( 'get_capi_pii_caching_status' )
                             ->andReturn( 0 );
+        $this->mocked_options->shouldReceive( 'get_capig' )
+                            ->andReturn( '0' );
 
     // FBL4B bridge methods — delegate to MBE values by default
     $active_pixel = array_key_exists( 'pixel_id', $options )

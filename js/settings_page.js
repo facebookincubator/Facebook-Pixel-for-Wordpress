@@ -62,6 +62,38 @@ if ("false" == hasAccessToken) {
     enablePageViewFilterCheckBox.addEventListener("change", function () {
         saveCapiIntegrationEventsFilter(this.checked ? "1" : "0");
     });
+
+    var capigCheckbox = document.getElementById("capig");
+    updateCapigCheckbox(meta_wc_params.capig);
+    capigCheckbox.addEventListener("change", function () {
+        saveCapig(this.checked ? "1" : "0");
+    });
+    function updateCapigCheckbox(val) {
+        capigCheckbox.checked = val === "1";
+    }
+    function saveCapig(new_val) {
+        jQuery
+            .ajax({
+                type: "post",
+                dataType: "json",
+                url: meta_wc_params.capigSaveUrl,
+                data: {
+                    action: meta_wc_params.capigActionName,
+                    val: new_val,
+                },
+                success: function (response) {
+                    updateCapigCheckbox(new_val);
+                },
+            })
+            .fail(function (jqXHR, textStatus, error) {
+                jQuery("#fb-capig-se").text(
+                    meta_wc_params.capigUpdateError
+                );
+                jQuery("#fb-capig-se")
+                    .show().delay(3000).fadeOut();
+                updateCapigCheckbox(new_val === "1" ? "0" : "1");
+            });
+    }
     function updateCapiPiiCachingCheckbox(val) {
         if (val === "1") {
             enablePiiCachingCheckbox.checked = true;

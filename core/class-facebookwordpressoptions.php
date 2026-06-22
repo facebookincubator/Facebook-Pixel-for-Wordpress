@@ -78,6 +78,14 @@ class FacebookWordpressOptions {
      * @var bool|null
      */
     private static $capi_pii_caching_status = null;
+    /**
+     * Whether the admin opted in to the Conversions API Gateway (CAPIG)
+     * integration, which emits the optinMetaEnabledCapi fbq command in the
+     * pixel init.
+     *
+     * @var string|null
+     */
+    private static $capig                   = null;
     const AAM_SETTINGS_REFRESH_IN_MINUTES   = 20;
 
     /**
@@ -97,6 +105,7 @@ class FacebookWordpressOptions {
         self::set_capi_integration_status();
         self::set_capi_integration_events_filter();
         self::set_capi_pii_caching_status();
+        self::set_capig();
     }
 
     /**
@@ -162,6 +171,36 @@ class FacebookWordpressOptions {
         return is_null( self::$capi_pii_caching_status ) ?
         FacebookPluginConfig::CAPI_PII_CACHING_STATUS_DEFAULT :
         self::$capi_pii_caching_status;
+    }
+
+    /**
+     * Loads the Conversions API Gateway (CAPIG) toggle from WordPress options.
+     *
+     * Passes the default to get_option() so fresh installs and upgrades
+     * from versions without this option seed the in-memory value with
+     * the opt-in default rather than `false`.
+     */
+    public static function set_capig() {
+        self::$capig = \get_option(
+            FacebookPluginConfig::CAPIG,
+            FacebookPluginConfig::CAPIG_DEFAULT
+        );
+    }
+
+    /**
+     * Returns '1' when the admin has opted in to emit the fbq
+     * optinMetaEnabledCapi command, '0' otherwise. Default is '1'
+     * (opt-in by default — fresh installs and upgrades emit the command).
+     *
+     * @return string
+     */
+    public static function get_capig() {
+        if ( is_null( self::$capig ) ||
+            '' === self::$capig ||
+            false === self::$capig ) {
+            return FacebookPluginConfig::CAPIG_DEFAULT;
+        }
+        return self::$capig;
     }
 
     /**

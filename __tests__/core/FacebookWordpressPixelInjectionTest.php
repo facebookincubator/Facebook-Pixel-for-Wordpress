@@ -210,6 +210,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_options->shouldReceive( 'get_capi_integration_status' )
       ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_capig' )
+      ->andReturn( '0' );
     $mocked_options->shouldReceive( 'get_agent_string' )
       ->andReturn( 'WordPress' );
     $mocked_options->shouldReceive( 'get_user_info' )
@@ -285,6 +287,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_options->shouldReceive( 'get_capi_integration_status' )
       ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_capig' )
+      ->andReturn( '0' );
     $mocked_options->shouldReceive( 'get_agent_string' )
       ->andReturn( 'WordPress' );
     $mocked_options->shouldReceive( 'get_user_info' )
@@ -368,6 +372,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_options->shouldReceive( 'get_capi_integration_status' )
       ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_capig' )
+      ->andReturn( '0' );
     $mocked_options->shouldReceive( 'get_agent_string' )
       ->andReturn( 'WordPress' );
     $mocked_options->shouldReceive( 'get_user_info' )
@@ -417,7 +423,59 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     $this->assertStringContainsString( 'FacebookSignal.init', $output );
     $this->assertStringContainsString( '"held":false', $output );
     $this->assertStringContainsString( '"attribution":{}', $output );
+    $this->assertStringContainsString( '"capig":"0"', $output );
     $this->assertStringNotContainsString( 'fb.1.123.browser', $output );
     $this->assertStringNotContainsString( 'fb.1.123.click', $output );
+  }
+
+  /**
+   * The Conversions API Gateway (CAPIG) toggle value is threaded into the
+   * FacebookSignal.init config so the JS init can emit
+   * fbq('optinMetaEnabledCapi', ...) before fbq('init', ...).
+   */
+  public function testInitConfigIncludesCapigWhenEnabled() {
+    FacebookWordpressPixelInjection::$render_cache = array();
+    FacebookPixel::set_pixel_id( '1234' );
+
+    $mocked_options = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
+    );
+    $mocked_options->shouldReceive( 'get_capi_integration_status' )
+      ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_capig' )
+      ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_agent_string' )
+      ->andReturn( 'WordPress' );
+    $mocked_options->shouldReceive( 'get_user_info' )
+      ->andReturn( array() );
+
+    $mocked_utils = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookPluginUtils'
+    );
+    $mocked_utils->shouldReceive( 'is_internal_user' )
+      ->andReturn( false );
+
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'return' => function ( $data ) {
+          return json_encode( $data );
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'admin_url',
+      array(
+        'return' => 'https://www.pikachu.com/wp-admin/admin-ajax.php',
+      )
+    );
+
+    $injection_obj = new FacebookWordpressPixelInjection();
+
+    ob_start();
+    $injection_obj->inject_pixel_code();
+    $output = ob_get_clean();
+
+    $this->assertStringContainsString( '"capig":"1"', $output );
   }
 }
