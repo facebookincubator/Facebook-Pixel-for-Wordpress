@@ -69,12 +69,12 @@ window.FacebookSignal = window.FacebookSignal || {
     if (this._pixelInitialized || !this._pixelId || typeof fbq !== 'function') {
       return;
     }
-    fbq('init', this._pixelId, this._pixelUserInfo, this._pixelOptions);
-
     if (this._pixelOptions && this._pixelOptions.includeCapiIntegration) {
       var url = window.location.origin + '?ob=open-bridge';
       fbq('set', 'openbridge', this._pixelId, url);
     }
+
+    fbq('init', this._pixelId, this._pixelUserInfo, this._pixelOptions);
 
     this._pixelInitialized = true;
     this._flushPendingPixelEvents();

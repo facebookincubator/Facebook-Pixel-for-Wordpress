@@ -422,4 +422,29 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     $this->assertStringNotContainsString( 'fb.1.123.browser', $output );
     $this->assertStringNotContainsString( 'fb.1.123.click', $output );
   }
+
+  /**
+   * Tests that OpenBridge setup is configured before pixel init.
+   *
+   * @return void
+   */
+  public function testOpenBridgeSetIsBeforePixelInitInSignalScript() {
+    $script_path = __DIR__ . '/../../js/facebook_signal.js';
+    $script      = file_get_contents( $script_path );
+
+    $this->assertNotFalse( $script );
+
+    $open_bridge_pos = strpos(
+      $script,
+      "fbq('set', 'openbridge', this._pixelId, url);"
+    );
+    $init_pos        = strpos(
+      $script,
+      "fbq('init', this._pixelId, this._pixelUserInfo, this._pixelOptions);"
+    );
+
+    $this->assertNotFalse( $open_bridge_pos );
+    $this->assertNotFalse( $init_pos );
+    $this->assertLessThan( $init_pos, $open_bridge_pos );
+  }
 }
