@@ -32,6 +32,7 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventRequest;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 use FacebookPixelPlugin\FacebookAds\Exception\Exception;
+use FacebookPixelPlugin\FacebookAds\Http\Exception\RequestException;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -226,19 +227,73 @@ class FacebookServerSideEvent {
                 'events_received' => $response->getEventsReceived(),
             );
         } catch ( \Exception $e ) {
-            FacebookCapiCircuitBreaker::record_exception( $e );
-            // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            error_log( '[Facebook Pixel for WordPress] CAPI error: ' . $e->getMessage() );
-            error_log( $e->getTraceAsString() );
-            // phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            if ( ! self::is_expected_test_event_request_exception( $e, $test_event_code ) ) {
+                FacebookCapiCircuitBreaker::record_exception( $e );
+            }
+            if ( self::should_log_exception( $e, $test_event_code ) ) {
+                // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                error_log( '[Facebook Pixel for WordPress] CAPI error: ' . $e->getMessage() );
+                error_log( $e->getTraceAsString() );
+                // phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            }
             return array(
                 'success' => false,
-                'error'   => array(
-                    'message' => $e->getMessage(),
-                    'code'    => $e->getCode(),
-                ),
+                'error'   => self::build_error_payload( $e ),
             );
         }
+    }
+
+    /**
+     * Builds a user-facing error payload from an exception.
+     *
+     * @param \Exception $e The exception raised by the CAPI send.
+     * @return array
+     */
+    private static function build_error_payload( \Exception $e ) {
+        $error_message      = $e->getMessage();
+        $error_user_message = $error_message;
+
+        if ( $e instanceof RequestException ) {
+            $error_user_message = $e->getErrorUserMessage();
+            if ( empty( $error_user_message ) ) {
+                $error_user_message = $error_message;
+            }
+        }
+
+        return array(
+            'message'        => $error_message,
+            'error_user_msg' => $error_user_message,
+            'code'           => $e->getCode(),
+        );
+    }
+
+    /**
+     * Determines whether a RequestException is an expected test-event error.
+     *
+     * Invalid test-event payloads can produce RequestException responses from
+     * Meta. Those errors should be surfaced to the admin UI, but they should
+     * not trip the connection circuit breaker or be written to debug.log.
+     *
+     * @param \Exception  $e The exception raised by the CAPI send.
+     * @param string|null $test_event_code Optional test event code.
+     * @return bool
+     */
+    private static function is_expected_test_event_request_exception( \Exception $e, $test_event_code = null ) {
+        return ! empty( $test_event_code ) && $e instanceof RequestException;
+    }
+
+    /**
+     * Determines whether an exception should be written to debug.log.
+     *
+     * For test-event sends, RequestException errors are expected when payloads
+     * are invalid and are therefore not logged.
+     *
+     * @param \Exception  $e The exception raised by the CAPI send.
+     * @param string|null $test_event_code Optional test event code.
+     * @return bool
+     */
+    private static function should_log_exception( \Exception $e, $test_event_code = null ) {
+        return ! self::is_expected_test_event_request_exception( $e, $test_event_code );
     }
 
     /**
