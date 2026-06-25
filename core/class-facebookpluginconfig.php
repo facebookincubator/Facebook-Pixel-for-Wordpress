@@ -132,12 +132,12 @@ class FacebookPluginConfig {
     'save_capi_pii_caching_status';
     const CAPI_PII_CACHING_STATUS_UPDATE_ERROR            =
     'Status could not be saved, please refresh the page and continue.';
-    const CAPIG                                           =
+    const CAPIG                  =
     'facebook_capig';
-    const CAPIG_DEFAULT                                   = '1';
-    const SAVE_CAPIG_ACTION_NAME                          =
+    const CAPIG_DEFAULT          = '1';
+    const SAVE_CAPIG_ACTION_NAME =
     'save_capig';
-    const CAPIG_UPDATE_ERROR                              =
+    const CAPIG_UPDATE_ERROR     =
     'Status could not be saved, please refresh the page and continue.';
 
     const CONNECTION_INVALID_TRANSIENT            =
