@@ -33,6 +33,7 @@ use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
+use FacebookPixelPlugin\Core\FormFieldMapper;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
@@ -312,7 +313,46 @@ class FacebookWordpressNinjaForms extends FacebookWordpressFormIntegrationBase {
         $event_data['country'] = self::getCountry( $form_data );
         $event_data['gender']  = self::getGender( $form_data );
 
-        return $event_data;
+        $form_id = isset( $form_data['id'] ) ? (string) $form_data['id'] : '';
+
+        return self::applyFieldMapping( $form_id, $form_data, $event_data );
+    }
+
+    /**
+     * Merges any saved field mapping for the form over the heuristic data.
+     *
+     * Mapped values (looked up by field key in the submitted form data) take
+     * priority; unmapped standard fields fall back to the auto-detected ones.
+     *
+     * @param string $form_id   The Ninja Forms form id.
+     * @param array  $form_data The submitted form data.
+     * @param array  $data       The heuristically extracted data.
+     * @return array The merged data.
+     */
+    private static function applyFieldMapping( $form_id, $form_data, $data ) {
+        if ( '' === $form_id || empty( $form_data['fields'] ) ) {
+            return $data;
+        }
+
+        $values = array();
+        foreach ( $form_data['fields'] as $field ) {
+            if ( isset( $field['key'] ) ) {
+                $values[ $field['key'] ] = isset( $field['value'] )
+                    ? $field['value'] : null;
+            }
+        }
+
+        $mapped = FormFieldMapper::resolve(
+            self::TRACKING_NAME,
+            $form_id,
+            function ( $field_id ) use ( $values ) {
+                $value = isset( $values[ $field_id ] )
+                    ? $values[ $field_id ] : null;
+                return is_scalar( $value ) ? $value : null;
+            }
+        );
+
+        return array_merge( $data, $mapped );
     }
 
     /**

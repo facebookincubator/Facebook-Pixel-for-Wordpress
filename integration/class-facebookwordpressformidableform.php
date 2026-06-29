@@ -33,6 +33,7 @@ use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
+use FacebookPixelPlugin\Core\FormFieldMapper;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
@@ -157,7 +158,7 @@ class FacebookWordpressFormidableForm extends FacebookWordpressFormIntegrationBa
         $server_event = ServerEventFactory::safe_create_event(
             'Lead',
             array( __CLASS__, 'readFormData' ),
-            array( $entry_id ),
+            array( $entry_id, $form_id ),
             self::TRACKING_NAME,
             true
         );
@@ -209,12 +210,13 @@ class FacebookWordpressFormidableForm extends FacebookWordpressFormIntegrationBa
      * last name, and phone, and combines this information with address data.
      *
      * @param int $entry_id The ID of the form entry.
+     * @param int $form_id  The ID of the form (used for field mapping).
      * @return array An associative array containing user and
      *               address information,
      *               or an empty array if the entry ID is
      *               empty or no data is found.
      */
-    public static function readFormData( $entry_id ) {
+    public static function readFormData( $entry_id, $form_id = null ) {
     if ( empty( $entry_id ) ) {
         return array();
     }
@@ -231,10 +233,60 @@ class FacebookWordpressFormidableForm extends FacebookWordpressFormIntegrationBa
                 'phone'      => self::getPhone( $field_values ),
             );
             $address_data = self::getAddressInformation( $field_values );
-            return array_merge( $user_data, $address_data );
+            $data         = array_merge( $user_data, $address_data );
+
+            return self::applyFieldMapping(
+                $form_id,
+                $field_values,
+                $data
+            );
         }
 
         return array();
+    }
+
+    /**
+     * Merges any saved field mapping for the form over the heuristic data.
+     *
+     * Mapped values (looked up by field id in the entry field values) take
+     * priority; unmapped standard fields fall back to the auto-detected ones.
+     * Only scalar saved values are used.
+     *
+     * @param int|string $form_id      The Formidable form id.
+     * @param array      $field_values The entry field value objects.
+     * @param array      $data          The heuristically extracted data.
+     * @return array The merged data.
+     */
+    private static function applyFieldMapping(
+        $form_id,
+        $field_values,
+        $data
+    ) {
+        $form_id = (string) $form_id;
+        if ( '' === $form_id ) {
+            return $data;
+        }
+
+        $values = array();
+        foreach ( $field_values as $field_value ) {
+            $field = $field_value->get_field();
+            if ( isset( $field->id ) ) {
+                $values[ (string) $field->id ] =
+                    $field_value->get_saved_value();
+            }
+        }
+
+        $mapped = FormFieldMapper::resolve(
+            self::TRACKING_NAME,
+            $form_id,
+            function ( $field_id ) use ( $values ) {
+                $value = isset( $values[ $field_id ] )
+                    ? $values[ $field_id ] : null;
+                return is_scalar( $value ) ? $value : null;
+            }
+        );
+
+        return array_merge( $data, $mapped );
     }
 
     /**

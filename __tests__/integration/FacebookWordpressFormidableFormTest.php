@@ -91,6 +91,12 @@ final class FacebookWordpressFormidableFormTest
         )
     );
 
+    // No field mapping configured for this form.
+    \WP_Mock::userFunction(
+        'get_option',
+        array( 'return' => array() )
+    );
+
     $mock_entry_id = 1;
     $mock_form_id = 1;
 
