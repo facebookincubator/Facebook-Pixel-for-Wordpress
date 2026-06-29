@@ -45,6 +45,98 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
     const TRACKING_NAME = 'caldera-forms';
 
     /**
+     * Whether this integration supports the admin Field Mapping screen.
+     *
+     * @return bool
+     */
+    public static function supports_field_mapping() {
+        return true;
+    }
+
+    /**
+     * Whether Caldera Forms is active.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return class_exists( '\Caldera_Forms_Forms' );
+    }
+
+    /**
+     * Human-readable label for the mapping UI.
+     *
+     * @return string
+     */
+    public static function get_integration_label() {
+        return 'Caldera Forms';
+    }
+
+    /**
+     * Lists all Caldera forms.
+     *
+     * @return array<int,array<string,string>>
+     */
+    public static function get_forms() {
+        if ( ! self::is_available() ) {
+            return array();
+        }
+
+        $forms = array();
+        foreach ( \Caldera_Forms_Forms::get_forms( true, true ) as $form ) {
+            if ( empty( $form['ID'] ) ) {
+                continue;
+            }
+            $forms[] = array(
+                'id'    => (string) $form['ID'],
+                'title' => isset( $form['name'] ) ? (string) $form['name'] : '',
+            );
+        }
+
+        return $forms;
+    }
+
+    /**
+     * Lists the fields of a single Caldera form.
+     *
+     * The field id is the Caldera field ID, the same key used to read the
+     * submitted value from $_POST at event time.
+     *
+     * @param string $form_id The Caldera form id.
+     * @return array<int,array<string,string>>
+     */
+    public static function get_form_fields( $form_id ) {
+        if ( ! self::is_available() ) {
+            return array();
+        }
+
+        $form = \Caldera_Forms_Forms::get_form( $form_id );
+        if ( empty( $form['fields'] ) || ! is_array( $form['fields'] ) ) {
+            return array();
+        }
+
+        $fields = array();
+        foreach ( $form['fields'] as $field ) {
+            if ( empty( $field['ID'] ) ) {
+                continue;
+            }
+            $type = isset( $field['type'] ) ? (string) $field['type'] : '';
+            if ( in_array( $type, array( 'button', 'html', 'section_break' ), true ) ) {
+                continue;
+            }
+            $label    = isset( $field['label'] ) && '' !== $field['label']
+                ? (string) $field['label']
+                : ( isset( $field['slug'] ) ? (string) $field['slug'] : (string) $field['ID'] );
+            $fields[] = array(
+                'id'    => (string) $field['ID'],
+                'label' => $label,
+                'type'  => $type,
+            );
+        }
+
+        return $fields;
+    }
+
+    /**
      * Hook into Caldera Forms to inject the Pixel code.
      *
      * Hooks into the `caldera_forms_ajax_return`

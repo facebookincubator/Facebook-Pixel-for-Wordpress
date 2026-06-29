@@ -46,6 +46,85 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
   const TRACKING_NAME = 'formidable-lite';
 
     /**
+     * Whether this integration supports the admin Field Mapping screen.
+     *
+     * @return bool
+     */
+    public static function supports_field_mapping() {
+        return true;
+    }
+
+    /**
+     * Whether Formidable Forms is active.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return class_exists( '\FrmForm' ) && class_exists( '\FrmField' );
+    }
+
+    /**
+     * Human-readable label for the mapping UI.
+     *
+     * @return string
+     */
+    public static function get_integration_label() {
+        return 'Formidable Forms';
+    }
+
+    /**
+     * Lists all published Formidable forms.
+     *
+     * @return array<int,array<string,string>>
+     */
+    public static function get_forms() {
+        if ( ! self::is_available() ) {
+            return array();
+        }
+
+        $forms = array();
+        foreach ( \FrmForm::get_published_forms() as $form ) {
+            $forms[] = array(
+                'id'    => (string) $form->id,
+                'title' => (string) $form->name,
+            );
+        }
+
+        return $forms;
+    }
+
+    /**
+     * Lists the fields of a single Formidable form.
+     *
+     * The field id is the numeric field id, the same key used to resolve the
+     * submitted value from the entry field values at event time.
+     *
+     * @param string $form_id The Formidable form id.
+     * @return array<int,array<string,string>>
+     */
+    public static function get_form_fields( $form_id ) {
+        if ( ! self::is_available() ) {
+            return array();
+        }
+
+        $fields = array();
+        foreach ( \FrmField::get_all_for_form( $form_id ) as $field ) {
+            $type = isset( $field->type ) ? (string) $field->type : '';
+            if ( in_array( $type, array( 'divider', 'html', 'captcha', 'break', 'end_divider' ), true ) ) {
+                continue;
+            }
+            $label    = isset( $field->name ) ? (string) $field->name : '';
+            $fields[] = array(
+                'id'    => (string) $field->id,
+                'label' => '' !== $label ? $label : ( '#' . $field->id ),
+                'type'  => $type,
+            );
+        }
+
+        return $fields;
+    }
+
+    /**
      * Injects pixel code for the Formidable Form plugin.
      *
      * This method hooks into the 'frm_after_create_entry' action, which is

@@ -46,6 +46,104 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
     const TRACKING_NAME = 'wpforms-lite';
 
     /**
+     * Whether this integration supports the admin Field Mapping screen.
+     *
+     * @return bool
+     */
+    public static function supports_field_mapping() {
+        return true;
+    }
+
+    /**
+     * Whether WPForms (Lite or Pro) is active.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return function_exists( 'wpforms' );
+    }
+
+    /**
+     * Human-readable label for the mapping UI.
+     *
+     * @return string
+     */
+    public static function get_integration_label() {
+        return 'WPForms';
+    }
+
+    /**
+     * Lists all WPForms forms.
+     *
+     * @return array<int,array<string,string>>
+     */
+    public static function get_forms() {
+        if ( ! self::is_available() ) {
+            return array();
+        }
+
+        $posts = wpforms()->form->get( '' );
+        if ( empty( $posts ) || ! is_array( $posts ) ) {
+            return array();
+        }
+
+        $forms = array();
+        foreach ( $posts as $post ) {
+            $forms[] = array(
+                'id'    => (string) $post->ID,
+                'title' => (string) $post->post_title,
+            );
+        }
+
+        return $forms;
+    }
+
+    /**
+     * Lists the fields of a single WPForms form.
+     *
+     * The field id is the numeric field id, the same key used to read the
+     * submitted value from the entry at event time.
+     *
+     * @param string $form_id The WPForms form id.
+     * @return array<int,array<string,string>>
+     */
+    public static function get_form_fields( $form_id ) {
+        if ( ! self::is_available() ) {
+            return array();
+        }
+
+        $form = wpforms()->form->get( $form_id );
+        if ( empty( $form ) ) {
+            return array();
+        }
+
+        $data = function_exists( 'wpforms_decode' )
+            ? wpforms_decode( $form->post_content )
+            : json_decode( $form->post_content, true );
+
+        if ( empty( $data['fields'] ) || ! is_array( $data['fields'] ) ) {
+            return array();
+        }
+
+        $fields = array();
+        foreach ( $data['fields'] as $field ) {
+            if ( ! isset( $field['id'] ) ) {
+                continue;
+            }
+            $label    = isset( $field['label'] ) && '' !== $field['label']
+                ? (string) $field['label']
+                : ( '#' . $field['id'] );
+            $fields[] = array(
+                'id'    => (string) $field['id'],
+                'label' => $label,
+                'type'  => isset( $field['type'] ) ? (string) $field['type'] : '',
+            );
+        }
+
+        return $fields;
+    }
+
+    /**
      * Hooks into WPForms to inject the Pixel code.
      *
      * This method adds an action to the 'wpforms_process_before' hook,

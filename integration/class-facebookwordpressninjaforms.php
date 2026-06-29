@@ -46,6 +46,89 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
     const TRACKING_NAME = 'ninja-forms';
 
     /**
+     * Whether this integration supports the admin Field Mapping screen.
+     *
+     * @return bool
+     */
+    public static function supports_field_mapping() {
+        return true;
+    }
+
+    /**
+     * Whether Ninja Forms is active.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return function_exists( 'Ninja_Forms' );
+    }
+
+    /**
+     * Human-readable label for the mapping UI.
+     *
+     * @return string
+     */
+    public static function get_integration_label() {
+        return 'Ninja Forms';
+    }
+
+    /**
+     * Lists all Ninja Forms forms.
+     *
+     * @return array<int,array<string,string>>
+     */
+    public static function get_forms() {
+        if ( ! self::is_available() ) {
+            return array();
+        }
+
+        $forms = array();
+        foreach ( Ninja_Forms()->form()->get_forms() as $form ) {
+            $forms[] = array(
+                'id'    => (string) $form->get_id(),
+                'title' => (string) $form->get_setting( 'title' ),
+            );
+        }
+
+        return $forms;
+    }
+
+    /**
+     * Lists the fields of a single Ninja Forms form.
+     *
+     * The field id is the field key, which is the same key used to read the
+     * submitted value from the form data at event time.
+     *
+     * @param string $form_id The Ninja Forms form id.
+     * @return array<int,array<string,string>>
+     */
+    public static function get_form_fields( $form_id ) {
+        if ( ! self::is_available() ) {
+            return array();
+        }
+
+        $fields = array();
+        foreach ( Ninja_Forms()->form( $form_id )->get_fields() as $field ) {
+            $key = (string) $field->get_setting( 'key' );
+            if ( '' === $key ) {
+                continue;
+            }
+            $type = (string) $field->get_setting( 'type' );
+            if ( in_array( $type, array( 'submit', 'hr', 'html' ), true ) ) {
+                continue;
+            }
+            $label    = (string) $field->get_setting( 'label' );
+            $fields[] = array(
+                'id'    => $key,
+                'label' => '' !== $label ? $label : $key,
+                'type'  => $type,
+            );
+        }
+
+        return $fields;
+    }
+
+    /**
      * Injects Facebook Pixel code for Ninja Forms.
      *
      * This method hooks into the 'ninja_forms_submission_actions' action,

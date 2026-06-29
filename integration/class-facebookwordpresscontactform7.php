@@ -45,6 +45,95 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
     const TRACKING_NAME = 'contact-form-7';
 
     /**
+     * Whether this integration supports the admin Field Mapping screen.
+     *
+     * @return bool
+     */
+    public static function supports_field_mapping() {
+        return true;
+    }
+
+    /**
+     * Whether Contact Form 7 is active.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return class_exists( '\WPCF7_ContactForm' );
+    }
+
+    /**
+     * Human-readable label for the mapping UI.
+     *
+     * @return string
+     */
+    public static function get_integration_label() {
+        return 'Contact Form 7';
+    }
+
+    /**
+     * Lists all Contact Form 7 forms.
+     *
+     * @return array<int,array<string,string>>
+     */
+    public static function get_forms() {
+        if ( ! self::is_available() ) {
+            return array();
+        }
+
+        $forms = array();
+        foreach ( \WPCF7_ContactForm::find() as $form ) {
+            $forms[] = array(
+                'id'    => (string) $form->id(),
+                'title' => (string) $form->title(),
+            );
+        }
+
+        return $forms;
+    }
+
+    /**
+     * Lists the fields of a single Contact Form 7 form.
+     *
+     * The field id is the tag name, which is the same key used to read the
+     * submitted value from $_POST at event time.
+     *
+     * @param string $form_id The Contact Form 7 form id.
+     * @return array<int,array<string,string>>
+     */
+    public static function get_form_fields( $form_id ) {
+        if ( ! self::is_available() ) {
+            return array();
+        }
+
+        $form = \WPCF7_ContactForm::get_instance( $form_id );
+        if ( empty( $form ) ) {
+            return array();
+        }
+
+        $fields = array();
+        $seen   = array();
+        foreach ( $form->scan_form_tags() as $tag ) {
+            $name = isset( $tag->name ) ? (string) $tag->name : '';
+            if ( '' === $name || isset( $seen[ $name ] ) ) {
+                continue;
+            }
+            $basetype = isset( $tag->basetype ) ? (string) $tag->basetype : '';
+            if ( in_array( $basetype, array( 'submit', '' ), true ) ) {
+                continue;
+            }
+            $seen[ $name ] = true;
+            $fields[]      = array(
+                'id'    => $name,
+                'label' => $name,
+                'type'  => $basetype,
+            );
+        }
+
+        return $fields;
+    }
+
+    /**
      * Add hooks to inject the Contact Form 7 tracking code.
      *
      * Adds the following hooks:
