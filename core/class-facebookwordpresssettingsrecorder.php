@@ -90,6 +90,203 @@ class FacebookWordpressSettingsRecorder {
             'wp_ajax_fbl4b_clear_pixel',
             array( $this, 'fbl4b_clear_pixel' )
         );
+
+        // Form field mapping AJAX actions.
+        add_action(
+            'wp_ajax_' . FacebookPluginConfig::GET_MAPPING_FORMS_ACTION_NAME,
+            array( $this, 'get_mapping_forms' )
+        );
+        add_action(
+            'wp_ajax_' . FacebookPluginConfig::GET_MAPPING_FIELDS_ACTION_NAME,
+            array( $this, 'get_mapping_fields' )
+        );
+        add_action(
+            'wp_ajax_' . FacebookPluginConfig::SAVE_FIELD_MAPPING_ACTION_NAME,
+            array( $this, 'save_field_mapping' )
+        );
+        add_action(
+            'wp_ajax_' . FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME,
+            array( $this, 'delete_field_mapping' )
+        );
+    }
+
+    /**
+     * Resolves the integration class for a tracking name received over AJAX.
+     *
+     * Only integrations that support the Field Mapping screen are eligible,
+     * preventing arbitrary class resolution from request input.
+     *
+     * @param string $tracking_name The integration tracking name.
+     * @return string|null The fully-qualified class name, or null if invalid.
+     */
+    private function resolve_mapping_integration( $tracking_name ) {
+        $integrations =
+            FacebookPluginConfig::get_field_mapping_integrations();
+        return isset( $integrations[ $tracking_name ] )
+            ? $integrations[ $tracking_name ]
+            : null;
+    }
+
+    /**
+     * Returns the list of forms for the requested integration.
+     *
+     * @return array response data
+     */
+    public function get_mapping_forms() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer(
+            FacebookPluginConfig::GET_MAPPING_FORMS_ACTION_NAME
+        );
+
+        $tracking_name = sanitize_text_field(
+            isset( $_POST['integration'] ) ?
+            wp_unslash( $_POST['integration'] ) : ''
+        );
+        $class         = $this->resolve_mapping_integration( $tracking_name );
+        if ( null === $class ) {
+            return $this->handle_invalid_request();
+        }
+
+        return $this->handle_success_request(
+            array( 'forms' => $class::get_forms() )
+        );
+    }
+
+    /**
+     * Returns the fields for a form plus its currently saved mapping.
+     *
+     * @return array response data
+     */
+    public function get_mapping_fields() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer(
+            FacebookPluginConfig::GET_MAPPING_FIELDS_ACTION_NAME
+        );
+
+        $tracking_name = sanitize_text_field(
+            isset( $_POST['integration'] ) ?
+            wp_unslash( $_POST['integration'] ) : ''
+        );
+        $form_id       = sanitize_text_field(
+            isset( $_POST['form_id'] ) ?
+            wp_unslash( $_POST['form_id'] ) : ''
+        );
+        $class         = $this->resolve_mapping_integration( $tracking_name );
+        if ( null === $class || '' === $form_id ) {
+            return $this->handle_invalid_request();
+        }
+
+        return $this->handle_success_request(
+            array(
+                'fields'  => $class::get_form_fields( $form_id ),
+                'mapping' => FormFieldMapper::get_mappings(
+                    $tracking_name,
+                    $form_id
+                ),
+            )
+        );
+    }
+
+    /**
+     * Persists a form's field mapping (upsert; one mapping per form).
+     *
+     * Expects POST: integration, form_id, form_title, and mapping as a JSON
+     * object of field_id => standard_field. Invalid targets are dropped by
+     * FormFieldMapper.
+     *
+     * @return array response data
+     */
+    public function save_field_mapping() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer(
+            FacebookPluginConfig::SAVE_FIELD_MAPPING_ACTION_NAME
+        );
+
+        $tracking_name = sanitize_text_field(
+            isset( $_POST['integration'] ) ?
+            wp_unslash( $_POST['integration'] ) : ''
+        );
+        $form_id       = sanitize_text_field(
+            isset( $_POST['form_id'] ) ?
+            wp_unslash( $_POST['form_id'] ) : ''
+        );
+        $form_title    = sanitize_text_field(
+            isset( $_POST['form_title'] ) ?
+            wp_unslash( $_POST['form_title'] ) : ''
+        );
+        $class         = $this->resolve_mapping_integration( $tracking_name );
+        if ( null === $class || '' === $form_id ) {
+            return $this->handle_invalid_request();
+        }
+
+        $raw_mapping = isset( $_POST['mapping'] )
+            ? json_decode(
+                sanitize_textarea_field( wp_unslash( $_POST['mapping'] ) ),
+                true
+            )
+            : array();
+        if ( ! is_array( $raw_mapping ) ) {
+            return $this->handle_invalid_request();
+        }
+
+        $mapping = array();
+        foreach ( $raw_mapping as $field_id => $standard ) {
+            $field_id = sanitize_text_field( (string) $field_id );
+            $standard = sanitize_text_field( (string) $standard );
+            if ( '' === $field_id || '' === $standard ) {
+                continue;
+            }
+            $mapping[ $field_id ] = $standard;
+        }
+
+        FormFieldMapper::save_form_mapping(
+            $tracking_name,
+            $form_id,
+            $form_title,
+            $mapping
+        );
+
+        return $this->handle_success_request(
+            array( 'list' => FormFieldMapper::get_flat_list() )
+        );
+    }
+
+    /**
+     * Deletes a form's saved field mapping.
+     *
+     * @return array response data
+     */
+    public function delete_field_mapping() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer(
+            FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME
+        );
+
+        $tracking_name = sanitize_text_field(
+            isset( $_POST['integration'] ) ?
+            wp_unslash( $_POST['integration'] ) : ''
+        );
+        $form_id       = sanitize_text_field(
+            isset( $_POST['form_id'] ) ?
+            wp_unslash( $_POST['form_id'] ) : ''
+        );
+        if ( '' === $tracking_name || '' === $form_id ) {
+            return $this->handle_invalid_request();
+        }
+
+        FormFieldMapper::delete_form_mapping( $tracking_name, $form_id );
+
+        return $this->handle_success_request(
+            array( 'list' => FormFieldMapper::get_flat_list() )
+        );
     }
 
     /**
