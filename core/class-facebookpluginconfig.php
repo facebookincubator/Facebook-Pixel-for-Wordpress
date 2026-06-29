@@ -132,12 +132,12 @@ class FacebookPluginConfig {
     'save_capi_pii_caching_status';
     const CAPI_PII_CACHING_STATUS_UPDATE_ERROR            =
     'Status could not be saved, please refresh the page and continue.';
-    const CAPIG                                           =
+    const CAPIG                  =
     'facebook_capig';
-    const CAPIG_DEFAULT                                   = '1';
-    const SAVE_CAPIG_ACTION_NAME                          =
+    const CAPIG_DEFAULT          = '1';
+    const SAVE_CAPIG_ACTION_NAME =
     'save_capig';
-    const CAPIG_UPDATE_ERROR                              =
+    const CAPIG_UPDATE_ERROR     =
     'Status could not be saved, please refresh the page and continue.';
 
     const CONNECTION_INVALID_TRANSIENT            =
@@ -147,6 +147,22 @@ class FacebookPluginConfig {
     'dismiss_connection_invalid_notice';
     const ADMIN_IGNORE_CONNECTION_INVALID_NOTICE  =
     'ignore_connection_invalid_notice';
+
+    // Form field mapping storage and AJAX actions.
+    const FORM_FIELD_MAPPINGS_KEY          =
+    'facebook_form_field_mappings';
+    const GET_MAPPING_FORMS_ACTION_NAME    =
+    'fb_get_mapping_forms';
+    const GET_MAPPING_FIELDS_ACTION_NAME   =
+    'fb_get_mapping_fields';
+    const SAVE_FIELD_MAPPING_ACTION_NAME   =
+    'fb_save_field_mapping';
+    const DELETE_FIELD_MAPPING_ACTION_NAME =
+    'fb_delete_field_mapping';
+    const FIELD_MAPPING_SAVE_ERROR         =
+    'Mapping could not be saved, please refresh the page and try again.';
+    const FIELD_MAPPING_DELETE_ERROR       =
+    'Mapping could not be deleted, please refresh the page and try again.';
 
     /**
      * Integration config: INTEGRATION_KEY => PLUGIN_CLASS.
