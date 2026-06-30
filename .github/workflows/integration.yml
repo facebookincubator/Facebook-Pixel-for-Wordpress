@@ -1,0 +1,66 @@
+name: Form plugin integration tests
+
+on:
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  form-plugin-integration:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        php: ['7.4']
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer
+          extensions: mysqli, mysql
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction
+
+      - name: Install Subversion
+        run: sudo apt-get update && sudo apt-get install -y subversion
+
+      - name: Install WordPress test suite + database
+        run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1:3306 latest
+
+      - name: Install supported form plugins (free, from wordpress.org)
+        run: |
+          PLUGINS_DIR="/tmp/wordpress/wp-content/plugins"
+          mkdir -p "$PLUGINS_DIR"
+          for slug in contact-form-7 wpforms-lite ninja-forms formidable; do
+            echo "Installing $slug ..."
+            svn export --quiet --force \
+              "https://plugins.svn.wordpress.org/${slug}/trunk" \
+              "$PLUGINS_DIR/${slug}"
+          done
+
+      - name: Run integration tests
+        env:
+          # Require the plugins to be detected, so a wrong availability check
+          # fails the build instead of silently skipping.
+          FB_INTEGRATION_REQUIRE_PLUGINS: '1'
+        run: vendor/bin/phpunit -c phpunit-integration.xml

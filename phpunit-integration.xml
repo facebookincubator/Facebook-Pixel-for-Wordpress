@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<phpunit
+	bootstrap="__tests_integration__/bootstrap.php"
+	backupGlobals="false"
+	colors="true"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="false"
+	convertWarningsToExceptions="false"
+	convertDeprecationsToExceptions="false"
+	>
+	<!--
+		Notices/warnings/deprecations are NOT converted to exceptions here:
+		third-party form plugins emit their own and we don't want those to
+		fail the integration run.
+	-->
+	<testsuites>
+		<testsuite name="integration">
+			<directory suffix="Test.php">./__tests_integration__</directory>
+		</testsuite>
+	</testsuites>
+</phpunit>

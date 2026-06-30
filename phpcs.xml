@@ -59,5 +59,6 @@
     <exclude-pattern>task/*</exclude-pattern>
     <exclude-pattern>__tests__/*</exclude-pattern>
 	<exclude-pattern>__tests_sdk__/*</exclude-pattern>
+	<exclude-pattern>__tests_integration__/*</exclude-pattern>
     <exclude-pattern>FacebookAds/*</exclude-pattern>
 </ruleset>
