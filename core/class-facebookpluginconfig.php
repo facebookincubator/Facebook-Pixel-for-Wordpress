@@ -152,13 +152,13 @@ class FacebookPluginConfig {
     const FORM_FIELD_MAPPINGS_KEY          =
     'facebook_form_field_mappings';
     const GET_MAPPING_FORMS_ACTION_NAME    =
-    'fb_get_mapping_forms';
+    'facebook_get_mapping_forms';
     const GET_MAPPING_FIELDS_ACTION_NAME   =
-    'fb_get_mapping_fields';
+    'facebook_get_mapping_fields';
     const SAVE_FIELD_MAPPING_ACTION_NAME   =
-    'fb_save_field_mapping';
+    'facebook_save_field_mapping';
     const DELETE_FIELD_MAPPING_ACTION_NAME =
-    'fb_delete_field_mapping';
+    'facebook_delete_field_mapping';
     const FIELD_MAPPING_SAVE_ERROR         =
     'Mapping could not be saved, please refresh the page and try again.';
     const FIELD_MAPPING_DELETE_ERROR       =
