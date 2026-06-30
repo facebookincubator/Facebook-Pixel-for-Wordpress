@@ -33,13 +33,17 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 /**
  * Class FormFieldMappingConfig
  *
- * Defines the standard CAPI/Pixel fields that a form field can be mapped to.
- * The keys match the data keys understood by
+ * Registry of the standard CAPI/Pixel fields that a form field can be mapped
+ * to. The keys match the data keys understood by
  * ServerEventFactory::safe_create_event(), with the single exception of
  * `full_name`, which is a UI convenience that resolves into first_name and
  * last_name via ServerEventFactory::split_name().
+ *
+ * Instantiable so the target-field set can be substituted (e.g. in tests or
+ * a future extensible/filterable registry) rather than reached statically.
+ * The field keys remain class constants for convenient reference.
  */
-abstract class FormFieldMappingConfig {
+class FormFieldMappingConfig {
     // User-data (PII) standard fields.
     const FIRST_NAME    = 'first_name';
     const LAST_NAME     = 'last_name';
@@ -66,7 +70,7 @@ abstract class FormFieldMappingConfig {
      *
      * @return array<string,string>
      */
-    public static function get_user_data_fields() {
+    public function get_user_data_fields() {
         return array(
             self::FIRST_NAME    => 'First Name',
             self::LAST_NAME     => 'Last Name',
@@ -88,7 +92,7 @@ abstract class FormFieldMappingConfig {
      *
      * @return array<string,string>
      */
-    public static function get_custom_data_fields() {
+    public function get_custom_data_fields() {
         return array(
             self::VALUE            => 'Value',
             self::CURRENCY         => 'Currency',
@@ -103,10 +107,10 @@ abstract class FormFieldMappingConfig {
      *
      * @return array<string,string>
      */
-    public static function get_all_fields() {
+    public function get_all_fields() {
         return array_merge(
-            self::get_user_data_fields(),
-            self::get_custom_data_fields()
+            $this->get_user_data_fields(),
+            $this->get_custom_data_fields()
         );
     }
 
@@ -115,10 +119,10 @@ abstract class FormFieldMappingConfig {
      *
      * @return array<string,array<string,string>>
      */
-    public static function get_grouped_fields() {
+    public function get_grouped_fields() {
         return array(
-            'User Data'   => self::get_user_data_fields(),
-            'Custom Data' => self::get_custom_data_fields(),
+            'User Data'   => $this->get_user_data_fields(),
+            'Custom Data' => $this->get_custom_data_fields(),
         );
     }
 
@@ -128,7 +132,7 @@ abstract class FormFieldMappingConfig {
      * @param string $field The standard field key to validate.
      * @return bool True if the field is a recognized target.
      */
-    public static function is_valid_target( $field ) {
-        return array_key_exists( $field, self::get_all_fields() );
+    public function is_valid_target( $field ) {
+        return array_key_exists( $field, $this->get_all_fields() );
     }
 }

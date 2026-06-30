@@ -43,17 +43,30 @@ class FormFieldMapper {
     private $store;
 
     /**
+     * Registry of valid standard target fields.
+     *
+     * @var FormFieldMappingConfig
+     */
+    private $config;
+
+    /**
      * Constructor.
      *
-     * @param FormFieldMappingStore|null $store Optional storage backend.
-     *                                          Defaults to the WordPress
-     *                                          option-backed store. Inject a
-     *                                          fake in tests.
+     * @param FormFieldMappingStore|null  $store  Optional storage backend.
+     *                                            Defaults to the WordPress
+     *                                            option-backed store. Inject a
+     *                                            fake in tests.
+     * @param FormFieldMappingConfig|null $config Optional target-field
+     *                                            registry. Defaults to the
+     *                                            standard registry.
      */
-    public function __construct( $store = null ) {
-        $this->store = $store instanceof FormFieldMappingStore
+    public function __construct( $store = null, $config = null ) {
+        $this->store  = $store instanceof FormFieldMappingStore
             ? $store
             : new OptionFormFieldMappingStore();
+        $this->config = $config instanceof FormFieldMappingConfig
+            ? $config
+            : new FormFieldMappingConfig();
     }
 
     /**
@@ -165,7 +178,7 @@ class FormFieldMapper {
                 if ( '' === $field_id ) {
                     continue;
                 }
-                if ( ! FormFieldMappingConfig::is_valid_target( $standard ) ) {
+                if ( ! $this->config->is_valid_target( $standard ) ) {
                     continue;
                 }
                 $clean[ $field_id ] = $standard;

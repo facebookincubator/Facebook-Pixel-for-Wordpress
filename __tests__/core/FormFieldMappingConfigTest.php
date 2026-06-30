@@ -36,7 +36,7 @@ final class FormFieldMappingConfigTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testGetAllFieldsContainsUserAndCustomData() {
-        $all = FormFieldMappingConfig::get_all_fields();
+        $all = ( new FormFieldMappingConfig() )->get_all_fields();
 
         $this->assertArrayHasKey( 'first_name', $all );
         $this->assertArrayHasKey( 'email', $all );
@@ -52,7 +52,7 @@ final class FormFieldMappingConfigTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testGroupedFields() {
-        $grouped = FormFieldMappingConfig::get_grouped_fields();
+        $grouped = ( new FormFieldMappingConfig() )->get_grouped_fields();
 
         $this->assertArrayHasKey( 'User Data', $grouped );
         $this->assertArrayHasKey( 'Custom Data', $grouped );
@@ -66,17 +66,11 @@ final class FormFieldMappingConfigTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testIsValidTarget() {
-        $this->assertTrue(
-            FormFieldMappingConfig::is_valid_target( 'first_name' )
-        );
-        $this->assertTrue(
-            FormFieldMappingConfig::is_valid_target( 'content_ids' )
-        );
-        $this->assertFalse(
-            FormFieldMappingConfig::is_valid_target( 'not_a_real_field' )
-        );
-        $this->assertFalse(
-            FormFieldMappingConfig::is_valid_target( '' )
-        );
+        $config = new FormFieldMappingConfig();
+
+        $this->assertTrue( $config->is_valid_target( 'first_name' ) );
+        $this->assertTrue( $config->is_valid_target( 'content_ids' ) );
+        $this->assertFalse( $config->is_valid_target( 'not_a_real_field' ) );
+        $this->assertFalse( $config->is_valid_target( '' ) );
     }
 }
