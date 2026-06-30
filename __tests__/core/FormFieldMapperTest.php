@@ -20,14 +20,14 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\FormFieldMapper;
-use FacebookPixelPlugin\Tests\Mocks\InMemoryFormFieldMappingStore;
+use FacebookPixelPlugin\Core\FormFieldMappingStore;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
  * FormFieldMapperTest class.
  *
- * The mapper is exercised with an injected in-memory store, so these are
- * plain unit tests with no WordPress option mocking.
+ * The storage seam is a PHPUnit mock of FormFieldMappingStore (our own
+ * interface), so these are plain unit tests with no WordPress option mocking.
  *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
@@ -35,23 +35,24 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 final class FormFieldMapperTest extends FacebookWordpressTestBase {
 
     /**
-     * Builds a mapper backed by an in-memory store seeded with $data.
+     * Builds a mapper backed by a mock store whose read() returns $stored.
      *
-     * @param array $data Initial store contents.
-     * @return array An array of [ FormFieldMapper, InMemoryFormFieldMappingStore ].
+     * @param array $stored The contents read() should return.
+     * @return array An array of [ FormFieldMapper, store mock ].
      */
-    private function makeMapper( $data = array() ) {
-        $store  = new InMemoryFormFieldMappingStore( $data );
+    private function makeMapper( $stored = array() ) {
+        $store = $this->createMock( FormFieldMappingStore::class );
+        $store->method( 'read' )->willReturn( $stored );
         $mapper = new FormFieldMapper( $store );
         return array( $mapper, $store );
     }
 
     /**
-     * get_all returns an empty array when the store is empty.
+     * get_all returns whatever the store reads.
      *
      * @return void
      */
-    public function testGetAllReturnsArrayWhenStoreEmpty() {
+    public function testGetAllReturnsStoreContents() {
         list( $mapper ) = $this->makeMapper();
         $this->assertSame( array(), $mapper->get_all() );
     }
@@ -90,12 +91,28 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * save_form_mapping upserts the entry and drops invalid targets.
+     * save_form_mapping writes an upserted entry and drops invalid targets.
      *
      * @return void
      */
     public function testSaveFormMappingUpsertsAndDropsInvalid() {
         list( $mapper, $store ) = $this->makeMapper();
+
+        $store->expects( $this->once() )
+            ->method( 'write' )
+            ->with(
+                array(
+                    'wpforms-lite' => array(
+                        '7' => array(
+                            'form_title' => 'Contact',
+                            'mappings'   => array(
+                                '1' => 'email',
+                                '2' => 'first_name',
+                            ),
+                        ),
+                    ),
+                )
+            );
 
         $mapper->save_form_mapping(
             'wpforms-lite',
@@ -107,25 +124,10 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
                 '3' => 'totally_invalid_target',
             )
         );
-
-        $this->assertEquals(
-            array(
-                'wpforms-lite' => array(
-                    '7' => array(
-                        'form_title' => 'Contact',
-                        'mappings'   => array(
-                            '1' => 'email',
-                            '2' => 'first_name',
-                        ),
-                    ),
-                ),
-            ),
-            $store->read()
-        );
     }
 
     /**
-     * Re-saving the same form replaces the entry (one mapping per form).
+     * Re-saving the same form writes a replaced entry (one mapping per form).
      *
      * @return void
      */
@@ -141,28 +143,29 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             )
         );
 
+        $store->expects( $this->once() )
+            ->method( 'write' )
+            ->with(
+                array(
+                    'contact-form-7' => array(
+                        '123' => array(
+                            'form_title' => 'new title',
+                            'mappings'   => array( 'NEW' => 'phone' ),
+                        ),
+                    ),
+                )
+            );
+
         $mapper->save_form_mapping(
             'contact-form-7',
             '123',
             'new title',
             array( 'NEW' => 'phone' )
         );
-
-        $this->assertEquals(
-            array(
-                'contact-form-7' => array(
-                    '123' => array(
-                        'form_title' => 'new title',
-                        'mappings'   => array( 'NEW' => 'phone' ),
-                    ),
-                ),
-            ),
-            $store->read()
-        );
     }
 
     /**
-     * Saving an empty/all-invalid mapping removes any existing entry.
+     * Saving an empty/all-invalid mapping writes the entry removed.
      *
      * @return void
      */
@@ -178,18 +181,20 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             )
         );
 
+        $store->expects( $this->once() )
+            ->method( 'write' )
+            ->with( array() );
+
         $mapper->save_form_mapping(
             'contact-form-7',
             '123',
             'wform1',
             array( 'X' => 'invalid' )
         );
-
-        $this->assertSame( array(), $store->read() );
     }
 
     /**
-     * delete_form_mapping removes the form slot and prunes empty integration.
+     * delete_form_mapping writes the store with the form slot removed.
      *
      * @return void
      */
@@ -205,9 +210,11 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             )
         );
 
-        $mapper->delete_form_mapping( 'contact-form-7', '123' );
+        $store->expects( $this->once() )
+            ->method( 'write' )
+            ->with( array() );
 
-        $this->assertSame( array(), $store->read() );
+        $mapper->delete_form_mapping( 'contact-form-7', '123' );
     }
 
     /**
