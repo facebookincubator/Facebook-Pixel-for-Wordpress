@@ -32,6 +32,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
+use FacebookPixelPlugin\Core\FormFieldMapper;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
@@ -206,13 +207,48 @@ class FacebookWordpressCalderaForm extends FacebookWordpressFormIntegrationBase 
         if ( empty( $form ) ) {
             return array();
         }
-        return array(
+        $data = array(
             'email'      => self::getEmail( $form ),
             'first_name' => self::getFirstName( $form ),
             'last_name'  => self::getLastName( $form ),
             'phone'      => self::getPhone( $form ),
             'state'      => self::getState( $form ),
         );
+
+        $form_id = isset( $form['ID'] ) ? (string) $form['ID'] : '';
+
+        return self::applyFieldMapping( $form_id, $data );
+    }
+
+    /**
+     * Merges any saved field mapping for the form over the heuristic data.
+     *
+     * Mapped values (read from $_POST by Caldera field ID) take priority;
+     * unmapped standard fields fall back to the auto-detected values.
+     *
+     * @param string $form_id The Caldera form id.
+     * @param array  $data     The heuristically extracted data.
+     * @return array The merged data.
+     */
+    private static function applyFieldMapping( $form_id, $data ) {
+        if ( '' === $form_id ) {
+            return $data;
+        }
+
+        $mapped = ( new FormFieldMapper() )->resolve(
+            self::TRACKING_NAME,
+            $form_id,
+            function ( $field_id ) {
+                if ( ! isset( $_POST[ $field_id ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                    return null;
+                }
+                return sanitize_text_field(
+                    wp_unslash( $_POST[ $field_id ] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                );
+            }
+        );
+
+        return array_merge( $data, $mapped );
     }
 
     /**

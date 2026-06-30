@@ -33,6 +33,7 @@ use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
+use FacebookPixelPlugin\Core\FormFieldMapper;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
@@ -332,7 +333,41 @@ class FacebookWordpressWPForms extends FacebookWordpressFormIntegrationBase {
             self::getAddress( $entry, $form_data )
         );
 
-        return $event_data;
+        $form_id = isset( $form_data['id'] ) ? (string) $form_data['id'] : '';
+
+        return self::applyFieldMapping( $form_id, $entry, $event_data );
+    }
+
+    /**
+     * Merges any saved field mapping for the form over the heuristic data.
+     *
+     * Mapped values (looked up by field id in the entry) take priority;
+     * unmapped standard fields fall back to the auto-detected values. Only
+     * scalar entry values are used (composite fields like Name/Address are
+     * left to the heuristics).
+     *
+     * @param string $form_id The WPForms form id.
+     * @param array  $entry    The submitted entry data.
+     * @param array  $data     The heuristically extracted data.
+     * @return array The merged data.
+     */
+    private static function applyFieldMapping( $form_id, $entry, $data ) {
+        if ( '' === $form_id || empty( $entry['fields'] ) ) {
+            return $data;
+        }
+
+        $fields = $entry['fields'];
+        $mapped = ( new FormFieldMapper() )->resolve(
+            self::TRACKING_NAME,
+            $form_id,
+            function ( $field_id ) use ( $fields ) {
+                $value = isset( $fields[ $field_id ] )
+                    ? $fields[ $field_id ] : null;
+                return is_scalar( $value ) ? $value : null;
+            }
+        );
+
+        return array_merge( $data, $mapped );
     }
 
     /**

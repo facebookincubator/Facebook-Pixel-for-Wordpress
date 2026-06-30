@@ -32,6 +32,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
+use FacebookPixelPlugin\Core\FormFieldMapper;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
@@ -265,12 +266,47 @@ class FacebookWordpressContactForm7 extends FacebookWordpressFormIntegrationBase
         $form_tags = $form->scan_form_tags();
         $name      = self::getName( $form_tags );
 
-        return array(
+        $data = array(
             'email'      => self::getEmail( $form_tags ),
             'first_name' => $name[0],
             'last_name'  => $name[1],
             'phone'      => self::getPhone( $form_tags ),
         );
+
+        $form_id = method_exists( $form, 'id' ) ? (string) $form->id() : '';
+
+        return self::applyFieldMapping( $form_id, $data );
+    }
+
+    /**
+     * Merges any saved field mapping for the form over the heuristic data.
+     *
+     * Mapped values (read from $_POST by tag name) take priority; unmapped
+     * standard fields fall back to the auto-detected values.
+     *
+     * @param string $form_id The Contact Form 7 form id.
+     * @param array  $data     The heuristically extracted data.
+     * @return array The merged data.
+     */
+    private static function applyFieldMapping( $form_id, $data ) {
+        if ( '' === $form_id ) {
+            return $data;
+        }
+
+        $mapped = ( new FormFieldMapper() )->resolve(
+            self::TRACKING_NAME,
+            $form_id,
+            function ( $field_id ) {
+                if ( ! isset( $_POST[ $field_id ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                    return null;
+                }
+                return sanitize_text_field(
+                    wp_unslash( $_POST[ $field_id ] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                );
+            }
+        );
+
+        return array_merge( $data, $mapped );
     }
 
     /**
