@@ -38,6 +38,21 @@ require_once $_functions;
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
 /**
+ * Main plugin files (relative to the WP plugins dir) for the form plugins we
+ * support and test discovery against.
+ *
+ * @return string[]
+ */
+function _fb_form_plugin_files() {
+    return array(
+        'contact-form-7/wp-contact-form-7.php',
+        'wpforms-lite/wpforms.php',
+        'ninja-forms/ninja-forms.php',
+        'formidable/formidable.php',
+    );
+}
+
+/**
  * Loads the supported form plugins and this plugin before WordPress finishes
  * loading. Each form plugin is loaded only if present, so the suite degrades
  * gracefully when one isn't installed.
@@ -45,14 +60,7 @@ require_once dirname( __DIR__ ) . '/vendor/autoload.php';
  * @return void
  */
 function _fb_manually_load_plugins() {
-    $form_plugins = array(
-        'contact-form-7/wp-contact-form-7.php',
-        'wpforms-lite/wpforms.php',
-        'ninja-forms/ninja-forms.php',
-        'formidable/formidable.php',
-    );
-
-    foreach ( $form_plugins as $plugin ) {
+    foreach ( _fb_form_plugin_files() as $plugin ) {
         $path = WP_PLUGIN_DIR . '/' . $plugin;
         if ( file_exists( $path ) ) {
             require_once $path;
@@ -73,3 +81,28 @@ if ( ! defined( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH' ) ) {
 }
 
 require_once $_tests_dir . '/includes/bootstrap.php';
+
+// Activate the form plugins so those that use custom database tables (Ninja
+// Forms, Formidable) run their install routines and create them. Loading the
+// plugin file alone does not fire activation. Each activation is isolated so a
+// heavy/failing one doesn't abort the whole suite.
+require_once ABSPATH . 'wp-admin/includes/plugin.php';
+require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+foreach ( _fb_form_plugin_files() as $fb_plugin ) {
+    if ( ! file_exists( WP_PLUGIN_DIR . '/' . $fb_plugin ) ) {
+        continue;
+    }
+    try {
+        ob_start();
+        activate_plugin( $fb_plugin );
+        ob_end_clean();
+    } catch ( \Throwable $fb_e ) {
+        if ( ob_get_level() > 0 ) {
+            ob_end_clean();
+        }
+        // Best-effort: tests assert availability/shape regardless, and
+        // form-creation assertions degrade to skips when persistence is
+        // unavailable.
+        error_log( 'Integration activate_plugin failed for ' . $fb_plugin . ': ' . $fb_e->getMessage() );
+    }
+}
