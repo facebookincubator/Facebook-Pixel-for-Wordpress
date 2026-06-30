@@ -95,7 +95,8 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
     $event = ServerEventFactory::new_event( 'Lead' );
 
     $this->assertNotNull( $event->getEventTime() );
-    $this->assertLessThan( 1, time() - $event->getEventTime() );
+    // Allow a 1s delta so the test isn't flaky across a second boundary.
+    $this->assertLessThanOrEqual( 1, time() - $event->getEventTime() );
   }
 
   /**
