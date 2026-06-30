@@ -182,4 +182,25 @@ class FacebookPluginConfig {
             'WOOCOMMERCE'           => 'FacebookWordpressWooCommerce',
         );
     }
+
+    /**
+     * Returns the integrations that support the admin Field Mapping screen,
+     * keyed by tracking name => fully-qualified integration class name.
+     *
+     * @return array<string,string>
+     */
+    public static function get_field_mapping_integrations() {
+        $result = array();
+        foreach ( self::integration_config() as $class ) {
+            $fqcn = 'FacebookPixelPlugin\\Integration\\' . $class;
+            if ( ! class_exists( $fqcn ) ) {
+                continue;
+            }
+            if ( ! $fqcn::supports_field_mapping() ) {
+                continue;
+            }
+            $result[ $fqcn::TRACKING_NAME ] = $fqcn;
+        }
+        return $result;
+    }
 }
