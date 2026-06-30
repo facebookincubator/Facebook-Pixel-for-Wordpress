@@ -73,4 +73,44 @@ final class FormFieldMappingConfigTest extends FacebookWordpressTestBase {
         $this->assertFalse( $config->is_valid_target( 'not_a_real_field' ) );
         $this->assertFalse( $config->is_valid_target( '' ) );
     }
+
+    /**
+     * A field added via the TARGET_FIELDS_FILTER filter appears in the grouped
+     * options, in get_all_fields(), and is accepted as a valid target.
+     *
+     * @return void
+     */
+    public function testTargetFieldsFilterCanAddField() {
+        $config = new FormFieldMappingConfig();
+
+        // The default groups the filter receives.
+        $default              = array(
+            'User Data'   => $config->get_user_data_fields(),
+            'Custom Data' => $config->get_custom_data_fields(),
+        );
+        $modified             = $default;
+        $modified['Loyalty']  = array( 'loyalty_tier' => 'Loyalty Tier' );
+
+        // get_grouped_fields() runs the filter; it is reached three times here
+        // (directly, via get_all_fields(), and via is_valid_target()).
+        \WP_Mock::onFilter( FormFieldMappingConfig::TARGET_FIELDS_FILTER )
+            ->with( $default )
+            ->reply( $modified );
+        \WP_Mock::onFilter( FormFieldMappingConfig::TARGET_FIELDS_FILTER )
+            ->with( $default )
+            ->reply( $modified );
+        \WP_Mock::onFilter( FormFieldMappingConfig::TARGET_FIELDS_FILTER )
+            ->with( $default )
+            ->reply( $modified );
+
+        $grouped = $config->get_grouped_fields();
+        $this->assertArrayHasKey( 'Loyalty', $grouped );
+        $this->assertArrayHasKey( 'loyalty_tier', $grouped['Loyalty'] );
+
+        $this->assertArrayHasKey(
+            'loyalty_tier',
+            $config->get_all_fields()
+        );
+        $this->assertTrue( $config->is_valid_target( 'loyalty_tier' ) );
+    }
 }

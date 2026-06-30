@@ -66,6 +66,11 @@ class FormFieldMappingConfig {
     const CONTENT_IDS      = 'content_ids';
 
     /**
+     * Filter hook name used to customize the grouped target fields.
+     */
+    const TARGET_FIELDS_FILTER = 'facebook_pixel_form_mapping_target_fields';
+
+    /**
      * Returns the user-data target fields as key => human label.
      *
      * @return array<string,string>
@@ -103,27 +108,72 @@ class FormFieldMappingConfig {
     }
 
     /**
-     * Returns all target fields (user-data + custom-data) as key => label.
+     * Returns all target fields (flattened across every group) as
+     * key => label. Reflects any fields added/removed via the
+     * TARGET_FIELDS_FILTER filter, so it is the single source of truth for
+     * both the UI and validation.
      *
      * @return array<string,string>
      */
     public function get_all_fields() {
-        return array_merge(
-            $this->get_user_data_fields(),
-            $this->get_custom_data_fields()
-        );
+        $all = array();
+        foreach ( $this->get_grouped_fields() as $fields ) {
+            if ( is_array( $fields ) ) {
+                $all = array_merge( $all, $fields );
+            }
+        }
+        return $all;
     }
 
     /**
      * Returns the grouped target fields for rendering option groups.
      *
+     * The default groups (User Data, Custom Data) are passed through the
+     * TARGET_FIELDS_FILTER filter so other plugins or site owners can add,
+     * relabel, or remove target fields and groups.
+     *
      * @return array<string,array<string,string>>
      */
     public function get_grouped_fields() {
-        return array(
+        $groups = array(
             'User Data'   => $this->get_user_data_fields(),
             'Custom Data' => $this->get_custom_data_fields(),
         );
+
+        /**
+         * Filters the standard target fields shown in the Form Field Mapping
+         * screen, grouped by section label.
+         *
+         * Whatever this filter returns becomes both the set of options
+         * rendered in the UI and the set of keys accepted as valid mapping
+         * targets. Each group is an array of field_key => human label.
+         *
+         * Note: a field whose key is one of the plugin's built-in standard
+         * keys (email, first_name, value, etc.) is forwarded to the Pixel /
+         * Conversions API event. A brand-new custom key will appear in the UI
+         * and be accepted/stored, but is only transmitted once the event
+         * pipeline (ServerEventFactory) understands it.
+         *
+         * Example — add a field and a custom group:
+         *
+         *     add_filter(
+         *         'facebook_pixel_form_mapping_target_fields',
+         *         function ( $groups ) {
+         *             $groups['User Data']['email'] = 'Email address';
+         *             $groups['Loyalty'] = array(
+         *                 'loyalty_tier' => 'Loyalty Tier',
+         *             );
+         *             return $groups;
+         *         }
+         *     );
+         *
+         * @param array<string,array<string,string>> $groups Grouped target
+         *                                                    fields keyed by
+         *                                                    section label.
+         */
+        $groups = apply_filters( self::TARGET_FIELDS_FILTER, $groups );
+
+        return is_array( $groups ) ? $groups : array();
     }
 
     /**
