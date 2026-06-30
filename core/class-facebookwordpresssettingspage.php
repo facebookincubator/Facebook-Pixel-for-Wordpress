@@ -43,12 +43,25 @@ class FacebookWordpressSettingsPage {
     private $options_page = '';
 
     /**
+     * Mapper used to read stored form field mappings for the UI.
+     *
+     * @var FormFieldMapper
+     */
+    private $field_mapper;
+
+    /**
      * Registers the plugin's settings page, and adds the necessary hooks
      * for registering the plugin's scripts, notices, and menu items.
      *
-     * @param string $plugin_name the name of the plugin.
+     * @param string               $plugin_name  The name of the plugin.
+     * @param FormFieldMapper|null $field_mapper Optional mapper. Defaults to a
+     *                                           WordPress option-backed mapper.
      */
-    public function __construct( $plugin_name ) {
+    public function __construct( $plugin_name, $field_mapper = null ) {
+        $this->field_mapper = $field_mapper instanceof FormFieldMapper
+            ? $field_mapper
+            : new FormFieldMapper();
+
         add_filter(
             'plugin_action_links_' . $plugin_name,
             array( $this, 'add_settings_link' )
@@ -711,7 +724,7 @@ class FacebookWordpressSettingsPage {
             'integrations'    => $this->get_available_mapping_integrations(),
             'groupedFields'   =>
                 FormFieldMappingConfig::get_grouped_fields(),
-            'list'            => FormFieldMapper::get_flat_list(),
+            'list'            => $this->field_mapper->get_flat_list(),
             'saveError'       =>
                 FacebookPluginConfig::FIELD_MAPPING_SAVE_ERROR,
             'deleteError'     =>
