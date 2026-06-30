@@ -41,18 +41,9 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 /**
  * FacebookWordpressWPForms class.
  */
-class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
+class FacebookWordpressWPForms extends FacebookWordpressFormIntegrationBase {
     const PLUGIN_FILE   = 'wpforms-lite/wpforms.php';
     const TRACKING_NAME = 'wpforms-lite';
-
-    /**
-     * Whether this integration supports the admin Field Mapping screen.
-     *
-     * @return bool
-     */
-    public static function supports_field_mapping() {
-        return true;
-    }
 
     /**
      * Whether WPForms (Lite or Pro) is active.
@@ -73,45 +64,35 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
     }
 
     /**
-     * Lists all WPForms forms.
+     * Returns all WPForms form posts.
      *
-     * @return array<int,array<string,string>>
+     * @return iterable
      */
-    public static function get_forms() {
-        if ( ! self::is_available() ) {
-            return array();
-        }
-
+    protected static function fetch_forms() {
         $posts = wpforms()->form->get( '' );
-        if ( empty( $posts ) || ! is_array( $posts ) ) {
-            return array();
-        }
-
-        $forms = array();
-        foreach ( $posts as $post ) {
-            $forms[] = array(
-                'id'    => (string) $post->ID,
-                'title' => (string) $post->post_title,
-            );
-        }
-
-        return $forms;
+        return ( empty( $posts ) || ! is_array( $posts ) ) ? array() : $posts;
     }
 
     /**
-     * Lists the fields of a single WPForms form.
+     * Maps a WPForms form post to id + title.
      *
-     * The field id is the numeric field id, the same key used to read the
-     * submitted value from the entry at event time.
+     * @param mixed $raw_form A WP_Post for the form.
+     * @return array<string,mixed>
+     */
+    protected static function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->ID,
+            'title' => $raw_form->post_title,
+        );
+    }
+
+    /**
+     * Returns the decoded field definitions for a single WPForms form.
      *
      * @param string $form_id The WPForms form id.
-     * @return array<int,array<string,string>>
+     * @return iterable
      */
-    public static function get_form_fields( $form_id ) {
-        if ( ! self::is_available() ) {
-            return array();
-        }
-
+    protected static function fetch_form_fields( $form_id ) {
         $form = wpforms()->form->get( $form_id );
         if ( empty( $form ) ) {
             return array();
@@ -121,26 +102,29 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
             ? wpforms_decode( $form->post_content )
             : json_decode( $form->post_content, true );
 
-        if ( empty( $data['fields'] ) || ! is_array( $data['fields'] ) ) {
-            return array();
-        }
+        return ( empty( $data['fields'] ) || ! is_array( $data['fields'] ) )
+            ? array()
+            : $data['fields'];
+    }
 
-        $fields = array();
-        foreach ( $data['fields'] as $field ) {
-            if ( ! isset( $field['id'] ) ) {
-                continue;
-            }
-            $label    = isset( $field['label'] ) && '' !== $field['label']
-                ? (string) $field['label']
-                : ( '#' . $field['id'] );
-            $fields[] = array(
-                'id'    => (string) $field['id'],
-                'label' => $label,
-                'type'  => isset( $field['type'] ) ? (string) $field['type'] : '',
-            );
+    /**
+     * Maps a WPForms field definition to a field.
+     *
+     * The field id is the numeric field id, the same key used to read the
+     * submitted value from the entry at event time.
+     *
+     * @param mixed $raw_field A WPForms field definition array.
+     * @return array<string,mixed>|null
+     */
+    protected static function map_field( $raw_field ) {
+        if ( ! isset( $raw_field['id'] ) ) {
+            return null;
         }
-
-        return $fields;
+        return array(
+            'id'    => $raw_field['id'],
+            'label' => isset( $raw_field['label'] ) ? $raw_field['label'] : '',
+            'type'  => isset( $raw_field['type'] ) ? $raw_field['type'] : '',
+        );
     }
 
     /**

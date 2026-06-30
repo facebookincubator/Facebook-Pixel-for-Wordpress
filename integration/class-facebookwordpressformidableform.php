@@ -41,18 +41,9 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 /**
  * FacebookWordpressFormidableForm class.
  */
-class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
+class FacebookWordpressFormidableForm extends FacebookWordpressFormIntegrationBase {
   const PLUGIN_FILE   = 'formidable/formidable.php';
   const TRACKING_NAME = 'formidable-lite';
-
-    /**
-     * Whether this integration supports the admin Field Mapping screen.
-     *
-     * @return bool
-     */
-    public static function supports_field_mapping() {
-        return true;
-    }
 
     /**
      * Whether Formidable Forms is active.
@@ -73,55 +64,57 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
     }
 
     /**
-     * Lists all published Formidable forms.
+     * Returns all published Formidable form objects.
      *
-     * @return array<int,array<string,string>>
+     * @return iterable
      */
-    public static function get_forms() {
-        if ( ! self::is_available() ) {
-            return array();
-        }
-
-        $forms = array();
-        foreach ( \FrmForm::get_published_forms() as $form ) {
-            $forms[] = array(
-                'id'    => (string) $form->id,
-                'title' => (string) $form->name,
-            );
-        }
-
-        return $forms;
+    protected static function fetch_forms() {
+        return \FrmForm::get_published_forms();
     }
 
     /**
-     * Lists the fields of a single Formidable form.
+     * Maps a Formidable form object to id + title.
+     *
+     * @param mixed $raw_form A Formidable form object.
+     * @return array<string,mixed>
+     */
+    protected static function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->id,
+            'title' => $raw_form->name,
+        );
+    }
+
+    /**
+     * Returns the field objects for a single Formidable form.
+     *
+     * @param string $form_id The Formidable form id.
+     * @return iterable
+     */
+    protected static function fetch_form_fields( $form_id ) {
+        return \FrmField::get_all_for_form( $form_id );
+    }
+
+    /**
+     * Maps a Formidable field object to a field, skipping layout fields.
      *
      * The field id is the numeric field id, the same key used to resolve the
      * submitted value from the entry field values at event time.
      *
-     * @param string $form_id The Formidable form id.
-     * @return array<int,array<string,string>>
+     * @param mixed $raw_field A Formidable field object.
+     * @return array<string,mixed>|null
      */
-    public static function get_form_fields( $form_id ) {
-        if ( ! self::is_available() ) {
-            return array();
+    protected static function map_field( $raw_field ) {
+        $type = isset( $raw_field->type ) ? (string) $raw_field->type : '';
+        $skip = array( 'divider', 'html', 'captcha', 'break', 'end_divider' );
+        if ( in_array( $type, $skip, true ) ) {
+            return null;
         }
-
-        $fields = array();
-        foreach ( \FrmField::get_all_for_form( $form_id ) as $field ) {
-            $type = isset( $field->type ) ? (string) $field->type : '';
-            if ( in_array( $type, array( 'divider', 'html', 'captcha', 'break', 'end_divider' ), true ) ) {
-                continue;
-            }
-            $label    = isset( $field->name ) ? (string) $field->name : '';
-            $fields[] = array(
-                'id'    => (string) $field->id,
-                'label' => '' !== $label ? $label : ( '#' . $field->id ),
-                'type'  => $type,
-            );
-        }
-
-        return $fields;
+        return array(
+            'id'    => $raw_field->id,
+            'label' => isset( $raw_field->name ) ? $raw_field->name : '',
+            'type'  => $type,
+        );
     }
 
     /**

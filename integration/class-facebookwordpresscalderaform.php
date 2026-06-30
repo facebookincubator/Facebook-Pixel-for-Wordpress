@@ -40,18 +40,9 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 /**
  * FacebookWordpressCalderaForm class.
  */
-class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
+class FacebookWordpressCalderaForm extends FacebookWordpressFormIntegrationBase {
     const PLUGIN_FILE   = 'caldera-forms/caldera-core.php';
     const TRACKING_NAME = 'caldera-forms';
-
-    /**
-     * Whether this integration supports the admin Field Mapping screen.
-     *
-     * @return bool
-     */
-    public static function supports_field_mapping() {
-        return true;
-    }
 
     /**
      * Whether Caldera Forms is active.
@@ -72,68 +63,69 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
     }
 
     /**
-     * Lists all Caldera forms.
+     * Returns all Caldera form config arrays.
      *
-     * @return array<int,array<string,string>>
+     * @return iterable
      */
-    public static function get_forms() {
-        if ( ! self::is_available() ) {
-            return array();
-        }
-
-        $forms = array();
-        foreach ( \Caldera_Forms_Forms::get_forms( true, true ) as $form ) {
-            if ( empty( $form['ID'] ) ) {
-                continue;
-            }
-            $forms[] = array(
-                'id'    => (string) $form['ID'],
-                'title' => isset( $form['name'] ) ? (string) $form['name'] : '',
-            );
-        }
-
-        return $forms;
+    protected static function fetch_forms() {
+        return \Caldera_Forms_Forms::get_forms( true, true );
     }
 
     /**
-     * Lists the fields of a single Caldera form.
+     * Maps a Caldera form config to id + title.
+     *
+     * @param mixed $raw_form A Caldera form config array.
+     * @return array<string,mixed>
+     */
+    protected static function map_form( $raw_form ) {
+        return array(
+            'id'    => isset( $raw_form['ID'] ) ? $raw_form['ID'] : '',
+            'title' => isset( $raw_form['name'] ) ? $raw_form['name'] : '',
+        );
+    }
+
+    /**
+     * Returns the field config arrays for a single Caldera form.
+     *
+     * @param string $form_id The Caldera form id.
+     * @return iterable
+     */
+    protected static function fetch_form_fields( $form_id ) {
+        $form = \Caldera_Forms_Forms::get_form( $form_id );
+        return ( empty( $form['fields'] ) || ! is_array( $form['fields'] ) )
+            ? array()
+            : $form['fields'];
+    }
+
+    /**
+     * Maps a Caldera field config to a field, skipping non-input fields.
      *
      * The field id is the Caldera field ID, the same key used to read the
      * submitted value from $_POST at event time.
      *
-     * @param string $form_id The Caldera form id.
-     * @return array<int,array<string,string>>
+     * @param mixed $raw_field A Caldera field config array.
+     * @return array<string,mixed>|null
      */
-    public static function get_form_fields( $form_id ) {
-        if ( ! self::is_available() ) {
-            return array();
+    protected static function map_field( $raw_field ) {
+        if ( empty( $raw_field['ID'] ) ) {
+            return null;
         }
-
-        $form = \Caldera_Forms_Forms::get_form( $form_id );
-        if ( empty( $form['fields'] ) || ! is_array( $form['fields'] ) ) {
-            return array();
+        $type = isset( $raw_field['type'] ) ? (string) $raw_field['type'] : '';
+        if ( in_array(
+            $type,
+            array( 'button', 'html', 'section_break' ),
+            true
+        ) ) {
+            return null;
         }
-
-        $fields = array();
-        foreach ( $form['fields'] as $field ) {
-            if ( empty( $field['ID'] ) ) {
-                continue;
-            }
-            $type = isset( $field['type'] ) ? (string) $field['type'] : '';
-            if ( in_array( $type, array( 'button', 'html', 'section_break' ), true ) ) {
-                continue;
-            }
-            $label    = isset( $field['label'] ) && '' !== $field['label']
-                ? (string) $field['label']
-                : ( isset( $field['slug'] ) ? (string) $field['slug'] : (string) $field['ID'] );
-            $fields[] = array(
-                'id'    => (string) $field['ID'],
-                'label' => $label,
-                'type'  => $type,
-            );
-        }
-
-        return $fields;
+        $label = isset( $raw_field['label'] ) && '' !== $raw_field['label']
+            ? (string) $raw_field['label']
+            : ( isset( $raw_field['slug'] ) ? (string) $raw_field['slug'] : '' );
+        return array(
+            'id'    => $raw_field['ID'],
+            'label' => $label,
+            'type'  => $type,
+        );
     }
 
     /**

@@ -41,18 +41,9 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 /**
  * FacebookWordpressNinjaForms class.
  */
-class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
+class FacebookWordpressNinjaForms extends FacebookWordpressFormIntegrationBase {
     const PLUGIN_FILE   = 'ninja-forms/ninja-forms.php';
     const TRACKING_NAME = 'ninja-forms';
-
-    /**
-     * Whether this integration supports the admin Field Mapping screen.
-     *
-     * @return bool
-     */
-    public static function supports_field_mapping() {
-        return true;
-    }
 
     /**
      * Whether Ninja Forms is active.
@@ -73,59 +64,60 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
     }
 
     /**
-     * Lists all Ninja Forms forms.
+     * Returns all Ninja Forms form models.
      *
-     * @return array<int,array<string,string>>
+     * @return iterable
      */
-    public static function get_forms() {
-        if ( ! self::is_available() ) {
-            return array();
-        }
-
-        $forms = array();
-        foreach ( Ninja_Forms()->form()->get_forms() as $form ) {
-            $forms[] = array(
-                'id'    => (string) $form->get_id(),
-                'title' => (string) $form->get_setting( 'title' ),
-            );
-        }
-
-        return $forms;
+    protected static function fetch_forms() {
+        return Ninja_Forms()->form()->get_forms();
     }
 
     /**
-     * Lists the fields of a single Ninja Forms form.
+     * Maps a Ninja Forms form model to id + title.
      *
-     * The field id is the field key, which is the same key used to read the
-     * submitted value from the form data at event time.
+     * @param mixed $raw_form A Ninja Forms form model.
+     * @return array<string,mixed>
+     */
+    protected static function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->get_id(),
+            'title' => $raw_form->get_setting( 'title' ),
+        );
+    }
+
+    /**
+     * Returns the field models for a single Ninja Forms form.
      *
      * @param string $form_id The Ninja Forms form id.
-     * @return array<int,array<string,string>>
+     * @return iterable
      */
-    public static function get_form_fields( $form_id ) {
-        if ( ! self::is_available() ) {
-            return array();
-        }
+    protected static function fetch_form_fields( $form_id ) {
+        return Ninja_Forms()->form( $form_id )->get_fields();
+    }
 
-        $fields = array();
-        foreach ( Ninja_Forms()->form( $form_id )->get_fields() as $field ) {
-            $key = (string) $field->get_setting( 'key' );
-            if ( '' === $key ) {
-                continue;
-            }
-            $type = (string) $field->get_setting( 'type' );
-            if ( in_array( $type, array( 'submit', 'hr', 'html' ), true ) ) {
-                continue;
-            }
-            $label    = (string) $field->get_setting( 'label' );
-            $fields[] = array(
-                'id'    => $key,
-                'label' => '' !== $label ? $label : $key,
-                'type'  => $type,
-            );
+    /**
+     * Maps a Ninja Forms field model to a field, skipping layout fields.
+     *
+     * The field id is the field key, the same key used to read the submitted
+     * value from the form data at event time.
+     *
+     * @param mixed $raw_field A Ninja Forms field model.
+     * @return array<string,mixed>|null
+     */
+    protected static function map_field( $raw_field ) {
+        $key = (string) $raw_field->get_setting( 'key' );
+        if ( '' === $key ) {
+            return null;
         }
-
-        return $fields;
+        $type = (string) $raw_field->get_setting( 'type' );
+        if ( in_array( $type, array( 'submit', 'hr', 'html' ), true ) ) {
+            return null;
+        }
+        return array(
+            'id'    => $key,
+            'label' => $raw_field->get_setting( 'label' ),
+            'type'  => $type,
+        );
     }
 
     /**

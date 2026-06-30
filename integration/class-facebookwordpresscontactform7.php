@@ -40,18 +40,9 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 /**
  * FacebookWordpressContactForm7 class.
  */
-class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
+class FacebookWordpressContactForm7 extends FacebookWordpressFormIntegrationBase {
     const PLUGIN_FILE   = 'contact-form-7/wp-contact-form-7.php';
     const TRACKING_NAME = 'contact-form-7';
-
-    /**
-     * Whether this integration supports the admin Field Mapping screen.
-     *
-     * @return bool
-     */
-    public static function supports_field_mapping() {
-        return true;
-    }
 
     /**
      * Whether Contact Form 7 is active.
@@ -72,65 +63,60 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
     }
 
     /**
-     * Lists all Contact Form 7 forms.
+     * Returns all Contact Form 7 form objects.
      *
-     * @return array<int,array<string,string>>
+     * @return iterable
      */
-    public static function get_forms() {
-        if ( ! self::is_available() ) {
-            return array();
-        }
-
-        $forms = array();
-        foreach ( \WPCF7_ContactForm::find() as $form ) {
-            $forms[] = array(
-                'id'    => (string) $form->id(),
-                'title' => (string) $form->title(),
-            );
-        }
-
-        return $forms;
+    protected static function fetch_forms() {
+        return \WPCF7_ContactForm::find();
     }
 
     /**
-     * Lists the fields of a single Contact Form 7 form.
+     * Maps a Contact Form 7 form object to id + title.
      *
-     * The field id is the tag name, which is the same key used to read the
-     * submitted value from $_POST at event time.
+     * @param mixed $raw_form A WPCF7_ContactForm instance.
+     * @return array<string,mixed>
+     */
+    protected static function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->id(),
+            'title' => $raw_form->title(),
+        );
+    }
+
+    /**
+     * Returns the form tags for a single Contact Form 7 form.
      *
      * @param string $form_id The Contact Form 7 form id.
-     * @return array<int,array<string,string>>
+     * @return iterable
      */
-    public static function get_form_fields( $form_id ) {
-        if ( ! self::is_available() ) {
-            return array();
-        }
-
+    protected static function fetch_form_fields( $form_id ) {
         $form = \WPCF7_ContactForm::get_instance( $form_id );
-        if ( empty( $form ) ) {
-            return array();
-        }
+        return empty( $form ) ? array() : $form->scan_form_tags();
+    }
 
-        $fields = array();
-        $seen   = array();
-        foreach ( $form->scan_form_tags() as $tag ) {
-            $name = isset( $tag->name ) ? (string) $tag->name : '';
-            if ( '' === $name || isset( $seen[ $name ] ) ) {
-                continue;
-            }
-            $basetype = isset( $tag->basetype ) ? (string) $tag->basetype : '';
-            if ( in_array( $basetype, array( 'submit', '' ), true ) ) {
-                continue;
-            }
-            $seen[ $name ] = true;
-            $fields[]      = array(
-                'id'    => $name,
-                'label' => $name,
-                'type'  => $basetype,
-            );
+    /**
+     * Maps a Contact Form 7 tag to a field, skipping submit/unnamed tags.
+     *
+     * The field id is the tag name, the same key used to read the submitted
+     * value from $_POST at event time.
+     *
+     * @param mixed $raw_field A Contact Form 7 form tag.
+     * @return array<string,mixed>|null
+     */
+    protected static function map_field( $raw_field ) {
+        $name     = isset( $raw_field->name ) ? (string) $raw_field->name : '';
+        $basetype = isset( $raw_field->basetype )
+            ? (string) $raw_field->basetype : '';
+        if ( '' === $name
+            || in_array( $basetype, array( 'submit', '' ), true ) ) {
+            return null;
         }
-
-        return $fields;
+        return array(
+            'id'    => $name,
+            'label' => $name,
+            'type'  => $basetype,
+        );
     }
 
     /**
