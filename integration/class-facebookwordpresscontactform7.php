@@ -293,7 +293,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressFormIntegrationBase
             return $data;
         }
 
-        $mapped = FormFieldMapper::resolve(
+        $mapped = ( new FormFieldMapper() )->resolve(
             self::TRACKING_NAME,
             $form_id,
             function ( $field_id ) {

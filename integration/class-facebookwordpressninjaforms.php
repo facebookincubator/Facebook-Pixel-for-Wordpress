@@ -342,7 +342,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressFormIntegrationBase {
             }
         }
 
-        $mapped = FormFieldMapper::resolve(
+        $mapped = ( new FormFieldMapper() )->resolve(
             self::TRACKING_NAME,
             $form_id,
             function ( $field_id ) use ( $values ) {

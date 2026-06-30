@@ -357,7 +357,7 @@ class FacebookWordpressWPForms extends FacebookWordpressFormIntegrationBase {
         }
 
         $fields = $entry['fields'];
-        $mapped = FormFieldMapper::resolve(
+        $mapped = ( new FormFieldMapper() )->resolve(
             self::TRACKING_NAME,
             $form_id,
             function ( $field_id ) use ( $fields ) {
