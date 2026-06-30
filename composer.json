@@ -31,7 +31,8 @@
       "./"
     ],
     "exclude-from-classmap": [
-      "/build/"
+      "/build/",
+      "/vendor/yoast/phpunit-polyfills/"
     ]
   },
   "autoload-dev": {

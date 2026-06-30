@@ -38,26 +38,21 @@ require_once $_functions;
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
 /**
- * Main plugin files for the form plugins we support, relative to the WordPress
- * plugins directory. Each is loaded only if present so the suite degrades
- * gracefully when a plugin isn't installed.
- */
-$fb_form_plugins = array(
-    'contact-form-7/wp-contact-form-7.php',
-    'wpforms-lite/wpforms.php',
-    'ninja-forms/ninja-forms.php',
-    'formidable/formidable.php',
-);
-
-/**
- * Loads the form plugins and this plugin before WordPress finishes loading.
+ * Loads the supported form plugins and this plugin before WordPress finishes
+ * loading. Each form plugin is loaded only if present, so the suite degrades
+ * gracefully when one isn't installed.
  *
  * @return void
  */
 function _fb_manually_load_plugins() {
-    global $fb_form_plugins;
+    $form_plugins = array(
+        'contact-form-7/wp-contact-form-7.php',
+        'wpforms-lite/wpforms.php',
+        'ninja-forms/ninja-forms.php',
+        'formidable/formidable.php',
+    );
 
-    foreach ( $fb_form_plugins as $plugin ) {
+    foreach ( $form_plugins as $plugin ) {
         $path = WP_PLUGIN_DIR . '/' . $plugin;
         if ( file_exists( $path ) ) {
             require_once $path;
