@@ -68,4 +68,13 @@ function _fb_manually_load_plugins() {
 }
 tests_add_filter( 'muplugins_loaded', '_fb_manually_load_plugins' );
 
+// The WordPress test suite requires the Yoast PHPUnit Polyfills; point it at
+// the Composer-installed copy.
+if ( ! defined( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH' ) ) {
+    define(
+        'WP_TESTS_PHPUNIT_POLYFILLS_PATH',
+        dirname( __DIR__ ) . '/vendor/yoast/phpunit-polyfills'
+    );
+}
+
 require_once $_tests_dir . '/includes/bootstrap.php';
