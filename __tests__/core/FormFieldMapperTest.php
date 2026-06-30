@@ -20,10 +20,14 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\FormFieldMapper;
+use FacebookPixelPlugin\Tests\Mocks\InMemoryFormFieldMappingStore;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
  * FormFieldMapperTest class.
+ *
+ * The mapper is exercised with an injected in-memory store, so these are
+ * plain unit tests with no WordPress option mocking.
  *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
@@ -31,51 +35,25 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 final class FormFieldMapperTest extends FacebookWordpressTestBase {
 
     /**
-     * Captured value passed to the last update_option call.
+     * Builds a mapper backed by an in-memory store seeded with $data.
      *
-     * @var mixed
+     * @param array $data Initial store contents.
+     * @return array An array of [ FormFieldMapper, InMemoryFormFieldMappingStore ].
      */
-    private $saved_option;
-
-    /**
-     * Mocks get_option to return $store and update_option to capture writes.
-     *
-     * @param array $store The mapping store to return from get_option.
-     * @return void
-     */
-    private function mockOptionStore( $store ) {
-        $this->saved_option = null;
-        \WP_Mock::userFunction(
-            'get_option',
-            array(
-                'return' => function ( $key, $default = false ) use ( $store ) {
-                    return $store;
-                },
-            )
-        );
-        \WP_Mock::userFunction(
-            'update_option',
-            array(
-                'return' => function ( $key, $value ) {
-                    $this->saved_option = $value;
-                    return true;
-                },
-            )
-        );
+    private function makeMapper( $data = array() ) {
+        $store  = new InMemoryFormFieldMappingStore( $data );
+        $mapper = new FormFieldMapper( $store );
+        return array( $mapper, $store );
     }
 
     /**
-     * get_all returns an empty array when the option is not an array.
+     * get_all returns an empty array when the store is empty.
      *
      * @return void
      */
-    public function testGetAllReturnsArrayWhenOptionMissing() {
-        \WP_Mock::userFunction(
-            'get_option',
-            array( 'return' => false )
-        );
-
-        $this->assertSame( array(), FormFieldMapper::get_all() );
+    public function testGetAllReturnsArrayWhenStoreEmpty() {
+        list( $mapper ) = $this->makeMapper();
+        $this->assertSame( array(), $mapper->get_all() );
     }
 
     /**
@@ -84,7 +62,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testGetMappingsReturnsStoredMappings() {
-        $this->mockOptionStore(
+        list( $mapper ) = $this->makeMapper(
             array(
                 'contact-form-7' => array(
                     '123' => array(
@@ -98,18 +76,16 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             )
         );
 
-        $mappings = FormFieldMapper::get_mappings( 'contact-form-7', '123' );
-
         $this->assertEquals(
             array(
                 'FN_1' => 'first_name',
                 'EM_2' => 'email',
             ),
-            $mappings
+            $mapper->get_mappings( 'contact-form-7', '123' )
         );
         $this->assertSame(
             array(),
-            FormFieldMapper::get_mappings( 'contact-form-7', '999' )
+            $mapper->get_mappings( 'contact-form-7', '999' )
         );
     }
 
@@ -119,9 +95,9 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testSaveFormMappingUpsertsAndDropsInvalid() {
-        $this->mockOptionStore( array() );
+        list( $mapper, $store ) = $this->makeMapper();
 
-        FormFieldMapper::save_form_mapping(
+        $mapper->save_form_mapping(
             'wpforms-lite',
             7,
             'Contact',
@@ -144,7 +120,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
                     ),
                 ),
             ),
-            $this->saved_option
+            $store->read()
         );
     }
 
@@ -154,7 +130,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testSaveFormMappingReplacesExistingForm() {
-        $this->mockOptionStore(
+        list( $mapper, $store ) = $this->makeMapper(
             array(
                 'contact-form-7' => array(
                     '123' => array(
@@ -165,7 +141,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             )
         );
 
-        FormFieldMapper::save_form_mapping(
+        $mapper->save_form_mapping(
             'contact-form-7',
             '123',
             'new title',
@@ -181,7 +157,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
                     ),
                 ),
             ),
-            $this->saved_option
+            $store->read()
         );
     }
 
@@ -191,7 +167,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testSaveEmptyMappingRemovesEntry() {
-        $this->mockOptionStore(
+        list( $mapper, $store ) = $this->makeMapper(
             array(
                 'contact-form-7' => array(
                     '123' => array(
@@ -202,14 +178,14 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             )
         );
 
-        FormFieldMapper::save_form_mapping(
+        $mapper->save_form_mapping(
             'contact-form-7',
             '123',
             'wform1',
             array( 'X' => 'invalid' )
         );
 
-        $this->assertSame( array(), $this->saved_option );
+        $this->assertSame( array(), $store->read() );
     }
 
     /**
@@ -218,7 +194,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testDeleteFormMapping() {
-        $this->mockOptionStore(
+        list( $mapper, $store ) = $this->makeMapper(
             array(
                 'contact-form-7' => array(
                     '123' => array(
@@ -229,9 +205,9 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             )
         );
 
-        FormFieldMapper::delete_form_mapping( 'contact-form-7', '123' );
+        $mapper->delete_form_mapping( 'contact-form-7', '123' );
 
-        $this->assertSame( array(), $this->saved_option );
+        $this->assertSame( array(), $store->read() );
     }
 
     /**
@@ -240,7 +216,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testGetFlatList() {
-        $this->mockOptionStore(
+        list( $mapper ) = $this->makeMapper(
             array(
                 'contact-form-7' => array(
                     '123' => array(
@@ -260,7 +236,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             )
         );
 
-        $rows = FormFieldMapper::get_flat_list();
+        $rows = $mapper->get_flat_list();
 
         $this->assertCount( 2, $rows );
         $this->assertEquals(
@@ -282,15 +258,15 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testResolveMapsValues() {
-        $this->mockOptionStore(
+        list( $mapper ) = $this->makeMapper(
             array(
                 'contact-form-7' => array(
                     '123' => array(
                         'form_title' => 'wform1',
                         'mappings'   => array(
-                            'FN_1'   => 'first_name',
-                            'EM_2'   => 'email',
-                            'EMPTY'  => 'phone',
+                            'FN_1'  => 'first_name',
+                            'EM_2'  => 'email',
+                            'EMPTY' => 'phone',
                         ),
                     ),
                 ),
@@ -303,7 +279,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             'EMPTY' => '',
         );
 
-        $resolved = FormFieldMapper::resolve(
+        $resolved = $mapper->resolve(
             'contact-form-7',
             '123',
             function ( $field_id ) use ( $submitted ) {
@@ -327,7 +303,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testResolveSplitsFullName() {
-        $this->mockOptionStore(
+        list( $mapper ) = $this->makeMapper(
             array(
                 'contact-form-7' => array(
                     '123' => array(
@@ -338,7 +314,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             )
         );
 
-        $resolved = FormFieldMapper::resolve(
+        $resolved = $mapper->resolve(
             'contact-form-7',
             '123',
             function ( $field_id ) {
@@ -361,9 +337,9 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testResolveNoMapping() {
-        $this->mockOptionStore( array() );
+        list( $mapper ) = $this->makeMapper();
 
-        $resolved = FormFieldMapper::resolve(
+        $resolved = $mapper->resolve(
             'contact-form-7',
             '123',
             function ( $field_id ) {

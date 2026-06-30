@@ -35,6 +35,26 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * Class FormFieldMapper
  */
 class FormFieldMapper {
+    /**
+     * Storage backend for the mappings.
+     *
+     * @var FormFieldMappingStore
+     */
+    private $store;
+
+    /**
+     * Constructor.
+     *
+     * @param FormFieldMappingStore|null $store Optional storage backend.
+     *                                          Defaults to the WordPress
+     *                                          option-backed store. Inject a
+     *                                          fake in tests.
+     */
+    public function __construct( $store = null ) {
+        $this->store = $store instanceof FormFieldMappingStore
+            ? $store
+            : new OptionFormFieldMappingStore();
+    }
 
     /**
      * Returns the full mapping store.
@@ -51,12 +71,8 @@ class FormFieldMapper {
      *
      * @return array The full mapping store.
      */
-    public static function get_all() {
-        $stored = \get_option(
-            FacebookPluginConfig::FORM_FIELD_MAPPINGS_KEY,
-            array()
-        );
-        return is_array( $stored ) ? $stored : array();
+    public function get_all() {
+        return $this->store->read();
     }
 
     /**
@@ -66,8 +82,8 @@ class FormFieldMapper {
      * @param string $form_id       The native form id.
      * @return array|null The entry, or null if none is stored.
      */
-    public static function get_form_entry( $tracking_name, $form_id ) {
-        $all     = self::get_all();
+    public function get_form_entry( $tracking_name, $form_id ) {
+        $all     = $this->get_all();
         $form_id = (string) $form_id;
         if ( isset( $all[ $tracking_name ][ $form_id ] ) ) {
             return $all[ $tracking_name ][ $form_id ];
@@ -82,8 +98,8 @@ class FormFieldMapper {
      * @param string $form_id       The native form id.
      * @return array<string,string> The mappings, or an empty array.
      */
-    public static function get_mappings( $tracking_name, $form_id ) {
-        $entry = self::get_form_entry( $tracking_name, $form_id );
+    public function get_mappings( $tracking_name, $form_id ) {
+        $entry = $this->get_form_entry( $tracking_name, $form_id );
         if ( ! empty( $entry['mappings'] ) && is_array( $entry['mappings'] ) ) {
             return $entry['mappings'];
         }
@@ -97,9 +113,9 @@ class FormFieldMapper {
      *
      * @return array<int,array<string,mixed>>
      */
-    public static function get_flat_list() {
+    public function get_flat_list() {
         $rows = array();
-        foreach ( self::get_all() as $tracking_name => $forms ) {
+        foreach ( $this->get_all() as $tracking_name => $forms ) {
             if ( ! is_array( $forms ) ) {
                 continue;
             }
@@ -132,7 +148,7 @@ class FormFieldMapper {
      * @param array<string,string> $mappings      field_id => standard_field.
      * @return bool True on success.
      */
-    public static function save_form_mapping(
+    public function save_form_mapping(
         $tracking_name,
         $form_id,
         $form_title,
@@ -156,7 +172,7 @@ class FormFieldMapper {
             }
         }
 
-        $all = self::get_all();
+        $all = $this->get_all();
 
         if ( empty( $clean ) ) {
             // Nothing valid to store — remove any existing entry.
@@ -177,10 +193,7 @@ class FormFieldMapper {
             );
         }
 
-        return \update_option(
-            FacebookPluginConfig::FORM_FIELD_MAPPINGS_KEY,
-            $all
-        );
+        return $this->store->write( $all );
     }
 
     /**
@@ -190,10 +203,10 @@ class FormFieldMapper {
      * @param string $form_id       The native form id.
      * @return bool True on success (including when nothing existed).
      */
-    public static function delete_form_mapping( $tracking_name, $form_id ) {
+    public function delete_form_mapping( $tracking_name, $form_id ) {
         $tracking_name = (string) $tracking_name;
         $form_id       = (string) $form_id;
-        $all           = self::get_all();
+        $all           = $this->get_all();
 
         if ( ! isset( $all[ $tracking_name ][ $form_id ] ) ) {
             return true;
@@ -204,10 +217,7 @@ class FormFieldMapper {
             unset( $all[ $tracking_name ] );
         }
 
-        return \update_option(
-            FacebookPluginConfig::FORM_FIELD_MAPPINGS_KEY,
-            $all
-        );
+        return $this->store->write( $all );
     }
 
     /**
@@ -224,8 +234,8 @@ class FormFieldMapper {
      * @param callable $value_getter  fn( string $field_id ): mixed.
      * @return array<string,mixed> Standard-keyed resolved data.
      */
-    public static function resolve( $tracking_name, $form_id, $value_getter ) {
-        $mappings = self::get_mappings( $tracking_name, $form_id );
+    public function resolve( $tracking_name, $form_id, $value_getter ) {
+        $mappings = $this->get_mappings( $tracking_name, $form_id );
         $result   = array();
 
         foreach ( $mappings as $field_id => $standard ) {
