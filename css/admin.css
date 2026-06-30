@@ -1140,3 +1140,62 @@
     margin: 0px 10px 10px 0px;
   }
 }
+
+/* Form Field Mapping section */
+#fb-field-mapping {
+  margin: 10px 10px 20px 0;
+  padding: 16px;
+}
+
+#fb-field-mapping h4 {
+  margin: 18px 0 8px;
+}
+
+.fb-mapping-list,
+.fb-mapping-fields {
+  margin-bottom: 12px;
+  max-width: 760px;
+}
+
+.fb-mapping-list th,
+.fb-mapping-fields th {
+  text-align: left;
+}
+
+.fb-mapping-row {
+  margin-bottom: 12px;
+  max-width: 760px;
+}
+
+.fb-mapping-row label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.fb-mapping-row select,
+.fb-mapping-target {
+  min-width: 280px;
+  max-width: 100%;
+}
+
+.fb-mapping-actions {
+  margin-top: 12px;
+}
+
+#fb-mapping-status {
+  margin-left: 10px;
+}
+
+.fb-mapping-edit,
+.fb-mapping-delete {
+  text-decoration: none;
+}
+
+.fb-mapping-empty {
+  font-style: italic;
+}
+
+#fb-field-mapping .hidden {
+  display: none;
+}

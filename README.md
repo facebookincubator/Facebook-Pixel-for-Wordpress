@@ -41,6 +41,46 @@ https://www.facebook.com/business/help/881403525362441
 
 You can reference to integration/FacebookWordpressContactForm7.php and tests/FacebookWordpressContactForm7Test.php as an example
 
+# Form Field Mapping
+
+The plugin can map a form's fields to the standard Pixel / Conversions API
+fields used for matching (e.g. `email`, `first_name`, `phone`). Site admins
+configure this under **Settings → Meta → Form Field Mapping**: pick a supported
+form plugin, pick a form, then map each field to a standard field. A saved
+mapping takes priority over the plugin's automatic field detection; unmapped
+fields fall back to auto-detection. One mapping is stored per form.
+
+## Adding custom target fields (filter)
+
+The list of standard target fields shown in the mapping screen is extensible
+via the `facebook_pixel_form_mapping_target_fields` filter. It receives the
+fields grouped by section label (`field_key => label`) and must return the same
+shape. Use it to add, relabel, or remove target fields or whole groups:
+
+```php
+add_filter(
+    'facebook_pixel_form_mapping_target_fields',
+    function ( $groups ) {
+        // Relabel an existing field.
+        $groups['User Data']['email'] = 'Email address';
+
+        // Add a new group with a custom field.
+        $groups['Loyalty'] = array(
+            'loyalty_tier' => 'Loyalty Tier',
+        );
+
+        return $groups;
+    }
+);
+```
+
+Whatever the filter returns becomes both the options rendered in the UI and the
+set of keys accepted as valid mapping targets. A field whose key is one of the
+plugin's built-in standard keys (`email`, `first_name`, `value`, …) is
+forwarded to the Pixel / Conversions API event. A brand-new custom key will
+appear in the UI and be stored, but is only transmitted once the event pipeline
+(`ServerEventFactory`) is taught to handle it.
+
 # Testing
 
 There are two test suites:
