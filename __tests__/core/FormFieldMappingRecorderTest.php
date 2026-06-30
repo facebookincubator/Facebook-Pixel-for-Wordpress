@@ -23,15 +23,40 @@ namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
+use FacebookPixelPlugin\Core\FormFieldMapper;
+use FacebookPixelPlugin\Tests\Mocks\InMemoryFormFieldMappingStore;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
  * FormFieldMappingRecorderTest class.
  *
+ * The recorder is given a mapper backed by an in-memory store, so the
+ * handlers can be tested without WordPress option mocking.
+ *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
 final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
+
+    /**
+     * In-memory store backing the injected mapper.
+     *
+     * @var InMemoryFormFieldMappingStore
+     */
+    private $store;
+
+    /**
+     * Builds a recorder whose mapper is backed by an in-memory store.
+     *
+     * @param array $seed Initial mapping store contents.
+     * @return FacebookWordpressSettingsRecorder
+     */
+    private function makeRecorder( $seed = array() ) {
+        $this->store = new InMemoryFormFieldMappingStore( $seed );
+        return new FacebookWordpressSettingsRecorder(
+            new FormFieldMapper( $this->store )
+        );
+    }
 
     /**
      * Mocks the WordPress functions used by the mapping handlers.
@@ -68,14 +93,6 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
                 },
             )
         );
-        \WP_Mock::userFunction(
-            'get_option',
-            array( 'return' => array() )
-        );
-        \WP_Mock::userFunction(
-            'update_option',
-            array( 'return' => true )
-        );
     }
 
     /**
@@ -84,7 +101,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testMappingAjaxActionsAdded() {
-        $recorder = new FacebookWordpressSettingsRecorder();
+        $recorder = $this->makeRecorder();
         \WP_Mock::expectActionAdded(
             'wp_ajax_' . FacebookPluginConfig::GET_MAPPING_FORMS_ACTION_NAME,
             array( $recorder, 'get_mapping_forms' )
@@ -114,7 +131,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
      */
     public function testGetMappingFormsUnauthorized() {
         $this->mockMappingFunctions( false );
-        $recorder = new FacebookWordpressSettingsRecorder();
+        $recorder = $this->makeRecorder();
 
         $res = $recorder->get_mapping_forms();
 
@@ -129,7 +146,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     public function testGetMappingFormsInvalidIntegration() {
         $this->mockMappingFunctions();
         $_POST['integration'] = 'not-a-real-integration';
-        $recorder             = new FacebookWordpressSettingsRecorder();
+        $recorder             = $this->makeRecorder();
 
         $res = $recorder->get_mapping_forms();
 
@@ -144,7 +161,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     public function testGetMappingFormsSuccess() {
         $this->mockMappingFunctions();
         $_POST['integration'] = 'contact-form-7';
-        $recorder             = new FacebookWordpressSettingsRecorder();
+        $recorder             = $this->makeRecorder();
 
         $res = $recorder->get_mapping_forms();
 
@@ -162,7 +179,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $this->mockMappingFunctions();
         $_POST['integration'] = 'contact-form-7';
         $_POST['form_id']     = '';
-        $recorder             = new FacebookWordpressSettingsRecorder();
+        $recorder             = $this->makeRecorder();
 
         $res = $recorder->get_mapping_fields();
 
@@ -178,17 +195,29 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $this->mockMappingFunctions();
         $_POST['integration'] = 'contact-form-7';
         $_POST['form_id']     = '123';
-        $recorder             = new FacebookWordpressSettingsRecorder();
+        $recorder             = $this->makeRecorder(
+            array(
+                'contact-form-7' => array(
+                    '123' => array(
+                        'form_title' => 'wform1',
+                        'mappings'   => array( 'your-email' => 'email' ),
+                    ),
+                ),
+            )
+        );
 
         $res = $recorder->get_mapping_fields();
 
         $this->assertTrue( $res['success'] );
         $this->assertArrayHasKey( 'fields', $res['msg'] );
-        $this->assertArrayHasKey( 'mapping', $res['msg'] );
+        $this->assertEquals(
+            array( 'your-email' => 'email' ),
+            $res['msg']['mapping']
+        );
     }
 
     /**
-     * save_field_mapping persists a valid mapping and returns the list.
+     * save_field_mapping persists a valid mapping to the store.
      *
      * @return void
      */
@@ -203,12 +232,20 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
                 'EM_2' => 'email',
             )
         );
-        $recorder = new FacebookWordpressSettingsRecorder();
+        $recorder = $this->makeRecorder();
 
         $res = $recorder->save_field_mapping();
 
         $this->assertTrue( $res['success'] );
         $this->assertArrayHasKey( 'list', $res['msg'] );
+        // The mapping was actually written to the store.
+        $this->assertEquals(
+            array(
+                'FN_1' => 'first_name',
+                'EM_2' => 'email',
+            ),
+            $this->store->read()['contact-form-7']['123']['mappings']
+        );
     }
 
     /**
@@ -221,15 +258,16 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $_POST['integration'] = 'bogus';
         $_POST['form_id']     = '123';
         $_POST['mapping']     = json_encode( array( 'FN_1' => 'first_name' ) );
-        $recorder             = new FacebookWordpressSettingsRecorder();
+        $recorder             = $this->makeRecorder();
 
         $res = $recorder->save_field_mapping();
 
         $this->assertFalse( $res['success'] );
+        $this->assertSame( array(), $this->store->read() );
     }
 
     /**
-     * delete_field_mapping succeeds for a valid request.
+     * delete_field_mapping removes a stored mapping.
      *
      * @return void
      */
@@ -237,12 +275,22 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $this->mockMappingFunctions();
         $_POST['integration'] = 'contact-form-7';
         $_POST['form_id']     = '123';
-        $recorder             = new FacebookWordpressSettingsRecorder();
+        $recorder             = $this->makeRecorder(
+            array(
+                'contact-form-7' => array(
+                    '123' => array(
+                        'form_title' => 'wform1',
+                        'mappings'   => array( 'FN_1' => 'first_name' ),
+                    ),
+                ),
+            )
+        );
 
         $res = $recorder->delete_field_mapping();
 
         $this->assertTrue( $res['success'] );
         $this->assertArrayHasKey( 'list', $res['msg'] );
+        $this->assertSame( array(), $this->store->read() );
     }
 
     /**
@@ -254,7 +302,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $this->mockMappingFunctions();
         $_POST['integration'] = '';
         $_POST['form_id']     = '';
-        $recorder             = new FacebookWordpressSettingsRecorder();
+        $recorder             = $this->makeRecorder();
 
         $res = $recorder->delete_field_mapping();
 

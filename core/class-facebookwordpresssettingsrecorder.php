@@ -21,6 +21,26 @@ namespace FacebookPixelPlugin\Core;
 class FacebookWordpressSettingsRecorder {
 
     /**
+     * Mapper used for the form field mapping AJAX handlers.
+     *
+     * @var FormFieldMapper
+     */
+    private $field_mapper;
+
+    /**
+     * Constructor.
+     *
+     * @param FormFieldMapper|null $field_mapper Optional mapper. Defaults to a
+     *                                           WordPress option-backed mapper;
+     *                                           inject a fake in tests.
+     */
+    public function __construct( $field_mapper = null ) {
+        $this->field_mapper = $field_mapper instanceof FormFieldMapper
+            ? $field_mapper
+            : new FormFieldMapper();
+    }
+
+    /**
      * Registers ajax actions for saving FBE,
      * CAPI integration status, CAPI events filter
      * and CAPI PII caching status.
@@ -183,7 +203,7 @@ class FacebookWordpressSettingsRecorder {
         return $this->handle_success_request(
             array(
                 'fields'  => $class::get_form_fields( $form_id ),
-                'mapping' => FormFieldMapper::get_mappings(
+                'mapping' => $this->field_mapper->get_mappings(
                     $tracking_name,
                     $form_id
                 ),
@@ -245,7 +265,7 @@ class FacebookWordpressSettingsRecorder {
             $mapping[ $field_id ] = $standard;
         }
 
-        FormFieldMapper::save_form_mapping(
+        $this->field_mapper->save_form_mapping(
             $tracking_name,
             $form_id,
             $form_title,
@@ -253,7 +273,7 @@ class FacebookWordpressSettingsRecorder {
         );
 
         return $this->handle_success_request(
-            array( 'list' => FormFieldMapper::get_flat_list() )
+            array( 'list' => $this->field_mapper->get_flat_list() )
         );
     }
 
@@ -282,10 +302,10 @@ class FacebookWordpressSettingsRecorder {
             return $this->handle_invalid_request();
         }
 
-        FormFieldMapper::delete_form_mapping( $tracking_name, $form_id );
+        $this->field_mapper->delete_form_mapping( $tracking_name, $form_id );
 
         return $this->handle_success_request(
-            array( 'list' => FormFieldMapper::get_flat_list() )
+            array( 'list' => $this->field_mapper->get_flat_list() )
         );
     }
 
