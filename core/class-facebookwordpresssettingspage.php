@@ -50,17 +50,35 @@ class FacebookWordpressSettingsPage {
     private $field_mapper;
 
     /**
+     * Registry of standard target fields used to render the mapping UI.
+     *
+     * @var FormFieldMappingConfig
+     */
+    private $field_config;
+
+    /**
      * Registers the plugin's settings page, and adds the necessary hooks
      * for registering the plugin's scripts, notices, and menu items.
      *
-     * @param string               $plugin_name  The name of the plugin.
-     * @param FormFieldMapper|null $field_mapper Optional mapper. Defaults to a
-     *                                           WordPress option-backed mapper.
+     * @param string                      $plugin_name  The name of the plugin.
+     * @param FormFieldMapper|null        $field_mapper Optional mapper.
+     *                                                  Defaults to a WordPress
+     *                                                  option-backed mapper.
+     * @param FormFieldMappingConfig|null $field_config Optional target-field
+     *                                                  registry. Defaults to
+     *                                                  the standard registry.
      */
-    public function __construct( $plugin_name, $field_mapper = null ) {
+    public function __construct(
+        $plugin_name,
+        $field_mapper = null,
+        $field_config = null
+    ) {
         $this->field_mapper = $field_mapper instanceof FormFieldMapper
             ? $field_mapper
             : new FormFieldMapper();
+        $this->field_config = $field_config instanceof FormFieldMappingConfig
+            ? $field_config
+            : new FormFieldMappingConfig();
 
         add_filter(
             'plugin_action_links_' . $plugin_name,
@@ -723,7 +741,7 @@ class FacebookWordpressSettingsPage {
                 FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME,
             'integrations'    => $this->get_available_mapping_integrations(),
             'groupedFields'   =>
-                FormFieldMappingConfig::get_grouped_fields(),
+                $this->field_config->get_grouped_fields(),
             'list'            => $this->field_mapper->get_flat_list(),
             'saveError'       =>
                 FacebookPluginConfig::FIELD_MAPPING_SAVE_ERROR,
