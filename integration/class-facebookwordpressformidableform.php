@@ -41,9 +41,81 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 /**
  * FacebookWordpressFormidableForm class.
  */
-class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
+class FacebookWordpressFormidableForm extends FacebookWordpressFormIntegrationBase {
   const PLUGIN_FILE   = 'formidable/formidable.php';
   const TRACKING_NAME = 'formidable-lite';
+
+    /**
+     * Whether Formidable Forms is active.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return class_exists( '\FrmForm' ) && class_exists( '\FrmField' );
+    }
+
+    /**
+     * Human-readable label for the mapping UI.
+     *
+     * @return string
+     */
+    public static function get_integration_label() {
+        return 'Formidable Forms';
+    }
+
+    /**
+     * Returns all published Formidable form objects.
+     *
+     * @return iterable
+     */
+    protected static function fetch_forms() {
+        return \FrmForm::get_published_forms();
+    }
+
+    /**
+     * Maps a Formidable form object to id + title.
+     *
+     * @param mixed $raw_form A Formidable form object.
+     * @return array<string,mixed>
+     */
+    protected static function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->id,
+            'title' => $raw_form->name,
+        );
+    }
+
+    /**
+     * Returns the field objects for a single Formidable form.
+     *
+     * @param string $form_id The Formidable form id.
+     * @return iterable
+     */
+    protected static function fetch_form_fields( $form_id ) {
+        return \FrmField::get_all_for_form( $form_id );
+    }
+
+    /**
+     * Maps a Formidable field object to a field, skipping layout fields.
+     *
+     * The field id is the numeric field id, the same key used to resolve the
+     * submitted value from the entry field values at event time.
+     *
+     * @param mixed $raw_field A Formidable field object.
+     * @return array<string,mixed>|null
+     */
+    protected static function map_field( $raw_field ) {
+        $type = isset( $raw_field->type ) ? (string) $raw_field->type : '';
+        $skip = array( 'divider', 'html', 'captcha', 'break', 'end_divider' );
+        if ( in_array( $type, $skip, true ) ) {
+            return null;
+        }
+        return array(
+            'id'    => $raw_field->id,
+            'label' => isset( $raw_field->name ) ? $raw_field->name : '',
+            'type'  => $type,
+        );
+    }
 
     /**
      * Injects pixel code for the Formidable Form plugin.

@@ -40,9 +40,93 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 /**
  * FacebookWordpressCalderaForm class.
  */
-class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
+class FacebookWordpressCalderaForm extends FacebookWordpressFormIntegrationBase {
     const PLUGIN_FILE   = 'caldera-forms/caldera-core.php';
     const TRACKING_NAME = 'caldera-forms';
+
+    /**
+     * Whether Caldera Forms is active.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return class_exists( '\Caldera_Forms_Forms' );
+    }
+
+    /**
+     * Human-readable label for the mapping UI.
+     *
+     * @return string
+     */
+    public static function get_integration_label() {
+        return 'Caldera Forms';
+    }
+
+    /**
+     * Returns all Caldera form config arrays.
+     *
+     * @return iterable
+     */
+    protected static function fetch_forms() {
+        return \Caldera_Forms_Forms::get_forms( true, true );
+    }
+
+    /**
+     * Maps a Caldera form config to id + title.
+     *
+     * @param mixed $raw_form A Caldera form config array.
+     * @return array<string,mixed>
+     */
+    protected static function map_form( $raw_form ) {
+        return array(
+            'id'    => isset( $raw_form['ID'] ) ? $raw_form['ID'] : '',
+            'title' => isset( $raw_form['name'] ) ? $raw_form['name'] : '',
+        );
+    }
+
+    /**
+     * Returns the field config arrays for a single Caldera form.
+     *
+     * @param string $form_id The Caldera form id.
+     * @return iterable
+     */
+    protected static function fetch_form_fields( $form_id ) {
+        $form = \Caldera_Forms_Forms::get_form( $form_id );
+        return ( empty( $form['fields'] ) || ! is_array( $form['fields'] ) )
+            ? array()
+            : $form['fields'];
+    }
+
+    /**
+     * Maps a Caldera field config to a field, skipping non-input fields.
+     *
+     * The field id is the Caldera field ID, the same key used to read the
+     * submitted value from $_POST at event time.
+     *
+     * @param mixed $raw_field A Caldera field config array.
+     * @return array<string,mixed>|null
+     */
+    protected static function map_field( $raw_field ) {
+        if ( empty( $raw_field['ID'] ) ) {
+            return null;
+        }
+        $type = isset( $raw_field['type'] ) ? (string) $raw_field['type'] : '';
+        if ( in_array(
+            $type,
+            array( 'button', 'html', 'section_break' ),
+            true
+        ) ) {
+            return null;
+        }
+        $label = isset( $raw_field['label'] ) && '' !== $raw_field['label']
+            ? (string) $raw_field['label']
+            : ( isset( $raw_field['slug'] ) ? (string) $raw_field['slug'] : '' );
+        return array(
+            'id'    => $raw_field['ID'],
+            'label' => $label,
+            'type'  => $type,
+        );
+    }
 
     /**
      * Hook into Caldera Forms to inject the Pixel code.

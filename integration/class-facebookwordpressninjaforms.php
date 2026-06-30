@@ -41,9 +41,84 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 /**
  * FacebookWordpressNinjaForms class.
  */
-class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
+class FacebookWordpressNinjaForms extends FacebookWordpressFormIntegrationBase {
     const PLUGIN_FILE   = 'ninja-forms/ninja-forms.php';
     const TRACKING_NAME = 'ninja-forms';
+
+    /**
+     * Whether Ninja Forms is active.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return function_exists( 'Ninja_Forms' );
+    }
+
+    /**
+     * Human-readable label for the mapping UI.
+     *
+     * @return string
+     */
+    public static function get_integration_label() {
+        return 'Ninja Forms';
+    }
+
+    /**
+     * Returns all Ninja Forms form models.
+     *
+     * @return iterable
+     */
+    protected static function fetch_forms() {
+        return Ninja_Forms()->form()->get_forms();
+    }
+
+    /**
+     * Maps a Ninja Forms form model to id + title.
+     *
+     * @param mixed $raw_form A Ninja Forms form model.
+     * @return array<string,mixed>
+     */
+    protected static function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->get_id(),
+            'title' => $raw_form->get_setting( 'title' ),
+        );
+    }
+
+    /**
+     * Returns the field models for a single Ninja Forms form.
+     *
+     * @param string $form_id The Ninja Forms form id.
+     * @return iterable
+     */
+    protected static function fetch_form_fields( $form_id ) {
+        return Ninja_Forms()->form( $form_id )->get_fields();
+    }
+
+    /**
+     * Maps a Ninja Forms field model to a field, skipping layout fields.
+     *
+     * The field id is the field key, the same key used to read the submitted
+     * value from the form data at event time.
+     *
+     * @param mixed $raw_field A Ninja Forms field model.
+     * @return array<string,mixed>|null
+     */
+    protected static function map_field( $raw_field ) {
+        $key = (string) $raw_field->get_setting( 'key' );
+        if ( '' === $key ) {
+            return null;
+        }
+        $type = (string) $raw_field->get_setting( 'type' );
+        if ( in_array( $type, array( 'submit', 'hr', 'html' ), true ) ) {
+            return null;
+        }
+        return array(
+            'id'    => $key,
+            'label' => $raw_field->get_setting( 'label' ),
+            'type'  => $type,
+        );
+    }
 
     /**
      * Injects Facebook Pixel code for Ninja Forms.

@@ -49,6 +49,71 @@ abstract class FacebookWordpressIntegrationBase {
     public static function inject_pixel_code() {
     }
 
+    /**
+     * Whether this integration supports the admin Field Mapping screen.
+     *
+     * Form-builder integrations override this to return true. E-commerce and
+     * subscription integrations leave the default (false) and are not listed
+     * in the mapping UI.
+     *
+     * @return bool
+     */
+    public static function supports_field_mapping() {
+        return false;
+    }
+
+    /**
+     * Whether the underlying form plugin is currently available (active).
+     *
+     * Overridden by form-builder integrations to detect their plugin via
+     * class_exists()/function_exists(). Used to decide which integrations to
+     * show in the mapping UI.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return false;
+    }
+
+    /**
+     * Human-readable label for this integration, shown in the mapping UI.
+     *
+     * Defaults to the tracking name; form-builder integrations override it
+     * with a friendlier name.
+     *
+     * @return string
+     */
+    public static function get_integration_label() {
+        return static::TRACKING_NAME;
+    }
+
+    /**
+     * Returns the list of forms managed by this integration's plugin.
+     *
+     * Each entry is an associative array: [ 'id' => string, 'title' => string ].
+     * Overridden by form-builder integrations. Default is an empty list.
+     *
+     * @return array<int,array<string,string>>
+     */
+    public static function get_forms() {
+        return array();
+    }
+
+    /**
+     * Returns the input fields for a single form.
+     *
+     * Each entry is an associative array:
+     * [ 'id' => string, 'label' => string, 'type' => string ].
+     * The 'id' must be the same native identifier used to resolve the field's
+     * submitted value at event time. Overridden by form-builder integrations.
+     *
+     * @param string $form_id The native form id.
+     * @return array<int,array<string,string>>
+     */
+    public static function get_form_fields( $form_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+        return array();
+    }
+
 
     /**
      * Adds a hook to WordPress to inject the pixel code for a specific plugin.

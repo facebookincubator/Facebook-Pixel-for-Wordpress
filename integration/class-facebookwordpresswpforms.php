@@ -41,9 +41,91 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 /**
  * FacebookWordpressWPForms class.
  */
-class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
+class FacebookWordpressWPForms extends FacebookWordpressFormIntegrationBase {
     const PLUGIN_FILE   = 'wpforms-lite/wpforms.php';
     const TRACKING_NAME = 'wpforms-lite';
+
+    /**
+     * Whether WPForms (Lite or Pro) is active.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return function_exists( 'wpforms' );
+    }
+
+    /**
+     * Human-readable label for the mapping UI.
+     *
+     * @return string
+     */
+    public static function get_integration_label() {
+        return 'WPForms';
+    }
+
+    /**
+     * Returns all WPForms form posts.
+     *
+     * @return iterable
+     */
+    protected static function fetch_forms() {
+        $posts = wpforms()->form->get( '' );
+        return ( empty( $posts ) || ! is_array( $posts ) ) ? array() : $posts;
+    }
+
+    /**
+     * Maps a WPForms form post to id + title.
+     *
+     * @param mixed $raw_form A WP_Post for the form.
+     * @return array<string,mixed>
+     */
+    protected static function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->ID,
+            'title' => $raw_form->post_title,
+        );
+    }
+
+    /**
+     * Returns the decoded field definitions for a single WPForms form.
+     *
+     * @param string $form_id The WPForms form id.
+     * @return iterable
+     */
+    protected static function fetch_form_fields( $form_id ) {
+        $form = wpforms()->form->get( $form_id );
+        if ( empty( $form ) ) {
+            return array();
+        }
+
+        $data = function_exists( 'wpforms_decode' )
+            ? wpforms_decode( $form->post_content )
+            : json_decode( $form->post_content, true );
+
+        return ( empty( $data['fields'] ) || ! is_array( $data['fields'] ) )
+            ? array()
+            : $data['fields'];
+    }
+
+    /**
+     * Maps a WPForms field definition to a field.
+     *
+     * The field id is the numeric field id, the same key used to read the
+     * submitted value from the entry at event time.
+     *
+     * @param mixed $raw_field A WPForms field definition array.
+     * @return array<string,mixed>|null
+     */
+    protected static function map_field( $raw_field ) {
+        if ( ! isset( $raw_field['id'] ) ) {
+            return null;
+        }
+        return array(
+            'id'    => $raw_field['id'],
+            'label' => isset( $raw_field['label'] ) ? $raw_field['label'] : '',
+            'type'  => isset( $raw_field['type'] ) ? $raw_field['type'] : '',
+        );
+    }
 
     /**
      * Hooks into WPForms to inject the Pixel code.

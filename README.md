@@ -41,6 +41,42 @@ https://www.facebook.com/business/help/881403525362441
 
 You can reference to integration/FacebookWordpressContactForm7.php and tests/FacebookWordpressContactForm7Test.php as an example
 
+# Testing
+
+There are two test suites:
+
+**Unit tests** (default) — fast, no WordPress or database, using WP_Mock:
+
+```bash
+vendor/bin/phpunit --bootstrap __tests__/bootstrap.php __tests__
+```
+
+**Form-plugin integration tests** — boot a real WordPress test environment
+with the supported form plugins installed, to verify discovery works against
+the actual plugin code. These require MySQL and the WordPress test library.
+
+```bash
+# 1. Install the WP test suite + a test database (one time):
+bin/install-wp-tests.sh wordpress_test <db_user> <db_pass> 127.0.0.1 latest
+
+# 2. Install the free form plugins into the test WordPress, e.g.:
+PLUGINS_DIR="/tmp/wordpress/wp-content/plugins"
+for slug in contact-form-7 wpforms-lite ninja-forms formidable; do
+  svn export "https://plugins.svn.wordpress.org/${slug}/trunk" "$PLUGINS_DIR/${slug}"
+done
+
+# 3. Run the integration suite:
+vendor/bin/phpunit -c phpunit-integration.xml
+```
+
+Notes:
+- These run automatically in CI (`.github/workflows/integration.yml`), where
+  `FB_INTEGRATION_REQUIRE_PLUGINS=1` makes a missing/undetected plugin a
+  failure rather than a skip. Locally, without a plugin installed, the
+  corresponding test is skipped.
+- Caldera Forms is intentionally not covered: it was discontinued and removed
+  from the wordpress.org plugin repository, so it cannot be auto-installed.
+
 # Contributing
 
 See the CONTRIBUTING file for how to help out
