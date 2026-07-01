@@ -41,9 +41,33 @@ class FacebookWordpressPixelInjection {
     public static $render_cache = array();
 
     /**
-     * Constructor for the FacebookWordpressPixelInjection class.
+     * Shared event dispatcher for the request.
+     *
+     * @var Signals|null
      */
-    public function __construct() {
+    private $signals;
+
+    /**
+     * Field-to-EventData bridge injected into integrations.
+     *
+     * @var EventDataBuilder|null
+     */
+    private $event_builder;
+
+    /**
+     * Constructor.
+     *
+     * @param Signals|null          $signals       Shared dispatcher. Falls back
+     *                                             to a new Signals when omitted.
+     * @param EventDataBuilder|null $event_builder Field-to-EventData bridge.
+     */
+    public function __construct( $signals = null, $event_builder = null ) {
+        $this->signals       = $signals instanceof Signals
+            ? $signals
+            : new Signals();
+        $this->event_builder = $event_builder instanceof EventDataBuilder
+            ? $event_builder
+            : new EventDataBuilder();
     }
 
     /**
@@ -74,8 +98,12 @@ class FacebookWordpressPixelInjection {
             foreach (
                 FacebookPluginConfig::integration_config() as $key => $value
                 ) {
-            $class_name = 'FacebookPixelPlugin\\Integration\\' . $value;
-            $class_name::inject_pixel_code();
+            $class_name  = 'FacebookPixelPlugin\\Integration\\' . $value;
+            $integration = new $class_name(
+                $this->signals,
+                $this->event_builder
+            );
+            $integration->inject_pixel_code();
             }
             add_action(
                 'wp_footer',
@@ -98,7 +126,7 @@ class FacebookWordpressPixelInjection {
         }
 
         $pending_events =
-        FacebookServerSideEvent::get_instance()->get_pending_events();
+        $this->signals->get_server_events()->get_pending_events();
         if ( count( $pending_events ) > 0 ) {
             do_action(
                 'send_server_events',

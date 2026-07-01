@@ -38,15 +38,34 @@ abstract class FacebookWordpressIntegrationBase {
     const PLUGIN_FILE   = '';
     const TRACKING_NAME = '';
 
+    /**
+     * Event dispatcher shared for the request. Available to integrations that
+     * have been converted to the instance/Signals model.
+     *
+     * @var \FacebookPixelPlugin\Core\Signals|null
+     */
+    protected $signals;
 
     /**
-     * This function should be overridden in derived classes.
-     * It is responsible for adding action hooks to
-     * WordPress to inject the pixel code.
+     * Bridge that turns an integration's extracted fields into EventData.
      *
-     * @return void
+     * @var \FacebookPixelPlugin\Core\EventDataBuilder|null
      */
-    public static function inject_pixel_code() {
+    protected $event_builder;
+
+    /**
+     * Constructor.
+     *
+     * Dependencies are optional so integrations that haven't been converted
+     * yet (no own constructor, still static internally) can still be
+     * instantiated by the pixel injector without error.
+     *
+     * @param \FacebookPixelPlugin\Core\Signals|null          $signals       Shared dispatcher.
+     * @param \FacebookPixelPlugin\Core\EventDataBuilder|null $event_builder Field-to-EventData bridge.
+     */
+    public function __construct( $signals = null, $event_builder = null ) {
+        $this->signals       = $signals;
+        $this->event_builder = $event_builder;
     }
 
 

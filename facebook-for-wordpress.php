@@ -41,6 +41,7 @@ require_once plugin_dir_path( __FILE__ ) . 'core/class-releasesignalsajax.php';
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\Signals;
+use FacebookPixelPlugin\Core\EventDataBuilder;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\FacebookSignalState;
@@ -58,6 +59,20 @@ use FacebookPixelPlugin\Core\ServerEventAsyncTask;
  */
 class FacebookForWordpress {
     /**
+     * Shared event dispatcher for the request.
+     *
+     * @var Signals
+     */
+    private $signals;
+
+    /**
+     * Shared field-to-EventData bridge injected into integrations.
+     *
+     * @var EventDataBuilder
+     */
+    private $event_builder;
+
+    /**
      * Plugin constructor. Initializes the plugin options, loads the translation files,
      * sets up the Facebook pixel, sets up the pixel injection, and sets up the settings
      * page. Also starts the server event async task.
@@ -73,7 +88,8 @@ class FacebookForWordpress {
 
     $options = FacebookWordpressOptions::get_options();
     FacebookPixel::initialize( FacebookWordpressOptions::get_active_pixel_id() );
-    new Signals();
+    $this->event_builder = new EventDataBuilder();
+    $this->signals       = new Signals();
     new ReleaseSignalsAjax();
 
     if ( Signals::should_hold_signals() ) {
@@ -135,7 +151,10 @@ class FacebookForWordpress {
      * inject the Facebook pixel code into the footer of the WordPress page.
      */
     public function register_pixel_injection() {
-    $injection_obj = new FacebookWordpressPixelInjection();
+    $injection_obj = new FacebookWordpressPixelInjection(
+        $this->signals,
+        $this->event_builder
+    );
     $injection_obj->inject();
     }
 
