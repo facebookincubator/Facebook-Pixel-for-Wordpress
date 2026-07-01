@@ -2,9 +2,9 @@
 /**
  * Facebook Pixel Plugin AjaxFilterDelivery class.
  *
- * Injects the raw browser pixel code into a key of a plugin's AJAX response
- * array (e.g. Contact Form 7's wpcf7_feedback_response, WPForms' AJAX success
- * response), where a front-end listener evaluates it.
+ * Injects this delivery's queued pixel code into a key of a plugin's AJAX
+ * response array (e.g. Contact Form 7's wpcf7_feedback_response), where a
+ * front-end listener evaluates it.
  *
  * @package FacebookPixelPlugin
  */
@@ -28,7 +28,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 /**
  * Class AjaxFilterDelivery
  */
-class AjaxFilterDelivery implements EventDelivery {
+class AjaxFilterDelivery extends AbstractEventDelivery {
     /**
      * The WordPress filter carrying the AJAX response array.
      *
@@ -64,23 +64,20 @@ class AjaxFilterDelivery implements EventDelivery {
     }
 
     /**
-     * Registers the response filter that injects the (unwrapped) pixel code.
+     * Registers the response filter that injects this delivery's queued events
+     * (unwrapped) into the response array.
      *
-     * @param Signals $signals       The dispatcher providing render().
-     * @param string  $tracking_name The integration tracking name.
+     * @param string $tracking_name The integration tracking name.
      * @return void
      */
-    public function register( $signals, $tracking_name ) {
-        $key = $this->key;
+    public function register( $tracking_name ) {
+        $this->tracking_name = $tracking_name;
+        $key                 = $this->key;
         add_filter(
             $this->filter,
-            function ( $response ) use ( $signals, $tracking_name, $key ) {
-                if ( ! is_array( $response ) ) {
-                    return $response;
-                }
-                $code = $signals->render( $tracking_name, false );
-                if ( '' !== $code ) {
-                    $response[ $key ] = $code;
+            function ( $response ) use ( $key ) {
+                if ( is_array( $response ) && $this->has_events() ) {
+                    $response[ $key ] = $this->render_code( false );
                 }
                 return $response;
             },

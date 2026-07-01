@@ -97,6 +97,10 @@ class Signals {
         $priority = 10,
         $accepted_args = 2
     ) {
+        if ( $delivery instanceof EventDelivery ) {
+            $delivery->register( $tracking_name );
+        }
+
         // Thin forwarder: WordPress passes a per-hook argument list, so the
         // closure only captures those and hands them to the named handler
         // below along with this registration's config.
@@ -105,22 +109,20 @@ class Signals {
             function ( ...$hook_args ) use (
                 $event_name,
                 $data_provider,
-                $tracking_name
+                $tracking_name,
+                $delivery
             ) {
                 return $this->handle_registered_hook(
                     $event_name,
                     $data_provider,
                     $tracking_name,
+                    $delivery,
                     $hook_args
                 );
             },
             $priority,
             $accepted_args
         );
-
-        if ( $delivery instanceof EventDelivery ) {
-            $delivery->register( $this, $tracking_name );
-        }
     }
 
     /**
@@ -129,16 +131,18 @@ class Signals {
      * skipped, and the hook's first argument is returned unchanged so this is
      * safe on both actions and filters.
      *
-     * @param string   $event_name    The event name to dispatch.
-     * @param callable $data_provider fn( ...$hook_args ): ?EventData.
-     * @param string   $tracking_name The integration tracking name.
-     * @param array    $hook_args     Arguments WordPress passed to the hook.
+     * @param string        $event_name    The event name to dispatch.
+     * @param callable      $data_provider fn( ...$hook_args ): ?EventData.
+     * @param string        $tracking_name The integration tracking name.
+     * @param EventDelivery $delivery      The browser delivery to queue onto.
+     * @param array         $hook_args     Arguments WordPress passed to the hook.
      * @return mixed The hook's first argument, unchanged.
      */
     private function handle_registered_hook(
         $event_name,
         $data_provider,
         $tracking_name,
+        $delivery,
         $hook_args
     ) {
         $passthrough = isset( $hook_args[0] ) ? $hook_args[0] : null;
@@ -149,7 +153,10 @@ class Signals {
 
         $event_data = call_user_func_array( $data_provider, $hook_args );
         if ( $event_data instanceof EventData && ! $event_data->is_empty() ) {
-            $this->dispatch( $event_name, $event_data, $tracking_name );
+            $event = $this->dispatch( $event_name, $event_data, $tracking_name );
+            if ( $delivery instanceof EventDelivery ) {
+                $delivery->queue( $event );
+            }
         }
 
         return $passthrough;
@@ -157,8 +164,8 @@ class Signals {
 
     /**
      * Dispatches an EventData to the Conversions API (server side) by building
-     * the Event and tracking it. Browser rendering is handled separately via
-     * render()/delivery.
+     * the Event and tracking it, and returns the Event so the caller can queue
+     * it onto a browser delivery. Browser rendering is owned by the delivery.
      *
      * @param string    $event_name      The event name.
      * @param EventData $event_data      The neutral event payload.
@@ -181,21 +188,6 @@ class Signals {
         );
         $this->server_events->track( $event );
         return $event;
-    }
-
-    /**
-     * Renders the browser pixel code for the events tracked this request.
-     *
-     * @param string $tracking_name The integration tracking name.
-     * @param bool   $script_tag    Whether to wrap in a <script> tag.
-     * @return string The rendered pixel code (empty when nothing tracked).
-     */
-    public function render( $tracking_name, $script_tag = true ) {
-        return PixelRenderer::render(
-            $this->server_events->get_tracked_events(),
-            $tracking_name,
-            $script_tag
-        );
     }
 
     /**

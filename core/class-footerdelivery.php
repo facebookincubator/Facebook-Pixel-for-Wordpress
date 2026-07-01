@@ -2,8 +2,8 @@
 /**
  * Facebook Pixel Plugin FooterDelivery class.
  *
- * Emits the browser pixel code inline in wp_footer. Used by integrations whose
- * submission ends on a normal page render (no AJAX response to enrich).
+ * Emits this delivery's queued pixel code inline in wp_footer. Used by
+ * integrations whose submission ends on a normal page render.
  *
  * @package FacebookPixelPlugin
  */
@@ -27,7 +27,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 /**
  * Class FooterDelivery
  */
-class FooterDelivery implements EventDelivery {
+class FooterDelivery extends AbstractEventDelivery {
     /**
      * WordPress action priority for the footer output.
      *
@@ -45,19 +45,18 @@ class FooterDelivery implements EventDelivery {
     }
 
     /**
-     * Registers a wp_footer callback that echoes the rendered pixel code.
+     * Registers a wp_footer callback that echoes this delivery's queued events.
      *
-     * @param Signals $signals       The dispatcher providing render().
-     * @param string  $tracking_name The integration tracking name.
+     * @param string $tracking_name The integration tracking name.
      * @return void
      */
-    public function register( $signals, $tracking_name ) {
+    public function register( $tracking_name ) {
+        $this->tracking_name = $tracking_name;
         add_action(
             'wp_footer',
-            function () use ( $signals, $tracking_name ) {
-                $code = $signals->render( $tracking_name, true );
-                if ( '' !== $code ) {
-                    echo $code; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            function () {
+                if ( $this->has_events() ) {
+                    echo $this->render_code( true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 }
             },
             $this->priority

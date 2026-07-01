@@ -59,21 +59,8 @@ final class SignalsDispatchTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * render returns an empty string when nothing was tracked.
-     *
-     * @return void
-     */
-    public function testRenderEmptyWhenNoEvents() {
-        $store = $this->createMock( FacebookServerSideEvent::class );
-        $store->method( 'get_tracked_events' )->willReturn( array() );
-
-        $signals = new Signals( $store );
-
-        $this->assertSame( '', $signals->render( 'contact-form-7' ) );
-    }
-
-    /**
-     * on() registers the chosen browser delivery strategy.
+     * on() registers the chosen browser delivery strategy with the tracking
+     * name.
      *
      * @return void
      */
@@ -84,7 +71,7 @@ final class SignalsDispatchTest extends FacebookWordpressTestBase {
 
         $delivery->expects( $this->once() )
             ->method( 'register' )
-            ->with( $signals, 'contact-form-7' );
+            ->with( 'contact-form-7' );
 
         $signals->on(
             'wpcf7_submit',

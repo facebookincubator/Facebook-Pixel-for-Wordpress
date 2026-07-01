@@ -2,9 +2,10 @@
 /**
  * Facebook Pixel Plugin EventDelivery interface.
  *
- * A delivery strategy decides WHERE the browser pixel code for the tracked
- * events is emitted (page footer, an AJAX response key, appended HTML, ...).
- * Integrations choose one as configuration; Signals owns the rendering.
+ * A delivery strategy decides WHERE the browser pixel code is emitted (page
+ * footer, an AJAX response key, appended HTML, ...). Events dispatched for a
+ * given on() registration are queued onto its delivery, and the delivery
+ * renders exactly those — it does not read a shared tracked-events list.
  *
  * @package FacebookPixelPlugin
  */
@@ -30,12 +31,19 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  */
 interface EventDelivery {
     /**
-     * Registers the WordPress hook(s) that emit the browser pixel code for the
-     * events tracked on $signals for $tracking_name.
+     * Registers the WordPress hook(s) that emit this delivery's queued events
+     * and records the integration tracking name used when rendering.
      *
-     * @param Signals $signals       The dispatcher providing render().
-     * @param string  $tracking_name The integration tracking name.
+     * @param string $tracking_name The integration tracking name.
      * @return void
      */
-    public function register( $signals, $tracking_name );
+    public function register( $tracking_name );
+
+    /**
+     * Queues a dispatched event to be rendered by this delivery.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event.
+     * @return void
+     */
+    public function queue( $event );
 }

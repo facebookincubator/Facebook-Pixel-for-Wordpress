@@ -2,8 +2,8 @@
 /**
  * Facebook Pixel Plugin AjaxHtmlDelivery class.
  *
- * Appends the browser pixel code to the `html` key of a plugin's AJAX return
- * array (e.g. Caldera Forms' caldera_forms_ajax_return).
+ * Appends this delivery's queued pixel code to the `html` key of a plugin's
+ * AJAX return array (e.g. Caldera Forms' caldera_forms_ajax_return).
  *
  * @package FacebookPixelPlugin
  */
@@ -27,7 +27,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 /**
  * Class AjaxHtmlDelivery
  */
-class AjaxHtmlDelivery implements EventDelivery {
+class AjaxHtmlDelivery extends AbstractEventDelivery {
     /**
      * The WordPress filter carrying the AJAX return array.
      *
@@ -54,22 +54,20 @@ class AjaxHtmlDelivery implements EventDelivery {
     }
 
     /**
-     * Registers the return filter that appends the pixel code to $out['html'].
+     * Registers the return filter that appends this delivery's queued events
+     * to $out['html'].
      *
-     * @param Signals $signals       The dispatcher providing render().
-     * @param string  $tracking_name The integration tracking name.
+     * @param string $tracking_name The integration tracking name.
      * @return void
      */
-    public function register( $signals, $tracking_name ) {
+    public function register( $tracking_name ) {
+        $this->tracking_name = $tracking_name;
         add_filter(
             $this->filter,
-            function ( $out ) use ( $signals, $tracking_name ) {
-                if ( ! is_array( $out ) || ! isset( $out['html'] ) ) {
-                    return $out;
-                }
-                $code = $signals->render( $tracking_name, true );
-                if ( '' !== $code ) {
-                    $out['html'] .= $code;
+            function ( $out ) {
+                if ( is_array( $out ) && isset( $out['html'] )
+                    && $this->has_events() ) {
+                    $out['html'] .= $this->render_code( true );
                 }
                 return $out;
             },
