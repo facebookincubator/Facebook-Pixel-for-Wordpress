@@ -85,8 +85,8 @@ class FacebookWordpressOptions {
      *
      * @var string|null
      */
-    private static $capig                   = null;
-    const AAM_SETTINGS_REFRESH_IN_MINUTES   = 20;
+    private static $capig                 = null;
+    const AAM_SETTINGS_REFRESH_IN_MINUTES = 20;
 
     /**
      * Initialize the options class by setting all the relevant options.

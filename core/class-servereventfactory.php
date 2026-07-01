@@ -368,9 +368,38 @@ class ServerEventFactory {
         $integration,
         $prefer_referrer_for_event_src = false
     ) {
+        $data = call_user_func_array( $callback, $arguments );
+        return self::create_from_data(
+            $event_name,
+            $data,
+            $integration,
+            $prefer_referrer_for_event_src
+        );
+    }
+
+    /**
+     * Builds an Event from an already-extracted standard-keyed data array.
+     *
+     * Shared transformation used by both the legacy safe_create_event()
+     * callback path and the Signals dispatcher (which passes
+     * EventData::to_array()).
+     *
+     * @param string  $event_name  The name of the event.
+     * @param array   $data        Standard-keyed event data.
+     * @param string  $integration The integration tracking name.
+     * @param boolean $prefer_referrer_for_event_src Whether to prefer the
+     * referrer URL over the current request URL as the event source URL.
+     *
+     * @return Event The event object.
+     */
+    public static function create_from_data(
+        $event_name,
+        $data,
+        $integration,
+        $prefer_referrer_for_event_src = false
+    ) {
         $event = self::new_event( $event_name, $prefer_referrer_for_event_src );
 
-        $data              = call_user_func_array( $callback, $arguments );
         $data_split        = self::split_user_data_and_custom_data( $data );
         $user_data_array   = $data_split['user_data'];
         $custom_data_array = $data_split['custom_data'];

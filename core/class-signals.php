@@ -36,9 +36,24 @@ class Signals {
     const STATE_HELD   = 'held';
 
     /**
-     * Register AJAX handlers.
+     * Store of server-side (CAPI) events for the current request.
+     *
+     * @var FacebookServerSideEvent
      */
-    public function __construct() {
+    private $server_events;
+
+    /**
+     * Register AJAX handlers.
+     *
+     * @param FacebookServerSideEvent|null $server_events Optional CAPI event
+     *   store. Defaults to the shared instance. Injected so integrations and
+     *   the footer/async sender share one store per request.
+     */
+    public function __construct( $server_events = null ) {
+        $this->server_events = $server_events instanceof FacebookServerSideEvent
+            ? $server_events
+            : FacebookServerSideEvent::get_instance();
+
         add_action(
             'wp_ajax_' . self::AJAX_ACTION,
             array( $this, 'handle_update_state' )
@@ -46,6 +61,140 @@ class Signals {
         add_action(
             'wp_ajax_nopriv_' . self::AJAX_ACTION,
             array( $this, 'handle_update_state' )
+        );
+    }
+
+    /**
+     * Returns the CAPI event store shared for this request.
+     *
+     * @return FacebookServerSideEvent
+     */
+    public function get_server_events() {
+        return $this->server_events;
+    }
+
+    /**
+     * Registers an event: when $hook fires, extract an EventData via
+     * $data_provider, dispatch it (CAPI), and arrange browser delivery via
+     * $delivery. The integration decides the hook and the event; Signals owns
+     * all server-vs-browser handling.
+     *
+     * @param string        $hook          The WordPress hook (action/filter).
+     * @param string        $event_name    The event name (e.g. 'Lead').
+     * @param callable      $data_provider fn( ...$hook_args ): ?EventData.
+     * @param EventDelivery $delivery      Browser-pixel delivery strategy.
+     * @param string        $tracking_name The integration tracking name.
+     * @param int           $priority      Hook priority. Defaults to 10.
+     * @param int           $accepted_args Hook args to accept. Defaults to 2.
+     * @return void
+     */
+    public function on(
+        $hook,
+        $event_name,
+        $data_provider,
+        $delivery,
+        $tracking_name,
+        $priority = 10,
+        $accepted_args = 2
+    ) {
+        // Thin forwarder: WordPress passes a per-hook argument list, so the
+        // closure only captures those and hands them to the named handler
+        // below along with this registration's config.
+        add_filter(
+            $hook,
+            function ( ...$hook_args ) use (
+                $event_name,
+                $data_provider,
+                $tracking_name
+            ) {
+                return $this->handle_registered_hook(
+                    $event_name,
+                    $data_provider,
+                    $tracking_name,
+                    $hook_args
+                );
+            },
+            $priority,
+            $accepted_args
+        );
+
+        if ( $delivery instanceof EventDelivery ) {
+            $delivery->register( $this, $tracking_name );
+        }
+    }
+
+    /**
+     * Handles a hook registered via on(): extracts the EventData from the
+     * integration's data provider and dispatches it. Internal users are
+     * skipped, and the hook's first argument is returned unchanged so this is
+     * safe on both actions and filters.
+     *
+     * @param string   $event_name    The event name to dispatch.
+     * @param callable $data_provider fn( ...$hook_args ): ?EventData.
+     * @param string   $tracking_name The integration tracking name.
+     * @param array    $hook_args     Arguments WordPress passed to the hook.
+     * @return mixed The hook's first argument, unchanged.
+     */
+    private function handle_registered_hook(
+        $event_name,
+        $data_provider,
+        $tracking_name,
+        $hook_args
+    ) {
+        $passthrough = isset( $hook_args[0] ) ? $hook_args[0] : null;
+
+        if ( FacebookPluginUtils::is_internal_user() ) {
+            return $passthrough;
+        }
+
+        $event_data = call_user_func_array( $data_provider, $hook_args );
+        if ( $event_data instanceof EventData && ! $event_data->is_empty() ) {
+            $this->dispatch( $event_name, $event_data, $tracking_name );
+        }
+
+        return $passthrough;
+    }
+
+    /**
+     * Dispatches an EventData to the Conversions API (server side) by building
+     * the Event and tracking it. Browser rendering is handled separately via
+     * render()/delivery.
+     *
+     * @param string    $event_name      The event name.
+     * @param EventData $event_data      The neutral event payload.
+     * @param string    $tracking_name   The integration tracking name.
+     * @param bool      $prefer_referrer Whether to prefer the referrer as the
+     *                                   event source URL. Defaults to true.
+     * @return \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event
+     */
+    public function dispatch(
+        $event_name,
+        EventData $event_data,
+        $tracking_name,
+        $prefer_referrer = true
+    ) {
+        $event = ServerEventFactory::create_from_data(
+            $event_name,
+            $event_data->to_array(),
+            $tracking_name,
+            $prefer_referrer
+        );
+        $this->server_events->track( $event );
+        return $event;
+    }
+
+    /**
+     * Renders the browser pixel code for the events tracked this request.
+     *
+     * @param string $tracking_name The integration tracking name.
+     * @param bool   $script_tag    Whether to wrap in a <script> tag.
+     * @return string The rendered pixel code (empty when nothing tracked).
+     */
+    public function render( $tracking_name, $script_tag = true ) {
+        return PixelRenderer::render(
+            $this->server_events->get_tracked_events(),
+            $tracking_name,
+            $script_tag
         );
     }
 
