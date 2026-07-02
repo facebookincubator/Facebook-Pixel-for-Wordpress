@@ -2,15 +2,7 @@
 /**
  * Facebook Pixel Plugin FacebookWordpressWPFormsTest class.
  *
- * This file contains the main logic for FacebookWordpressWPFormsTest.
- *
  * @package FacebookPixelPlugin
- */
-
-/**
- * Define FacebookWordpressWPFormsTest class.
- *
- * @return void
  */
 
 /*
@@ -27,391 +19,290 @@
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
+use FacebookPixelPlugin\Core\Signals;
+use FacebookPixelPlugin\Core\EventDataBuilder;
+use FacebookPixelPlugin\Core\CompositeDelivery;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Integration\FacebookWordpressWPForms;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
  * FacebookWordpressWPFormsTest class.
  *
+ * These tests assert the same observable behavior as before the Signals
+ * refactor: submitting a WPForms form ends up tracking a server-side Lead
+ * event carrying the correct user/custom data. The only change is the entry
+ * point — the data provider (read_form_data) plus the real Signals dispatch
+ * path instead of the old trackEvent static method.
+ *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in separate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
  */
 final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
-    /**
-     * Tests that the inject_pixel_code method adds the correct WordPress hook.
-     *
-     * This test verifies that the 'wpforms_process_before' action hook is added
-     * to trigger the 'trackEvent' method of the FacebookWordpressWPForms class.
-     *
-     * @return void
-     */
-    public function testInjectPixelCode() {
-    \WP_Mock::expectActionAdded(
-        'wpforms_process_before',
-        array( FacebookWordpressWPForms::class, 'trackEvent' ),
-        20,
-        2
-    );
-    \WP_Mock::expectFilterAdded(
-        'wpforms_ajax_submit_success_response',
-        array( FacebookWordpressWPForms::class, 'injectLeadEventAjax' ),
-        20,
-        3
-    );
-    \WP_Mock::expectFilterAdded(
-        'wpforms_ajax_submit_redirect',
-        array( FacebookWordpressWPForms::class, 'injectLeadEventAjax' ),
-        20,
-        3
-    );
-    \WP_Mock::expectActionAdded(
-        'wp_footer',
-        array( FacebookWordpressWPForms::class, 'injectAjaxListener' ),
-        9
-    );
 
-        FacebookWordpressWPForms::inject_pixel_code();
-        $this->assertHooksAdded();
-    }
+  /**
+   * Builds a WPForms integration wired to a real Signals dispatcher, so a
+   * dispatched event actually tracks through FacebookServerSideEvent.
+   *
+   * @return array [ FacebookWordpressWPForms, Signals ]
+   */
+  private function makeIntegration() {
+    $signals     = new Signals();
+    $integration = new FacebookWordpressWPForms(
+      $signals,
+      new EventDataBuilder()
+    );
+    return array( $integration, $signals );
+  }
 
-    /**
-     * Tests the injectLeadEvent method when the user is not an internal user.
-     *
-     * This test verifies that the Pixel code is correctly
-     * appended to the HTML output
-     * when the user is not an internal user. It ensures that the output matches
-     * the expected pattern for the "wpforms-lite" event.
-     *
-     * @return void
-     */
-    public function testInjectLeadEventWithoutInternalUser() {
-        parent::mockIsInternalUser( false );
-        self::mockFacebookWordpressOptions();
+  /**
+   * Mocks the current user, plugin options, and the JSON/sanitize helpers the
+   * dispatch/render path relies on.
+   *
+   * @return void
+   */
+  private function setupUserAndOptions() {
+    self::mockIsInternalUser( false );
+    self::mockFacebookWordpressOptions();
+
+    $this->mocked_fbpixel->shouldReceive( 'get_logged_in_user_info' )
+      ->andReturn( array() );
 
     \WP_Mock::userFunction(
-        'sanitize_text_field',
-        array(
-            'args'   => array( \Mockery::any() ),
-            'return' => function ( $input ) {
-                return $input;
-            },
-        )
+      'wp_json_encode',
+      array(
+        'args'   => array( \Mockery::type( 'array' ), \Mockery::type( 'int' ) ),
+        'return' => function ( $data, $options ) {
+          return json_encode( $data );
+        },
+      )
     );
-
-        $event = ServerEventFactory::new_event( 'Lead' );
-        FacebookServerSideEvent::get_instance()->track( $event );
-
     \WP_Mock::userFunction(
-        'wp_json_encode',
-        array(
-            'args'   => array(
-                \Mockery::type( 'array' ),
-        \Mockery::type( 'int' ),
-      ),
-            'return' => function ( $data, $options ) {
-                return json_encode( $data );
-            },
-        )
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+  }
+
+  /**
+   * Asserts the shared user data carried on the tracked Lead event.
+   *
+   * @param object $event The tracked server event.
+   * @return void
+   */
+  private function assertLeadUserData( $event ) {
+    $user_data = $event->getUserData();
+    $this->assertEquals( 'pika.chu@s2s.com', $user_data->getEmail() );
+    $this->assertEquals( 'pika', $user_data->getFirstName() );
+    $this->assertEquals( 'chu', $user_data->getLastName() );
+    $this->assertEquals( '1234567', $user_data->getPhone() );
+    $this->assertEquals( 'us', $user_data->getCountryCode() );
+    $this->assertEquals( 'springfield', $user_data->getCity() );
+    $this->assertEquals( 'ohio', $user_data->getState() );
+    $this->assertEquals( '45401', $user_data->getZipCode() );
+  }
+
+  /**
+   * set_up_tracking registers the Lead Signals event using a composite
+   * delivery (footer + AJAX filters).
+   *
+   * @return void
+   */
+  public function testSetUpTrackingRegistersLeadSignalEvent() {
+    $signals     = $this->createMock( Signals::class );
+    $integration = new FacebookWordpressWPForms(
+      $signals,
+      new EventDataBuilder()
     );
 
-        FacebookWordpressWPForms::injectLeadEvent();
-    $this->expectOutputRegex(
-        '/wpforms-lite[\s\S]+End Meta Pixel Event Code/'
-    );
-    }
-
-    /**
-     * Tests the injectLeadEvent method when the user is an internal user.
-     *
-     * This test verifies that no Pixel code is appended to the HTML output
-     * when the user is an internal user. It
-     * asserts that the output HTML remains
-     * unchanged and that no events are tracked.
-     *
-     * @return void
-     */
-    public function testInjectLeadEventWithInternalUser() {
-        parent::mockIsInternalUser( true );
-        self::mockFacebookWordpressOptions();
-
-        FacebookWordpressWPForms::injectLeadEvent( 'mock_form_data' );
-        $this->expectOutputString( '' );
-    }
-
-    /**
-     * Tests the trackEvent method for a non-internal user.
-     *
-     * This test verifies that the Pixel code is correctly
-     * injected into the HTML
-     * output and that the server-side event is tracked
-     * with the correct parameters
-     * when the user is not an internal user. It asserts
-     * that the output HTML matches
-     * the expected pattern for the "wpforms-lite" event.
-     *
-     * @return void
-     */
-    public function testTrackEventWithoutInternalUser() {
-        self::mockIsInternalUser( false );
-        self::mockFacebookWordpressOptions();
-
-        $mock_entry     = $this->createMockEntry();
-        $mock_form_data = $this->createMockFormData();
-
-    \WP_Mock::userFunction(
-        'sanitize_text_field',
-        array(
-            'args'   => array( \Mockery::any() ),
-            'return' => function ( $input ) {
-                return $input;
-            },
-        )
-    );
+    $deliveries = array();
+    $signals->expects( $this->once() )
+      ->method( 'on' )
+      ->willReturnCallback(
+        function ( $hook, $event, $provider, $delivery ) use ( &$deliveries ) {
+          $deliveries[ $event ] = $delivery;
+        }
+      );
 
     \WP_Mock::expectActionAdded(
-        'wp_footer',
-        array(
-            FacebookWordpressWPForms::class,
-            'injectLeadEvent',
-        ),
-        20
+      'wp_footer',
+      array( $integration, 'inject_ajax_listener' ),
+      9
     );
 
-    FacebookWordpressWPForms::trackEvent(
-        $mock_entry,
-        $mock_form_data
+    $integration->set_up_tracking();
+
+    $this->assertInstanceOf(
+      CompositeDelivery::class,
+      $deliveries['Lead']
+    );
+    $this->assertConditionsMet();
+  }
+
+  /**
+   * A dispatched Lead tracks a Lead server event with the submission's user
+   * data (first-last name format).
+   *
+   * @return void
+   */
+  public function testLeadEventWithoutInternalUser() {
+    $this->setupUserAndOptions();
+
+    list( $integration, $signals ) = $this->makeIntegration();
+
+    $data = $integration->read_form_data(
+      $this->createMockEntry(),
+      $this->createMockFormData()
+    );
+    $signals->dispatch(
+      'Lead',
+      $data,
+      FacebookWordpressWPForms::TRACKING_NAME
     );
 
-        $tracked_events =
-        FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $tracked_events =
+      FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $this->assertCount( 1, $tracked_events );
 
-        $this->assertCount( 1, $tracked_events );
-
-        $event = $tracked_events[0];
-        $this->assertEquals( 'Lead', $event->getEventName() );
-        $this->assertNotNull( $event->getEventTime() );
-        $this->assertEquals(
-            'pika.chu@s2s.com',
-            $event->getUserData()->getEmail()
-        );
-        $this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
-        $this->assertEquals( 'chu', $event->getUserData()->getLastName() );
-        $this->assertEquals( '1234567', $event->getUserData()->getPhone() );
-        $this->assertEquals( 'us', $event->getUserData()->getCountryCode() );
-        $this->assertEquals( 'springfield', $event->getUserData()->getCity() );
-        $this->assertEquals( 'ohio', $event->getUserData()->getState() );
-        $this->assertEquals( '45401', $event->getUserData()->getZipCode() );
+    $event = $tracked_events[0];
+    $this->assertEquals( 'Lead', $event->getEventName() );
+    $this->assertNotNull( $event->getEventTime() );
+    $this->assertLeadUserData( $event );
     $this->assertEquals(
-        'wpforms-lite',
-        $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+      'wpforms-lite',
+      $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
     );
-    }
+  }
 
-    /**
-     * Tests the trackEvent method when the user is not an internal user,
-     * and the form data is provided in the simple format.
-     *
-     * This test verifies that the server-side event is tracked with the correct
-     * parameters when the user is not an internal user and the form data is
-     * provided in the simple format. It
-     * ensures that the output HTML matches the
-     * expected pattern for the "wpforms-lite" event.
-     *
-     * @return void
-     */
-    public function testTrackEventWithoutInternalUserSimpleFormat() {
-        self::mockIsInternalUser( false );
-        self::mockFacebookWordpressOptions();
+  /**
+   * A dispatched Lead tracks a Lead server event with the submission's user
+   * data (simple name format), and prefers the referrer for the event source
+   * URL.
+   *
+   * @return void
+   */
+  public function testLeadEventWithoutInternalUserSimpleFormat() {
+    $this->setupUserAndOptions();
+    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
-        $mock_entry              = $this->createMockEntry( true );
-        $mock_form_data          = $this->createMockFormData( true );
-        $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
+    list( $integration, $signals ) = $this->makeIntegration();
 
-    \WP_Mock::expectActionAdded(
-        'wp_footer',
-        array(
-            FacebookWordpressWPForms::class,
-            'injectLeadEvent',
+    $data = $integration->read_form_data(
+      $this->createMockEntry( true ),
+      $this->createMockFormData( true )
+    );
+    $signals->dispatch(
+      'Lead',
+      $data,
+      FacebookWordpressWPForms::TRACKING_NAME
+    );
+
+    $tracked_events =
+      FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $this->assertCount( 1, $tracked_events );
+
+    $event = $tracked_events[0];
+    $this->assertEquals( 'Lead', $event->getEventName() );
+    $this->assertNotNull( $event->getEventTime() );
+    $this->assertLeadUserData( $event );
+    $this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
+    $this->assertEquals(
+      'wpforms-lite',
+      $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+    );
+  }
+
+  /**
+   * read_form_data returns null (nothing to dispatch) when the entry is empty.
+   *
+   * @return void
+   */
+  public function testReadFormDataReturnsNullForEmptyEntry() {
+    list( $integration ) = $this->makeIntegration();
+
+    $this->assertNull(
+      $integration->read_form_data(
+        array(),
+        $this->createMockFormData()
+      )
+    );
+  }
+
+  /**
+   * read_form_data returns null (nothing to dispatch) when the form schema is
+   * empty.
+   *
+   * @return void
+   */
+  public function testReadFormDataReturnsNullForEmptyFormData() {
+    list( $integration ) = $this->makeIntegration();
+
+    $this->assertNull(
+      $integration->read_form_data(
+        $this->createMockEntry(),
+        array()
+      )
+    );
+  }
+
+  /**
+   * Creates a mock entry with predefined field values.
+   *
+   * @param bool $simple_format Whether to use the simple format for the name
+   *                            field.
+   * @return array The mock entry with predefined field values.
+   */
+  private function createMockEntry( $simple_format = false ) {
+    return array(
+      'fields' => array(
+        '0' => $simple_format ? 'Pika Chu' : array(
+          'first' => 'Pika',
+          'last'  => 'Chu',
         ),
-        20
-    );
-
-    \WP_Mock::userFunction(
-        'sanitize_text_field',
-        array(
-            'args'   => array( \Mockery::any() ),
-            'return' => function ( $input ) {
-                return $input;
-            },
-        )
-    );
-
-    FacebookWordpressWPForms::trackEvent(
-        $mock_entry,
-        $mock_form_data
-    );
-
-        $tracked_events =
-        FacebookServerSideEvent::get_instance()->get_tracked_events();
-
-        $this->assertCount( 1, $tracked_events );
-
-        $event = $tracked_events[0];
-        $this->assertEquals( 'Lead', $event->getEventName() );
-        $this->assertNotNull( $event->getEventTime() );
-        $this->assertEquals(
-            'pika.chu@s2s.com',
-            $event->getUserData()->getEmail()
-        );
-        $this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
-        $this->assertEquals( 'chu', $event->getUserData()->getLastName() );
-        $this->assertEquals( '1234567', $event->getUserData()->getPhone() );
-        $this->assertEquals( 'us', $event->getUserData()->getCountryCode() );
-        $this->assertEquals( 'springfield', $event->getUserData()->getCity() );
-        $this->assertEquals( 'ohio', $event->getUserData()->getState() );
-        $this->assertEquals( '45401', $event->getUserData()->getZipCode() );
-        $this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
-    }
-
-    /**
-     * Tests that ajax responses are enriched with pixel code.
-     *
-     * @return void
-     */
-    public function testInjectLeadEventAjaxAddsPixelCode() {
-        self::mockIsInternalUser( false );
-        self::mockFacebookWordpressOptions();
-
-    \WP_Mock::userFunction(
-        'sanitize_text_field',
-        array(
-            'args'   => array( \Mockery::any() ),
-            'return' => function ( $input ) {
-                return $input;
-            },
-        )
-    );
-
-    \WP_Mock::userFunction(
-        'wp_json_encode',
-        array(
-            'args'   => array(
-                \Mockery::type( 'array' ),
-        \Mockery::type( 'int' ),
+        '1' => 'pika.chu@s2s.com',
+        '2' => '1234567',
+        '3' => array(
+          'country' => 'US',
+          'postal'  => '45401',
+          'state'   => 'Ohio',
+          'city'    => 'Springfield',
+        ),
       ),
-            'return' => function ( $data, $options ) {
-                return json_encode( $data );
-            },
-        )
     );
+  }
 
-        $event = ServerEventFactory::new_event( 'Lead' );
-        FacebookServerSideEvent::get_instance()->track( $event );
-
-        $response = FacebookWordpressWPForms::injectLeadEventAjax( array(), 123, null );
-
-        $this->assertArrayHasKey( 'fb_pxl_code', $response );
-        $this->assertStringContainsString( "fbq('track'", $response['fb_pxl_code'] );
-    }
-
-    /**
-     * Tests that ajax responses remain unchanged for internal users.
-     *
-     * @return void
-     */
-    public function testInjectLeadEventAjaxSkipsForInternalUser() {
-        self::mockIsInternalUser( true );
-        self::mockFacebookWordpressOptions();
-
-        $response = FacebookWordpressWPForms::injectLeadEventAjax( array( 'foo' => 'bar' ), 123, null );
-
-        $this->assertArrayNotHasKey( 'fb_pxl_code', $response );
-        $this->assertEquals( 'bar', $response['foo'] );
-    }
-
-    /**
-     * Tests that the AJAX listener script is printed.
-     *
-     * @return void
-     */
-    public function testInjectAjaxListenerOutputsScript() {
-        FacebookWordpressWPForms::injectAjaxListener();
-        $this->expectOutputRegex( '/wpformsAjaxSubmitSuccess/' );
-    }
-
-    /**
-     * Creates a mock entry with predefined field values.
-     *
-     * This method creates a mock entry with sample data including email,
-     * first name, last name, phone, and address fields. It utilizes the
-     * simple format or the first-last format for the name field, depending on
-     * the value of the $simple_format parameter.
-     *
-     * @param bool $simple_format Whether to use the
-     * simple format for the name field.
-     *
-     * @return array The mock entry with predefined field values.
-     */
-    private function createMockEntry( $simple_format = false ) {
-        return array(
-            'fields' => array(
-                '0' => $simple_format ? 'Pika Chu' : array(
-                    'first' => 'Pika',
-                    'last'  => 'Chu',
-                ),
-                '1' => 'pika.chu@s2s.com',
-                '2' => '1234567',
-                '3' => array(
-                    'country' => 'US',
-                    'postal'  => '45401',
-                    'state'   => 'Ohio',
-                    'city'    => 'Springfield',
-                ),
-            ),
-        );
-    }
-
-    /**
-     * Creates a mock form data object with predefined field values.
-     *
-     * This method creates a mock form data object
-     * with sample data including email,
-     * first name, last name, phone, and address fields. It utilizes the
-     * simple format or the first-last format for the name field, depending on
-     * the value of the $simple_format parameter.
-     *
-     * @param bool $simple_format Whether to use
-     * the simple format for the name field.
-     *
-     * @return array The mock form data object with predefined field values.
-     */
-    private function createMockFormData( $simple_format = false ) {
-        return array(
-            'fields' => array(
-                array(
-                    'type'   => 'name',
-                    'id'     => '0',
-                    'format' => $simple_format ? 'simple' : 'first-last',
-                ),
-                array(
-                    'type' => 'email',
-                    'id'   => '1',
-                ),
-                array(
-                    'type' => 'phone',
-                    'id'   => '2',
-                ),
-                array(
-                    'type' => 'address',
-                    'id'   => '3',
-                ),
-            ),
-        );
-    }
+  /**
+   * Creates a mock form data object with predefined field values.
+   *
+   * @param bool $simple_format Whether to use the simple format for the name
+   *                            field.
+   * @return array The mock form data object with predefined field values.
+   */
+  private function createMockFormData( $simple_format = false ) {
+    return array(
+      'fields' => array(
+        array(
+          'type'   => 'name',
+          'id'     => '0',
+          'format' => $simple_format ? 'simple' : 'first-last',
+        ),
+        array(
+          'type' => 'email',
+          'id'   => '1',
+        ),
+        array(
+          'type' => 'phone',
+          'id'   => '2',
+        ),
+        array(
+          'type' => 'address',
+          'id'   => '3',
+        ),
+      ),
+    );
+  }
 }

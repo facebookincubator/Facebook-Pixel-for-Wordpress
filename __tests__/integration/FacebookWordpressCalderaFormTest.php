@@ -2,15 +2,7 @@
 /**
  * Facebook Pixel Plugin FacebookWordpressCalderaFormTest class.
  *
- * This file contains the main logic for FacebookWordpressCalderaFormTest.
- *
  * @package FacebookPixelPlugin
- */
-
-/**
- * Define FacebookWordpressCalderaFormTest class.
- *
- * @return void
  */
 
 /*
@@ -27,339 +19,73 @@
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
-use FacebookPixelPlugin\Integration\FacebookWordpressCalderaForm;
+use FacebookPixelPlugin\Core\Signals;
+use FacebookPixelPlugin\Core\EventDataBuilder;
+use FacebookPixelPlugin\Core\AjaxHtmlDelivery;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Integration\FacebookWordpressCalderaForm;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 
 /**
  * FacebookWordpressCalderaFormTest class.
  *
+ * These tests assert the same observable behavior as before the Signals
+ * refactor: a completed Caldera submission tracks a Lead server-side event
+ * carrying the correct user data. The only change is the entry point — the
+ * read_form_data data provider plus the real Signals dispatch path instead of
+ * the old injectLeadEvent static method.
+ *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in separate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
  */
 final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
+
   /**
-   * Tests that the inject_pixel_code method adds the
-   * correct hooks to WordPress
-   * and that no events are tracked after calling the method.
+   * Builds a Caldera integration wired to a real Signals dispatcher, so a
+   * dispatched event actually tracks through FacebookServerSideEvent.
    *
-   * @return void
+   * @return array [ FacebookWordpressCalderaForm, Signals ]
    */
-  public function testInjectPixelCode() {
-    \WP_Mock::expectActionAdded(
-      'caldera_forms_ajax_return',
-      array( FacebookWordpressCalderaForm::class, 'injectLeadEvent' ),
-      10,
-      2
+  private function makeIntegration() {
+    $signals     = new Signals();
+    $integration = new FacebookWordpressCalderaForm(
+      $signals,
+      new EventDataBuilder()
     );
-
-    FacebookWordpressCalderaForm::inject_pixel_code();
-    $this->assertHooksAdded();
-
-    $this->assertCount(
-      0,
-      FacebookServerSideEvent::get_instance()->get_tracked_events()
-    );
+    return array( $integration, $signals );
   }
 
   /**
-   * Tests the injectLeadEvent method for a non-internal user
-   * when the form submission is complete.
-   *
-   * This test checks that the Pixel code is correctly
-   * appended to the HTML output
-   * when the form submission status is 'complete' and the
-   * user is not an internal user.
-   * It verifies that the output HTML contains the
-   * expected Pixel code pattern.
+   * Stubs the JSON/sanitize helpers the dispatch/read path relies on.
    *
    * @return void
    */
-  public function testInjectLeadEventWithoutInternalUserAndSubmitted() {
-    self::mockIsInternalUser( false );
-    self::mockFacebookWordpressOptions();
-    $mock_out = array(
-      'status' => 'complete',
-      'html'   => 'successful submitted',
-    );
-
-        \WP_Mock::userFunction(
-            'sanitize_text_field',
-            array(
+  private function mockRenderHelpers() {
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
         'args'   => array( \Mockery::any() ),
         'return' => function ( $input ) {
           return $input;
         },
-            )
-        );
-
-        \WP_Mock::userFunction(
-            'wp_json_encode',
-            array(
-        'args'   => array(
-          \Mockery::type( 'array' ),
-          \Mockery::type( 'int' ),
-        ),
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'args'   => array( \Mockery::type( 'array' ), \Mockery::type( 'int' ) ),
         'return' => function ( $data, $options ) {
           return json_encode( $data );
         },
-            )
-        );
-
-    $out = FacebookWordpressCalderaForm::injectLeadEvent( $mock_out, null );
-
-    $this->assertArrayHasKey( 'html', $out );
-    $code = $out['html'];
-    $this->assertMatchesRegularExpression(
-      '/caldera-forms[\s\S]+End Meta Pixel Event Code/',
-      $code
+      )
     );
   }
 
   /**
-   * Tests the injectLeadEvent method for a non-internal user
-     * when the form submission is not complete.
+   * Builds a mock Caldera form definition and populates the matching $_POST
+   * field values, mirroring a completed submission.
    *
-   * This test checks that the Pixel code is not appended to the HTML output
-   * when the form submission status is not 'complete'
-     * and the user is not an internal user.
-   * It verifies that the output HTML is not modified
-     * and the server-side event tracking list is empty.
-   *
-   * @return void
-   */
-  public function testInjectLeadEventWithoutInternalUserAndNotSubmitted() {
-    self::mockIsInternalUser( false );
-    self::mockFacebookWordpressOptions();
-    $mock_out  = array(
-      'status' => 'preprocess',
-      'html'   => 'fail to submit form',
-    );
-    $mock_form = array();
-
-    $out = FacebookWordpressCalderaForm::injectLeadEvent(
-            $mock_out,
-            $mock_form
-        );
-
-    $this->assertArrayHasKey( 'html', $out );
-    $code = $out['html'];
-    $this->assertEquals( 'fail to submit form', $code );
-
-    $this->assertCount(
-      0,
-      FacebookServerSideEvent::get_instance()->get_tracked_events()
-    );
-  }
-
-  /**
-   * Tests the injectLeadEvent method for an internal
-     * user when the form submission is complete.
-   *
-   * This test verifies that no Pixel code is
-     * appended to the HTML output
-   * when the user is an internal user, even if the form
-     * submission status is 'complete'.
-   * It asserts that the output HTML
-     * remains unchanged and that no events are tracked.
-   *
-   * @return void
-   */
-  public function testInjectLeadEventWithInternalUser() {
-    self::mockIsInternalUser( true );
-    self::mockFacebookWordpressOptions();
-    $mock_out  = array(
-      'status' => 'complete',
-      'html'   => 'successful submitted',
-    );
-    $mock_form = array();
-
-    $out = FacebookWordpressCalderaForm::injectLeadEvent(
-            $mock_out,
-            $mock_form
-        );
-
-    $this->assertArrayHasKey( 'html', $out );
-    $code = $out['html'];
-    $this->assertEquals( 'successful submitted', $code );
-
-    $this->assertCount(
-      0,
-      FacebookServerSideEvent::get_instance()->get_tracked_events()
-    );
-  }
-
-  /**
-   * Tests the injectLeadEvent method when the form submission
-     * is complete and the user is not an internal user.
-   *
-   * This test verifies that the Pixel code is appended to the HTML output
-   * and that the server-side event is tracked with the correct parameters.
-   */
-  public function testSendLeadEventViaServerAPISuccessWithoutInternalUser() {
-    self::mockIsInternalUser( false );
-    self::mockFacebookWordpressOptions();
-
-    $mock_out                = array(
-      'status' => 'complete',
-      'html'   => 'successful submitted',
-    );
-    $mock_form               = self::createMockForm();
-    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
-
-        \WP_Mock::userFunction(
-            'sanitize_text_field',
-            array(
-        'args'   => array( \Mockery::any() ),
-        'return' => function ( $input ) {
-          return $input;
-        },
-            )
-        );
-
-        \WP_Mock::userFunction(
-            'wp_unslash',
-            array(
-        'args'   => array( \Mockery::any() ),
-        'return' => function ( $input ) {
-          return $input;
-        },
-            )
-        );
-
-        \WP_Mock::userFunction(
-            'wp_json_encode',
-            array(
-        'args'   => array(
-          \Mockery::type( 'array' ),
-          \Mockery::type( 'int' ),
-        ),
-        'return' => function ( $data, $options ) {
-          return json_encode( $data );
-        },
-            )
-        );
-
-    $out = FacebookWordpressCalderaForm::injectLeadEvent(
-            $mock_out,
-            $mock_form
-        );
-
-    $this->assertArrayHasKey( 'html', $out );
-    $code = $out['html'];
-    $this->assertMatchesRegularExpression(
-      '/caldera-forms[\s\S]+End Meta Pixel Event Code/',
-      $code
-    );
-
-    $tracked_events =
-    FacebookServerSideEvent::get_instance()->get_tracked_events();
-
-    $this->assertCount( 1, $tracked_events );
-
-    $event = $tracked_events[0];
-    $this->assertEquals( 'Lead', $event->getEventName() );
-    $this->assertNotNull( $event->getEventTime() );
-    $this->assertEquals(
-            'pika.chu@s2s.com',
-            $event->getUserData()->getEmail()
-        );
-    $this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
-    $this->assertEquals( 'chu', $event->getUserData()->getLastName() );
-    $this->assertEquals( '2061234567', $event->getUserData()->getPhone() );
-    $this->assertEquals( 'wa', $event->getUserData()->getState() );
-    $this->assertEquals(
-      'caldera-forms',
-      $event->getCustomData()->getCustomProperty(
-                'fb_integration_tracking'
-            )
-    );
-    $this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
-  }
-
-  /**
-   * Tests the injectLeadEvent method when the form submission
-     * is not complete and the user is not an internal user.
-   *
-   * This test verifies that no Pixel code is appended to the HTML output and
-   * that no server-side event is tracked when the
-     * form submission status is not 'complete'
-   * and the user is not an internal user.
-   *
-   * @return void
-   */
-  public function testSendLeadEventViaServerAPIFailureWithoutInternalUser() {
-    self::mockIsInternalUser( false );
-    self::mockFacebookWordpressOptions();
-    $mock_out  = array(
-      'status' => 'preprocess',
-      'html'   => 'fail to submit form',
-    );
-    $mock_form = array();
-
-    $out = FacebookWordpressCalderaForm::injectLeadEvent(
-            $mock_out,
-            $mock_form
-        );
-
-    $this->assertArrayHasKey( 'html', $out );
-    $code = $out['html'];
-    $this->assertEquals( 'fail to submit form', $code );
-
-    $this->assertCount(
-      0,
-      FacebookServerSideEvent::get_instance()->get_tracked_events()
-    );
-  }
-
-  /**
-   * Tests the injectLeadEvent method when the form
-     * submission is complete and the user is an internal user.
-   *
-   * This test verifies that no Pixel code is appended to the HTML output and
-   * that no server-side event is tracked when the
-     * form submission status is 'complete'
-   * and the user is an internal user.
-   *
-   * @return void
-   */
-  public function testSendLeadEventViaServerAPIFailureWithInternalUser() {
-    self::mockIsInternalUser( true );
-    self::mockFacebookWordpressOptions();
-    $mock_out  = array(
-      'status' => 'complete',
-      'html'   => 'successful submitted',
-    );
-    $mock_form = array();
-
-    $s2s_spy = \Mockery::spy( FacebookServerSideEvent::class );
-
-    $out = FacebookWordpressCalderaForm::injectLeadEvent(
-            $mock_out,
-            $mock_form
-        );
-
-    $this->assertArrayHasKey( 'html', $out );
-    $code = $out['html'];
-    $this->assertEquals( 'successful submitted', $code );
-
-    $this->assertCount(
-      0,
-      FacebookServerSideEvent::get_instance()->get_tracked_events()
-    );
-  }
-
-  /**
-   * Creates a mock form data array with email, first name,
-     * last name, phone, and state fields populated.
-   *
-   * @return array a mock form data array
+   * @return array The Caldera form data array.
    */
   private static function createMockForm() {
     $email_field = array(
@@ -401,6 +127,136 @@ final class FacebookWordpressCalderaFormTest extends FacebookWordpressTestBase {
         $phone,
         $state_field,
       ),
+    );
+  }
+
+  /**
+   * set_up_tracking registers the Lead Signals event on the Caldera AJAX
+   * return hook, using the AJAX HTML delivery.
+   *
+   * @return void
+   */
+  public function testSetUpTrackingRegistersLeadSignal() {
+    $signals     = $this->createMock( Signals::class );
+    $integration = new FacebookWordpressCalderaForm(
+      $signals,
+      new EventDataBuilder()
+    );
+
+    $delivery = null;
+    $signals->expects( $this->once() )
+      ->method( 'on' )
+      ->willReturnCallback(
+        function ( $hook, $event, $provider, $del ) use ( &$delivery ) {
+          $this->assertEquals( 'caldera_forms_ajax_return', $hook );
+          $this->assertEquals( 'Lead', $event );
+          $delivery = $del;
+        }
+      );
+
+    $integration->set_up_tracking();
+
+    $this->assertInstanceOf( AjaxHtmlDelivery::class, $delivery );
+  }
+
+  /**
+   * A completed submission tracks a Lead server event with the submitter's
+   * user data, dispatched through the real Signals path.
+   *
+   * @return void
+   */
+  public function testLeadEventWithoutInternalUser() {
+    self::mockIsInternalUser( false );
+    self::mockFacebookWordpressOptions();
+    $this->mockRenderHelpers();
+
+    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
+
+    $out  = array(
+      'status' => 'complete',
+      'html'   => 'successful submitted',
+    );
+    $form = self::createMockForm();
+
+    list( $integration, $signals ) = $this->makeIntegration();
+
+    $data = $integration->read_form_data( $out, $form );
+    $signals->dispatch(
+      'Lead',
+      $data,
+      FacebookWordpressCalderaForm::TRACKING_NAME
+    );
+
+    $tracked_events =
+      FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $this->assertCount( 1, $tracked_events );
+
+    $event = $tracked_events[0];
+    $this->assertEquals( 'Lead', $event->getEventName() );
+    $this->assertNotNull( $event->getEventTime() );
+
+    $user_data = $event->getUserData();
+    $this->assertEquals( 'pika.chu@s2s.com', $user_data->getEmail() );
+    $this->assertEquals( 'pika', $user_data->getFirstName() );
+    $this->assertEquals( 'chu', $user_data->getLastName() );
+    $this->assertEquals( '2061234567', $user_data->getPhone() );
+    $this->assertEquals( 'wa', $user_data->getState() );
+
+    $this->assertEquals(
+      'caldera-forms',
+      $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+    );
+    $this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
+  }
+
+  /**
+   * read_form_data returns null (nothing to dispatch) when the submission is
+   * not complete, so no server event is tracked.
+   *
+   * @return void
+   */
+  public function testReadFormDataReturnsNullWhenNotComplete() {
+    self::mockIsInternalUser( false );
+    self::mockFacebookWordpressOptions();
+
+    $out  = array(
+      'status' => 'preprocess',
+      'html'   => 'fail to submit form',
+    );
+    $form = self::createMockForm();
+
+    list( $integration ) = $this->makeIntegration();
+
+    $this->assertNull( $integration->read_form_data( $out, $form ) );
+
+    $this->assertCount(
+      0,
+      FacebookServerSideEvent::get_instance()->get_tracked_events()
+    );
+  }
+
+  /**
+   * read_form_data returns null when the form data is empty, even for a
+   * completed submission.
+   *
+   * @return void
+   */
+  public function testReadFormDataReturnsNullWhenFormEmpty() {
+    self::mockIsInternalUser( false );
+    self::mockFacebookWordpressOptions();
+
+    $out = array(
+      'status' => 'complete',
+      'html'   => 'successful submitted',
+    );
+
+    list( $integration ) = $this->makeIntegration();
+
+    $this->assertNull( $integration->read_form_data( $out, array() ) );
+
+    $this->assertCount(
+      0,
+      FacebookServerSideEvent::get_instance()->get_tracked_events()
     );
   }
 }

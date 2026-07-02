@@ -29,14 +29,8 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
-use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\FacebookWordPressOptions;
 use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\PixelRenderer;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
+use FacebookPixelPlugin\Core\AjaxFilterDelivery;
 
 /**
  * FacebookWordpressNinjaForms class.
@@ -46,107 +40,87 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
     const TRACKING_NAME = 'ninja-forms';
 
     /**
-     * Injects Facebook Pixel code for Ninja Forms.
+     * Registers the Ninja Forms hooks.
      *
-     * This method hooks into the 'ninja_forms_submission_actions' action,
-     * which is triggered during the form submission process in Ninja Forms.
-     * It adds the 'injectLeadEvent' method to handle form submission events,
-     * allowing the tracking of lead events with Facebook Pixel.
+     * A Lead event is dispatched through Signals when a submission runs its
+     * success-message action; the browser pixel is delivered into the
+     * success-message AJAX response and a front-end listener evaluates it.
      *
      * @return void
      */
-    public static function inject_pixel_code() {
-        add_action(
+    public function set_up_tracking() {
+        $this->signals->on(
             'ninja_forms_submission_actions',
-            array( __CLASS__, 'injectLeadEvent' ),
+            'Lead',
+            array( $this, 'read_form_data' ),
+            new AjaxFilterDelivery(
+                'ninja_forms_post_run_action_type_successmessage',
+                'fb_pxl_code'
+            ),
+            self::TRACKING_NAME,
             10,
             3
         );
-        add_filter(
-            'ninja_forms_post_run_action_type_successmessage',
-            array( __CLASS__, 'injectLeadEventResponse' )
-        );
         add_action(
             'wp_footer',
-            array( __CLASS__, 'injectAjaxListener' ),
+            array( $this, 'inject_ajax_listener' ),
             9
         );
     }
 
     /**
-     * Injects lead event code into the form submission process of Ninja Forms.
+     * Extracts the Lead event data from a Ninja Forms submission, or null when
+     * the submission has no success-message action.
      *
-     * This method hooks into the 'ninja_forms_submission_actions' action,
-     * which is triggered during the form submission process in Ninja Forms.
-     * It generates a lead event for successful submissions so the event can be
-     * added to the AJAX response later in the request lifecycle.
-     *
-     * @param array $actions An array of form submission actions.
-     * @param array $form_cache An array of form cache data.
-     * @param array $form_data An array of form data.
-     *
-     * @return array An array of form submission actions with the injected code.
+     * @param array $actions    The form submission actions.
+     * @param array $form_cache The form cache data (unused).
+     * @param array $form_data  The submitted form data.
+     * @return \FacebookPixelPlugin\Core\EventData|null
      */
-    public static function injectLeadEvent(
+    public function read_form_data(
         $actions,
-        $form_cache,
-        $form_data
+        $form_cache = array(),
+        $form_data = array()
     ) {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return $actions;
+        if ( ! self::has_success_message( $actions ) || empty( $form_data ) ) {
+            return null;
         }
 
-        foreach ( $actions as $action ) {
-            if ( ! isset( $action['settings'] ) ||
-            ! isset( $action['settings']['type'] ) ) {
-                continue;
-            }
+        $name = self::getName( $form_data );
 
-            $type = $action['settings']['type'];
-            if ( ! is_string( $type ) ) {
-                continue;
-            }
-
-            if ( 'successmessage' === $type ) {
-                $event = ServerEventFactory::safe_create_event(
-                    'Lead',
-                    array( __CLASS__, 'readFormData' ),
-                    array( $form_data ),
-                    self::TRACKING_NAME,
-                    true
-                );
-                FacebookServerSideEvent::get_instance()->track( $event );
-                break;
-            }
-        }
-
-        return $actions;
+        return $this->event_builder->build(
+            array(
+                'first_name' => $name ? $name[0] : self::getFirstName( $form_data ),
+                'last_name'  => $name ? $name[1] : self::getLastName( $form_data ),
+                'email'      => self::getEmail( $form_data ),
+                'phone'      => self::getPhone( $form_data ),
+                'city'       => self::getCity( $form_data ),
+                'zip'        => self::getZipCode( $form_data ),
+                'state'      => self::getState( $form_data ),
+                'country'    => self::getCountry( $form_data ),
+                'gender'     => self::getGender( $form_data ),
+            )
+        );
     }
 
     /**
-     * Adds raw pixel calls to the Ninja Forms AJAX response.
+     * Whether the submission actions include a success-message action.
      *
-     * @param array $data Submission response data.
-     * @return array
+     * @param array $actions The form submission actions.
+     * @return bool
      */
-    public static function injectLeadEventResponse( $data ) {
-        if ( FacebookPluginUtils::is_internal_user()
-            || isset( $data['fb_pxl_code'] ) ) {
-            return $data;
+    private static function has_success_message( $actions ) {
+        if ( ! is_array( $actions ) ) {
+            return false;
         }
-
-        $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
-        if ( empty( $events ) ) {
-            return $data;
+        foreach ( $actions as $action ) {
+            if ( isset( $action['settings']['type'] )
+                && is_string( $action['settings']['type'] )
+                && 'successmessage' === $action['settings']['type'] ) {
+                return true;
+            }
         }
-
-        $data['fb_pxl_code'] = PixelRenderer::render(
-            $events,
-            self::TRACKING_NAME,
-            false
-        );
-
-        return $data;
+        return false;
     }
 
     /**
@@ -154,7 +128,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
      *
      * @return void
      */
-    public static function injectAjaxListener() {
+    public function inject_ajax_listener() {
         ?>
         <!-- Meta Pixel Event Code -->
         <script type='text/javascript'>
@@ -192,52 +166,6 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
         </script>
         <!-- End Meta Pixel Event Code -->
         <?php
-    }
-
-    /**
-     * Reads form data from the $_POST global array.
-     *
-     * This function extracts user-related data such as email,
-     * first name, last name,
-     * phone number, and address details from the $_POST array,
-     * commonly used in form
-     * submissions. The extracted data includes:
-     * - 'email': The user's email address.
-     * - 'first_name': The user's first name.
-     * - 'last_name': The user's last name.
-     * - 'phone': The user's phone number.
-     * - 'city', 'state', 'zip', 'country': Address
-     * details, where the country must
-     *   be specified using a 2-letter code.
-     *
-     * The function returns an associative array containing the extracted data.
-     *
-     * @param array $form_data The form data as an associative array.
-     * @return array An associative array of form data.
-     */
-    public static function readFormData( $form_data ) {
-        if ( empty( $form_data ) ) {
-            return array();
-        }
-
-            $event_data = array();
-            $name       = self::getName( $form_data );
-        if ( $name ) {
-            $event_data['first_name'] = $name[0];
-            $event_data['last_name']  = $name[1];
-        } else {
-            $event_data['first_name'] = self::getFirstName( $form_data );
-            $event_data['last_name']  = self::getLastName( $form_data );
-        }
-        $event_data['email']   = self::getEmail( $form_data );
-        $event_data['phone']   = self::getPhone( $form_data );
-        $event_data['city']    = self::getCity( $form_data );
-        $event_data['zip']     = self::getZipCode( $form_data );
-        $event_data['state']   = self::getState( $form_data );
-        $event_data['country'] = self::getCountry( $form_data );
-        $event_data['gender']  = self::getGender( $form_data );
-
-        return $event_data;
     }
 
     /**

@@ -29,11 +29,7 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
-use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\PixelRenderer;
+use FacebookPixelPlugin\Core\FooterDelivery;
 
 /**
  * FacebookWordpressMailchimpForWp class.
@@ -43,80 +39,30 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
     const TRACKING_NAME = 'mailchimp-for-wp';
 
     /**
-     * Injects Facebook Pixel events for the MailChimp for WP plugin.
-     *
-     * This method sets up WordPress actions to inject Facebook Pixel events
-     * for different stages of the MailChimp for WP plugin process.
+     * Registers the Mailchimp for WP hook: a Lead event dispatched through
+     * Signals on a successful subscribe, with the pixel emitted in the footer.
      *
      * @return void
      */
-    public static function inject_pixel_code() {
-    self::add_pixel_fire_for_hook(
-        array(
-            'hook_name'       => 'mc4wp_form_subscribed',
-            'classname'       => __CLASS__,
-            'inject_function' => 'injectLeadEvent',
-        )
-    );
-    }
-
-    /**
-     * Injects Facebook Pixel events for the MailChimp for WP plugin.
-     *
-     * This method sets up WordPress actions to inject Facebook Pixel events
-     * for different stages of the MailChimp for WP plugin process.
-     *
-     * @return void
-     */
-    public static function injectLeadEvent() {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
-        }
-
-        $server_event = ServerEventFactory::safe_create_event(
+    public function set_up_tracking() {
+        $this->signals->on(
+            'mc4wp_form_subscribed',
             'Lead',
-            array( __CLASS__, 'readFormData' ),
-            array(),
+            array( $this, 'read_form_data' ),
+            new FooterDelivery(),
             self::TRACKING_NAME,
-            true
-        );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        $code = PixelRenderer::render(
-            array( $server_event ),
-            self::TRACKING_NAME
-        );
-        printf(
-            '
-    <!-- Meta Pixel Event Code -->
-      %s
-    <!-- End Meta Pixel Event Code -->
-        ',
-            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            10,
+            1
         );
     }
 
     /**
-     * Reads form data from the $_POST global array.
+     * Extracts the Lead event data from the Mailchimp submission ($_POST).
      *
-     * This function extracts user-related data
-     * such as email, first name, last name,
-     * phone number, and address details from the
-     * $_POST array, commonly used in form
-     * submissions. The extracted data includes:
-     * - 'email': The user's email address.
-     * - 'first_name': The user's first name.
-     * - 'last_name': The user's last name.
-     * - 'phone': The user's phone number.
-     * - 'city', 'state', 'zip', 'country': Address details,
-     * where the country must
-     *   be specified using a 2-letter code.
-     *
-     * The function returns an associative array containing the extracted data.
-     *
-     * @return array An associative array of form data.
+     * @param mixed $form The mc4wp form (unused; data is read from $_POST).
+     * @return \FacebookPixelPlugin\Core\EventData
      */
-    public static function readFormData() {
+    public function read_form_data( $form = null ) {
         $event_data = array();
         if ( ! empty( $_POST['EMAIL'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
             $event_data['email'] = sanitize_email( wp_unslash( $_POST['EMAIL'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -157,6 +103,7 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
                 $event_data['country'] = $address_data['country'];
             }
         }
-        return $event_data;
+
+        return $this->event_builder->build( $event_data );
     }
 }

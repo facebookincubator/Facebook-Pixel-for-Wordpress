@@ -29,11 +29,9 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\PixelRenderer;
+use FacebookPixelPlugin\Core\InlineScriptDelivery;
+use FacebookPixelPlugin\Core\CartFragmentDelivery;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content;
 
 /**
@@ -49,144 +47,156 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     const DIV_ID_FOR_AJAX_PIXEL_EVENTS = 'fb-pxl-ajax-code';
 
     /**
-     * Injects Facebook Pixel events for WooCommerce.
+     * Registers the WooCommerce events through Signals, unless the Facebook for
+     * WooCommerce plugin owns tracking.
      *
-     * This method sets up WordPress actions to inject Facebook Pixel events
-     * for different stages of the WooCommerce process, only if the
-     * Facebook for WooCommerce plugin is not active.
-     *
-     * - InitiateCheckout: Injects pixel event after checkout form.
-     * - AddToCart: Tracks add to cart actions.
-     * - Purchase: Fires pixel event on purchase completion.
-     * - ViewContent: Tracks product page views.
-     * - AJAX: Adds a footer div for AJAX-triggered events.
-     *
-     * Hooks are added with a priority of 40, and the add to cart event
-     * includes four parameters.
+     * All events use the inline-script delivery except AddToCart, which uses a
+     * cart-fragment delivery so the pixel rides the AJAX add-to-cart response.
+     * InitiateCheckout and Purchase register on two hooks each to cover the
+     * classic/block and thankyou/payment-complete flows.
      *
      * @return void
      */
-    public static function inject_pixel_code() {
-        if ( ! self::isFacebookForWooCommerceActive() ) {
-            // InitiateCheckout events for classic checkout.
-            add_action(
-                'woocommerce_after_checkout_form',
-                array( __CLASS__, 'trackInitiateCheckout' ),
-                40
-            );
-            // InitiateCheckout events for block-based checkout.
-            add_action(
-                'woocommerce_blocks_checkout_enqueue_data',
-                array( __CLASS__, 'trackInitiateCheckout' )
-            );
-
-            add_action(
-                'woocommerce_add_to_cart',
-                array( __CLASS__, 'trackAddToCartEvent' ),
-                40,
-                4
-            );
-
-            add_action(
-                'woocommerce_thankyou',
-                array( __CLASS__, 'trackPurchaseEvent' ),
-                40
-            );
-
-            add_action(
-                'woocommerce_payment_complete',
-                array( __CLASS__, 'trackPurchaseEvent' ),
-                40
-            );
-
-            add_action(
-                'woocommerce_after_single_product',
-                array( __CLASS__, 'trackViewContentEvent' ),
-                40
-            );
-
-            add_action(
-                'wp_footer',
-                array( __CLASS__, 'addDivForAjaxPixelEvent' )
-            );
+    public function set_up_tracking() {
+        if ( self::isFacebookForWooCommerceActive() ) {
+            return;
         }
-    }
 
-    /**
-     * Injects a hidden div with an id of
-     * 'fb-pxl-ajax-code' into the page footer.
-     * This div is used to inject pixel events via AJAX requests.
-     */
-    public static function addDivForAjaxPixelEvent() {
-        echo wp_kses(
-            self::getDivForAjaxPixelEvent(),
-            array(
-                'div' => array(
-                    'id' => array(),
-                ),
-            )
+        // InitiateCheckout: classic checkout form + block-based checkout.
+        $this->signals->on(
+            'woocommerce_after_checkout_form',
+            'InitiateCheckout',
+            array( $this, 'read_initiate_checkout' ),
+            new InlineScriptDelivery(),
+            self::TRACKING_NAME,
+            40,
+            0
+        );
+        $this->signals->on(
+            'woocommerce_blocks_checkout_enqueue_data',
+            'InitiateCheckout',
+            array( $this, 'read_initiate_checkout' ),
+            new InlineScriptDelivery(),
+            self::TRACKING_NAME,
+            10,
+            0
+        );
+
+        $this->signals->on(
+            'woocommerce_add_to_cart',
+            'AddToCart',
+            array( $this, 'read_add_to_cart' ),
+            new CartFragmentDelivery(
+                'woocommerce_add_to_cart_fragments',
+                self::DIV_ID_FOR_AJAX_PIXEL_EVENTS
+            ),
+            self::TRACKING_NAME,
+            40,
+            4
+        );
+
+        // Purchase: thankyou page + payment completion.
+        $this->signals->on(
+            'woocommerce_thankyou',
+            'Purchase',
+            array( $this, 'read_purchase' ),
+            new InlineScriptDelivery(),
+            self::TRACKING_NAME,
+            40,
+            1
+        );
+        $this->signals->on(
+            'woocommerce_payment_complete',
+            'Purchase',
+            array( $this, 'read_purchase' ),
+            new InlineScriptDelivery(),
+            self::TRACKING_NAME,
+            40,
+            1
+        );
+
+        $this->signals->on(
+            'woocommerce_after_single_product',
+            'ViewContent',
+            array( $this, 'read_view_content' ),
+            new InlineScriptDelivery(),
+            self::TRACKING_NAME,
+            40,
+            0
         );
     }
 
     /**
-     * Generates a div element with a specific ID for
-     * AJAX-triggered pixel events.
+     * Extracts the ViewContent event data for the current product page.
      *
-     * This method returns a div element with the ID defined
-     * by DIV_ID_FOR_AJAX_PIXEL_EVENTS.
-     * The function allows for optional content to be included inside the div.
-     *
-     * @param string $content Optional content to be placed inside the div.
-     * @return string HTML div element as a string.
+     * @return \FacebookPixelPlugin\Core\EventData|null
      */
-    public static function getDivForAjaxPixelEvent( $content = '' ) {
-        return "<div id='" . self::DIV_ID_FOR_AJAX_PIXEL_EVENTS . "'>"
-        . $content . '</div>';
-    }
-
-    /**
-     * Injects a ViewContent event into the page, but only if the user is not an
-     * internal user (i.e. an admin user).
-     *
-     * The event is only injected if a valid product
-     * object can be retrieved from
-     * the current post ID. If not, the method simply exits.
-     *
-     * The ViewContent event is generated by calling
-     * the createViewContentEvent method
-     * and passing in the product object as an argument.
-     * The event is then tracked
-     * using the FacebookServerSideEvent singleton,
-     * and the pixel code is enqueued
-     * for output.
-     *
-     * @return void
-     */
-    public static function trackViewContentEvent() {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
-        }
-
+    public function read_view_content() {
         global $post;
         if ( ! isset( $post->ID ) ) {
-            return;
+            return null;
         }
 
         $product = wc_get_product( $post->ID );
         if ( ! $product ) {
-            return;
+            return null;
         }
 
-        $server_event = ServerEventFactory::safe_create_event(
-            'ViewContent',
-            array( __CLASS__, 'createViewContentEvent' ),
-            array( $product ),
-            self::TRACKING_NAME
+        return $this->event_builder->build(
+            self::createViewContentEvent( $product )
         );
+    }
 
-        FacebookServerSideEvent::get_instance()->track( $server_event, false );
+    /**
+     * Extracts the Purchase event data for a completed order.
+     *
+     * @param int $order_id The order ID.
+     * @return \FacebookPixelPlugin\Core\EventData|null
+     */
+    public function read_purchase( $order_id = 0 ) {
+        if ( empty( $order_id ) ) {
+            return null;
+        }
 
-        self::enqueuePixelCode( $server_event );
+        return $this->event_builder->build(
+            self::createPurchaseEvent( $order_id )
+        );
+    }
+
+    /**
+     * Extracts the AddToCart event data for a cart addition.
+     *
+     * @param string $cart_item_key The cart item key.
+     * @param int    $product_id    The product ID.
+     * @param int    $quantity      The quantity.
+     * @param int    $variation_id  The variation ID (unused).
+     * @return \FacebookPixelPlugin\Core\EventData|null
+     */
+    public function read_add_to_cart(
+        $cart_item_key = '',
+        $product_id = 0,
+        $quantity = 0,
+        $variation_id = 0
+    ) {
+        return $this->event_builder->build(
+            self::createAddToCartEvent( $cart_item_key, $product_id, $quantity )
+        );
+    }
+
+    /**
+     * Extracts the InitiateCheckout event data from the WooCommerce session.
+     *
+     * @return \FacebookPixelPlugin\Core\EventData|null
+     */
+    public function read_initiate_checkout() {
+        if ( null === WC()->cart
+            || 0 === WC()->cart->get_cart_contents_count() ) {
+            return null;
+        }
+
+        return $this->event_builder->build(
+            self::createInitiateCheckoutEvent()
+        );
     }
 
     /**
@@ -235,33 +245,6 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
             'product_cat'
         );
         return ! empty( $categories ) && count( $categories ) > 0 ? $categories[0]->name : null;
-    }
-
-    /**
-     * Tracks a Meta Pixel Purchase event.
-     *
-     * This method is a callback for the `woocommerce_thankyou` action hook.
-     * It tracks a Meta Pixel Purchase event whenever a purchase is completed.
-     *
-     * @param int $order_id The order ID.
-     *
-     * @since 1.0.0
-     */
-    public static function trackPurchaseEvent( $order_id ) {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
-        }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'Purchase',
-            array( __CLASS__, 'createPurchaseEvent' ),
-            array( $order_id ),
-            self::TRACKING_NAME
-        );
-
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        self::enqueuePixelCode( $server_event );
     }
 
     /**
@@ -320,89 +303,6 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     }
 
     /**
-     * Generates a Meta Pixel AddToCart event data.
-     *
-     * The AddToCart event is fired when a customer
-     * adds a product to their cart.
-     * It is typically sent when a customer submits a
-     * form to add a product to their cart.
-     *
-     * The method loops through the items in the cart and creates a
-     * Meta Pixel Content object for each item. The method then sets the
-     * content_type, currency, value, content_ids and contents fields in
-     * the event data.
-     *
-     * @param string $cart_item_key The cart item key.
-     * @param int    $product_id    The product ID.
-     * @param int    $quantity      The quantity of the item in the cart.
-     * @param int    $variation_id  The variation ID.
-     *
-     * @since 1.0.0
-     */
-    public static function trackAddToCartEvent(
-        $cart_item_key,
-        $product_id,
-        $quantity,
-        $variation_id
-    ) {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
-        }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'AddToCart',
-            array( __CLASS__, 'createAddToCartEvent' ),
-            array( $cart_item_key, $product_id, $quantity ),
-            self::TRACKING_NAME
-        );
-
-            $is_ajax_request = wp_doing_ajax();
-
-        FacebookServerSideEvent::get_instance()->track(
-            $server_event,
-            $is_ajax_request
-        );
-
-        if ( ! $is_ajax_request ) {
-            self::enqueuePixelCode( $server_event );
-        } else {
-            FacebookServerSideEvent::get_instance()->set_pending_pixel_event(
-                'addPixelCodeToAddToCartFragment',
-                $server_event
-            );
-            add_filter(
-                'woocommerce_add_to_cart_fragments',
-                array( __CLASS__, 'addPixelCodeToAddToCartFragment' )
-            );
-        }
-    }
-
-    /**
-     * Modifies the WooCommerce "add to cart" AJAX fragment response
-     * to include the Meta Pixel code.
-     *
-     * This method is used to inject the Meta Pixel code into the
-     * page after the user has added a product to their cart.
-     *
-     * @param array $fragments The response array passed to the
-     *                          "woocommerce_add_to_cart_fragments" filter.
-     *
-     * @return array The modified response array.
-     *
-     * @since 1.0.0
-     */
-    public static function addPixelCodeToAddToCartFragment( $fragments ) {
-        $server_event = FacebookServerSideEvent::get_instance()
-        ->get_pending_pixel_event( 'addPixelCodeToAddToCartFragment' );
-        if ( ! is_null( $server_event ) ) {
-            $pixel_code = self::generatePixelCode( $server_event, true );
-            $fragments[ '#' . self::DIV_ID_FOR_AJAX_PIXEL_EVENTS ] =
-            self::getDivForAjaxPixelEvent( $pixel_code );
-        }
-        return $fragments;
-    }
-
-    /**
      * Creates a Meta Pixel AddToCart event data.
      *
      * The AddToCart event is fired when a customer adds a product to their
@@ -440,32 +340,6 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         }
 
         return $event_data;
-    }
-
-    /**
-     * Tracks a Meta Pixel InitiateCheckout event.
-     *
-     * This method is a wrapper of FacebookServerSideEvent::track() method.
-     * It creates a Meta Pixel InitiateCheckout event data with the data
-     * from the WooCommerce session, and then tracks the event.
-     *
-     * @since 1.0.0
-     */
-    public static function trackInitiateCheckout() {
-        if ( FacebookPluginUtils::is_internal_user() || null === WC()->cart || WC()->cart->get_cart_contents_count() === 0 ) {
-            return;
-        }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'InitiateCheckout',
-            array( __CLASS__, 'createInitiateCheckoutEvent' ),
-            array(),
-            self::TRACKING_NAME
-        );
-
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        self::enqueuePixelCode( $server_event );
     }
 
     /**
@@ -708,81 +582,5 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
             get_option( 'active_plugins' ),
             true
         );
-    }
-
-    /**
-     * Generates the pixel code for a given server event.
-     *
-     * @param FacebookServerSideEvent $server_event The server event
-     * to generate the pixel code for.
-     * @param bool                    $script_tag   Whether to wrap
-     * the pixel code in a script tag. Default to false.
-     *
-     * @return string The pixel code for the given server event.
-     *
-     * @since 1.0.0
-     */
-    public static function generatePixelCode(
-        $server_event,
-        $script_tag = false
-) {
-        $code = PixelRenderer::render(
-            array( $server_event ),
-            self::TRACKING_NAME,
-            $script_tag
-        );
-        $code = sprintf(
-            '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-          ',
-            $code
-        );
-        return $code;
-    }
-
-    /**
-     * Enqueues a Meta Pixel event code for a given server event.
-     *
-     * This method renders the Meta Pixel code for the given server event,
-     * and then enqueues it using the WooCommerce JavaScript enqueueing
-     * system.
-     *
-     * @param FacebookServerSideEvent $server_event The server
-     * event to enqueue the pixel code for.
-     *
-     * @return string The Meta Pixel code for the given server event.
-     *
-     * @since 1.0.0
-     */
-    public static function enqueuePixelCode( $server_event ) {
-        $code   = self::generatePixelCode( $server_event, false );
-        $handle = 'meta_pixel_inline';
-
-        if ( ! function_exists( 'wp_add_inline_script' ) ) {
-            global $wc_queued_js;
-            $wc_queued_js .= "\n" . $code;
-            return $code;
-        }
-
-        static $registered = false;
-        if ( ! $registered ) {
-            if ( ! wp_script_is( $handle, 'registered' ) ) {
-                wp_register_script(
-                    $handle,
-                    '',
-                    array(),
-                    \FacebookPixelPlugin\Core\FacebookPluginConfig::PLUGIN_VERSION,
-                    true
-                );
-            }
-            wp_enqueue_script( $handle );
-            $registered = true;
-        }
-
-        wp_add_inline_script( $handle, $code );
-
-        return $code;
     }
 }

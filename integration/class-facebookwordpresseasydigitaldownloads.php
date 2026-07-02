@@ -31,12 +31,10 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Core\EventIdGenerator;
 use FacebookPixelPlugin\Core\FacebookSignalState;
+use FacebookPixelPlugin\Core\FooterDelivery;
 
 /**
  * FacebookWordpressEasyDigitalDownloads class.
@@ -46,63 +44,77 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
     const TRACKING_NAME = 'easy-digital-downloads';
 
     /**
-     * Injects various Facebook Pixel events for Easy Digital Downloads.
+     * Registers the Easy Digital Downloads events through Signals.
      *
-     * This method sets up WordPress actions to inject Facebook Pixel events
-     * for different stages of the Easy Digital Downloads process:
+     * - AddToCart: a hidden shared event id is printed onto the purchase form
+     *   and a JS listener fires the browser pixel; the AJAX add-to-cart request
+     *   dispatches the server event only (no browser delivery — the enqueued
+     *   listener owns the browser side), reusing the shared id for dedup.
+     * - InitiateCheckout: dispatched when the checkout cart renders.
+     * - Purchase: dispatched from the payment receipt.
+     * - ViewContent: dispatched on the download page.
      *
-     * - AddToCart: Adds JavaScript listeners and hooks for AJAX requests,
-     *   and injects a hidden field with an event ID.
-     * - InitiateCheckout: Fires a pixel event after the checkout cart is
-     *   displayed.
-     * - Purchase: Tracks purchase events after the payment receipt.
-     * - ViewContent: Injects view content events after download content.
+     * @return void
      */
-    public static function inject_pixel_code() {
+    public function set_up_tracking() {
         add_action(
             'edd_after_download_content',
-            array( __CLASS__, 'injectAddToCartListener' )
+            array( $this, 'inject_add_to_cart_listener' )
         );
         add_action(
             'edd_downloads_list_after',
-            array( __CLASS__, 'injectAddToCartListener' )
+            array( $this, 'inject_add_to_cart_listener' )
         );
-
-        add_action(
-            'wp_ajax_edd_add_to_cart',
-            array( __CLASS__, 'injectAddToCartEventAjax' ),
-            5
-        );
-
-        add_action(
-            'wp_ajax_nopriv_edd_add_to_cart',
-            array( __CLASS__, 'injectAddToCartEventAjax' ),
-            5
-        );
-
         add_action(
             'edd_purchase_link_top',
-            array( __CLASS__, 'injectAddToCartEventId' )
+            array( $this, 'inject_add_to_cart_event_id' )
         );
 
-        self::add_pixel_fire_for_hook(
-            array(
-                'hook_name'       => 'edd_after_checkout_cart',
-                'classname'       => __CLASS__,
-                'inject_function' => 'injectInitiateCheckoutEvent',
-            )
+        $this->signals->on(
+            'wp_ajax_edd_add_to_cart',
+            'AddToCart',
+            array( $this, 'read_add_to_cart' ),
+            null,
+            self::TRACKING_NAME,
+            5,
+            0
+        );
+        $this->signals->on(
+            'wp_ajax_nopriv_edd_add_to_cart',
+            'AddToCart',
+            array( $this, 'read_add_to_cart' ),
+            null,
+            self::TRACKING_NAME,
+            5,
+            0
         );
 
-        add_action(
+        $this->signals->on(
+            'edd_after_checkout_cart',
+            'InitiateCheckout',
+            array( $this, 'read_initiate_checkout' ),
+            new FooterDelivery(),
+            self::TRACKING_NAME,
+            10,
+            0
+        );
+
+        $this->signals->on(
             'edd_payment_receipt_after',
-            array( __CLASS__, 'trackPurchaseEvent' ),
+            'Purchase',
+            array( $this, 'read_purchase' ),
+            new FooterDelivery(),
+            self::TRACKING_NAME,
             10,
             2
         );
 
-        add_action(
+        $this->signals->on(
             'edd_after_download_content',
-            array( __CLASS__, 'injectViewContentEvent' ),
+            'ViewContent',
+            array( $this, 'read_view_content' ),
+            new FooterDelivery(),
+            self::TRACKING_NAME,
             40,
             1
         );
@@ -111,16 +123,17 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
     /**
      * Injects a hidden field with a unique event ID into the AddToCart form.
      *
-     * The event ID is used to identify the AddToCart event
-     * for a given download.
+     * The shared event ID lets the browser AddToCart pixel (fired by the JS
+     * listener) deduplicate against the server event dispatched on the AJAX
+     * add-to-cart request.
      *
      * @return void
      */
-    public static function injectAddToCartEventId() {
+    public function inject_add_to_cart_event_id() {
         if ( FacebookPluginUtils::is_internal_user() ) {
             return;
         }
-            $event_id = EventIdGenerator::guidv4();
+        $event_id = EventIdGenerator::guidv4();
         printf(
             '<input type="hidden" name="facebook_event_id" value="%s">',
             esc_attr( $event_id )
@@ -128,49 +141,34 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
     }
 
     /**
-     * Triggers the AddToCart event for Easy Digital Downloads.
+     * Extracts the AddToCart event data from the AJAX add-to-cart request.
      *
-     * The `edd-add-to-cart` nonce check is performed to ensure that the request
-     * comes from a valid EDD form submission. The event
-     * ID is verified to ensure that
-     * it is a valid Event ID.
+     * Verifies the EDD add-to-cart nonce and reuses the shared event id carried
+     * in the posted form data so the server event deduplicates against the
+     * browser event fired by the JS listener.
      *
-     * @since 1.0.0
+     * @return \FacebookPixelPlugin\Core\EventData|null
      */
-    public static function injectAddToCartEventAjax() {
-        if ( isset( $_POST['nonce'] ) && isset( $_POST['download_id'] )
-            && isset( $_POST['post_data'] ) ) {
-            $download_id = absint( $_POST['download_id'] );
-            $nonce       = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
-            if ( wp_verify_nonce( $nonce, 'edd-add-to-cart-' . $download_id )
-            === false ) {
-                return;
-            }
-            parse_str( $_POST['post_data'], $post_data ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-            if ( isset( $post_data['facebook_event_id'] ) ) {
-                $event_id = $post_data['facebook_event_id'];
-            $server_event = ServerEventFactory::safe_create_event(
-                'AddToCart',
-                array( __CLASS__, 'createAddToCartEvent' ),
-                array( $download_id ),
-                self::TRACKING_NAME
-            );
-                $server_event->setEventId( $event_id );
-                FacebookServerSideEvent::get_instance()->track( $server_event );
-            }
+    public function read_add_to_cart() {
+        if ( ! isset( $_POST['nonce'], $_POST['download_id'], $_POST['post_data'] ) ) {
+            return null;
         }
+
+        $download_id = absint( wp_unslash( $_POST['download_id'] ) );
+        $nonce       = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
+        if ( false === wp_verify_nonce( $nonce, 'edd-add-to-cart-' . $download_id ) ) {
+            return null;
+        }
+
         parse_str( $_POST['post_data'], $post_data ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
-        if ( isset( $post_data['facebook_event_id'] ) ) {
-            $event_id     = $post_data['facebook_event_id'];
-            $server_event = ServerEventFactory::safe_create_event(
-                'AddToCart',
-                array( __CLASS__, 'createAddToCartEvent' ),
-                array( $download_id ),
-                self::TRACKING_NAME
-            );
-            $server_event->setEventId( $event_id );
-            FacebookServerSideEvent::get_instance()->track( $server_event );
-        }
+        $event_id = isset( $post_data['facebook_event_id'] )
+            ? sanitize_text_field( $post_data['facebook_event_id'] )
+            : null;
+
+        return $this->event_builder->build(
+            self::createAddToCartEvent( $download_id ),
+            $event_id
+        );
     }
 
     /**
@@ -178,15 +176,13 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
      * for Easy Digital Downloads.
      *
      * This method enqueues a JavaScript file that listens for
-     * the `edd_add_to_cart`
-     * event, and sends a server-side event to Facebook
-     * for the AddToCart pixel event.
+     * the `edd_add_to_cart` event and fires the browser AddToCart pixel.
      *
      * @param int $download_id The ID of the download item.
      *
-     * @since 1.0.0
+     * @return void
      */
-    public static function injectAddToCartListener( $download_id ) {
+    public function inject_add_to_cart_listener( $download_id ) {
         if ( FacebookPluginUtils::is_internal_user() ) {
             return;
         }
@@ -215,131 +211,50 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
     }
 
     /**
-     * Injects a Meta Pixel InitiateCheckout event.
+     * Extracts the InitiateCheckout event data when the checkout cart renders.
      *
-     * This method is a callback for the `edd_purchase_link_top` action hook.
-     * It injects a Meta Pixel InitiateCheckout event into
-     * the page whenever a purchase link is rendered.
-     *
-     * @since 1.0.0
+     * @return \FacebookPixelPlugin\Core\EventData|null
      */
-    public static function injectInitiateCheckoutEvent() {
-        if ( FacebookPluginUtils::is_internal_user() ||
-        ! function_exists( 'EDD' ) ) {
-            return;
+    public function read_initiate_checkout() {
+        if ( ! function_exists( 'EDD' ) ) {
+            return null;
         }
 
-        $server_event = ServerEventFactory::safe_create_event(
-            'InitiateCheckout',
-            array( __CLASS__, 'createInitiateCheckoutEvent' ),
-            array(),
-            self::TRACKING_NAME
+        return $this->event_builder->build(
+            self::createInitiateCheckoutEvent()
         );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        $code = PixelRenderer::render(
-            array( $server_event ),
-            self::TRACKING_NAME
-        );
-    printf(
-        '
-<!-- Meta Pixel Event Code -->
-%s
-<!-- End Meta Pixel Event Code -->
-      ',
-        $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-    );
     }
 
     /**
-     * Tracks a Meta Pixel Purchase event.
+     * Extracts the Purchase event data from the payment receipt.
      *
-     * This method is a callback for the `edd_complete_purchase` action hook.
-     * It tracks a Meta Pixel Purchase event whenever a purchase is completed.
-     *
-     * @param object $payment The payment object.
-     * @param array  $edd_receipt_args The receipt arguments.
-     *
-     * @since 1.0.0
+     * @param object $payment          The payment object.
+     * @param array  $edd_receipt_args The receipt arguments (unused).
+     * @return \FacebookPixelPlugin\Core\EventData|null
      */
-    public static function trackPurchaseEvent( $payment, $edd_receipt_args ) {
-        if ( FacebookPluginUtils::is_internal_user() || empty( $payment->ID ) ) {
-            return;
+    public function read_purchase( $payment, $edd_receipt_args = array() ) {
+        if ( empty( $payment->ID ) ) {
+            return null;
         }
 
-        $server_event = ServerEventFactory::safe_create_event(
-            'Purchase',
-            array( __CLASS__, 'createPurchaseEvent' ),
-            array( $payment ),
-            self::TRACKING_NAME
-        );
-            FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        add_action(
-            'wp_footer',
-            array( __CLASS__, 'injectPurchaseEvent' ),
-            20
+        return $this->event_builder->build(
+            self::createPurchaseEvent( $payment )
         );
     }
 
     /**
-     * Injects a Meta Pixel Purchase event.
-     *
-     * This method is a callback for the `wp_footer` action hook.
-     * It injects a Meta Pixel Purchase event
-     * into the page whenever a purchase is completed.
-     *
-     * @since 1.0.0
-     */
-    public static function injectPurchaseEvent() {
-        $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
-        $code   = PixelRenderer::render( $events, self::TRACKING_NAME );
-
-        printf(
-            '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-          ',
-            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        );
-    }
-
-    /**
-     * Injects a Meta Pixel ViewContent event.
-     *
-     * This method is a callback for the
-     * `edd_download_before_content` action hook.
-     * It injects a Meta Pixel ViewContent event
-     * into the page whenever a download
-     * item is viewed.
+     * Extracts the ViewContent event data for a viewed download.
      *
      * @param int $download_id The ID of the download item.
-     *
-     * @since 1.0.0
+     * @return \FacebookPixelPlugin\Core\EventData|null
      */
-    public static function injectViewContentEvent( $download_id ) {
-        if ( FacebookPluginUtils::is_internal_user() || empty( $download_id ) ) {
-            return;
+    public function read_view_content( $download_id = 0 ) {
+        if ( empty( $download_id ) ) {
+            return null;
         }
 
-        $server_event = ServerEventFactory::safe_create_event(
-            'ViewContent',
-            array( __CLASS__, 'createViewContentEvent' ),
-            array( $download_id ),
-            self::TRACKING_NAME
-        );
-
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        $code = PixelRenderer::render( array( $server_event ), self::TRACKING_NAME );
-        printf(
-            '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-          ',
-            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        return $this->event_builder->build(
+            self::createViewContentEvent( $download_id )
         );
     }
 

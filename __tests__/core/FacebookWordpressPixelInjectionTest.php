@@ -68,8 +68,8 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
    * inject_pixel_code and inject_pixel_noscript_code methods. Also verifies
    * that the sendServerEvents method is not added as an action.
    *
-   * Checks that each integration injects the correct Pixel code by verifying
-   * that the inject_pixel_code method is called on each integration class.
+   * Checks that each integration sets up its tracking by verifying that the
+   * set_up_tracking method is called on each integration class.
    *
    * @return void
    */
@@ -85,13 +85,13 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
       array( $injection_obj, 'inject_pixel_noscript_code' )
     );
 
-    // Integrations are now instantiated and inject_pixel_code() is called on
+    // Integrations are now instantiated and set_up_tracking() is called on
     // the instance, so overload each class and expect the instance call.
     foreach ( self::$integrations as $index => $integration ) {
       $mock = \Mockery::mock(
         'overload:FacebookPixelPlugin\\Integration\\' . $integration
       );
-      $mock->shouldReceive( 'inject_pixel_code' )->once();
+      $mock->shouldReceive( 'set_up_tracking' )->once();
     }
 
     \WP_Mock::expectActionNotAdded(

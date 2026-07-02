@@ -29,11 +29,9 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\PixelRenderer;
+use FacebookPixelPlugin\Core\FooterDelivery;
+use FacebookPixelPlugin\Core\AjaxHtmlDelivery;
 
 /**
  * FacebookWordpressWPECommerce class.
@@ -43,199 +41,104 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
     const TRACKING_NAME = 'wp-e-commerce';
 
     /**
-     * Injects Facebook Pixel events for WP eCommerce.
+     * Registers the WP eCommerce events through Signals:
+     *  - AddToCart: on the add-to-cart JSON response (appended to
+     *    widget_output).
+     *  - InitiateCheckout: in the footer of the shopping cart page.
+     *  - Purchase: in the footer after a transaction completes.
      *
-     * This method sets up WordPress actions to inject Facebook Pixel events
-     * for different stages of the WP eCommerce process:
-     *
-     * - AddToCart: Hooks into the JSON response
-     * after an item is added to the cart.
-     * - InitiateCheckout: Fires a pixel event before
-     * the shopping cart page is displayed.
-     * - Purchase: Triggers a pixel event after
-     * the transaction results are processed.
-     *
-     * Hooks are added with specific priorities
-     * to ensure correct execution order.
+     * @return void
      */
-    public static function inject_pixel_code() {
-        add_action(
+    public function set_up_tracking() {
+        $this->signals->on(
             'wpsc_add_to_cart_json_response',
-            array( __CLASS__, 'injectAddToCartEvent' ),
-            11
+            'AddToCart',
+            array( $this, 'read_add_to_cart' ),
+            new AjaxHtmlDelivery(
+                'wpsc_add_to_cart_json_response',
+                'widget_output'
+            ),
+            self::TRACKING_NAME,
+            11,
+            1
         );
 
-        self::add_pixel_fire_for_hook(
-            array(
-                'hook_name'       => 'wpsc_before_shopping_cart_page',
-                'classname'       => __CLASS__,
-                'inject_function' => 'injectInitiateCheckoutEvent',
-            )
+        $this->signals->on(
+            'wpsc_before_shopping_cart_page',
+            'InitiateCheckout',
+            array( $this, 'read_initiate_checkout' ),
+            new FooterDelivery(),
+            self::TRACKING_NAME,
+            10,
+            1
         );
 
-        add_action(
+        $this->signals->on(
             'wpsc_transaction_results_shutdown',
-            array( __CLASS__, 'injectPurchaseEvent' ),
+            'Purchase',
+            array( $this, 'read_purchase' ),
+            new FooterDelivery(),
+            self::TRACKING_NAME,
             11,
             3
         );
     }
 
     /**
-     * Injects Facebook Pixel code for add to cart events.
+     * Builds the AddToCart EventData from the add-to-cart JSON response.
      *
-     * This method is called from the
-     * `wpsc_add_to_cart_json_response` action hook.
-     * It creates an "AddToCart" event and tracks
-     * it using the Facebook server-side
-     * API. It then injects the Facebook Pixel code into the response.
-     *
-     * @param array $response The JSON response
-     * after an item is added to the cart.
-     * @return array The modified response with the Facebook Pixel code added.
+     * @param array $response The add-to-cart JSON response.
+     * @return \FacebookPixelPlugin\Core\EventData|null
      */
-    public static function injectAddToCartEvent( $response ) {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return $response;
+    public function read_add_to_cart( $response ) {
+        if ( empty( $response['product_id'] ) ) {
+            return null;
         }
-
-        $product_id   = $response['product_id'];
-        $server_event = ServerEventFactory::safe_create_event(
-            'AddToCart',
-            array( __CLASS__, 'createAddToCartEvent' ),
-            array( $product_id ),
-            self::TRACKING_NAME
-        );
-            FacebookServerSideEvent::get_instance()->track( $server_event );
-
-            $code                   = PixelRenderer::render(
-                array( $server_event ),
-                self::TRACKING_NAME
-            );
-        $code                       = sprintf(
-            '
-        <!-- Meta Pixel Event Code -->
-        %s
-        <!-- End Meta Pixel Event Code -->
-            ',
-            $code
-        );
-        $response['widget_output'] .= $code;
-        return $response;
-    }
-
-    /**
-     * Injects a Meta Pixel InitiateCheckout event.
-     *
-     * This method is called from the
-     * `wpsc_before_shopping_cart_page` action hook.
-     * It injects a Meta Pixel InitiateCheckout
-     * event into the page whenever a shopping cart is rendered.
-     *
-     * @since 1.0.0
-     */
-    public static function injectInitiateCheckoutEvent() {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
-        }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'InitiateCheckout',
-            array( __CLASS__, 'createInitiateCheckoutEvent' ),
-            array(),
-            self::TRACKING_NAME
-        );
-            FacebookServerSideEvent::get_instance()->track( $server_event );
-
-            $code = PixelRenderer::render(
-                array(
-                    $server_event,
-                ),
-                self::TRACKING_NAME
-            );
-        printf(
-            '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-          ',
-            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        return $this->event_builder->build(
+            self::createAddToCartEvent( $response['product_id'] )
         );
     }
 
     /**
-     * Injects a Meta Pixel Purchase event.
+     * Builds the InitiateCheckout EventData for the shopping cart page.
      *
-     * This method is triggered by the
-     * `wpsc_transaction_results_shutdown` action hook.
-     * It creates and tracks a "Purchase"
-     * event using the Facebook server-side API,
-     * injecting the Facebook Pixel code
-     * into the page if the user is not internal and
-     * the display_to_screen flag is true.
-     *
-     * @param object $purchase_log_object The
-     * purchase log object containing transaction details.
-     * @param mixed  $session_id The session
-     * ID for the current user session.
-     * @param bool   $display_to_screen Flag
-     * indicating whether to display the Pixel code on screen.
-     *
-     * @since 1.0.0
+     * @return \FacebookPixelPlugin\Core\EventData
      */
-    public static function injectPurchaseEvent(
+    public function read_initiate_checkout() {
+        return $this->event_builder->build(
+            self::createInitiateCheckoutEvent()
+        );
+    }
+
+    /**
+     * Builds the Purchase EventData from a completed transaction.
+     *
+     * @param object $purchase_log_object The purchase log object.
+     * @param mixed  $session_id          The session id (unused).
+     * @param bool   $display_to_screen   Whether the results are shown.
+     * @return \FacebookPixelPlugin\Core\EventData|null
+     */
+    public function read_purchase(
         $purchase_log_object,
-        $session_id,
-        $display_to_screen
+        $session_id = null,
+        $display_to_screen = false
     ) {
-        if ( FacebookPluginUtils::is_internal_user() || ! $display_to_screen ) {
-            return;
+        if ( ! $display_to_screen ) {
+            return null;
         }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'Purchase',
-            array( __CLASS__, 'createPurchaseEvent' ),
-            array( $purchase_log_object ),
-            self::TRACKING_NAME
-        );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        $code = PixelRenderer::render(
-            array(
-                $server_event,
-            ),
-            self::TRACKING_NAME
-        );
-
-        printf(
-            '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-        ',
-            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        return $this->event_builder->build(
+            self::createPurchaseEvent( $purchase_log_object )
         );
     }
 
     /**
      * Generates a Meta Pixel Purchase event data.
      *
-     * The Purchase event is fired when a customer completes a purchase.
-     * It is typically sent when a customer submits an order.
-     *
-     * The method loops through the items in the order and creates a
-     * Meta Pixel Content object for each item. The method then sets the
-     * content_type, currency, value, content_ids and contents fields in
-     * the event data.
-     *
-     * @param object $purchase_log_object The
-     * purchase log object containing transaction details.
-     *
+     * @param object $purchase_log_object The purchase log object containing
+     *                                    transaction details.
      * @return array The event data.
-     *
-     * @since 1.0.0
      */
-    public static function createPurchaseEvent( $purchase_log_object ) {
+    private static function createPurchaseEvent( $purchase_log_object ) {
         $event_data = FacebookPluginUtils::get_logged_in_user_info();
 
         $cart_items  = $purchase_log_object->get_items();
@@ -260,22 +163,10 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
     /**
      * Generates a Meta Pixel AddToCart event data.
      *
-     * The AddToCart event is fired when a customer adds a product to their
-     * cart. It is typically sent when a customer adds a product to their
-     * cart.
-     *
-     * The method loops through the items in the cart and creates a Meta Pixel
-     * Content object for the product that was added to the cart. The method
-     * then sets the content_type, currency, value, content_ids and contents
-     * fields in the event data.
-     *
      * @param int $product_id The product ID.
-     *
      * @return array The event data.
-     *
-     * @since 1.0.0
      */
-    public static function createAddToCartEvent( $product_id ) {
+    private static function createAddToCartEvent( $product_id ) {
         $event_data = FacebookPluginUtils::get_logged_in_user_info();
 
         global $wpsc_cart;
@@ -300,19 +191,9 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
     /**
      * Generates a Meta Pixel InitiateCheckout event data.
      *
-     * The InitiateCheckout event is fired when a customer initiates a checkout.
-     * It is typically sent when a customer clicks a "checkout" button
-     * or submits an order.
-     *
-     * The method loops through the items in the cart and creates a Meta Pixel
-     * Content object for each item. The method then sets the content_type,
-     * currency, value, content_ids and contents fields in the event data.
-     *
      * @return array The event data.
-     *
-     * @since 1.0.0
      */
-    public static function createInitiateCheckoutEvent() {
+    private static function createInitiateCheckoutEvent() {
         $event_data  = FacebookPluginUtils::get_logged_in_user_info();
         $content_ids = array();
 

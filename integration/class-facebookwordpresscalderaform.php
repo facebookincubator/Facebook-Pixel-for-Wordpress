@@ -29,13 +29,7 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\FacebookWordPressOptions;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\PixelRenderer;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
+use FacebookPixelPlugin\Core\AjaxHtmlDelivery;
 
 /**
  * FacebookWordpressCalderaForm class.
@@ -45,89 +39,48 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
     const TRACKING_NAME = 'caldera-forms';
 
     /**
-     * Hook into Caldera Forms to inject the Pixel code.
+     * Registers the Caldera hook: a Lead event dispatched through Signals when
+     * the AJAX submission completes, with the browser pixel appended to the
+     * response HTML (same caldera_forms_ajax_return filter).
      *
-     * Hooks into the `caldera_forms_ajax_return`
-     * action and calls the `injectLeadEvent` method.
-     *
-     * @since 0.9.0
+     * @return void
      */
-    public static function inject_pixel_code() {
-        add_action(
+    public function set_up_tracking() {
+        $this->signals->on(
             'caldera_forms_ajax_return',
-            array( __CLASS__, 'injectLeadEvent' ),
+            'Lead',
+            array( $this, 'read_form_data' ),
+            new AjaxHtmlDelivery( 'caldera_forms_ajax_return' ),
+            self::TRACKING_NAME,
             10,
             2
         );
     }
 
     /**
-     * Injects the Pixel code into the Caldera Forms response.
+     * Extracts the Lead event data from a completed Caldera submission.
      *
-     * Hooks into the `caldera_forms_ajax_return` action and checks if the form
-     * is submitted successfully and if the user is not an internal user.
-     * If conditions are met, it creates a `Lead` event and tracks it using
-     * the `FacebookServerSideEvent` class.
-     * Then it renders the Pixel code using the `PixelRenderer` class and
-     * appends the code to the form response.
-     *
-     * @param array $out The Caldera Forms response.
+     * @param array $out  The Caldera Forms AJAX response.
      * @param array $form The form data.
-     *
-     * @return array The modified Caldera Forms response.
+     * @return \FacebookPixelPlugin\Core\EventData|null
      */
-    public static function injectLeadEvent( $out, $form ) {
-        if (
-        FacebookPluginUtils::is_internal_user() ||
-        'complete' !== $out['status']
-        ) {
-            return $out;
+    public function read_form_data( $out, $form = array() ) {
+        if ( ! is_array( $out ) || ! isset( $out['status'] )
+            || 'complete' !== $out['status'] ) {
+            return null;
         }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'Lead',
-            array( __CLASS__, 'readFormData' ),
-            array( $form ),
-            self::TRACKING_NAME,
-            true
-        );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        $code = PixelRenderer::render(
-            array( $server_event ),
-            self::TRACKING_NAME
-        );
-        $code = sprintf(
-            '
-        <!-- Meta Pixel Event Code -->
-        %s
-        <!-- End Meta Pixel Event Code -->
-            ',
-            $code
-        );
-
-        $out['html'] .= $code;
-        return $out;
-    }
-
-    /**
-     * Reads the form data from the Caldera Forms submission.
-     *
-     * @param array $form The form data.
-     *
-     * @return array The form data in the format
-     * expected by the `FacebookServerSideEvent` class.
-     */
-    public static function readFormData( $form ) {
         if ( empty( $form ) ) {
-            return array();
+            return null;
         }
-        return array(
-            'email'      => self::getEmail( $form ),
-            'first_name' => self::getFirstName( $form ),
-            'last_name'  => self::getLastName( $form ),
-            'phone'      => self::getPhone( $form ),
-            'state'      => self::getState( $form ),
+
+        return $this->event_builder->build(
+            array(
+                'email'      => self::getEmail( $form ),
+                'first_name' => self::getFirstName( $form ),
+                'last_name'  => self::getLastName( $form ),
+                'phone'      => self::getPhone( $form ),
+                'state'      => self::getState( $form ),
+            )
         );
     }
 

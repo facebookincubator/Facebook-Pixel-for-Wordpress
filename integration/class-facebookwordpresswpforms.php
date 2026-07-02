@@ -29,14 +29,10 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
-use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\FacebookWordPressOptions;
 use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\PixelRenderer;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
+use FacebookPixelPlugin\Core\CompositeDelivery;
+use FacebookPixelPlugin\Core\FooterDelivery;
+use FacebookPixelPlugin\Core\AjaxFilterDelivery;
 
 /**
  * FacebookWordpressWPForms class.
@@ -46,148 +42,52 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
     const TRACKING_NAME = 'wpforms-lite';
 
     /**
-     * Hooks into WPForms to inject the Pixel code.
+     * Registers the WPForms hooks.
      *
-     * This method adds an action to the 'wpforms_process_before' hook,
-     * which will trigger the 'trackEvent' method. It ensures that
-     * the Pixel code is injected during the form processing stage.
+     * A Lead event is dispatched through Signals when a submission is
+     * processed. The browser pixel is delivered both in the footer (classic
+     * submit) and in the AJAX success/redirect responses (AJAX submit); a
+     * front-end listener evaluates the AJAX-delivered code.
+     *
+     * @return void
      */
-    public static function inject_pixel_code() {
-        // Tracks server and browser events when a submission is processed.
-        add_action(
+    public function set_up_tracking() {
+        $this->signals->on(
             'wpforms_process_before',
-            array( __CLASS__, 'trackEvent' ),
+            'Lead',
+            array( $this, 'read_form_data' ),
+            new CompositeDelivery(
+                array(
+                    new FooterDelivery(),
+                    new AjaxFilterDelivery(
+                        'wpforms_ajax_submit_success_response',
+                        'fb_pxl_code'
+                    ),
+                    new AjaxFilterDelivery(
+                        'wpforms_ajax_submit_redirect',
+                        'fb_pxl_code'
+                    ),
+                )
+            ),
+            self::TRACKING_NAME,
             20,
             2
         );
 
-        // Enriches AJAX responses (success or redirect) with pixel code.
-        add_filter(
-            'wpforms_ajax_submit_success_response',
-            array( __CLASS__, 'injectLeadEventAjax' ),
-            20,
-            3
-        );
-        add_filter(
-            'wpforms_ajax_submit_redirect',
-            array( __CLASS__, 'injectLeadEventAjax' ),
-            20,
-            3
-        );
-
-        // Adds a front-end listener that fires pixel code returned in AJAX responses.
         add_action(
             'wp_footer',
-            array( __CLASS__, 'injectAjaxListener' ),
+            array( $this, 'inject_ajax_listener' ),
             9
         );
     }
 
     /**
-     * Tracks a server-side event for a form submission in WPForms.
-     *
-     * This method is hooked into the 'wpforms_process_before' action, which is
-     * fired by WPForms before a form is processed.
-     * It then calls the track method
-     * on the FacebookServerSideEvent instance, which generates a lead event for
-     * the form submission.
-     *
-     * If the user is an internal user, the method returns without tracking
-     * any event.
-     *
-     * @param array $entry The form entry data.
-     * @param array $form_data The form data.
+     * Outputs a JS listener that evaluates fb_pxl_code from WPForms AJAX
+     * responses (the AJAX path does not re-render wp_footer).
      *
      * @return void
      */
-    public static function trackEvent( $entry, $form_data ) {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
-        }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'Lead',
-            array( __CLASS__, 'readFormData' ),
-            array( $entry, $form_data ),
-            self::TRACKING_NAME,
-            true
-        );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        add_action(
-            'wp_footer',
-            array( __CLASS__, 'injectLeadEvent' ),
-            20
-        );
-    }
-
-    /**
-     * Injects lead event code into the footer.
-     *
-     * This method retrieves tracked events from the FacebookServerSideEvent
-     * instance and renders them into pixel code using the PixelRenderer.
-     * The resulting code is printed into the footer section of the page.
-     * If the user is an internal user, the method returns without injecting
-     * any code.
-     *
-     * @return void
-     */
-    public static function injectLeadEvent() {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
-        }
-
-        $events     =
-            FacebookServerSideEvent::get_instance()->get_tracked_events();
-        $pixel_code = PixelRenderer::render( $events, self::TRACKING_NAME );
-
-        printf(
-            '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-          ',
-            $pixel_code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        );
-    }
-
-    /**
-     * Add pixel code into AJAX success/redirect responses.
-     *
-     * @param array $response  Existing AJAX response payload.
-     * @param int   $form_id   Form ID (provided by WPForms).
-     * @param mixed $extra     Unused extra parameter (URL or form data).
-     *
-     * @return array Modified response containing fb_pxl_code when available.
-     */
-    public static function injectLeadEventAjax( $response, $form_id = null, $extra = null ) {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return $response;
-        }
-
-        $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
-        if ( empty( $events ) ) {
-            return $response;
-        }
-
-        $response['fb_pxl_code'] = PixelRenderer::render(
-            $events,
-            self::TRACKING_NAME,
-            false // Return raw fbq calls; they will be eval'd on the client.
-        );
-
-        return $response;
-    }
-
-    /**
-     * Outputs a JS listener that evaluates fb_pxl_code from WPForms AJAX responses.
-     *
-     * This covers the default WPForms AJAX path where the page is not reloaded
-     * and no wp_footer hook is executed after submission.
-     *
-     * @return void
-     */
-    public static function injectAjaxListener() {
+    public function inject_ajax_listener() {
         ?>
         <!-- Meta Pixel Event Code -->
         <script type='text/javascript'>
@@ -212,45 +112,30 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
     }
 
     /**
-     * Reads the form submission data and extracts user information.
+     * Extracts the Lead event data from a WPForms submission.
      *
-     * This method processes the form entry and form
-     * data to extract user-related
-     * information such as email, first name, last name,
-     * and phone number. It also
-     * retrieves the address data, including city,
-     * state, country, and postal code.
-     *
-     * If either the form entry or form data is
-     * empty, an empty array is returned.
-     *
-     * @param array $entry The form entry data.
+     * @param array $entry     The form entry data.
      * @param array $form_data The form schema data.
-     *
-     * @return array An associative array
-     *               containing user and address information
-     *               extracted from the form entry.
+     * @return \FacebookPixelPlugin\Core\EventData|null
      */
-    public static function readFormData( $entry, $form_data ) {
+    public function read_form_data( $entry, $form_data = array() ) {
         if ( empty( $entry ) || empty( $form_data ) ) {
-            return array();
+            return null;
         }
 
         $name = self::getName( $entry, $form_data );
 
-        $event_data = array(
-            'email'      => self::getEmail( $entry, $form_data ),
-            'first_name' => ! empty( $name ) ? $name[0] : null,
-            'last_name'  => ! empty( $name ) ? $name[1] : null,
-            'phone'      => self::getPhone( $entry, $form_data ),
+        return $this->event_builder->build(
+            array_merge(
+                array(
+                    'email'      => self::getEmail( $entry, $form_data ),
+                    'first_name' => ! empty( $name ) ? $name[0] : null,
+                    'last_name'  => ! empty( $name ) ? $name[1] : null,
+                    'phone'      => self::getPhone( $entry, $form_data ),
+                ),
+                self::getAddress( $entry, $form_data )
+            )
         );
-
-        $event_data = array_merge(
-            $event_data,
-            self::getAddress( $entry, $form_data )
-        );
-
-        return $event_data;
     }
 
     /**
