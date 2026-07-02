@@ -20,14 +20,19 @@
 namespace FacebookPixelPlugin\Tests\Integration;
 
 use FacebookPixelPlugin\Core\Signals;
-use FacebookPixelPlugin\Core\EventData;
 use FacebookPixelPlugin\Core\EventDataBuilder;
-use FacebookPixelPlugin\Core\AjaxFilterDelivery;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Integration\FacebookWordpressNinjaForms;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
  * FacebookWordpressNinjaFormsTest class.
+ *
+ * These tests assert the same observable behavior as before the Signals
+ * refactor: a Ninja Forms submission that carries a success-message action
+ * tracks a Lead server-side event with the correct user data. The only change
+ * is the entry point — the read_form_data provider plus the real Signals
+ * dispatch path instead of the old injectLeadEvent static method.
  *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
@@ -35,12 +40,13 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
 
   /**
-   * Builds a Ninja Forms integration with a mock Signals + real builder.
+   * Builds a Ninja Forms integration wired to a real Signals dispatcher, so a
+   * dispatched event actually tracks through FacebookServerSideEvent.
    *
-   * @return array [ FacebookWordpressNinjaForms, Signals mock ]
+   * @return array [ FacebookWordpressNinjaForms, Signals ]
    */
   private function makeIntegration() {
-    $signals     = $this->createMock( Signals::class );
+    $signals     = new Signals();
     $integration = new FacebookWordpressNinjaForms(
       $signals,
       new EventDataBuilder()
@@ -49,37 +55,151 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * A form_data fixture with name + email fields.
+   * Mocks the current user, plugin options, and the sanitize helper the
+   * dispatch path relies on.
    *
-   * @return array
+   * @return void
    */
-  private function formData() {
-    return array(
-      'fields' => array(
-        array( 'key' => 'name_1', 'value' => 'Pika Chu' ),
-        array( 'key' => 'email_1', 'value' => 'pika.chu@s2s.com' ),
-      ),
+  private function setupUserAndOptions() {
+    self::mockIsInternalUser( false );
+    self::mockFacebookWordpressOptions();
+
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
     );
   }
 
   /**
-   * set_up_tracking registers the Lead event (AJAX delivery) + listener.
+   * A submission with a success-message action feeds the form fields through
+   * read_form_data and dispatches a Lead event carrying all the user data —
+   * same observable outcome as the old injectLeadEvent path.
    *
    * @return void
    */
-  public function testInjectPixelCodeRegistersEventAndListener() {
+  public function testSubmissionTracksLeadEventWithoutInternalUser() {
+    $this->setupUserAndOptions();
+
+    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
+
+    $actions = array(
+      array(
+        'id'       => 1,
+        'settings' => array(
+          'type'        => 'successmessage',
+          'success_msg' => 'successful',
+        ),
+      ),
+    );
+
     list( $integration, $signals ) = $this->makeIntegration();
+
+    $data = $integration->read_form_data(
+      $actions,
+      null,
+      $this->getMockFormData()
+    );
+    $this->assertNotNull( $data );
+
+    $signals->dispatch(
+      'Lead',
+      $data,
+      FacebookWordpressNinjaForms::TRACKING_NAME
+    );
+
+    $tracked_events =
+      FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $this->assertCount( 1, $tracked_events );
+
+    $event     = $tracked_events[0];
+    $user_data = $event->getUserData();
+    $this->assertEquals( 'Lead', $event->getEventName() );
+    $this->assertNotNull( $event->getEventTime() );
+    $this->assertEquals( 'pika.chu@s2s.com', $user_data->getEmail() );
+    $this->assertEquals( 'pika', $user_data->getFirstName() );
+    $this->assertEquals( 'chu', $user_data->getLastName() );
+    $this->assertEquals( '12345', $user_data->getPhone() );
+    $this->assertEquals( 'oh', $user_data->getState() );
+    $this->assertEquals( 'springfield', $user_data->getCity() );
+    $this->assertEquals( 'us', $user_data->getCountryCode() );
+    $this->assertEquals( '4321', $user_data->getZipCode() );
+    $this->assertEquals( 'm', $user_data->getGender() );
+    $this->assertEquals(
+      'ninja-forms',
+      $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+    );
+    $this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
+  }
+
+  /**
+   * read_form_data returns null (nothing to dispatch) when the submission has
+   * no success-message action.
+   *
+   * @return void
+   */
+  public function testReadFormDataSkipsWithoutSuccessMessage() {
+    $this->setupUserAndOptions();
+
+    $actions = array(
+      array(
+        'id'       => 1,
+        'settings' => array( 'type' => 'email' ),
+      ),
+    );
+
+    list( $integration ) = $this->makeIntegration();
+
+    $this->assertNull(
+      $integration->read_form_data( $actions, null, $this->getMockFormData() )
+    );
+  }
+
+  /**
+   * read_form_data returns null when the submission carries no form data.
+   *
+   * @return void
+   */
+  public function testReadFormDataSkipsWithoutFormData() {
+    $this->setupUserAndOptions();
+
+    $actions = array(
+      array(
+        'id'       => 1,
+        'settings' => array( 'type' => 'successmessage' ),
+      ),
+    );
+
+    list( $integration ) = $this->makeIntegration();
+
+    $this->assertNull(
+      $integration->read_form_data( $actions, null, array() )
+    );
+  }
+
+  /**
+   * set_up_tracking registers the Lead event through Signals and adds the
+   * front-end AJAX listener hook.
+   *
+   * @return void
+   */
+  public function testSetUpTrackingRegistersLeadSignal() {
+    $signals     = $this->createMock( Signals::class );
+    $integration = new FacebookWordpressNinjaForms(
+      $signals,
+      new EventDataBuilder()
+    );
 
     $signals->expects( $this->once() )
       ->method( 'on' )
       ->with(
         'ninja_forms_submission_actions',
         'Lead',
-        $this->isType( 'callable' ),
-        $this->isInstanceOf( AjaxFilterDelivery::class ),
-        'ninja-forms',
-        10,
-        3
+        array( $integration, 'read_form_data' )
       );
 
     \WP_Mock::expectActionAdded(
@@ -94,40 +214,57 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * read_form_data extracts fields when a success-message action is present.
+   * The AJAX response listener script is printed on wp_footer.
    *
    * @return void
    */
-  public function testReadFormDataReturnsEventData() {
+  public function testInjectAjaxListenerOutputsScript() {
     list( $integration ) = $this->makeIntegration();
 
-    $actions = array( array( 'settings' => array( 'type' => 'successmessage' ) ) );
-
-    $data = $integration->read_form_data( $actions, array(), $this->formData() );
-
-    $this->assertInstanceOf( EventData::class, $data );
-    $this->assertEquals(
-      array(
-        'first_name' => 'Pika',
-        'last_name'  => 'Chu',
-        'email'      => 'pika.chu@s2s.com',
-      ),
-      $data->to_array()
-    );
+    $integration->inject_ajax_listener();
+    $this->expectOutputRegex( '/submit:response/' );
   }
 
   /**
-   * read_form_data returns null without a success-message action.
+   * Creates a mock Ninja Forms submission with some sample form fields.
    *
-   * @return void
+   * @return array
    */
-  public function testReadFormDataSkipsWithoutSuccessMessage() {
-    list( $integration ) = $this->makeIntegration();
-
-    $actions = array( array( 'settings' => array( 'type' => 'redirect' ) ) );
-
-    $this->assertNull(
-      $integration->read_form_data( $actions, array(), $this->formData() )
+  private function getMockFormData() {
+    $fields = array(
+      array(
+        'key'   => 'email',
+        'value' => 'pika.chu@s2s.com',
+      ),
+      array(
+        'key'   => 'name',
+        'value' => 'Pika Chu',
+      ),
+      array(
+        'key'   => 'phone',
+        'value' => '12345',
+      ),
+      array(
+        'key'   => 'city',
+        'value' => 'Springfield',
+      ),
+      array(
+        'key'   => 'liststate',
+        'value' => 'OH',
+      ),
+      array(
+        'key'   => 'listcountry',
+        'value' => 'US',
+      ),
+      array(
+        'key'   => 'zip',
+        'value' => '4321',
+      ),
+      array(
+        'key'   => 'gender',
+        'value' => 'M',
+      ),
     );
+    return array( 'fields' => $fields );
   }
 }
