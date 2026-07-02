@@ -29,14 +29,7 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
-use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\FacebookWordPressOptions;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\PixelRenderer;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
+use FacebookPixelPlugin\Core\FooterDelivery;
 
 /**
  * FacebookWordpressFormidableForm class.
@@ -46,123 +39,54 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
   const TRACKING_NAME = 'formidable-lite';
 
     /**
-     * Injects pixel code for the Formidable Form plugin.
-     *
-     * This method hooks into the 'frm_after_create_entry' action, which is
-     * fired by the Formidable Form plugin after a form entry is created. It
-     * then calls the trackServerEvent method, which generates a lead event
-     * for the form submission.
+     * Registers the Formidable hook: a Lead event dispatched through Signals
+     * after an entry is created, with the browser pixel emitted in the footer.
      *
      * @return void
      */
-    public static function inject_pixel_code() {
-        add_action(
+    public function inject_pixel_code() {
+        $this->signals->on(
             'frm_after_create_entry',
-            array( __CLASS__, 'trackServerEvent' ),
+            'Lead',
+            array( $this, 'read_form_data' ),
+            new FooterDelivery(),
+            self::TRACKING_NAME,
             20,
             2
         );
     }
 
     /**
-     * Tracks a server-side event for a form submission in Formidable Form.
+     * Extracts the Lead event data for a created Formidable entry.
      *
-     * This method is hooked into the 'frm_after_create_entry' action, which is
-     * fired by the Formidable Form plugin after a form entry is created. It
-     * then calls the track method on the FacebookServerSideEvent instance,
-     * which generates a lead event for the form submission.
-     *
-     * @param int $entry_id The ID of the form entry.
-     * @param int $form_id The ID of the form.
-     *
-     * @return void
+     * @param int      $entry_id The ID of the form entry.
+     * @param int|null $form_id  The ID of the form (unused).
+     * @return \FacebookPixelPlugin\Core\EventData|null
      */
-    public static function trackServerEvent( $entry_id, $form_id ) {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
+    public function read_form_data( $entry_id, $form_id = null ) {
+        if ( empty( $entry_id ) ) {
+            return null;
         }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'Lead',
-            array( __CLASS__, 'readFormData' ),
-            array( $entry_id ),
-            self::TRACKING_NAME,
-            true
-        );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        add_action(
-            'wp_footer',
-            array( __CLASS__, 'injectLeadEvent' ),
-            20
-        );
-    }
-
-    /**
-     * Injects lead event code into the footer.
-     *
-     * This method retrieves tracked events from the FacebookServerSideEvent
-     * instance and renders them into pixel code using the PixelRenderer.
-     * The resulting code is printed into the footer section of the page.
-     * If the user is an internal user, the method returns without injecting
-     * any code.
-     *
-     * @return void
-     */
-    public static function injectLeadEvent() {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
-        }
-
-        $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
-        $code   = PixelRenderer::render( $events, self::TRACKING_NAME );
-
-        printf(
-            '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-          ',
-            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        );
-    }
-
-    /**
-     * Reads form data for a given entry ID.
-     *
-     * This method retrieves the entry values from Formidable
-     * Forms using the provided
-     * entry ID. It extracts specific user information such as
-     * email, first name,
-     * last name, and phone, and combines this information with address data.
-     *
-     * @param int $entry_id The ID of the form entry.
-     * @return array An associative array containing user and
-     *               address information,
-     *               or an empty array if the entry ID is
-     *               empty or no data is found.
-     */
-    public static function readFormData( $entry_id ) {
-    if ( empty( $entry_id ) ) {
-        return array();
-    }
 
         $entry_values =
-        IntegrationUtils::get_formidable_forms_entry_values( $entry_id );
+            IntegrationUtils::get_formidable_forms_entry_values( $entry_id );
 
         $field_values = $entry_values->get_field_values();
-        if ( ! empty( $field_values ) ) {
-            $user_data    = array(
-                'email'      => self::getEmail( $field_values ),
-                'first_name' => self::getFirstName( $field_values ),
-                'last_name'  => self::getLastName( $field_values ),
-                'phone'      => self::getPhone( $field_values ),
-            );
-            $address_data = self::getAddressInformation( $field_values );
-            return array_merge( $user_data, $address_data );
+        if ( empty( $field_values ) ) {
+            return null;
         }
 
-        return array();
+        return $this->event_builder->build(
+            array_merge(
+                array(
+                    'email'      => self::getEmail( $field_values ),
+                    'first_name' => self::getFirstName( $field_values ),
+                    'last_name'  => self::getLastName( $field_values ),
+                    'phone'      => self::getPhone( $field_values ),
+                ),
+                self::getAddressInformation( $field_values )
+            )
+        );
     }
 
     /**
