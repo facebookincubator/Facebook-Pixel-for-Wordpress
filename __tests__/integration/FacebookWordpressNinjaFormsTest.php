@@ -35,7 +35,7 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
 
   /**
-   * Builds a Ninja Forms integration with a mock Signals and a real builder.
+   * Builds a Ninja Forms integration with a mock Signals + real builder.
    *
    * @return array [ FacebookWordpressNinjaForms, Signals mock ]
    */
@@ -49,38 +49,21 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * A form_data with the given fields (each key => value).
+   * A form_data fixture with name + email fields.
    *
-   * @param array $fields Map of field key => value.
    * @return array
    */
-  private function formData( $fields ) {
-    $out = array();
-    foreach ( $fields as $key => $value ) {
-      $out[] = array(
-        'key'   => $key,
-        'value' => $value,
-      );
-    }
+  private function formData() {
     return array(
-      'id'     => 1,
-      'fields' => $out,
+      'fields' => array(
+        array( 'key' => 'name_1', 'value' => 'Pika Chu' ),
+        array( 'key' => 'email_1', 'value' => 'pika.chu@s2s.com' ),
+      ),
     );
   }
 
   /**
-   * A submission actions array with a success-message action.
-   *
-   * @return array
-   */
-  private function successActions() {
-    return array(
-      array( 'settings' => array( 'type' => 'successmessage' ) ),
-    );
-  }
-
-  /**
-   * inject_pixel_code registers the Lead event (AJAX delivery) and listener.
+   * inject_pixel_code registers the Lead event (AJAX delivery) + listener.
    *
    * @return void
    */
@@ -111,25 +94,16 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * read_form_data extracts fields into an EventData on a success submission.
+   * read_form_data extracts fields when a success-message action is present.
    *
    * @return void
    */
   public function testReadFormDataReturnsEventData() {
     list( $integration ) = $this->makeIntegration();
 
-    $form_data = $this->formData(
-      array(
-        'name'  => 'Pika Chu',
-        'email' => 'pika.chu@s2s.com',
-      )
-    );
+    $actions = array( array( 'settings' => array( 'type' => 'successmessage' ) ) );
 
-    $data = $integration->read_form_data(
-      $this->successActions(),
-      array(),
-      $form_data
-    );
+    $data = $integration->read_form_data( $actions, array(), $this->formData() );
 
     $this->assertInstanceOf( EventData::class, $data );
     $this->assertEquals(
@@ -143,17 +117,17 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * read_form_data returns null when there is no success-message action.
+   * read_form_data returns null without a success-message action.
    *
    * @return void
    */
   public function testReadFormDataSkipsWithoutSuccessMessage() {
     list( $integration ) = $this->makeIntegration();
 
-    $form_data = $this->formData( array( 'email' => 'pika.chu@s2s.com' ) );
+    $actions = array( array( 'settings' => array( 'type' => 'redirect' ) ) );
 
     $this->assertNull(
-      $integration->read_form_data( array(), array(), $form_data )
+      $integration->read_form_data( $actions, array(), $this->formData() )
     );
   }
 }
