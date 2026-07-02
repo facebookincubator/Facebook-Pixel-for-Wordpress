@@ -193,9 +193,17 @@ class Signals {
             $prefer_referrer
         );
 
-        // When an integration supplies a shared id (e.g. from a hidden form
-        // field), reuse it so the server event deduplicates against the
-        // browser event that carries the same id.
+        // Browser/server dedup. For every integration except EDD add-to-cart
+        // this block is a no-op: the browser pixel is rendered from THIS same
+        // Event via PixelRenderer (which copies the id into the fbq eventID),
+        // so both sides already share the ServerEventFactory-generated id and
+        // get_event_id() is null here. EDD add-to-cart is the exception — its
+        // browser pixel fires client-side on click, before this server Event
+        // exists, so it cannot inherit this id. That flow pre-shares an id via
+        // a hidden form field; read_add_to_cart() puts it on the EventData and
+        // we stamp it onto the server Event so the two deduplicate. See
+        // T278177691 to remove this plumbing once EDD's add-to-cart pixel can
+        // be rendered from the server Event too.
         $event_id = $event_data->get_event_id();
         if ( ! empty( $event_id ) ) {
             $event->setEventId( $event_id );
