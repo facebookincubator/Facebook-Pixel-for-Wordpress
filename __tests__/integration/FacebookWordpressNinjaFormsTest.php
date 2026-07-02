@@ -2,15 +2,7 @@
 /**
  * Facebook Pixel Plugin FacebookWordpressNinjaFormsTest class.
  *
- * This file contains the main logic for FacebookWordpressNinjaFormsTest.
- *
  * @package FacebookPixelPlugin
- */
-
-/**
- * Define FacebookWordpressNinjaFormsTest class.
- *
- * @return void
  */
 
 /*
@@ -27,247 +19,141 @@
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
+use FacebookPixelPlugin\Core\Signals;
+use FacebookPixelPlugin\Core\EventData;
+use FacebookPixelPlugin\Core\EventDataBuilder;
+use FacebookPixelPlugin\Core\AjaxFilterDelivery;
 use FacebookPixelPlugin\Integration\FacebookWordpressNinjaForms;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
  * FacebookWordpressNinjaFormsTest class.
  *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in separate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
  */
 final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
-  /**
-   * Tests that the inject_pixel_code method adds
-     * the correct hooks to WordPress.
-   *
-   * @return void
-   */
-  public function testInjectPixelCode() {
-    \WP_Mock::expectActionAdded(
-      'ninja_forms_submission_actions',
-      array( FacebookWordpressNinjaForms::class, 'injectLeadEvent' ),
-      10,
-      3
-    );
-    \WP_Mock::expectFilterAdded(
-      'ninja_forms_post_run_action_type_successmessage',
-      array( FacebookWordpressNinjaForms::class, 'injectLeadEventResponse' )
-    );
-    \WP_Mock::expectActionAdded(
-      'wp_footer',
-      array( FacebookWordpressNinjaForms::class, 'injectAjaxListener' ),
-      9
-    );
 
-    FacebookWordpressNinjaForms::inject_pixel_code();
-    $this->assertHooksAdded();
+  /**
+   * Builds a Ninja Forms integration with a mock Signals and a real builder.
+   *
+   * @return array [ FacebookWordpressNinjaForms, Signals mock ]
+   */
+  private function makeIntegration() {
+    $signals     = $this->createMock( Signals::class );
+    $integration = new FacebookWordpressNinjaForms(
+      $signals,
+      new EventDataBuilder()
+    );
+    return array( $integration, $signals );
   }
 
   /**
-   * Tests the injectLeadEvent method when the user is not an internal user.
+   * A form_data with the given fields (each key => value).
    *
-   * This test verifies that the success message is left unchanged and that the
-   * server-side event is tracked with the correct parameters.
-   * It ensures that the 'Lead' event is recorded with the expected user data,
-   * including email, first name, last name, phone number,
-     * city, state, country,
-   * zip code, and gender when the Ninja Forms integration is triggered.
-   * It also checks that the event source URL is correctly set.
-   *
-   * @return void
+   * @param array $fields Map of field key => value.
+   * @return array
    */
-  public function testInjectLeadEventWithoutInternalUser() {
-    parent::mockIsInternalUser( false );
-    self::mockFacebookWordpressOptions();
-
-    $mock_actions = array(
-      array(
-        'id'       => 1,
-        'settings' => array(
-          'type'        => 'successmessage',
-          'success_msg' => 'successful',
-        ),
-      ),
+  private function formData( $fields ) {
+    $out = array();
+    foreach ( $fields as $key => $value ) {
+      $out[] = array(
+        'key'   => $key,
+        'value' => $value,
+      );
+    }
+    return array(
+      'id'     => 1,
+      'fields' => $out,
     );
-
-    $mock_form_data          = $this->getMockFormData();
-    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
-
-        \WP_Mock::userFunction(
-            'sanitize_text_field',
-            array(
-        'args'   => array( \Mockery::any() ),
-        'return' => function ( $input ) {
-          return $input;
-        },
-            )
-        );
-
-    $result = FacebookWordpressNinjaForms::injectLeadEvent(
-      $mock_actions,
-      null,
-      $mock_form_data
-    );
-
-    $this->assertNotEmpty( $result );
-    $this->assertArrayHasKey( 'settings', $result[0] );
-    $this->assertArrayHasKey( 'success_msg', $result[0]['settings'] );
-    $this->assertEquals( 'successful', $result[0]['settings']['success_msg'] );
-
-    $tracked_events =
-    FacebookServerSideEvent::get_instance()->get_tracked_events();
-
-    $this->assertCount( 1, $tracked_events );
-
-    $event = $tracked_events[0];
-    $this->assertEquals( 'Lead', $event->getEventName() );
-    $this->assertNotNull( $event->getEventTime() );
-    $this->assertEquals(
-            'pika.chu@s2s.com',
-            $event->getUserData()->getEmail()
-        );
-    $this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
-    $this->assertEquals( 'chu', $event->getUserData()->getLastName() );
-    $this->assertEquals( '12345', $event->getUserData()->getPhone() );
-    $this->assertEquals( 'oh', $event->getUserData()->getState() );
-    $this->assertEquals( 'springfield', $event->getUserData()->getCity() );
-    $this->assertEquals( 'us', $event->getUserData()->getCountryCode() );
-    $this->assertEquals( '4321', $event->getUserData()->getZipCode() );
-    $this->assertEquals( 'm', $event->getUserData()->getGender() );
-    $this->assertEquals(
-      'ninja-forms',
-      $event->getCustomData()->getCustomProperty(
-                'fb_integration_tracking'
-            )
-    );
-    $this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
   }
 
   /**
-   * Tests the injectLeadEvent method when the user is an internal user.
-   *
-   * This test verifies that the output HTML remains
-     * unchanged and that no events are tracked.
-   *
-   * @return void
-   */
-  public function testInjectLeadEventWithInternalUser() {
-    parent::mockIsInternalUser( true );
-
-    $result = FacebookWordpressNinjaForms::injectLeadEvent(
-      'mock_actions',
-      'mock_form_cache',
-      'mock_form_data'
-    );
-
-    $this->assertEquals( 'mock_actions', $result );
-  }
-
-  /**
-   * Tests that the AJAX response is enriched with raw pixel code.
-   *
-   * @return void
-   */
-  public function testInjectLeadEventResponseAddsPixelCode() {
-    parent::mockIsInternalUser( false );
-    self::mockFacebookWordpressOptions();
-
-        \WP_Mock::userFunction(
-            'sanitize_text_field',
-            array(
-        'args'   => array( \Mockery::any() ),
-        'return' => function ( $input ) {
-          return $input;
-        },
-            )
-        );
-
-        \WP_Mock::userFunction(
-            'wp_json_encode',
-            array(
-        'args'   => array(
-                    \Mockery::type( 'array' ),
-          \Mockery::type( 'int' ),
-        ),
-        'return' => function ( $data, $options ) {
-          return json_encode( $data );
-        },
-            )
-        );
-
-    $event = \FacebookPixelPlugin\Core\ServerEventFactory::new_event( 'Lead' );
-    FacebookServerSideEvent::get_instance()->track( $event );
-
-    $response = FacebookWordpressNinjaForms::injectLeadEventResponse( array() );
-
-    $this->assertArrayHasKey( 'fb_pxl_code', $response );
-    $this->assertStringContainsString( "fbq('track'", $response['fb_pxl_code'] );
-  }
-
-  /**
-   * Tests that the AJAX response listener script is printed.
-   *
-   * @return void
-   */
-  public function testInjectAjaxListenerOutputsScript() {
-    FacebookWordpressNinjaForms::injectAjaxListener();
-    $this->expectOutputRegex( '/submit:response/' );
-  }
-
-  /**
-   * Creates a mock form data object with some sample form tags.
+   * A submission actions array with a success-message action.
    *
    * @return array
    */
-  private function getMockFormData() {
-    $email   = array(
-      'key'   => 'email',
-      'value' => 'pika.chu@s2s.com',
+  private function successActions() {
+    return array(
+      array( 'settings' => array( 'type' => 'successmessage' ) ),
     );
-    $name    = array(
-      'key'   => 'name',
-      'value' => 'Pika Chu',
+  }
+
+  /**
+   * inject_pixel_code registers the Lead event (AJAX delivery) and listener.
+   *
+   * @return void
+   */
+  public function testInjectPixelCodeRegistersEventAndListener() {
+    list( $integration, $signals ) = $this->makeIntegration();
+
+    $signals->expects( $this->once() )
+      ->method( 'on' )
+      ->with(
+        'ninja_forms_submission_actions',
+        'Lead',
+        $this->isType( 'callable' ),
+        $this->isInstanceOf( AjaxFilterDelivery::class ),
+        'ninja-forms',
+        10,
+        3
+      );
+
+    \WP_Mock::expectActionAdded(
+      'wp_footer',
+      array( $integration, 'inject_ajax_listener' ),
+      9
     );
-    $phone   = array(
-      'key'   => 'phone',
-      'value' => '12345',
+
+    $integration->inject_pixel_code();
+
+    $this->assertConditionsMet();
+  }
+
+  /**
+   * read_form_data extracts fields into an EventData on a success submission.
+   *
+   * @return void
+   */
+  public function testReadFormDataReturnsEventData() {
+    list( $integration ) = $this->makeIntegration();
+
+    $form_data = $this->formData(
+      array(
+        'name'  => 'Pika Chu',
+        'email' => 'pika.chu@s2s.com',
+      )
     );
-    $city    = array(
-      'key'   => 'city',
-      'value' => 'Springfield',
+
+    $data = $integration->read_form_data(
+      $this->successActions(),
+      array(),
+      $form_data
     );
-    $state   = array(
-      'key'   => 'liststate',
-      'value' => 'OH',
+
+    $this->assertInstanceOf( EventData::class, $data );
+    $this->assertEquals(
+      array(
+        'first_name' => 'Pika',
+        'last_name'  => 'Chu',
+        'email'      => 'pika.chu@s2s.com',
+      ),
+      $data->to_array()
     );
-    $country = array(
-      'key'   => 'listcountry',
-      'value' => 'US',
+  }
+
+  /**
+   * read_form_data returns null when there is no success-message action.
+   *
+   * @return void
+   */
+  public function testReadFormDataSkipsWithoutSuccessMessage() {
+    list( $integration ) = $this->makeIntegration();
+
+    $form_data = $this->formData( array( 'email' => 'pika.chu@s2s.com' ) );
+
+    $this->assertNull(
+      $integration->read_form_data( array(), array(), $form_data )
     );
-    $zip     = array(
-      'key'   => 'zip',
-      'value' => '4321',
-    );
-    $gender  = array(
-      'key'   => 'gender',
-      'value' => 'M',
-    );
-    $fields  = array(
-      $email,
-      $name,
-      $phone,
-      $city,
-      $state,
-      $country,
-      $zip,
-      $gender,
-    );
-    return array( 'fields' => $fields );
   }
 }
