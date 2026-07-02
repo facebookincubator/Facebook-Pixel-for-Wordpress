@@ -52,13 +52,9 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
    * @var array
    */
   private static $integrations = array(
-    'FacebookWordpressCalderaForm',
-    'FacebookWordpressContactForm7',
-    'FacebookWordpressEasyDigitalDownloads',
-    'FacebookWordpressFormidableForm',
+    // Narrowed to match the temporarily reduced integration_config() while the
+    // ServerEvents/BrowserEvents consolidation lands.
     'FacebookWordpressMailchimpForWp',
-    'FacebookWordpressNinjaForms',
-    'FacebookWordpressWPECommerce',
   );
 
   /**
