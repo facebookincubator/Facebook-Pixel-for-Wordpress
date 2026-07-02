@@ -41,12 +41,32 @@ class EventData {
     private $fields;
 
     /**
+     * Optional shared event id, used to deduplicate a browser event against its
+     * server-side counterpart. Null when the dispatcher should generate one.
+     *
+     * @var string|null
+     */
+    private $event_id;
+
+    /**
      * Constructor.
      *
-     * @param array<string,mixed> $fields Standard event fields.
+     * @param array<string,mixed> $fields   Standard event fields.
+     * @param string|null         $event_id Optional shared event id for
+     *                                       browser/server deduplication.
      */
-    public function __construct( array $fields = array() ) {
-        $this->fields = $fields;
+    public function __construct( array $fields = array(), $event_id = null ) {
+        $this->fields   = $fields;
+        $this->event_id = $event_id;
+    }
+
+    /**
+     * Returns the shared event id, or null when none was provided.
+     *
+     * @return string|null
+     */
+    public function get_event_id() {
+        return $this->event_id;
     }
 
     /**
