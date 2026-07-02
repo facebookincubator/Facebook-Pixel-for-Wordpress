@@ -31,7 +31,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\PixelRenderer;
@@ -89,7 +89,7 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
             self::TRACKING_NAME,
             true
         );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
+        ( new Signals() )->track_event( $server_event );
 
         add_action(
             'wp_footer',
@@ -114,7 +114,7 @@ class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
             return;
         }
 
-        $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
+        $events = ( new Signals() )->get_tracked_events();
         $code   = PixelRenderer::render( $events, self::TRACKING_NAME );
 
         printf(

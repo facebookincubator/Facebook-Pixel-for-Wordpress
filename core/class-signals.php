@@ -168,6 +168,65 @@ class Signals {
         return FacebookServerSideEvent::send( $events, $test_event_code );
     }
 
+    /*
+     * Temporary redirects to the CAPI event store.
+     *
+     * Legacy integrations and PixelInjection call these through Signals so the
+     * store is reached only via the facade. They are thin pass-throughs on
+     * purpose and are removed as each caller is converted to
+     * track()/render()/flush_pending_events(). Do not add new callers.
+     */
+
+    /**
+     * Tracks an already-built server event.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event.
+     * @param bool                                                     $send_now Send now or queue.
+     * @return void
+     */
+    public function track_event( $event, $send_now = true ) {
+        $this->server_events->track( $event, $send_now );
+    }
+
+    /**
+     * Returns all events tracked this request.
+     *
+     * @return array
+     */
+    public function get_tracked_events() {
+        return $this->server_events->get_tracked_events();
+    }
+
+    /**
+     * Returns events queued for deferred sending this request.
+     *
+     * @return array
+     */
+    public function get_pending_events() {
+        return $this->server_events->get_pending_events();
+    }
+
+    /**
+     * Stores a server event to be emitted when a named callback fires.
+     *
+     * @param string                                                   $callback_name The callback name.
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event         The event.
+     * @return void
+     */
+    public function set_pending_pixel_event( $callback_name, $event ) {
+        $this->server_events->set_pending_pixel_event( $callback_name, $event );
+    }
+
+    /**
+     * Returns a server event stored for a named callback.
+     *
+     * @param string $callback_name The callback name.
+     * @return \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event|null
+     */
+    public function get_pending_pixel_event( $callback_name ) {
+        return $this->server_events->get_pending_pixel_event( $callback_name );
+    }
+
     /**
      * Whether signals are held for the current request (consent not yet given).
      *

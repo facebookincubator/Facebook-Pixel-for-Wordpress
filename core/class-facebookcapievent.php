@@ -29,7 +29,6 @@ namespace FacebookPixelPlugin\Core;
 
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventRequest;
 use FacebookPixelPlugin\FacebookAds\ApiConfig;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -82,9 +81,19 @@ class FacebookCapiEvent {
     );
 
     /**
-     * Hook into WordPress's AJAX actions to handle sending a CAPI event.
+     * Shared Signals service.
+     *
+     * @var Signals
      */
-    public function __construct() {
+    private $signals;
+
+    /**
+     * Hook into WordPress's AJAX actions to handle sending a CAPI event.
+     *
+     * @param Signals|null $signals Shared signals service.
+     */
+    public function __construct( ?Signals $signals = null ) {
+        $this->signals = $signals ? $signals : new Signals();
         add_action(
             'wp_ajax_send_capi_event',
             array( $this, 'send_capi_event' )
@@ -232,7 +241,7 @@ class FacebookCapiEvent {
             }
         }
 
-        $result = ( new Signals() )->send( $events, $test_event_code );
+        $result = $this->signals->send( $events, $test_event_code );
 
         if ( $result && $result['success'] ) {
             wp_send_json_success(

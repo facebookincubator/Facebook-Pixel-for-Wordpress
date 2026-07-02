@@ -83,9 +83,19 @@ class ReleaseSignalsAjax {
     );
 
     /**
-     * Register AJAX handlers.
+     * Shared Signals service.
+     *
+     * @var Signals
      */
-    public function __construct() {
+    private $signals;
+
+    /**
+     * Register AJAX handlers.
+     *
+     * @param Signals|null $signals Shared signals service.
+     */
+    public function __construct( ?Signals $signals = null ) {
+        $this->signals = $signals ? $signals : new Signals();
         add_action( 'wp_ajax_' . self::ACTION, array( $this, 'handle' ) );
         add_action( 'wp_ajax_nopriv_' . self::ACTION, array( $this, 'handle' ) );
     }
@@ -162,7 +172,7 @@ class ReleaseSignalsAjax {
 
         if ( ! empty( $events_to_send ) ) {
             $this->record_rate_limit_usage( count( $events_to_send ) );
-            ( new Signals() )->send( $events_to_send );
+            $this->signals->send( $events_to_send );
         }
 
         // Return fresh user_info so JS can initialise fbq with correct AAM data

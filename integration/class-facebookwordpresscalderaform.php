@@ -30,7 +30,7 @@ namespace FacebookPixelPlugin\Integration;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\PixelRenderer;
@@ -91,7 +91,7 @@ class FacebookWordpressCalderaForm extends FacebookWordpressIntegrationBase {
             self::TRACKING_NAME,
             true
         );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
+        ( new Signals() )->track_event( $server_event );
 
         $code = PixelRenderer::render(
             array( $server_event ),

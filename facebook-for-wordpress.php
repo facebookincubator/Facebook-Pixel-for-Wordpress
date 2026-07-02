@@ -74,7 +74,7 @@ class FacebookForWordpress {
     FacebookPixel::initialize( FacebookWordpressOptions::get_active_pixel_id() );
     $signals = new Signals();
     $signals->register();
-    new ReleaseSignalsAjax();
+    new ReleaseSignalsAjax( $signals );
 
     if ( $signals->should_hold_signals() ) {
         $signals->hold();
@@ -89,7 +89,7 @@ class FacebookForWordpress {
     $this->register_settings_page();
     add_action( 'admin_init', array( $this, 'maybe_reset_upgrade_notice' ) );
 
-    new ServerEventAsyncTask();
+    new ServerEventAsyncTask( $signals );
 
     self::update_db_for_wpcom();
     }

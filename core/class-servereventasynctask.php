@@ -15,8 +15,6 @@
 
 namespace FacebookPixelPlugin\Core;
 
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
@@ -34,6 +32,24 @@ class ServerEventAsyncTask extends \WP_Async_Task {
      * @var string
      */
     protected $action = 'send_server_events';
+
+    /**
+     * Shared Signals service.
+     *
+     * @var Signals
+     */
+    private $signals;
+
+    /**
+     * Constructor.
+     *
+     * @param Signals|null $signals    Shared signals service.
+     * @param string       $auth_level WP_Async_Task auth level.
+     */
+    public function __construct( ?Signals $signals = null, $auth_level = self::BOTH ) {
+        parent::__construct( $auth_level );
+        $this->signals = $signals ? $signals : new Signals();
+    }
 
     /**
      * Converts the normalized user data to the keys used in UserData.
@@ -123,7 +139,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
      * This function decodes the JSON string sent in the $_POST['event_data']
      * and processes the events as an array of Event objects.
      *
-     * @see FacebookServerSideEvent::send()
+     * @see Signals::send()
      *
      * @throws \Exception If there was an preprocessing error.
      */
@@ -150,6 +166,6 @@ class ServerEventAsyncTask extends \WP_Async_Task {
             $event    = $this->convert_array_to_event( $event_as_array );
             $events[] = $event;
         }
-        ( new Signals() )->send( $events );
+        $this->signals->send( $events );
     }
 }
