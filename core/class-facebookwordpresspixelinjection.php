@@ -125,15 +125,7 @@ class FacebookWordpressPixelInjection {
             return;
         }
 
-        $pending_events =
-        $this->signals->get_server_events()->get_pending_events();
-        if ( count( $pending_events ) > 0 ) {
-            do_action(
-                'send_server_events',
-                $pending_events,
-                count( $pending_events )
-            );
-        }
+        $this->signals->flush_pending_events();
     }
 
     /**

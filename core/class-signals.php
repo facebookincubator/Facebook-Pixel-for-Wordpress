@@ -65,12 +65,18 @@ class Signals {
     }
 
     /**
-     * Returns the CAPI event store shared for this request.
+     * Sends any server-side events that were queued (dispatched for deferred
+     * sending) during this request via the send_server_events action. The
+     * pending-event store is kept fully encapsulated here so callers never
+     * reach into it.
      *
-     * @return FacebookServerSideEvent
+     * @return void
      */
-    public function get_server_events() {
-        return $this->server_events;
+    public function flush_pending_events() {
+        $pending = $this->server_events->get_pending_events();
+        if ( count( $pending ) > 0 ) {
+            do_action( 'send_server_events', $pending, count( $pending ) );
+        }
     }
 
     /**
@@ -186,6 +192,15 @@ class Signals {
             $tracking_name,
             $prefer_referrer
         );
+
+        // When an integration supplies a shared id (e.g. from a hidden form
+        // field), reuse it so the server event deduplicates against the
+        // browser event that carries the same id.
+        $event_id = $event_data->get_event_id();
+        if ( ! empty( $event_id ) ) {
+            $event->setEventId( $event_id );
+        }
+
         $this->server_events->track( $event );
         return $event;
     }
