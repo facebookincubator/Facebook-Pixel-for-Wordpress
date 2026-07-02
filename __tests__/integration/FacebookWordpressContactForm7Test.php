@@ -20,9 +20,9 @@
 namespace FacebookPixelPlugin\Tests\Integration;
 
 use FacebookPixelPlugin\Core\Signals;
-use FacebookPixelPlugin\Core\EventData;
 use FacebookPixelPlugin\Core\EventDataBuilder;
 use FacebookPixelPlugin\Core\AjaxFilterDelivery;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Integration\FacebookWordpressContactForm7;
 use FacebookPixelPlugin\Tests\Mocks\MockContactForm7;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
@@ -30,23 +30,56 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 /**
  * FacebookWordpressContactForm7Test class.
  *
+ * These tests assert the same observable behavior as before the Signals
+ * refactor: a successful Contact Form 7 submission ends up tracking a Lead
+ * server-side event carrying the correct user/custom data. The only change is
+ * the entry point — read_form_data plus the real Signals dispatch path instead
+ * of the old trackServerEvent static method.
+ *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
 final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase {
 
   /**
-   * Builds a CF7 integration with a mock Signals and a real builder.
+   * Builds a CF7 integration wired to a real Signals dispatcher, so a
+   * dispatched event actually tracks through FacebookServerSideEvent.
    *
-   * @return array [ FacebookWordpressContactForm7, Signals mock ]
+   * @return array [ FacebookWordpressContactForm7, Signals ]
    */
   private function makeIntegration() {
-    $signals     = $this->createMock( Signals::class );
+    $signals     = new Signals();
     $integration = new FacebookWordpressContactForm7(
       $signals,
       new EventDataBuilder()
     );
     return array( $integration, $signals );
+  }
+
+  /**
+   * Stubs the JSON/sanitize helpers the dispatch/render path relies on.
+   *
+   * @return void
+   */
+  private function mockRenderHelpers() {
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'args'   => array( \Mockery::type( 'array' ), \Mockery::type( 'int' ) ),
+        'return' => function ( $data, $options ) {
+          return json_encode( $data );
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'args'   => array( \Mockery::any() ),
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
   }
 
   /**
@@ -56,7 +89,11 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
    * @return void
    */
   public function testInjectPixelCodeRegistersEventAndListener() {
-    list( $integration, $signals ) = $this->makeIntegration();
+    $signals     = $this->createMock( Signals::class );
+    $integration = new FacebookWordpressContactForm7(
+      $signals,
+      new EventDataBuilder()
+    );
 
     $signals->expects( $this->once() )
       ->method( 'on' )
@@ -83,51 +120,129 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
   }
 
   /**
-   * read_form_data extracts the standard fields into an EventData.
+   * A dispatched Lead tracks a Lead server event carrying the submitter's
+   * user data and the contact-form-7 tracking property — the same outcome the
+   * old trackServerEvent path asserted.
    *
    * @return void
    */
-  public function testReadFormDataReturnsEventData() {
-    \WP_Mock::userFunction(
-      'sanitize_text_field',
-      array(
-        'return' => function ( $input ) {
-          return $input;
-        },
-      )
-    );
+  public function testTrackServerEventWithoutInternalUser() {
+    self::mockIsInternalUser( false );
+    self::mockFacebookWordpressOptions();
+    $this->mockRenderHelpers();
 
-    list( $integration ) = $this->makeIntegration();
-    $form                = $this->createMockForm();
+    $_SERVER['HTTP_REFERER'] = 'TEST_REFERER';
 
+    list( $integration, $signals ) = $this->makeIntegration();
+
+    $form = $this->createMockForm();
     $data = $integration->read_form_data(
       $form,
       array( 'status' => 'mail_sent' )
     );
-
-    $this->assertInstanceOf( EventData::class, $data );
-    $this->assertEquals(
-      array(
-        'email'      => 'pika.chu@s2s.com',
-        'first_name' => 'Pika',
-        'last_name'  => 'Chu',
-        'phone'      => '12223334444',
-      ),
-      $data->to_array()
+    $signals->dispatch(
+      'Lead',
+      $data,
+      FacebookWordpressContactForm7::TRACKING_NAME
     );
+
+    $tracked_events =
+      FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $this->assertCount( 1, $tracked_events );
+
+    $event = $tracked_events[0];
+    $this->assertEquals( 'Lead', $event->getEventName() );
+    $this->assertNotNull( $event->getEventTime() );
+    $this->assertEquals(
+      'pika.chu@s2s.com',
+      $event->getUserData()->getEmail()
+    );
+    $this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
+    $this->assertEquals( 'chu', $event->getUserData()->getLastName() );
+    $this->assertEquals( '12223334444', $event->getUserData()->getPhone() );
+    $this->assertEquals(
+      'contact-form-7',
+      $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+    );
+    $this->assertEquals( 'TEST_REFERER', $event->getEventSourceUrl() );
   }
 
   /**
-   * read_form_data returns null (no dispatch) when the mail did not send.
+   * A dispatched Lead still tracks a Lead server event when the form carries
+   * no recognizable name/email/phone tags — mirrors the old
+   * "without form data" case.
    *
    * @return void
    */
-  public function testReadFormDataSkipsWhenNotMailSent() {
+  public function testTrackServerEventWithoutFormData() {
+    self::mockIsInternalUser( false );
+    self::mockFacebookWordpressOptions();
+    $this->mockRenderHelpers();
+
+    list( $integration, $signals ) = $this->makeIntegration();
+
+    $form = new MockContactForm7();
+    $data = $integration->read_form_data(
+      $form,
+      array( 'status' => 'mail_sent' )
+    );
+    $signals->dispatch(
+      'Lead',
+      $data,
+      FacebookWordpressContactForm7::TRACKING_NAME
+    );
+
+    $tracked_events =
+      FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $this->assertCount( 1, $tracked_events );
+
+    $event = $tracked_events[0];
+    $this->assertEquals( 'Lead', $event->getEventName() );
+    $this->assertNotNull( $event->getEventTime() );
+  }
+
+  /**
+   * read_form_data returns null (nothing dispatched) when the mail did not
+   * send, for every non-success CF7 status.
+   *
+   * @return void
+   */
+  public function testReadFormDataSkipsWhenMailFails() {
+    self::mockIsInternalUser( false );
+    self::mockFacebookWordpressOptions();
+
+    $bad_statuses = array(
+      'validation_failed',
+      'acceptance_missing',
+      'spam',
+      'aborted',
+      'mail_failed',
+    );
+
     list( $integration ) = $this->makeIntegration();
     $form                = $this->createMockForm();
 
+    foreach ( $bad_statuses as $status ) {
+      $this->assertNull(
+        $integration->read_form_data( $form, array( 'status' => $status ) )
+      );
+    }
+
+    $tracked_events =
+      FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $this->assertCount( 0, $tracked_events );
+  }
+
+  /**
+   * read_form_data returns null (nothing dispatched) when the form is empty.
+   *
+   * @return void
+   */
+  public function testReadFormDataSkipsWhenFormEmpty() {
+    list( $integration ) = $this->makeIntegration();
+
     $this->assertNull(
-      $integration->read_form_data( $form, array( 'status' => 'spam' ) )
+      $integration->read_form_data( null, array( 'status' => 'mail_sent' ) )
     );
   }
 
