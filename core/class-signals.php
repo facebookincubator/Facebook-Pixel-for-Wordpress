@@ -65,12 +65,18 @@ class Signals {
     }
 
     /**
-     * Returns the CAPI event store shared for this request.
+     * Sends any server-side events that were queued (dispatched for deferred
+     * sending) during this request via the send_server_events action. The
+     * pending-event store is kept fully encapsulated here so callers never
+     * reach into it.
      *
-     * @return FacebookServerSideEvent
+     * @return void
      */
-    public function get_server_events() {
-        return $this->server_events;
+    public function flush_pending_events() {
+        $pending = $this->server_events->get_pending_events();
+        if ( count( $pending ) > 0 ) {
+            do_action( 'send_server_events', $pending, count( $pending ) );
+        }
     }
 
     /**
@@ -186,6 +192,23 @@ class Signals {
             $tracking_name,
             $prefer_referrer
         );
+
+        // Browser/server dedup. For every integration except EDD add-to-cart
+        // this block is a no-op: the browser pixel is rendered from THIS same
+        // Event via PixelRenderer (which copies the id into the fbq eventID),
+        // so both sides already share the ServerEventFactory-generated id and
+        // get_event_id() is null here. EDD add-to-cart is the exception — its
+        // browser pixel fires client-side on click, before this server Event
+        // exists, so it cannot inherit this id. That flow pre-shares an id via
+        // a hidden form field; read_add_to_cart() puts it on the EventData and
+        // we stamp it onto the server Event so the two deduplicate. See
+        // T278177691 to remove this plumbing once EDD's add-to-cart pixel can
+        // be rendered from the server Event too.
+        $event_id = $event_data->get_event_id();
+        if ( ! empty( $event_id ) ) {
+            $event->setEventId( $event_id );
+        }
+
         $this->server_events->track( $event );
         return $event;
     }

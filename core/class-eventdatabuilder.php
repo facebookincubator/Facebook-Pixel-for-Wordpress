@@ -39,10 +39,12 @@ class EventDataBuilder {
      * Builds an EventData from a standard-keyed field array, dropping null and
      * empty-string values so downstream code doesn't emit sparse keys.
      *
-     * @param array<string,mixed> $fields Standard event fields.
+     * @param array<string,mixed> $fields   Standard event fields.
+     * @param string|null         $event_id Optional shared event id for
+     *                                       browser/server deduplication.
      * @return EventData
      */
-    public function build( array $fields ) {
+    public function build( array $fields, $event_id = null ) {
         $clean = array();
         foreach ( $fields as $key => $value ) {
             if ( null === $value || '' === $value ) {
@@ -50,6 +52,6 @@ class EventDataBuilder {
             }
             $clean[ $key ] = $value;
         }
-        return new EventData( $clean );
+        return new EventData( $clean, $event_id );
     }
 }

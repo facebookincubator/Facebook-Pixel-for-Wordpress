@@ -85,11 +85,13 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
       array( $injection_obj, 'inject_pixel_noscript_code' )
     );
 
-    $spies = array();
+    // Integrations are now instantiated and inject_pixel_code() is called on
+    // the instance, so overload each class and expect the instance call.
     foreach ( self::$integrations as $index => $integration ) {
-      $spies[] = \Mockery::spy(
-        'alias:FacebookPixelPlugin\\Integration\\' . $integration
+      $mock = \Mockery::mock(
+        'overload:FacebookPixelPlugin\\Integration\\' . $integration
       );
+      $mock->shouldReceive( 'inject_pixel_code' )->once();
     }
 
     \WP_Mock::expectActionNotAdded(
@@ -106,9 +108,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     FacebookWordpressOptions::initialize();
     $injection_obj->inject();
 
-    foreach ( $spies as $index => $spy ) {
-      $spy->shouldHaveReceived( 'inject_pixel_code' );
-    }
+    $this->assertConditionsMet();
   }
 
   /**

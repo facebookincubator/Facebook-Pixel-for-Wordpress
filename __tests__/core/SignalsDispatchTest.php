@@ -3,7 +3,7 @@
  * Facebook Pixel Plugin SignalsDispatchTest class.
  *
  * Covers the event-dispatch additions to Signals (constructor injection,
- * render, and on() delegating browser delivery).
+ * pending-event flushing, and on() delegating browser delivery).
  *
  * @package FacebookPixelPlugin
  */
@@ -47,15 +47,37 @@ final class SignalsDispatchTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * The injected server-event store is used and exposed.
+     * flush_pending_events sends the queued events from the injected store via
+     * the send_server_events action.
      *
      * @return void
      */
-    public function testInjectedServerEventStore() {
-        $store   = $this->createMock( FacebookServerSideEvent::class );
+    public function testFlushPendingEventsSendsQueuedEvents() {
+        $event = new \stdClass();
+        $store = $this->createMock( FacebookServerSideEvent::class );
+        $store->method( 'get_pending_events' )->willReturn( array( $event ) );
         $signals = new Signals( $store );
 
-        $this->assertSame( $store, $signals->get_server_events() );
+        \WP_Mock::expectAction( 'send_server_events', array( $event ), 1 );
+
+        $signals->flush_pending_events();
+
+        $this->assertConditionsMet();
+    }
+
+    /**
+     * flush_pending_events does nothing when the store has no queued events.
+     *
+     * @return void
+     */
+    public function testFlushPendingEventsNoopWhenEmpty() {
+        $store = $this->createMock( FacebookServerSideEvent::class );
+        $store->method( 'get_pending_events' )->willReturn( array() );
+        $signals = new Signals( $store );
+
+        $signals->flush_pending_events();
+
+        $this->assertConditionsMet();
     }
 
     /**
