@@ -1,15 +1,21 @@
 <?php
 /**
- * Copyright (C) 2017-present, Meta, Inc.
+ * Facebook Pixel Plugin FacebookWordpressFormidableFormTest class.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * @package FacebookPixelPlugin
  */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
@@ -18,12 +24,14 @@ use FacebookPixelPlugin\Core\EventData;
 use FacebookPixelPlugin\Core\EventDataBuilder;
 use FacebookPixelPlugin\Core\FooterDelivery;
 use FacebookPixelPlugin\Integration\FacebookWordpressFormidableForm;
-use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
-use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormField;
-use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormFieldValue;
 use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormEntryValues;
+use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormFieldValue;
+use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormField;
+use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
+ * FacebookWordpressFormidableFormTest class.
+ *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
@@ -31,7 +39,7 @@ final class FacebookWordpressFormidableFormTest
   extends FacebookWordpressTestBase {
 
   /**
-   * Builds a Formidable integration with a mock Signals and a real builder.
+   * Builds a Formidable integration with a mock Signals + real builder.
    *
    * @return array [ FacebookWordpressFormidableForm, Signals mock ]
    */
@@ -45,7 +53,7 @@ final class FacebookWordpressFormidableFormTest
   }
 
   /**
-   * inject_pixel_code registers the Lead event with footer delivery.
+   * inject_pixel_code registers the Lead event with a footer delivery.
    *
    * @return void
    */
@@ -70,7 +78,7 @@ final class FacebookWordpressFormidableFormTest
   }
 
   /**
-   * read_form_data extracts the entry's fields into an EventData.
+   * read_form_data extracts the entry field values into an EventData.
    *
    * @return void
    */
@@ -102,38 +110,33 @@ final class FacebookWordpressFormidableFormTest
    */
   public function testReadFormDataSkipsWhenNoEntry() {
     list( $integration ) = $this->makeIntegration();
-
-    $this->assertNull( $integration->read_form_data( 0, 1 ) );
+    $this->assertNull( $integration->read_form_data( 0 ) );
   }
 
   /**
-   * Sets up an IntegrationUtils alias mock returning a mock entry with fields.
+   * Aliases IntegrationUtils to return a fixture entry with sample fields.
    *
    * @param int $entry_id The entry id.
    * @return void
    */
   private static function setupMockFormidableForm( $entry_id ) {
-    $email = new MockFormidableFormFieldValue(
+    $email      = new MockFormidableFormFieldValue(
       new MockFormidableFormField( 'email', null, null ),
       'pika.chu@s2s.com'
     );
-
     $first_name = new MockFormidableFormFieldValue(
       new MockFormidableFormField( 'text', 'Name', 'First' ),
       'Pika'
     );
-
-    $last_name = new MockFormidableFormFieldValue(
+    $last_name  = new MockFormidableFormFieldValue(
       new MockFormidableFormField( 'text', 'Last', 'Last' ),
       'Chu'
     );
-
-    $phone = new MockFormidableFormFieldValue(
+    $phone      = new MockFormidableFormFieldValue(
       new MockFormidableFormField( 'phone', null, null ),
       '123456'
     );
-
-    $address = new MockFormidableFormFieldValue(
+    $address    = new MockFormidableFormFieldValue(
       new MockFormidableFormField( 'address', null, null ),
       array(
         'city'    => 'Springfield',
