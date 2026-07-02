@@ -232,7 +232,7 @@ class FacebookCapiEvent {
             }
         }
 
-        $result = FacebookServerSideEvent::send( $events, $test_event_code );
+        $result = ( new Signals() )->send( $events, $test_event_code );
 
         if ( $result && $result['success'] ) {
             wp_send_json_success(

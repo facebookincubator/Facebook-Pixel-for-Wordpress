@@ -150,6 +150,6 @@ class ServerEventAsyncTask extends \WP_Async_Task {
             $event    = $this->convert_array_to_event( $event_as_array );
             $events[] = $event;
         }
-        FacebookServerSideEvent::send( $events );
+        ( new Signals() )->send( $events );
     }
 }

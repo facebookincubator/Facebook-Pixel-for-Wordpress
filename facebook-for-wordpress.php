@@ -43,7 +43,6 @@ use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\FacebookWordpressOpenBridge;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
@@ -73,11 +72,12 @@ class FacebookForWordpress {
 
     $options = FacebookWordpressOptions::get_options();
     FacebookPixel::initialize( FacebookWordpressOptions::get_active_pixel_id() );
-    new Signals();
+    $signals = new Signals();
+    $signals->register();
     new ReleaseSignalsAjax();
 
-    if ( Signals::should_hold_signals() ) {
-        FacebookSignalState::hold();
+    if ( $signals->should_hold_signals() ) {
+        $signals->hold();
     }
 
     // Initialize ParamBuilder server-side before pixel injection.

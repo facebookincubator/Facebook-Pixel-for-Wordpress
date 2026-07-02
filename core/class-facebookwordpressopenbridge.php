@@ -159,7 +159,7 @@ class FacebookWordpressOpenBridge {
             true
         );
         $event->setEventId( $data['event_id'] );
-        FacebookServerSideEvent::send( array( $event ) );
+        ( new Signals() )->send( array( $event ) );
     }
 
     /**

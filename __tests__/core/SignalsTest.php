@@ -39,22 +39,22 @@ final class SignalsTest extends FacebookWordpressTestBase {
       )
     );
 
-    $this->assertNull( Signals::get_signal_state() );
-    $this->assertFalse( Signals::should_hold_signals() );
+    $this->assertNull( ( new Signals() )->get_signal_state() );
+    $this->assertFalse( ( new Signals() )->should_hold_signals() );
 
     $_COOKIE[ Signals::COOKIE_NAME ] = Signals::STATE_HELD;
     $this->assertSame(
       Signals::STATE_HELD,
-      Signals::get_signal_state()
+      ( new Signals() )->get_signal_state()
     );
-    $this->assertTrue( Signals::should_hold_signals() );
+    $this->assertTrue( ( new Signals() )->should_hold_signals() );
 
     $_COOKIE[ Signals::COOKIE_NAME ] = Signals::STATE_ACTIVE;
     $this->assertSame(
       Signals::STATE_ACTIVE,
-      Signals::get_signal_state()
+      ( new Signals() )->get_signal_state()
     );
-    $this->assertFalse( Signals::should_hold_signals() );
+    $this->assertFalse( ( new Signals() )->should_hold_signals() );
   }
 
   /**
@@ -259,9 +259,9 @@ final class SignalsTest extends FacebookWordpressTestBase {
     );
 
     $_COOKIE[ Signals::COOKIE_NAME ] = 'garbage';
-    $this->assertNull( Signals::get_signal_state() );
-    $this->assertFalse( Signals::is_signals_active() );
-    $this->assertFalse( Signals::should_hold_signals() );
+    $this->assertNull( ( new Signals() )->get_signal_state() );
+    $this->assertFalse( ( new Signals() )->is_signals_active() );
+    $this->assertFalse( ( new Signals() )->should_hold_signals() );
   }
 
   /**
@@ -289,15 +289,15 @@ final class SignalsTest extends FacebookWordpressTestBase {
 
     // Unset cookie — neither active nor held.
     unset( $_COOKIE[ Signals::COOKIE_NAME ] );
-    $this->assertFalse( Signals::is_signals_active() );
+    $this->assertFalse( ( new Signals() )->is_signals_active() );
 
     // Explicitly held.
     $_COOKIE[ Signals::COOKIE_NAME ] = Signals::STATE_HELD;
-    $this->assertFalse( Signals::is_signals_active() );
+    $this->assertFalse( ( new Signals() )->is_signals_active() );
 
     // Explicitly active.
     $_COOKIE[ Signals::COOKIE_NAME ] = Signals::STATE_ACTIVE;
-    $this->assertTrue( Signals::is_signals_active() );
+    $this->assertTrue( ( new Signals() )->is_signals_active() );
   }
 
   /**

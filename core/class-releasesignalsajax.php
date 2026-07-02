@@ -105,8 +105,8 @@ class ReleaseSignalsAjax {
         // On cached pages the nonce in the original render is stale.
         // Gate on the signal-state cookie instead; only browsers that have been
         // through the hold/release flow carry this cookie.
-        $signal_state = isset( $_COOKIE[ FacebookSignalState::COOKIE_NAME ] )
-            ? sanitize_text_field( wp_unslash( $_COOKIE[ FacebookSignalState::COOKIE_NAME ] ) )
+        $signal_state = isset( $_COOKIE[ Signals::COOKIE_NAME ] )
+            ? sanitize_text_field( wp_unslash( $_COOKIE[ Signals::COOKIE_NAME ] ) )
             : '';
 
         if ( empty( $signal_state ) ) {
@@ -162,7 +162,7 @@ class ReleaseSignalsAjax {
 
         if ( ! empty( $events_to_send ) ) {
             $this->record_rate_limit_usage( count( $events_to_send ) );
-            FacebookServerSideEvent::send( $events_to_send );
+            ( new Signals() )->send( $events_to_send );
         }
 
         // Return fresh user_info so JS can initialise fbq with correct AAM data

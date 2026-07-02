@@ -49,7 +49,8 @@ class Signals {
     private $server_events;
 
     /**
-     * Register AJAX handlers.
+     * Constructor. Side-effect free so instances can be created freely (and
+     * injected/mocked). Hook registration is done separately via register().
      *
      * @param FacebookServerSideEvent|null $server_events Optional CAPI event
      *   store. Defaults to the shared instance. Injected so integrations and
@@ -59,7 +60,14 @@ class Signals {
         $this->server_events = $server_events instanceof FacebookServerSideEvent
             ? $server_events
             : FacebookServerSideEvent::get_instance();
+    }
 
+    /**
+     * Registers the consent-state AJAX handler. Call once during bootstrap.
+     *
+     * @return void
+     */
+    public function register() {
         add_action(
             'wp_ajax_' . self::AJAX_ACTION,
             array( $this, 'handle_update_state' )
@@ -148,11 +156,90 @@ class Signals {
     }
 
     /**
+     * Sends events straight to the Conversions API. The facade entry point for
+     * one-off server sends (release flow, OpenBridge, CAPI event endpoint,
+     * async task) so callers never touch the event store directly.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[] $events The events.
+     * @param string|null                                                $test_event_code Optional test code.
+     * @return array|null
+     */
+    public function send( $events, $test_event_code = null ) {
+        return FacebookServerSideEvent::send( $events, $test_event_code );
+    }
+
+    /**
+     * Whether signals are held for the current request (consent not yet given).
+     *
+     * @return bool
+     */
+    public function is_held() {
+        return FacebookSignalState::is_held();
+    }
+
+    /**
+     * Hold signals for the current request (queue instead of send).
+     *
+     * @return void
+     */
+    public function hold() {
+        FacebookSignalState::hold();
+    }
+
+    /**
+     * Release signals for the current request.
+     *
+     * @return void
+     */
+    public function release() {
+        FacebookSignalState::release();
+    }
+
+    /**
+     * Returns a CAPI event queued while signals were held, by event id.
+     *
+     * @param string $event_id Event identifier.
+     * @return \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event|null
+     */
+    public function get_queued_event( $event_id ) {
+        return FacebookSignalState::get_queued_event( $event_id );
+    }
+
+    /**
+     * Returns the forward-safe normalized user data for a queued event.
+     *
+     * @param string $event_id Event identifier.
+     * @return array|null
+     */
+    public function get_queued_user_data( $event_id ) {
+        return FacebookSignalState::get_queued_user_data( $event_id );
+    }
+
+    /**
+     * Returns attribution data (e.g. fbp/fbc) captured while held.
+     *
+     * @param string $key Data key.
+     * @return string|null
+     */
+    public function get_attribution_data( $key ) {
+        return FacebookSignalState::get_attribution_data( $key );
+    }
+
+    /**
+     * Clears the queued events and attribution stores.
+     *
+     * @return void
+     */
+    public function reset_queue() {
+        FacebookSignalState::reset_queue();
+    }
+
+    /**
      * Get current signals state.
      *
      * @return string|null 'active', 'held', or null when unset.
      */
-    public static function get_signal_state() {
+    public function get_signal_state() {
         if ( ! isset( $_COOKIE[ self::COOKIE_NAME ] ) ) {
             return null;
         }
@@ -173,8 +260,8 @@ class Signals {
      *
      * @return bool
      */
-    public static function is_signals_active() {
-        return self::STATE_ACTIVE === self::get_signal_state();
+    public function is_signals_active() {
+        return self::STATE_ACTIVE === $this->get_signal_state();
     }
 
     /**
@@ -182,8 +269,8 @@ class Signals {
      *
      * @return bool
      */
-    public static function should_hold_signals() {
-        return self::STATE_HELD === self::get_signal_state();
+    public function should_hold_signals() {
+        return self::STATE_HELD === $this->get_signal_state();
     }
 
     /**
@@ -205,9 +292,9 @@ class Signals {
         );
 
         if ( self::STATE_HELD === $state ) {
-            FacebookSignalState::hold();
+            $this->hold();
         } else {
-            FacebookSignalState::release();
+            $this->release();
         }
 
         wp_send_json_success(
