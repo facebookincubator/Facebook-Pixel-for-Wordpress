@@ -44,7 +44,7 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
      *
      * @return void
      */
-    public function inject_pixel_code() {
+    public function set_up_tracking() {
         $this->signals->on(
             'mc4wp_form_subscribed',
             'Lead',

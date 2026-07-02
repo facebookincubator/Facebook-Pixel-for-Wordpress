@@ -49,7 +49,7 @@ class FacebookWordpressWPECommerce extends FacebookWordpressIntegrationBase {
      *
      * @return void
      */
-    public function inject_pixel_code() {
+    public function set_up_tracking() {
         $this->signals->on(
             'wpsc_add_to_cart_json_response',
             'AddToCart',

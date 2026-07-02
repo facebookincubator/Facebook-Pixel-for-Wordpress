@@ -56,7 +56,7 @@ class FacebookWordpressEasyDigitalDownloads extends FacebookWordpressIntegration
      *
      * @return void
      */
-    public function inject_pixel_code() {
+    public function set_up_tracking() {
         add_action(
             'edd_after_download_content',
             array( $this, 'inject_add_to_cart_listener' )

@@ -48,7 +48,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
      *
      * @return void
      */
-    public function inject_pixel_code() {
+    public function set_up_tracking() {
         $this->signals->on(
             'ninja_forms_submission_actions',
             'Lead',

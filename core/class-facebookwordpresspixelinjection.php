@@ -103,7 +103,7 @@ class FacebookWordpressPixelInjection {
                 $this->signals,
                 $this->event_builder
             );
-            $integration->inject_pixel_code();
+            $integration->set_up_tracking();
             }
             add_action(
                 'wp_footer',

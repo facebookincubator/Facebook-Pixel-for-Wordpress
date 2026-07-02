@@ -51,7 +51,7 @@ class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
      *
      * @return void
      */
-    public function inject_pixel_code() {
+    public function set_up_tracking() {
         $this->signals->on(
             'wpforms_process_before',
             'Lead',

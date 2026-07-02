@@ -201,7 +201,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * inject_pixel_code registers six Signals events when Facebook for
+   * set_up_tracking registers six Signals events when Facebook for
    * WooCommerce is not active, and AddToCart alone uses the cart-fragment
    * delivery while the rest use the inline-script delivery.
    *
@@ -225,7 +225,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         }
       );
 
-    $integration->inject_pixel_code();
+    $integration->set_up_tracking();
 
     $this->assertInstanceOf(
       CartFragmentDelivery::class,
@@ -246,7 +246,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * inject_pixel_code registers nothing when Facebook for WooCommerce owns
+   * set_up_tracking registers nothing when Facebook for WooCommerce owns
    * tracking.
    *
    * @return void
@@ -262,7 +262,7 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
     $signals->expects( $this->never() )->method( 'on' );
 
-    $integration->inject_pixel_code();
+    $integration->set_up_tracking();
 
     $this->assertConditionsMet();
   }

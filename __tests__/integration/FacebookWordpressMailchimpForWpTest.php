@@ -50,7 +50,7 @@ final class FacebookWordpressMailchimpForWpTest
   }
 
   /**
-   * inject_pixel_code registers the Lead event with a footer delivery.
+   * set_up_tracking registers the Lead event with a footer delivery.
    *
    * @return void
    */
@@ -69,7 +69,7 @@ final class FacebookWordpressMailchimpForWpTest
         1
       );
 
-    $integration->inject_pixel_code();
+    $integration->set_up_tracking();
 
     $this->assertConditionsMet();
   }

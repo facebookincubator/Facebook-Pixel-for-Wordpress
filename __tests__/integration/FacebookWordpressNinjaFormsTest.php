@@ -63,7 +63,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * inject_pixel_code registers the Lead event (AJAX delivery) + listener.
+   * set_up_tracking registers the Lead event (AJAX delivery) + listener.
    *
    * @return void
    */
@@ -88,7 +88,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
       9
     );
 
-    $integration->inject_pixel_code();
+    $integration->set_up_tracking();
 
     $this->assertConditionsMet();
   }

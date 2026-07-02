@@ -48,7 +48,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * inject_pixel_code registers the three WP eCommerce events.
+   * set_up_tracking registers the three WP eCommerce events.
    *
    * @return void
    */
@@ -57,7 +57,7 @@ final class FacebookWordpressWPECommerceTest extends FacebookWordpressTestBase {
 
     $signals->expects( $this->exactly( 3 ) )->method( 'on' );
 
-    $integration->inject_pixel_code();
+    $integration->set_up_tracking();
 
     $this->assertConditionsMet();
   }

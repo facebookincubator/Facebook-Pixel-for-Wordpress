@@ -126,7 +126,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
   }
 
   /**
-   * inject_pixel_code registers the five Signals-routed EDD events.
+   * set_up_tracking registers the five Signals-routed EDD events.
    *
    * @return void
    */
@@ -144,7 +144,7 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
       array( $integration, 'inject_add_to_cart_event_id' )
     );
 
-    $integration->inject_pixel_code();
+    $integration->set_up_tracking();
 
     $this->assertConditionsMet();
   }

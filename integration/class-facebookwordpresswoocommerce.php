@@ -57,7 +57,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
      *
      * @return void
      */
-    public function inject_pixel_code() {
+    public function set_up_tracking() {
         if ( self::isFacebookForWooCommerceActive() ) {
             return;
         }

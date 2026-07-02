@@ -49,7 +49,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * inject_pixel_code registers the Lead event (with a composite footer+AJAX
+   * set_up_tracking registers the Lead event (with a composite footer+AJAX
    * delivery) and the front-end AJAX listener.
    *
    * @return void
@@ -75,7 +75,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
       9
     );
 
-    $integration->inject_pixel_code();
+    $integration->set_up_tracking();
 
     $this->assertConditionsMet();
   }

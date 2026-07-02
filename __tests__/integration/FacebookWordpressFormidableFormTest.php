@@ -53,7 +53,7 @@ final class FacebookWordpressFormidableFormTest
   }
 
   /**
-   * inject_pixel_code registers the Lead event with a footer delivery.
+   * set_up_tracking registers the Lead event with a footer delivery.
    *
    * @return void
    */
@@ -72,7 +72,7 @@ final class FacebookWordpressFormidableFormTest
         2
       );
 
-    $integration->inject_pixel_code();
+    $integration->set_up_tracking();
 
     $this->assertConditionsMet();
   }

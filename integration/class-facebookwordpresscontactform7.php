@@ -48,7 +48,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
      *
      * @return void
      */
-    public function inject_pixel_code() {
+    public function set_up_tracking() {
         $this->signals->on(
             'wpcf7_submit',
             'Lead',

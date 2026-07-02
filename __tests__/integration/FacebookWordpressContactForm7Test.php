@@ -83,7 +83,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
   }
 
   /**
-   * inject_pixel_code registers the Lead event on Signals (with the AJAX
+   * set_up_tracking registers the Lead event on Signals (with the AJAX
    * delivery) and the front-end mail-sent listener.
    *
    * @return void
@@ -114,7 +114,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
       2
     );
 
-    $integration->inject_pixel_code();
+    $integration->set_up_tracking();
 
     $this->assertConditionsMet();
   }
