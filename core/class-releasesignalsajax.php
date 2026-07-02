@@ -92,10 +92,10 @@ class ReleaseSignalsAjax {
     /**
      * Register AJAX handlers.
      *
-     * @param Signals|null $signals Shared signals service.
+     * @param Signals $signals Shared signals service.
      */
-    public function __construct( ?Signals $signals = null ) {
-        $this->signals = $signals ? $signals : new Signals();
+    public function __construct( Signals $signals ) {
+        $this->signals = $signals;
         add_action( 'wp_ajax_' . self::ACTION, array( $this, 'handle' ) );
         add_action( 'wp_ajax_nopriv_' . self::ACTION, array( $this, 'handle' ) );
     }

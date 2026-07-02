@@ -405,13 +405,12 @@ final class SignalsTest extends FacebookWordpressTestBase {
    */
   public function testFlushPendingEventsSendsQueuedEvents() {
     $event = new \stdClass();
-    $store = $this->createMock( FacebookServerSideEvent::class );
-    $store->method( 'get_pending_events' )->willReturn( array( $event ) );
-    $signals = new Signals( $store );
+    // Queue an event (track with send_now = false) on the shared store.
+    FacebookServerSideEvent::get_instance()->track( $event, false );
 
     \WP_Mock::expectAction( 'send_server_events', array( $event ), 1 );
 
-    $signals->flush_pending_events();
+    ( new Signals() )->flush_pending_events();
 
     $this->assertConditionsMet();
   }
@@ -422,11 +421,7 @@ final class SignalsTest extends FacebookWordpressTestBase {
    * @return void
    */
   public function testFlushPendingEventsNoopWhenEmpty() {
-    $store = $this->createMock( FacebookServerSideEvent::class );
-    $store->method( 'get_pending_events' )->willReturn( array() );
-    $signals = new Signals( $store );
-
-    $signals->flush_pending_events();
+    ( new Signals() )->flush_pending_events();
 
     $this->assertConditionsMet();
   }

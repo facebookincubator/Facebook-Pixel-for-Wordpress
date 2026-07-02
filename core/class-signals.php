@@ -49,17 +49,12 @@ class Signals {
     private $server_events;
 
     /**
-     * Constructor. Side-effect free so instances can be created freely (and
-     * injected/mocked). Hook registration is done separately via register().
-     *
-     * @param FacebookServerSideEvent|null $server_events Optional CAPI event
-     *   store. Defaults to the shared instance. Injected so integrations and
-     *   the footer/async sender share one store per request.
+     * Constructor. Side-effect free (hook registration is done via register()),
+     * so instances can be created freely. Signals is the facade over the CAPI
+     * event store, so it resolves that store itself.
      */
-    public function __construct( $server_events = null ) {
-        $this->server_events = $server_events instanceof FacebookServerSideEvent
-            ? $server_events
-            : FacebookServerSideEvent::get_instance();
+    public function __construct() {
+        $this->server_events = FacebookServerSideEvent::get_instance();
     }
 
     /**
@@ -165,7 +160,7 @@ class Signals {
      * @return array|null
      */
     public function send( $events, $test_event_code = null ) {
-        return FacebookServerSideEvent::send( $events, $test_event_code );
+        return $this->server_events->send( $events, $test_event_code );
     }
 
     /*

@@ -43,12 +43,12 @@ class ServerEventAsyncTask extends \WP_Async_Task {
     /**
      * Constructor.
      *
-     * @param Signals|null $signals    Shared signals service.
-     * @param string       $auth_level WP_Async_Task auth level.
+     * @param Signals $signals    Shared signals service.
+     * @param string  $auth_level WP_Async_Task auth level.
      */
-    public function __construct( ?Signals $signals = null, $auth_level = self::BOTH ) {
+    public function __construct( Signals $signals, $auth_level = self::BOTH ) {
         parent::__construct( $auth_level );
-        $this->signals = $signals ? $signals : new Signals();
+        $this->signals = $signals;
     }
 
     /**

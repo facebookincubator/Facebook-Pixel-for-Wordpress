@@ -90,10 +90,10 @@ class FacebookCapiEvent {
     /**
      * Hook into WordPress's AJAX actions to handle sending a CAPI event.
      *
-     * @param Signals|null $signals Shared signals service.
+     * @param Signals $signals Shared signals service.
      */
-    public function __construct( ?Signals $signals = null ) {
-        $this->signals = $signals ? $signals : new Signals();
+    public function __construct( Signals $signals ) {
+        $this->signals = $signals;
         add_action(
             'wp_ajax_send_capi_event',
             array( $this, 'send_capi_event' )

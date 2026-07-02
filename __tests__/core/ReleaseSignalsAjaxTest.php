@@ -6,6 +6,7 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\ReleaseSignalsAjax;
+use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
@@ -38,7 +39,7 @@ final class ReleaseSignalsAjaxTest extends FacebookWordpressTestBase {
       )
     );
 
-    $handler = new ReleaseSignalsAjax();
+    $handler = new ReleaseSignalsAjax( new Signals() );
     $method  = new \ReflectionMethod( ReleaseSignalsAjax::class, 'validate_event' );
     if ( PHP_VERSION_ID < 80100 ) {
       $method->setAccessible( true );
@@ -117,7 +118,7 @@ final class ReleaseSignalsAjaxTest extends FacebookWordpressTestBase {
       )
     );
 
-    $handler = new ReleaseSignalsAjax();
+    $handler = new ReleaseSignalsAjax( new Signals() );
     $method  = new \ReflectionMethod( ReleaseSignalsAjax::class, 'build_event' );
     if ( PHP_VERSION_ID < 80100 ) {
       $method->setAccessible( true );
