@@ -2,16 +2,7 @@
 /**
  * Facebook Pixel Plugin FacebookWordpressEasyDigitalDownloadsTest class.
  *
- * This file contains the main logic
- * for FacebookWordpressEasyDigitalDownloadsTest.
- *
  * @package FacebookPixelPlugin
- */
-
-/**
- * Define FacebookWordpressEasyDigitalDownloadsTest class.
- *
- * @return void
  */
 
 /*
@@ -28,416 +19,45 @@
 
 namespace FacebookPixelPlugin\Tests\Integration;
 
+use FacebookPixelPlugin\Core\Signals;
+use FacebookPixelPlugin\Core\EventData;
+use FacebookPixelPlugin\Core\EventDataBuilder;
 use FacebookPixelPlugin\Integration\FacebookWordpressEasyDigitalDownloads;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 /**
  * FacebookWordpressEasyDigitalDownloadsTest class.
  *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
- *
- * All tests in this test class should be run in separate PHP process to
- * make sure tests are isolated.
- * Stop preserving global state from the parent process.
  */
 final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressTestBase {
 
   /**
-   * Tests that the inject_pixel_code method correctly sets up the
-   * necessary WordPress hooks for the Facebook Pixel events in
-   * the Easy Digital Downloads integration.
+   * Builds an EDD integration with a mock Signals + real builder.
    *
-   * This test verifies that the appropriate hooks are added for
-   * the 'injectInitiateCheckoutEvent' event with the expected
-   * hook name 'edd_after_checkout_cart'.
-   *
-   * Utilizes the Mockery library to mock the base integration class
-   * and validate that the add_pixel_fire_for_hook method is called with
-   * the correct parameters.
+   * @return array [ FacebookWordpressEasyDigitalDownloads, Signals mock ]
    */
-  public function testInjectPixelCode() {
-    $event_hook_map = array(
-      'injectInitiateCheckoutEvent' => 'edd_after_checkout_cart',
+  private function makeIntegration() {
+    $signals     = $this->createMock( Signals::class );
+    $integration = new FacebookWordpressEasyDigitalDownloads(
+      $signals,
+      new EventDataBuilder()
     );
+    return array( $integration, $signals );
+  }
 
-    $mocked_base = \Mockery::mock(
-      'alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase'
+  /**
+   * Alias-mocks the plugin utils + EDD helpers used by the create* builders,
+   * and stubs the WordPress functions the AddToCart/ViewContent path needs.
+   *
+   * @return void
+   */
+  private function setupProductMocks() {
+    $utils = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookPluginUtils'
     );
-    foreach ( $event_hook_map as $event => $hook ) {
-      $mocked_base->shouldReceive( 'add_pixel_fire_for_hook' )
-      ->with(
-        array(
-          'hook_name'       => $hook,
-          'classname'       =>
-                    FacebookWordpressEasyDigitalDownloads::class,
-          'inject_function' => $event,
-        )
-      )
-      ->once();
-    }
-
-    FacebookWordpressEasyDigitalDownloads::inject_pixel_code();
-  }
-
-  /**
-   * Tests that the injectAddToCartEventId method injects the correct
-   * hidden input field when the user is not an internal user.
-   *
-   * This test verifies that the hidden input field is correctly injected
-   * into the HTML output when the user is not an internal user
-   * and the injectAddToCartEventId method is called.
-   */
-  public function testInjectAddToCartEventIdWithoutInternalUser() {
-    self::mockIsInternalUser( false );
-    self::mockFacebookWordpressOptions();
-
-    FacebookWordpressEasyDigitalDownloads::injectAddToCartEventId();
-    $this->expectOutputRegex(
-      '/input type="hidden" name="facebook_event_id"/'
-    );
-  }
-
-  /**
-   * Tests that the injectInitiateCheckoutEvent method correctly injects
-   * the Pixel code for the 'InitiateCheckout' event when the user is
-   * not an internal user.
-   *
-   * This test verifies that the output contains the expected Meta Pixel
-   * Event Code for Easy Digital Downloads and that the server-side event
-   * tracking records the 'InitiateCheckout' event with the correct user
-   * and custom data attributes.
-   */
-  public function testInitiateCheckoutEventWithoutInternalUser() {
-    self::mockIsInternalUser( false );
-    self::mockFacebookWordpressOptions();
-
-    $this->setupEDDMocks();
-
-        \WP_Mock::userFunction(
-            'wp_json_encode',
-            array(
-        'args'   => array(
-                    \Mockery::type( 'array' ),
-          \Mockery::type( 'int' ),
-        ),
-        'return' => function ( $data, $options ) {
-          return json_encode( $data );
-        },
-            )
-        );
-
-    FacebookWordpressEasyDigitalDownloads::injectInitiateCheckoutEvent();
-
-    $this->expectOutputRegex(
-      '/easy-digital-downloads[\s\S]+End Meta Pixel Event Code/'
-    );
-
-    $tracked_events =
-    FacebookServerSideEvent::get_instance()->get_tracked_events();
-
-    $this->assertCount( 1, $tracked_events );
-
-    $event = $tracked_events[0];
-    $this->assertEquals( 'InitiateCheckout', $event->getEventName() );
-    $this->assertNotNull( $event->getEventTime() );
-    $this->assertEquals(
-            'pika.chu@s2s.com',
-            $event->getUserData()->getEmail()
-        );
-    $this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
-    $this->assertEquals( 'chu', $event->getUserData()->getLastName() );
-    $this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
-    $this->assertEquals( '300', $event->getCustomData()->getValue() );
-    $this->assertEquals(
-      'easy-digital-downloads',
-      $event->getCustomData()->getCustomProperty(
-                'fb_integration_tracking'
-            )
-    );
-  }
-
-  /**
-   * Tests that the trackPurchaseEvent method correctly injects the Pixel code
-   * for the 'Purchase' event when the user is not an internal user.
-   *
-   * This test verifies that the server-side event tracking records the
-   * 'Purchase' event with the correct user and custom data attributes.
-   */
-  public function testPurchaseEventWithoutInternalUser() {
-    self::mockIsInternalUser( false );
-    self::mockFacebookWordpressOptions();
-
-    $this->setupEDDMocks();
-
-    $payment = new class() {
-      /**
-       * Unique ID
-       *
-       * @var integer
-       */
-      public $ID = 1;
-    };
-
-    \WP_Mock::expectActionAdded(
-      'wp_footer',
-      array(
-        'FacebookPixelPlugin\\Integration\\FacebookWordpressEasyDigitalDownloads',
-        'injectPurchaseEvent',
-      ),
-      20
-    );
-
-    FacebookWordpressEasyDigitalDownloads::trackPurchaseEvent(
-            $payment,
-            null
-        );
-
-    $tracked_events =
-    FacebookServerSideEvent::get_instance()->get_tracked_events();
-
-    $this->assertCount( 1, $tracked_events );
-
-    $event = $tracked_events[0];
-    $this->assertEquals( 'Purchase', $event->getEventName() );
-    $this->assertNotNull( $event->getEventTime() );
-    $this->assertEquals(
-            'pika.chu@s2s.com',
-            $event->getUserData()->getEmail()
-        );
-    $this->assertEquals( 'pika', $event->getUserData()->getFirstName() );
-    $this->assertEquals( 'chu', $event->getUserData()->getLastName() );
-    $this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
-    $this->assertEquals( 700, $event->getCustomData()->getValue() );
-    $this->assertEquals(
-            'product',
-            $event->getCustomData()->getContentType()
-        );
-    $this->assertEquals(
-            array( 99, 999 ),
-            $event->getCustomData()->getContentIds()
-        );
-    $this->assertEquals(
-      'easy-digital-downloads',
-      $event->getCustomData()->getCustomProperty(
-                'fb_integration_tracking'
-            )
-    );
-  }
-
-  /**
-   * Tests that the injectAddToCartListener method does not inject
-   * any Pixel code when the user is an internal user.
-   *
-   * This test verifies that the output does not contain any Meta Pixel
-   * Event Code when the injectAddToCartListener method is called by an
-   * internal user.
-   */
-  public function testInjectAddToCartEventListenerWithInternalUser() {
-    self::mockIsInternalUser( true );
-
-    $download_id = '1234';
-    FacebookWordpressEasyDigitalDownloads::injectAddToCartListener(
-      $download_id
-    );
-    $this->expectOutputString( '' );
-  }
-
-  /**
-   * Tests that the injectAddToCartEventId method does not inject
-   * any Pixel code when the user is an internal user.
-   *
-   * This test verifies that the output does not contain any Meta Pixel
-   * Event Code when the injectAddToCartEventId method is called by an
-   * internal user.
-   */
-  public function testInjectAddToCartEventIdWithInternalUser() {
-    self::mockIsInternalUser( true );
-
-    FacebookWordpressEasyDigitalDownloads::injectAddToCartEventId();
-    $this->expectOutputString( '' );
-  }
-
-  /**
-   * Tests that the injectInitiateCheckoutEvent method does not inject
-   * any Pixel code when the user is an internal user.
-   *
-   * This test verifies that the output does not contain any Meta Pixel
-   * Event Code when the injectInitiateCheckoutEvent method is called by an
-   * internal user.
-   */
-  public function testInjectInitiateCheckoutEventWithInternalUser() {
-    self::mockIsInternalUser( true );
-
-    FacebookWordpressEasyDigitalDownloads::injectInitiateCheckoutEvent();
-    $this->expectOutputString( '' );
-  }
-
-  /**
-   * Tests that the trackPurchaseEvent method does not inject any Pixel code
-   * when the user is an internal user.
-   *
-   * This test verifies that the output does not contain any Meta Pixel
-   * Event Code when the trackPurchaseEvent method is called by an
-   * internal user.
-   */
-  public function testInjectPurchaseEventWithInternalUser() {
-    self::mockIsInternalUser( true );
-    $payment = array( 'ID' => '1234' );
-    FacebookWordpressEasyDigitalDownloads::trackPurchaseEvent(
-            $payment,
-            null
-        );
-    $this->expectOutputString( '' );
-  }
-
-  /**
-   * Tests that the injectViewContentEvent method does not inject
-   * any Pixel code when the user is an internal user.
-   *
-   * This test verifies that the output does not contain any Meta Pixel
-   * Event Code when the injectViewContentEvent method is called by an
-   * internal user.
-   */
-  public function testInjectViewContentEventWithInternalUser() {
-    self::mockIsInternalUser( true );
-
-    $download_id = 1234;
-    FacebookWordpressEasyDigitalDownloads::injectViewContentEvent(
-            $download_id
-        );
-    $this->expectOutputString( '' );
-  }
-
-  /**
-   * Tests that the injectViewContentEvent method
-     * correctly injects the Pixel code
-   * for the 'ViewContent' event when the user is not an internal user.
-   *
-   * This test verifies that the output contains the expected Meta Pixel
-   * Event Code for Easy Digital Downloads and that the server-side event
-   * tracking records the 'ViewContent' event with the correct user and
-   * custom data attributes, such as content IDs, content type, currency,
-   * content name, and value.
-   */
-  public function testInjectViewContentEventWithoutInternalUser() {
-    self::mockIsInternalUser( false );
-    self::mockFacebookWordpressOptions();
-
-    $this->setupEDDMocks();
-
-        \WP_Mock::userFunction(
-            'wp_json_encode',
-            array(
-        'args'   => array(
-                    \Mockery::type( 'array' ),
-          \Mockery::type( 'int' ),
-        ),
-        'return' => function ( $data, $options ) {
-          return json_encode( $data );
-        },
-            )
-        );
-
-    FacebookWordpressEasyDigitalDownloads::injectViewContentEvent( 1234 );
-    $this->expectOutputRegex(
-      '/easy-digital-downloads[\s\S]+End Meta Pixel Event Code/'
-    );
-    $tracked_events =
-    FacebookServerSideEvent::get_instance()->get_tracked_events();
-
-    $this->assertCount( 1, $tracked_events );
-
-    $event       = $tracked_events[0];
-    $custom_data = $event->getCustomData();
-    $user_data   = $event->getUserData();
-
-    $this->assertEquals( 'pika.chu@s2s.com', $user_data->getEmail() );
-    $this->assertEquals( 'pika', $user_data->getFirstName() );
-    $this->assertEquals( 'chu', $user_data->getLastName() );
-    $this->assertEquals( 'ViewContent', $event->getEventName() );
-    $this->assertEquals( array( '1234' ), $custom_data->getContentIds() );
-    $this->assertEquals( 'product', $custom_data->getContentType() );
-    $this->assertEquals( 'USD', $custom_data->getCurrency() );
-    $this->assertEquals( 'Encarta', $custom_data->getContentName() );
-    $this->assertEquals( 50, $custom_data->getValue() );
-    $this->assertNotNull( $event->getEventTime() );
-  }
-
-  /**
-   * Tests that the injectAddToCartEventAjax method correctly injects
-   * the Pixel code for the 'AddToCart' event when the user is not an
-   * internal user.
-   *
-   * This test verifies that the output contains the expected Meta Pixel
-   * Event Code for Easy Digital Downloads and that the server-side event
-   * tracking records the 'AddToCart' event with the correct user and
-   * custom data attributes, such as content IDs, content type, currency,
-   * content name, and value.
-   */
-  public function testInjectAddToCartEventAjax() {
-    self::mockIsInternalUser( false );
-    self::mockFacebookWordpressOptions();
-
-    $this->setupEDDMocks();
-
-        \WP_Mock::userFunction(
-            'wp_unslash',
-            array(
-        'args'   => array( \Mockery::any() ),
-        'return' => function ( $input ) {
-          return $input;
-        },
-            )
-        );
-
-    FacebookWordpressEasyDigitalDownloads::injectAddToCartEventAjax();
-
-    $tracked_events =
-    FacebookServerSideEvent::get_instance()->get_tracked_events();
-
-    $this->assertCount( 2, $tracked_events );
-
-    $event       = $tracked_events[0];
-    $custom_data = $event->getCustomData();
-    $user_data   = $event->getUserData();
-
-    $this->assertEquals( 'abc-123', $event->getEventId() );
-    $this->assertEquals( 'pika.chu@s2s.com', $user_data->getEmail() );
-    $this->assertEquals( 'pika', $user_data->getFirstName() );
-    $this->assertEquals( 'chu', $user_data->getLastName() );
-    $this->assertEquals( 'AddToCart', $event->getEventName() );
-    $this->assertEquals( array( '1234' ), $custom_data->getContentIds() );
-    $this->assertEquals( 'product', $custom_data->getContentType() );
-    $this->assertEquals( 'USD', $custom_data->getCurrency() );
-    $this->assertEquals( 'Encarta', $custom_data->getContentName() );
-    $this->assertEquals( 50, $custom_data->getValue() );
-    $this->assertNotNull( $event->getEventTime() );
-  }
-
-  /**
-   * Sets up the necessary mocks for Easy Digital Downloads integration tests.
-   *
-   * This method mocks various functions and methods
-     * related to Easy Digital Downloads
-   * to simulate the environment for testing purposes.
-     * It configures the expected
-   * return values for functions like currency retrieval,
-     * cart total calculation,
-   * payment metadata, and download object information. It also sets up mock
-   * POST data and ensures nonce verification functions behave as expected.
-   */
-  private function setupEDDMocks() {
-    \WP_Mock::userFunction( 'EDD' );
-    $mock_edd_utils = \Mockery::mock(
-      'alias:FacebookPixelPlugin\Integration\EDDUtils'
-    );
-    $mock_edd_utils->shouldReceive( 'get_currency' )->andReturn( 'USD' );
-    $mock_edd_utils->shouldReceive( 'get_cart_total' )->andReturn( 300 );
-
-    $this->mocked_fbpixel->shouldReceive( 'get_logged_in_user_info' )
-    ->andReturn(
+    $utils->shouldReceive( 'get_logged_in_user_info' )->andReturn(
       array(
         'email'      => 'pika.chu@s2s.com',
         'first_name' => 'Pika',
@@ -445,10 +65,84 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
       )
     );
 
+    $edd_utils = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Integration\EDDUtils'
+    );
+    $edd_utils->shouldReceive( 'get_currency' )->andReturn( 'USD' );
+    $edd_utils->shouldReceive( 'get_cart_total' )->andReturn( 300 );
+
+    $download             = new \stdClass();
+    $download->post_title = 'Encarta';
+    \WP_Mock::userFunction(
+      'edd_get_download',
+      array( 'return' => $download )
+    );
+    \WP_Mock::userFunction(
+      'get_post_meta',
+      array( 'return' => array( array( 'amount' => 50 ) ) )
+    );
+  }
+
+  /**
+   * inject_pixel_code registers the five Signals-routed EDD events.
+   *
+   * @return void
+   */
+  public function testInjectPixelCodeRegistersFiveSignalEvents() {
+    list( $integration, $signals ) = $this->makeIntegration();
+
+    $signals->expects( $this->exactly( 5 ) )->method( 'on' );
+
+    \WP_Mock::expectActionAdded(
+      'edd_purchase_link_top',
+      array( $integration, 'inject_add_to_cart_event_id' )
+    );
+
+    $integration->inject_pixel_code();
+
+    $this->assertConditionsMet();
+  }
+
+  /**
+   * read_initiate_checkout builds an InitiateCheckout EventData.
+   *
+   * @return void
+   */
+  public function testReadInitiateCheckoutReturnsEventData() {
+    \WP_Mock::userFunction( 'EDD' );
+    $this->setupProductMocks();
+
+    list( $integration ) = $this->makeIntegration();
+
+    $data = $integration->read_initiate_checkout();
+
+    $this->assertInstanceOf( EventData::class, $data );
+    $fields = $data->to_array();
+    $this->assertEquals( 'pika.chu@s2s.com', $fields['email'] );
+    $this->assertEquals( 'USD', $fields['currency'] );
+    $this->assertEquals( 300, $fields['value'] );
+  }
+
+  /**
+   * read_initiate_checkout returns null when EDD is not loaded.
+   *
+   * @return void
+   */
+  public function testReadInitiateCheckoutSkipsWithoutEdd() {
+    list( $integration ) = $this->makeIntegration();
+
+    $this->assertNull( $integration->read_initiate_checkout() );
+  }
+
+  /**
+   * read_purchase builds a Purchase EventData from the payment meta.
+   *
+   * @return void
+   */
+  public function testReadPurchaseReturnsEventData() {
     \WP_Mock::userFunction(
       'edd_get_payment_meta',
       array(
-        'args'   => 1,
         'return' => array(
           'email'        => 'pika.chu@s2s.com',
           'user_info'    => array(
@@ -470,30 +164,76 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
       )
     );
 
-    \WP_Mock::userFunction(
-      'get_post_meta',
-      array(
-        'args'   => array(
-          1234,
-          \WP_Mock\Functions::type( 'string' ),
-          true,
-        ),
-        'return' => array(
-          array(
-            'amount' => 50,
-          ),
-        ),
-      )
-    );
-    $download_object             = new \stdClass();
-    $download_object->post_title = 'Encarta';
-    \WP_Mock::userFunction(
-      'edd_get_download',
-      array(
-        'args'   => array( \WP_Mock\Functions::type( 'int' ) ),
-        'return' => $download_object,
-      )
-    );
+    list( $integration ) = $this->makeIntegration();
+
+    $payment     = new \stdClass();
+    $payment->ID = 1;
+
+    $data = $integration->read_purchase( $payment, null );
+
+    $this->assertInstanceOf( EventData::class, $data );
+    $fields = $data->to_array();
+    $this->assertEquals( 'pika.chu@s2s.com', $fields['email'] );
+    $this->assertEquals( 700, $fields['value'] );
+    $this->assertEquals( 'USD', $fields['currency'] );
+    $this->assertEquals( array( 99, 999 ), $fields['content_ids'] );
+    $this->assertEquals( 'product', $fields['content_type'] );
+  }
+
+  /**
+   * read_purchase returns null when the payment has no ID.
+   *
+   * @return void
+   */
+  public function testReadPurchaseSkipsWithoutPaymentId() {
+    list( $integration ) = $this->makeIntegration();
+
+    $payment     = new \stdClass();
+    $payment->ID = 0;
+
+    $this->assertNull( $integration->read_purchase( $payment, null ) );
+  }
+
+  /**
+   * read_view_content builds a ViewContent EventData for a download.
+   *
+   * @return void
+   */
+  public function testReadViewContentReturnsEventData() {
+    $this->setupProductMocks();
+
+    list( $integration ) = $this->makeIntegration();
+
+    $data = $integration->read_view_content( 1234 );
+
+    $this->assertInstanceOf( EventData::class, $data );
+    $fields = $data->to_array();
+    $this->assertEquals( array( '1234' ), $fields['content_ids'] );
+    $this->assertEquals( 'product', $fields['content_type'] );
+    $this->assertEquals( 'USD', $fields['currency'] );
+    $this->assertEquals( 'Encarta', $fields['content_name'] );
+    $this->assertEquals( 50, $fields['value'] );
+  }
+
+  /**
+   * read_view_content returns null without a download id.
+   *
+   * @return void
+   */
+  public function testReadViewContentSkipsWithoutDownloadId() {
+    list( $integration ) = $this->makeIntegration();
+
+    $this->assertNull( $integration->read_view_content( 0 ) );
+  }
+
+  /**
+   * read_add_to_cart verifies the nonce, builds the EventData, and reuses the
+   * shared event id from the posted form data.
+   *
+   * @return void
+   */
+  public function testReadAddToCartReturnsEventDataWithSharedId() {
+    $this->setupProductMocks();
 
     $_POST['nonce']       = '54321';
     $_POST['download_id'] = '1234';
@@ -501,29 +241,129 @@ final class FacebookWordpressEasyDigitalDownloadsTest extends FacebookWordpressT
 
     \WP_Mock::userFunction(
       'absint',
-      array(
-        'args'   => array( \WP_Mock\Functions::type( 'string' ) ),
-        'return' => 1234,
-      )
+      array( 'return' => 1234 )
     );
-
     \WP_Mock::userFunction(
       'sanitize_text_field',
       array(
-        'args'   => array( \WP_Mock\Functions::type( 'string' ) ),
-        'return' => '54321',
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_verify_nonce',
+      array( 'return' => true )
+    );
+
+    list( $integration ) = $this->makeIntegration();
+
+    $data = $integration->read_add_to_cart();
+
+    $this->assertInstanceOf( EventData::class, $data );
+    $this->assertEquals( 'abc-123', $data->get_event_id() );
+    $fields = $data->to_array();
+    $this->assertEquals( array( '1234' ), $fields['content_ids'] );
+    $this->assertEquals( 'product', $fields['content_type'] );
+    $this->assertEquals( 'Encarta', $fields['content_name'] );
+  }
+
+  /**
+   * read_add_to_cart returns null when the AJAX payload is incomplete.
+   *
+   * @return void
+   */
+  public function testReadAddToCartSkipsWithoutPost() {
+    list( $integration ) = $this->makeIntegration();
+
+    $this->assertNull( $integration->read_add_to_cart() );
+  }
+
+  /**
+   * read_add_to_cart returns null when the nonce fails verification.
+   *
+   * @return void
+   */
+  public function testReadAddToCartSkipsOnBadNonce() {
+    $_POST['nonce']       = 'bad';
+    $_POST['download_id'] = '1234';
+    $_POST['post_data']   = 'facebook_event_id=abc-123';
+
+    \WP_Mock::userFunction(
+      'absint',
+      array( 'return' => 1234 )
+    );
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'return' => function ( $input ) {
+          return $input;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_verify_nonce',
+      array( 'return' => false )
+    );
+
+    list( $integration ) = $this->makeIntegration();
+
+    $this->assertNull( $integration->read_add_to_cart() );
+  }
+
+  /**
+   * inject_add_to_cart_event_id prints the hidden shared-id field for a
+   * non-internal user.
+   *
+   * @return void
+   */
+  public function testInjectAddToCartEventIdOutputsHiddenField() {
+    self::mockIsInternalUser( false );
+    \WP_Mock::userFunction(
+      'esc_attr',
+      array(
+        'return' => function ( $input ) {
+          return $input;
+        },
       )
     );
 
-    \WP_Mock::userFunction(
-      'wp_verify_nonce',
-      array(
-        'args'   => array(
-          \WP_Mock\Functions::type( 'string' ),
-          \WP_Mock\Functions::type( 'string' ),
-        ),
-        'return' => true,
-      )
+    list( $integration ) = $this->makeIntegration();
+
+    $integration->inject_add_to_cart_event_id();
+
+    $this->expectOutputRegex(
+      '/input type="hidden" name="facebook_event_id"/'
     );
+  }
+
+  /**
+   * inject_add_to_cart_event_id prints nothing for an internal user.
+   *
+   * @return void
+   */
+  public function testInjectAddToCartEventIdSkipsInternalUser() {
+    self::mockIsInternalUser( true );
+
+    list( $integration ) = $this->makeIntegration();
+
+    $integration->inject_add_to_cart_event_id();
+
+    $this->expectOutputString( '' );
+  }
+
+  /**
+   * inject_add_to_cart_listener enqueues nothing for an internal user.
+   *
+   * @return void
+   */
+  public function testInjectAddToCartListenerSkipsInternalUser() {
+    self::mockIsInternalUser( true );
+
+    list( $integration ) = $this->makeIntegration();
+
+    $integration->inject_add_to_cart_listener( 1234 );
+
+    $this->expectOutputString( '' );
   }
 }
