@@ -50,6 +50,18 @@ abstract class AbstractEventDelivery implements EventDelivery {
      * @return void
      */
     public function queue( $event ) {
+        $this->store( $event );
+    }
+
+    /**
+     * Records an event without any delivery side effect. Subclasses that emit
+     * on queue() (e.g. inline enqueue) use this to keep the event for later
+     * rendering without triggering that side effect.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event.
+     * @return void
+     */
+    protected function store( $event ) {
         $this->events[] = $event;
     }
 
