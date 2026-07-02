@@ -381,8 +381,8 @@ class ServerEventFactory {
      * Builds an Event from an already-extracted standard-keyed data array.
      *
      * Shared transformation used by both the legacy safe_create_event()
-     * callback path and the Signals dispatcher (which passes
-     * EventData::to_array()).
+     * callback path and Signals::track() (which passes a standard-keyed data
+     * array from the integration).
      *
      * @param string  $event_name  The name of the event.
      * @param array   $data        Standard-keyed event data.

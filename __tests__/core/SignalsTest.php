@@ -6,6 +6,7 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\Signals;
+use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
@@ -297,5 +298,136 @@ final class SignalsTest extends FacebookWordpressTestBase {
     // Explicitly active.
     $_COOKIE[ Signals::COOKIE_NAME ] = Signals::STATE_ACTIVE;
     $this->assertTrue( Signals::is_signals_active() );
+  }
+
+  /**
+   * Stubs the render/build helpers track() and render() rely on.
+   *
+   * @return void
+   */
+  private function mockEventHelpers() {
+    self::mockFacebookWordpressOptions();
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'return' => function ( $data, $options = 0 ) {
+          return json_encode( $data );
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'return' => function ( $value ) {
+          return $value;
+        },
+      )
+    );
+  }
+
+  /**
+   * track() builds the CAPI event, drops empty fields (keeping 0), tracks it,
+   * and returns it.
+   *
+   * @return void
+   */
+  public function testTrackBuildsTracksAndReturnsEvent() {
+    $this->mockEventHelpers();
+
+    $signals = new Signals();
+    $event   = $signals->track(
+      'Lead',
+      array(
+        'email' => 'pika.chu@s2s.com',
+        'value' => 0,
+        'phone' => '',
+        'note'  => null,
+      ),
+      'contact-form-7'
+    );
+
+    $this->assertEquals( 'Lead', $event->getEventName() );
+    $this->assertEquals( 0, $event->getCustomData()->getValue() );
+    $this->assertEquals(
+      'contact-form-7',
+      $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
+    );
+
+    $tracked = FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $this->assertCount( 1, $tracked );
+    $this->assertSame( $event, $tracked[0] );
+  }
+
+  /**
+   * track() stamps a supplied shared id onto the event for dedup.
+   *
+   * @return void
+   */
+  public function testTrackSetsSharedEventId() {
+    $this->mockEventHelpers();
+
+    $signals = new Signals();
+    $event   = $signals->track(
+      'AddToCart',
+      array( 'content_ids' => array( '1' ) ),
+      'easy-digital-downloads',
+      'shared-123'
+    );
+
+    $this->assertEquals( 'shared-123', $event->getEventId() );
+  }
+
+  /**
+   * render() turns a tracked event into browser pixel code.
+   *
+   * @return void
+   */
+  public function testRenderReturnsPixelCode() {
+    $this->mockEventHelpers();
+
+    $signals = new Signals();
+    $event   = $signals->track(
+      'Lead',
+      array( 'email' => 'pika.chu@s2s.com' ),
+      'contact-form-7'
+    );
+
+    $code = $signals->render( $event, 'contact-form-7' );
+
+    $this->assertStringContainsString( 'Lead', $code );
+    $this->assertStringContainsString( 'contact-form-7', $code );
+  }
+
+  /**
+   * flush_pending_events() sends the queued events via send_server_events.
+   *
+   * @return void
+   */
+  public function testFlushPendingEventsSendsQueuedEvents() {
+    $event = new \stdClass();
+    $store = $this->createMock( FacebookServerSideEvent::class );
+    $store->method( 'get_pending_events' )->willReturn( array( $event ) );
+    $signals = new Signals( $store );
+
+    \WP_Mock::expectAction( 'send_server_events', array( $event ), 1 );
+
+    $signals->flush_pending_events();
+
+    $this->assertConditionsMet();
+  }
+
+  /**
+   * flush_pending_events() does nothing when nothing is queued.
+   *
+   * @return void
+   */
+  public function testFlushPendingEventsNoopWhenEmpty() {
+    $store = $this->createMock( FacebookServerSideEvent::class );
+    $store->method( 'get_pending_events' )->willReturn( array() );
+    $signals = new Signals( $store );
+
+    $signals->flush_pending_events();
+
+    $this->assertConditionsMet();
   }
 }

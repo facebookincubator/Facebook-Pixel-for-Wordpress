@@ -18,12 +18,18 @@ namespace FacebookPixelPlugin\Core;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 /**
- * Cookie-backed signals state for frontend event gating.
+ * Server-event service + cookie-backed frontend signal gating.
  *
- * Mirrors WooCommerce\Facebook\Signals in the facebook-for-woocommerce plugin
- * and the frontend FacebookSignal JS API. These implementations share the
- * cookie name, state values, AJAX payload, and hold/release semantics; keep
- * them behaviorally in sync when making changes here.
+ * Signals is a plain service the integrations call: it builds and tracks the
+ * CAPI (server) event and, when the integration needs browser output, renders
+ * that event to pixel code. It does NOT register integration hooks or decide
+ * where the pixel goes — the integration owns its hooks, their signatures, and
+ * what to do with the results, because that placement is integration-specific
+ * (an AJAX POST response vs a redirect vs a page render).
+ *
+ * The consent-gating statics mirror WooCommerce\Facebook\Signals and the
+ * frontend FacebookSignal JS API; keep the cookie name, states, and hold/
+ * release semantics in sync with them.
  *
  * @see https://github.com/woocommerce/facebook-for-woocommerce/blob/trunk/includes/Signals.php
  * @see ../../js/facebook_signal.js
@@ -65,129 +71,80 @@ class Signals {
     }
 
     /**
-     * Returns the CAPI event store shared for this request.
+     * Builds and tracks the server-side (CAPI) event for the given data and
+     * returns it, so the caller can render it for the browser if needed.
      *
-     * @return FacebookServerSideEvent
-     */
-    public function get_server_events() {
-        return $this->server_events;
-    }
-
-    /**
-     * Registers an event: when $hook fires, extract an EventData via
-     * $data_provider, dispatch it (CAPI), and arrange browser delivery via
-     * $delivery. The integration decides the hook and the event; Signals owns
-     * all server-vs-browser handling.
+     * Empty fields (null / '') are dropped; 0 and '0' are kept. When the
+     * integration supplies a shared id (e.g. a browser-generated id carried on
+     * a form), it is set on the event so it deduplicates against the browser
+     * event that uses the same id.
      *
-     * @param string        $hook          The WordPress hook (action/filter).
-     * @param string        $event_name    The event name (e.g. 'Lead').
-     * @param callable      $data_provider fn( ...$hook_args ): ?EventData.
-     * @param EventDelivery $delivery      Browser-pixel delivery strategy.
-     * @param string        $tracking_name The integration tracking name.
-     * @param int           $priority      Hook priority. Defaults to 10.
-     * @param int           $accepted_args Hook args to accept. Defaults to 2.
-     * @return void
-     */
-    public function on(
-        $hook,
-        $event_name,
-        $data_provider,
-        $delivery,
-        $tracking_name,
-        $priority = 10,
-        $accepted_args = 2
-    ) {
-        if ( $delivery instanceof EventDelivery ) {
-            $delivery->register( $tracking_name );
-        }
-
-        // Thin forwarder: WordPress passes a per-hook argument list, so the
-        // closure only captures those and hands them to the named handler
-        // below along with this registration's config.
-        add_filter(
-            $hook,
-            function ( ...$hook_args ) use (
-                $event_name,
-                $data_provider,
-                $tracking_name,
-                $delivery
-            ) {
-                return $this->handle_registered_hook(
-                    $event_name,
-                    $data_provider,
-                    $tracking_name,
-                    $delivery,
-                    $hook_args
-                );
-            },
-            $priority,
-            $accepted_args
-        );
-    }
-
-    /**
-     * Handles a hook registered via on(): extracts the EventData from the
-     * integration's data provider and dispatches it. Internal users are
-     * skipped, and the hook's first argument is returned unchanged so this is
-     * safe on both actions and filters.
-     *
-     * @param string        $event_name    The event name to dispatch.
-     * @param callable      $data_provider fn( ...$hook_args ): ?EventData.
-     * @param string        $tracking_name The integration tracking name.
-     * @param EventDelivery $delivery      The browser delivery to queue onto.
-     * @param array         $hook_args     Arguments WordPress passed to the hook.
-     * @return mixed The hook's first argument, unchanged.
-     */
-    private function handle_registered_hook(
-        $event_name,
-        $data_provider,
-        $tracking_name,
-        $delivery,
-        $hook_args
-    ) {
-        $passthrough = isset( $hook_args[0] ) ? $hook_args[0] : null;
-
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return $passthrough;
-        }
-
-        $event_data = call_user_func_array( $data_provider, $hook_args );
-        if ( $event_data instanceof EventData && ! $event_data->is_empty() ) {
-            $event = $this->dispatch( $event_name, $event_data, $tracking_name );
-            if ( $delivery instanceof EventDelivery ) {
-                $delivery->queue( $event );
-            }
-        }
-
-        return $passthrough;
-    }
-
-    /**
-     * Dispatches an EventData to the Conversions API (server side) by building
-     * the Event and tracking it, and returns the Event so the caller can queue
-     * it onto a browser delivery. Browser rendering is owned by the delivery.
-     *
-     * @param string    $event_name      The event name.
-     * @param EventData $event_data      The neutral event payload.
-     * @param string    $tracking_name   The integration tracking name.
-     * @param bool      $prefer_referrer Whether to prefer the referrer as the
-     *                                   event source URL. Defaults to true.
+     * @param string      $event_name      The event name (e.g. 'Lead').
+     * @param array       $data            User + custom data, standard-keyed.
+     * @param string      $tracking_name   The integration tracking name.
+     * @param string|null $event_id        Optional shared id for dedup.
+     * @param bool        $prefer_referrer Prefer the referrer as event source
+     *                                     URL. Defaults to true.
      * @return \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event
      */
-    public function dispatch(
+    public function track(
         $event_name,
-        EventData $event_data,
+        array $data,
         $tracking_name,
+        $event_id = null,
         $prefer_referrer = true
     ) {
+        $clean = array_filter(
+            $data,
+            static function ( $value ) {
+                return null !== $value && '' !== $value;
+            }
+        );
+
         $event = ServerEventFactory::create_from_data(
             $event_name,
-            $event_data->to_array(),
+            $clean,
             $tracking_name,
             $prefer_referrer
         );
+
+        if ( ! empty( $event_id ) ) {
+            $event->setEventId( $event_id );
+        }
+
         $this->server_events->track( $event );
         return $event;
+    }
+
+    /**
+     * Renders a tracked event to browser pixel code. The integration decides
+     * where the returned code goes (AJAX response, footer, inline, …).
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event.
+     * @param string                                                   $tracking_name Tracking name.
+     * @param bool                                                     $script_tag Wrap in a <script> tag.
+     * @return string
+     */
+    public function render( $event, $tracking_name, $script_tag = true ) {
+        return PixelRenderer::render(
+            array( $event ),
+            $tracking_name,
+            $script_tag
+        );
+    }
+
+    /**
+     * Sends any server-side events that were queued for deferred sending during
+     * this request via the send_server_events action. Keeps the pending-event
+     * store encapsulated so callers never reach into it.
+     *
+     * @return void
+     */
+    public function flush_pending_events() {
+        $pending = $this->server_events->get_pending_events();
+        if ( count( $pending ) > 0 ) {
+            do_action( 'send_server_events', $pending, count( $pending ) );
+        }
     }
 
     /**
