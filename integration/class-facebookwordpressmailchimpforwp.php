@@ -29,11 +29,8 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\Signals;
-use FacebookPixelPlugin\Core\PixelRenderer;
 
 /**
  * FacebookWordpressMailchimpForWp class.
@@ -50,11 +47,10 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
      *
      * @return void
      */
-    public static function inject_pixel_code() {
-    self::add_pixel_fire_for_hook(
+    public function inject_pixel_code() {
+    $this->add_pixel_fire_for_hook(
         array(
             'hook_name'       => 'mc4wp_form_subscribed',
-            'classname'       => __CLASS__,
             'inject_function' => 'injectLeadEvent',
         )
     );
@@ -68,7 +64,7 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
      *
      * @return void
      */
-    public static function injectLeadEvent() {
+    public function injectLeadEvent() {
         if ( FacebookPluginUtils::is_internal_user() ) {
             return;
         }
@@ -80,10 +76,10 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
             self::TRACKING_NAME,
             true
         );
-        ( new Signals() )->track_event( $server_event );
+        $this->signals->track_event( $server_event );
 
-        $code = PixelRenderer::render(
-            array( $server_event ),
+        $code = $this->signals->render(
+            $server_event,
             self::TRACKING_NAME
         );
         printf(

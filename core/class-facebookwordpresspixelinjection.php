@@ -31,6 +31,11 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 /**
  * Class FacebookWordpressPixelInjection
+ *
+ * Injects the browser Pixel bootstrap (base/init/noscript/page-view) into the
+ * page, wires the integrations, and flushes queued server events. Created and
+ * owned by Signals; it receives the shared Signals + BrowserEvents rather than
+ * reaching for them.
  */
 class FacebookWordpressPixelInjection {
     /**
@@ -41,9 +46,28 @@ class FacebookWordpressPixelInjection {
     public static $render_cache = array();
 
     /**
-     * Constructor for the FacebookWordpressPixelInjection class.
+     * The facade for the signals subsystem.
+     *
+     * @var Signals
      */
-    public function __construct() {
+    private $signals;
+
+    /**
+     * The browser-side pixel generator.
+     *
+     * @var BrowserEvents
+     */
+    private $browser;
+
+    /**
+     * Constructor.
+     *
+     * @param Signals       $signals The signals facade.
+     * @param BrowserEvents $browser The browser-side pixel generator.
+     */
+    public function __construct( Signals $signals, BrowserEvents $browser ) {
+        $this->signals = $signals;
+        $this->browser = $browser;
     }
 
     /**
@@ -75,7 +99,7 @@ class FacebookWordpressPixelInjection {
                 FacebookPluginConfig::integration_config() as $key => $value
                 ) {
             $class_name = 'FacebookPixelPlugin\\Integration\\' . $value;
-            $class_name::inject_pixel_code();
+            ( new $class_name( $this->signals ) )->inject_pixel_code();
             }
             add_action(
                 'wp_footer',
@@ -85,43 +109,26 @@ class FacebookWordpressPixelInjection {
     }
 
     /**
-     * Sends any pending Facebook server-side events.
-     *
-     * This method checks if there are any pending Facebook server-side events,
-     * and if so, it sends them by triggering the `send_server_events` action.
+     * Sends any queued server-side events (unless signals are held).
      *
      * @return void
      */
     public function send_pending_events() {
-        if ( FacebookSignalState::is_held() ) {
+        if ( $this->signals->is_held() ) {
             return;
         }
 
-        $pending_events =
-        ( new Signals() )->get_pending_events();
-        if ( count( $pending_events ) > 0 ) {
-            do_action(
-                'send_server_events',
-                $pending_events,
-                count( $pending_events )
-            );
-        }
+        $this->signals->flush_pending_events();
     }
 
     /**
-     * Injects the Facebook pixel base code, Open Bridge configuration code
-     * if CAI is enabled, Facebook pixel initialization code and Facebook
-     * pixel page view code.
-     *
-     * This method is hooked into the `wp_head` action and is responsible
-     * for injecting the necessary code to enable the Facebook pixel for
-     * the current page. It uses the `FacebookPixel` class to generate
-     * the necessary code and injects it into the page.
+     * Injects the Facebook pixel base code, the FacebookSignal init code, and
+     * the page-view code into `wp_head`.
      *
      * @return void
      */
     public function inject_pixel_code() {
-        $pixel_id = FacebookPixel::get_pixel_id();
+        $pixel_id = $this->browser->get_pixel_id();
         if (
             ( isset(
                 self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ]
@@ -134,22 +141,18 @@ class FacebookWordpressPixelInjection {
         }
 
         self::$render_cache[ FacebookPluginConfig::IS_PIXEL_RENDERED ] = true;
-        echo FacebookPixel::get_pixel_base_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo $this->browser->get_pixel_base_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         echo $this->get_facebook_signal_init_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo FacebookPixel::get_pixel_page_view_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo $this->browser->get_pixel_page_view_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     }
 
     /**
-     * Injects the Facebook Pixel noscript code.
-     *
-     * This method is responsible for adding the noscript version of the
-     * Facebook Pixel code to the page. It uses the `get_pixel_noscript_code`
-     * method from the `FacebookPixel` class to generate the necessary code.
+     * Injects the Facebook Pixel noscript code into `wp_body_open`.
      *
      * @return void
      */
     public function inject_pixel_noscript_code() {
-        echo FacebookPixel::get_pixel_noscript_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo $this->browser->get_pixel_noscript_code(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     }
 
     /**
@@ -184,7 +187,7 @@ class FacebookWordpressPixelInjection {
      * @return string
      */
     private function get_facebook_signal_init_code() {
-        $pixel_id  = FacebookPixel::get_pixel_id();
+        $pixel_id  = $this->browser->get_pixel_id();
         $user_info = FacebookPluginUtils::is_internal_user()
             ? array()
             : FacebookWordpressOptions::get_user_info();
@@ -199,13 +202,13 @@ class FacebookWordpressPixelInjection {
             'capig'         => FacebookWordpressOptions::get_capig(),
         );
 
-        if ( FacebookSignalState::is_held() ) {
+        if ( $this->signals->is_held() ) {
             $attribution = array_filter(
                 array(
-                    'fbp'       => FacebookSignalState::get_attribution_data( 'fbp' ),
-                    'fbc'       => FacebookSignalState::get_attribution_data( 'fbc' ),
-                    'fbpDomain' => FacebookSignalState::get_attribution_data( 'fbp_domain' ),
-                    'fbcDomain' => FacebookSignalState::get_attribution_data( 'fbc_domain' ),
+                    'fbp'       => $this->signals->get_attribution_data( 'fbp' ),
+                    'fbc'       => $this->signals->get_attribution_data( 'fbc' ),
+                    'fbpDomain' => $this->signals->get_attribution_data( 'fbp_domain' ),
+                    'fbcDomain' => $this->signals->get_attribution_data( 'fbc_domain' ),
                 )
             );
             if ( ! empty( $attribution ) ) {

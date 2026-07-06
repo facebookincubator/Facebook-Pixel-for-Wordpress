@@ -155,15 +155,20 @@ class FacebookPluginConfig {
      */
     public static function integration_config() {
         return array(
-            'CALDERA_FORM'          => 'FacebookWordpressCalderaForm',
-            'CONTACT_FORM_7'        => 'FacebookWordpressContactForm7',
-            'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
-            'FORMIDABLE_FORM'       => 'FacebookWordpressFormidableForm',
-            'MAILCHIMP_FOR_WP'      => 'FacebookWordpressMailchimpForWp',
-            'NINJA_FORMS'           => 'FacebookWordpressNinjaForms',
-            'WP_FORMS'              => 'FacebookWordpressWPForms',
-            'WP_E_COMMERCE'         => 'FacebookWordpressWPECommerce',
-            'WOOCOMMERCE'           => 'FacebookWordpressWooCommerce',
+            // Temporarily narrowed to a single integration while the
+            // ServerEvents / BrowserEvents consolidation lands. The rest are
+            // re-enabled as they're converted to the new structure.
+            'MAILCHIMP_FOR_WP' => 'FacebookWordpressMailchimpForWp',
+            // phpcs:disable Squiz.PHP.CommentedOutCode.Found -- intentionally disabled pending conversion.
+            // 'CALDERA_FORM'          => 'FacebookWordpressCalderaForm',
+            // 'CONTACT_FORM_7'        => 'FacebookWordpressContactForm7',
+            // 'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
+            // 'FORMIDABLE_FORM'       => 'FacebookWordpressFormidableForm',
+            // 'NINJA_FORMS'           => 'FacebookWordpressNinjaForms',
+            // 'WP_FORMS'              => 'FacebookWordpressWPForms',
+            // 'WP_E_COMMERCE'         => 'FacebookWordpressWPECommerce',
+            // 'WOOCOMMERCE'           => 'FacebookWordpressWooCommerce',
+            // phpcs:enable Squiz.PHP.CommentedOutCode.Found
         );
     }
 }

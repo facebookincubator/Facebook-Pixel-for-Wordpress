@@ -30,6 +30,7 @@ namespace FacebookPixelPlugin\Tests\Integration;
 use FacebookPixelPlugin\Integration\FacebookWordpressMailchimpForWp;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\Signals;
 
 /**
  * FacebookWordpressMailchimpForWpTest class.
@@ -52,19 +53,20 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
    * hook is added to trigger the 'injectLeadEvent' method.
    */
   public function testInjectPixelCode() {
-    $mocked_base = \Mockery::mock(
-      'alias:FacebookPixelPlugin\Integration\FacebookWordpressIntegrationBase'
+    $signals = \Mockery::mock( Signals::class );
+    $integration = \Mockery::mock(
+      FacebookWordpressMailchimpForWp::class . '[add_pixel_fire_for_hook]',
+      array( $signals )
     );
-    $mocked_base->shouldReceive( 'add_pixel_fire_for_hook' )
-    ->with(
-      array(
-        'hook_name'       => 'mc4wp_form_subscribed',
-        'classname'       => FacebookWordpressMailchimpForWp::class,
-        'inject_function' => 'injectLeadEvent',
+    $integration->shouldReceive( 'add_pixel_fire_for_hook' )
+      ->with(
+        array(
+          'hook_name'       => 'mc4wp_form_subscribed',
+          'inject_function' => 'injectLeadEvent',
+        )
       )
-    )
-    ->once();
-    FacebookWordpressMailchimpForWp::inject_pixel_code();
+      ->once();
+    $integration->inject_pixel_code();
   }
 
   /**
@@ -137,7 +139,8 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
             )
         );
 
-    FacebookWordpressMailchimpForWp::injectLeadEvent();
+    $integration = new FacebookWordpressMailchimpForWp( new Signals() );
+    $integration->injectLeadEvent();
     $this->expectOutputRegex(
       '/mailchimp-for-wp[\s\S]+End Meta Pixel Event Code/'
     );
@@ -181,7 +184,10 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
    */
   public function testInjectLeadEventWithInternalUser() {
     self::mockIsInternalUser( true );
-    FacebookWordpressMailchimpForWp::injectLeadEvent();
+    $integration = new FacebookWordpressMailchimpForWp(
+      \Mockery::mock( Signals::class )
+    );
+    $integration->injectLeadEvent();
     $this->expectOutputString( '' );
   }
 }

@@ -65,7 +65,7 @@ abstract class FacebookWordpressTestBase extends TestCase {
         $GLOBALS['wp_version'] = '1.0';
     \Mockery::getConfiguration()->setConstantsMap(
         array(
-            'FacebookPixelPlugin\Core\FacebookPixel' => array(
+            'FacebookPixelPlugin\Core\BrowserEvents' => array(
                 'FB_INTEGRATION_TRACKING_KEY' => 'fb_integration_tracking',
             ),
         )

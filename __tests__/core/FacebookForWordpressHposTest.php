@@ -67,9 +67,6 @@ final class FacebookForWordpressHposTest extends FacebookWordpressTestBase {
         $mocked_options->shouldReceive( 'get_active_pixel_id' )->andReturn( '1234' );
         $mocked_options->shouldReceive( 'is_wordpress_com_hosted' )->andReturn( false );
 
-        $mocked_pixel = \Mockery::mock( 'alias:FacebookPixelPlugin\\Core\\FacebookPixel' );
-        $mocked_pixel->shouldReceive( 'initialize' )->once();
-
         \Mockery::mock( 'overload:FacebookPixelPlugin\\Core\\ServerEventAsyncTask' );
 
         require_once dirname( __DIR__, 2 ) . '/facebook-for-wordpress.php';

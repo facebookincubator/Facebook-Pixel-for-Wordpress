@@ -40,13 +40,32 @@ abstract class FacebookWordpressIntegrationBase {
 
 
     /**
+     * The shared Signals facade, injected by the pixel injector.
+     *
+     * @var \FacebookPixelPlugin\Core\Signals
+     */
+    protected $signals;
+
+    /**
+     * Constructor. Integrations are instantiated by the pixel injector with the
+     * single shared Signals instance created in the bootstrap, so every
+     * integration tracks/render through the same facade rather than
+     * constructing its own.
+     *
+     * @param \FacebookPixelPlugin\Core\Signals $signals The shared Signals facade.
+     */
+    public function __construct( \FacebookPixelPlugin\Core\Signals $signals ) {
+        $this->signals = $signals;
+    }
+
+    /**
      * This function should be overridden in derived classes.
      * It is responsible for adding action hooks to
      * WordPress to inject the pixel code.
      *
      * @return void
      */
-    public static function inject_pixel_code() {
+    public function inject_pixel_code() {
     }
 
 
@@ -61,8 +80,8 @@ abstract class FacebookWordpressIntegrationBase {
      * added with a priority of 11.
      *
      * The function that is called is the $inject_function,
-     * which is a static method of the class $classname.
-     * The function is called with the parameters $argv.
+     * which is an instance method of this integration. It is invoked on the
+     * same instance, so it has access to the injected Signals facade.
      *
      * The hook is added with a priority of $priority,
      * which is optional and defaults to 11.
@@ -72,28 +91,25 @@ abstract class FacebookWordpressIntegrationBase {
      *
      *     @type string $hook_name       The name of the
      * hook that triggers the injection of the pixel code.
-     *     @type string $classname       The name of the
-     * class that contains the function that injects the pixel code.
      *     @type string $inject_function The name of
-     * the function that injects the pixel code.
+     * the instance method that injects the pixel code.
      *     @type int    $priority        The priority of
      * the hook. Optional and defaults to 11.
      * }
      */
-    public static function add_pixel_fire_for_hook(
+    public function add_pixel_fire_for_hook(
         $pixel_fire_for_hook_params
     ) {
         $hook_name       = $pixel_fire_for_hook_params['hook_name'];
-        $classname       = $pixel_fire_for_hook_params['classname'];
         $inject_function = $pixel_fire_for_hook_params['inject_function'];
         $priority        = isset( $pixel_fire_for_hook_params['priority'] ) ?
         $pixel_fire_for_hook_params['priority'] : 11;
 
         $user_function = array(
-            $classname,
+            $this,
             $inject_function,
         );
-        $reflection    = new ReflectionMethod( $classname, $inject_function );
+        $reflection    = new ReflectionMethod( $this, $inject_function );
         $argc          = $reflection->getNumberOfParameters();
         $argv          = $reflection->getParameters();
 
