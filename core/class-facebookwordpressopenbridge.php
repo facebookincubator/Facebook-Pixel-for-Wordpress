@@ -28,7 +28,6 @@
 namespace FacebookPixelPlugin\Core;
 
 use FacebookPixelPlugin\Core\AAMSettingsFields;
-use FacebookPixelPlugin\Core\ServerEventFactory;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -162,10 +161,9 @@ class FacebookWordpressOpenBridge {
         if ( in_array( $event_name, self::$blocked_events, true ) ) {
             return;
         }
-        $event = ServerEventFactory::safe_create_event(
+        $event = EventFactory::create(
             $event_name,
-            array( $this, 'extract_from_databag' ),
-            array( $data ),
+            $this->extract_from_databag( $data ),
             'wp-cloudbridge-plugin',
             true
         );

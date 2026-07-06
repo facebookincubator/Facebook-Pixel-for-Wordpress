@@ -194,10 +194,9 @@ class FacebookCapiEvent {
             wp_die();
         }
 
-            $event  = ServerEventFactory::safe_create_event(
+            $event  = EventFactory::create(
                 $event_name,
-                array( $this, 'get_event_custom_data' ),
-                array( $custom_data ),
+                $this->get_event_custom_data( $custom_data ),
                 'fb-capi-event',
                 true
             );
@@ -234,7 +233,7 @@ class FacebookCapiEvent {
             $events = array();
             if ( isset( $raw_payload['data'] ) ) {
                 foreach ( $raw_payload['data'] as $event_as_array ) {
-                    $events[] = ServerEventFactory::create_from_array(
+                    $events[] = EventFactory::create_from_array(
                         $event_as_array
                     );
                 }

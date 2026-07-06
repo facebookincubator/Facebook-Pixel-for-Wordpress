@@ -151,4 +151,27 @@ class FacebookPluginUtils {
         set_transient( $transient, 1, DAY_IN_SECONDS );
         error_log( $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
     }
+
+    /**
+     * Split a full name string into an array containing the first name
+     * and last name.
+     *
+     * If the name contains a space, it will be split into a first name and
+     * last name. Otherwise, the entire name will be considered the first
+     * name and the last name will be null.
+     *
+     * @param string $name The full name to split.
+     * @return array An array containing the first name and last name.
+     */
+    public static function split_name( $name ) {
+        $first_name = $name;
+        $last_name  = null;
+        $index      = strpos( $name, ' ' );
+        if ( false !== $index ) {
+            $first_name = substr( $name, 0, $index );
+            $last_name  = substr( $name, $index + 1 );
+        }
+
+        return array( $first_name, $last_name );
+    }
 }

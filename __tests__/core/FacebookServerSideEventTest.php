@@ -27,7 +27,7 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\ServerEventFactory;
+use FacebookPixelPlugin\Core\EventFactory;
 use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
@@ -69,7 +69,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
       )
     );
 
-    $event = ServerEventFactory::new_event( 'Lead' );
+    $event = EventFactory::create( 'Lead' );
 
     FacebookServerSideEvent::get_instance()->track( $event );
 
@@ -121,8 +121,8 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
       )
     );
 
-    $event1 = ServerEventFactory::new_event( 'Lead' );
-    $event2 = ServerEventFactory::new_event( 'AddToCart' );
+    $event1 = EventFactory::create( 'Lead' );
+    $event2 = EventFactory::create( 'AddToCart' );
 
     FacebookServerSideEvent::get_instance()->track( $event1, false );
     FacebookServerSideEvent::get_instance()->track( $event2 );
@@ -168,7 +168,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
       )
     );
 
-    $event = ServerEventFactory::new_event( 'Lead' );
+    $event = EventFactory::create( 'Lead' );
 
     FacebookServerSideEvent::get_instance()
       ->set_pending_pixel_event( 'test_callback', $event );
@@ -208,7 +208,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $api = \Mockery::mock( 'alias:FacebookPixelPlugin\FacebookAds\Api' );
     $api->shouldReceive( 'init' )->never();
 
-    $event  = ServerEventFactory::new_event( 'Lead' );
+    $event  = EventFactory::create( 'Lead' );
     $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
 
     $this->assertNull( $result );
@@ -245,7 +245,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $api = \Mockery::mock( 'alias:FacebookPixelPlugin\FacebookAds\Api' );
     $api->shouldReceive( 'init' )->never();
 
-    $event  = ServerEventFactory::new_event( 'Lead' );
+    $event  = EventFactory::create( 'Lead' );
     $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
 
     $this->assertFalse( $result['success'] );
@@ -282,7 +282,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
       )
     );
 
-    $event  = ServerEventFactory::new_event( 'Lead' );
+    $event  = EventFactory::create( 'Lead' );
     $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
 
     $this->assertFalse( $result['success'] );
@@ -315,7 +315,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     \WP_Mock::userFunction( 'is_admin', array( 'return' => false ) );
     \WP_Mock::userFunction( 'wp_doing_cron', array( 'return' => false ) );
 
-    $event  = ServerEventFactory::new_event( 'Lead' );
+    $event  = EventFactory::create( 'Lead' );
     $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
 
     $this->assertNull( $result );

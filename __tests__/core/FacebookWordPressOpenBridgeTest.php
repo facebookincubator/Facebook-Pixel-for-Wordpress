@@ -27,7 +27,7 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\ServerEventFactory;
+use FacebookPixelPlugin\Core\EventFactory;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordpressOpenBridge;
 use FacebookPixelPlugin\Core\Signals;
@@ -79,7 +79,7 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
       )
     );
 
-    $event                = ServerEventFactory::new_event( 'Lead' );
+    $event                = EventFactory::create( 'Lead' );
     $open_bridge_instance = FacebookWordpressOpenBridge::get_instance( new Signals() );
 
     $ev = $open_bridge_instance->extract_from_databag( $event );
@@ -204,7 +204,7 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
       )
     );
 
-    $event                = ServerEventFactory::new_event( 'Lead' );
+    $event                = EventFactory::create( 'Lead' );
     $open_bridge_instance = FacebookWordpressOpenBridge::get_instance( new Signals() );
 
     $ev = $open_bridge_instance->extract_from_databag( $event );
@@ -236,7 +236,7 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
       )
     );
 
-    $event                = ServerEventFactory::new_event( 'Lead' );
+    $event                = EventFactory::create( 'Lead' );
     $open_bridge_instance = FacebookWordpressOpenBridge::get_instance( new Signals() );
 
     $ev = $open_bridge_instance->extract_from_databag( $event );

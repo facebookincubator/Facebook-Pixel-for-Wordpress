@@ -15,11 +15,6 @@
 
 namespace FacebookPixelPlugin\Core;
 
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content;
-
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 /**
@@ -49,43 +44,6 @@ class ServerEventAsyncTask extends \WP_Async_Task {
     public function __construct( Signals $signals, $auth_level = self::BOTH ) {
         parent::__construct( $auth_level );
         $this->signals = $signals;
-    }
-
-    /**
-     * Converts the normalized user data to the keys used in UserData.
-     *
-     * Normalized user data is an array of key => value pairs
-     * where the key is a normalized version of the user data field name
-     * and the value is the value of the field.
-     *
-     * This function takes that array and converts it to
-     * the format used by UserData.
-     *
-     * @param array $user_data_normalized The normalized user data.
-     *
-     * @return array The converted user data.
-     */
-    private function convert_user_data( $user_data_normalized ) {
-        return ServerEventFactory::map_user_data_keys( $user_data_normalized );
-    }
-
-    /**
-     * Converts an array representation of an event into an Event object.
-     *
-     * This function takes an array that represents an event and
-     * converts it into
-     * an instance of the `Event` class. If the array contains `user_data`, a
-     * `UserData` object is created and associated with the event. Similarly, if
-     * `custom_data` is present, a `CustomData` object is created and
-     * associated.
-     * This includes handling nested `contents` and additional custom properties
-     * like `fb_integration_tracking`.
-     *
-     * @param array $event_as_array The array representing the event.
-     * @return Event The constructed Event object.
-     */
-    private function convert_array_to_event( $event_as_array ) {
-        return ServerEventFactory::create_from_array( $event_as_array );
     }
 
     /**
@@ -163,7 +121,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
         }
         $events = array();
         foreach ( $events_as_array as $event_as_array ) {
-            $event    = $this->convert_array_to_event( $event_as_array );
+            $event    = EventFactory::create_from_array( $event_as_array );
             $events[] = $event;
         }
         $this->signals->send( $events );

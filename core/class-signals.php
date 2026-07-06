@@ -178,7 +178,7 @@ class Signals {
             }
         );
 
-        $event = ServerEventFactory::create_from_data(
+        $event = EventFactory::create(
             $event_name,
             $clean,
             $tracking_name,

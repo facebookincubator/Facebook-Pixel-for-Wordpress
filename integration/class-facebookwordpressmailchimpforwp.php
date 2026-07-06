@@ -30,7 +30,7 @@ namespace FacebookPixelPlugin\Integration;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\ServerEventFactory;
+use FacebookPixelPlugin\Core\EventFactory;
 
 /**
  * FacebookWordpressMailchimpForWp class.
@@ -69,10 +69,9 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
             return;
         }
 
-        $server_event = ServerEventFactory::safe_create_event(
+        $server_event = EventFactory::create(
             'Lead',
-            array( __CLASS__, 'readFormData' ),
-            array(),
+            self::readFormData(),
             self::TRACKING_NAME,
             true
         );
