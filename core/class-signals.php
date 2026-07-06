@@ -256,11 +256,10 @@ class Signals {
      * Tracks an already-built server event.
      *
      * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event.
-     * @param bool                                                     $send_now Send now or queue.
      * @return void
      */
-    public function track_event( $event, $send_now = true ) {
-        self::$server_events->track( $event, $send_now );
+    public function track_event( $event ) {
+        self::$server_events->track( $event );
     }
 
     /**

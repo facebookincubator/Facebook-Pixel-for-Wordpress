@@ -57,7 +57,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * Tests that the track method of FacebookServerSideEvent fires an action.
+   * Tests that the track method records the event.
    *
    * This test ensures that when a 'Lead' event
    * is tracked using the track method,
@@ -68,7 +68,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
    *
    * @return void
    */
-  public function testTrackEventFiresAction() {
+  public function testTrackRecordsEvent() {
     self::mockFacebookWordpressOptions();
 
     \WP_Mock::userFunction(
@@ -114,11 +114,9 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
    * Tests that the track method of FacebookServerSideEvent stores the events
    * correctly.
    *
-   * This test verifies that when tracking an event using the track method,
-   * the events are stored in the correct order
-   * and the correct number of events
-   * are stored. It also verifies that the events can be retrieved using the
-   * get_pending_events method.
+   * This test verifies that when tracking events using the track method, they
+   * accumulate in order in the pending queue (dispatched together on flush)
+   * and can be retrieved using the get_pending_events method.
    */
   public function testStoresPendingEvents() {
     self::mockFacebookWordpressOptions();
@@ -136,7 +134,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $event1 = EventFactory::create( 'Lead' );
     $event2 = EventFactory::create( 'AddToCart' );
 
-    $this->store->track( $event1, false );
+    $this->store->track( $event1 );
     $this->store->track( $event2 );
 
     $pending_events =
@@ -147,12 +145,16 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
       $this->store->get_num_tracked_events()
     );
     $this->assertEquals(
-      1,
+      2,
       count( $pending_events )
     );
     $this->assertEquals(
       'Lead',
       $pending_events[0]->getEventName()
+    );
+    $this->assertEquals(
+      'AddToCart',
+      $pending_events[1]->getEventName()
     );
   }
 

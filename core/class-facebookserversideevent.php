@@ -70,26 +70,20 @@ class FacebookServerSideEvent {
     private $api = null;
 
     /**
-     * Tracks a given event and optionally sends it immediately.
+     * Tracks a given event: records it and queues it for sending.
      *
-     * @param object $event   The event to be tracked.
-     * @param bool   $send_now Optional. Whether to send the event immediately.
-     *                        Defaults to true. If true, the event will be sent
-     *                        immediately. If false, the event will be added to
-     *                        the pending events queue.
+     * Events are accumulated (not sent one-by-one) and dispatched together via
+     * a single send_server_events action — see Signals::flush_pending_events —
+     * so multiple events tracked in one request don't clobber each other on the
+     * async send. When signals are held, the event is queued for browser
+     * release instead of being sent from the server.
+     *
+     * @param object $event The event to be tracked.
      */
-    public function track( $event, $send_now = true ) {
+    public function track( $event ) {
         $this->tracked_events[] = $event;
-        if ( $send_now ) {
-            if ( self::should_suppress_frontend_send() ) {
-                FacebookSignalState::queue_event( $event );
-            } else {
-                do_action(
-                    'send_server_events',
-                    array( $event ),
-                    1
-                );
-            }
+        if ( self::should_suppress_frontend_send() ) {
+            FacebookSignalState::queue_event( $event );
         } else {
             $this->pending_events[] = $event;
         }

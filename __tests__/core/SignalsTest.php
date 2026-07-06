@@ -404,8 +404,8 @@ final class SignalsTest extends FacebookWordpressTestBase {
    */
   public function testFlushPendingEventsSendsQueuedEvents() {
     $event = new \stdClass();
-    // Queue an event (track with send_now = false) on the shared store.
-    ( new Signals() )->track_event( $event, false );
+    // Track an event so it accumulates in the shared store's pending queue.
+    ( new Signals() )->track_event( $event );
 
     \WP_Mock::expectAction( 'send_server_events', array( $event ), 1 );
 
