@@ -43,7 +43,6 @@ use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\FacebookWordpressOpenBridge;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
@@ -51,12 +50,20 @@ use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
 use FacebookPixelPlugin\Core\ReleaseSignalsAjax;
 use FacebookPixelPlugin\Core\FacebookParamBuilder;
+use FacebookPixelPlugin\Core\FacebookCapiEvent;
 use FacebookPixelPlugin\Core\ServerEventAsyncTask;
 
 /**
  * FacebookForWordpress root class.
  */
 class FacebookForWordpress {
+    /**
+     * Shared Signals service (composition root).
+     *
+     * @var Signals
+     */
+    private $signals;
+
     /**
      * Plugin constructor. Initializes the plugin options, loads the translation files,
      * sets up the Facebook pixel, sets up the pixel injection, and sets up the settings
@@ -73,11 +80,13 @@ class FacebookForWordpress {
 
     $options = FacebookWordpressOptions::get_options();
     FacebookPixel::initialize( FacebookWordpressOptions::get_active_pixel_id() );
-    new Signals();
-    new ReleaseSignalsAjax();
+    $this->signals = new Signals();
+    $this->signals->register();
+    new ReleaseSignalsAjax( $this->signals );
+    new FacebookCapiEvent( $this->signals );
 
-    if ( Signals::should_hold_signals() ) {
-        FacebookSignalState::hold();
+    if ( $this->signals->should_hold_signals() ) {
+        $this->signals->hold();
     }
 
     // Initialize ParamBuilder server-side before pixel injection.
@@ -89,7 +98,7 @@ class FacebookForWordpress {
     $this->register_settings_page();
     add_action( 'admin_init', array( $this, 'maybe_reset_upgrade_notice' ) );
 
-    new ServerEventAsyncTask();
+    new ServerEventAsyncTask( $this->signals );
 
     self::update_db_for_wpcom();
     }
@@ -178,9 +187,10 @@ class FacebookForWordpress {
         ) {
         $data = json_decode( file_get_contents( 'php://input' ), true );
         if ( ! is_null( $data ) ) {
-            FacebookWordpressOpenBridge::get_instance()->handle_open_bridge_req(
-                $data
-            );
+            FacebookWordpressOpenBridge::get_instance( $this->signals )
+                ->handle_open_bridge_req(
+                    $data
+                );
         }
         if ( isset( $_SERVER['HTTP_ORIGIN'] ) ) {
             $origin = wp_kses( wp_unslash( $_SERVER['HTTP_ORIGIN'] ), array() );

@@ -98,7 +98,7 @@ class FacebookWordpressPixelInjection {
         }
 
         $pending_events =
-        FacebookServerSideEvent::get_instance()->get_pending_events();
+        ( new Signals() )->get_pending_events();
         if ( count( $pending_events ) > 0 ) {
             do_action(
                 'send_server_events',

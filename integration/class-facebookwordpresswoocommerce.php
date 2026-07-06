@@ -32,7 +32,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Core\PixelRenderer;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content;
 
@@ -184,7 +184,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
             self::TRACKING_NAME
         );
 
-        FacebookServerSideEvent::get_instance()->track( $server_event, false );
+        ( new Signals() )->track_event( $server_event, false );
 
         self::enqueuePixelCode( $server_event );
     }
@@ -259,7 +259,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
             self::TRACKING_NAME
         );
 
-        FacebookServerSideEvent::get_instance()->track( $server_event );
+        ( new Signals() )->track_event( $server_event );
 
         self::enqueuePixelCode( $server_event );
     }
@@ -358,7 +358,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
 
             $is_ajax_request = wp_doing_ajax();
 
-        FacebookServerSideEvent::get_instance()->track(
+        ( new Signals() )->track_event(
             $server_event,
             $is_ajax_request
         );
@@ -366,7 +366,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
         if ( ! $is_ajax_request ) {
             self::enqueuePixelCode( $server_event );
         } else {
-            FacebookServerSideEvent::get_instance()->set_pending_pixel_event(
+            ( new Signals() )->set_pending_pixel_event(
                 'addPixelCodeToAddToCartFragment',
                 $server_event
             );
@@ -392,7 +392,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
      * @since 1.0.0
      */
     public static function addPixelCodeToAddToCartFragment( $fragments ) {
-        $server_event = FacebookServerSideEvent::get_instance()
+        $server_event = ( new Signals() )
         ->get_pending_pixel_event( 'addPixelCodeToAddToCartFragment' );
         if ( ! is_null( $server_event ) ) {
             $pixel_code = self::generatePixelCode( $server_event, true );
@@ -445,7 +445,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     /**
      * Tracks a Meta Pixel InitiateCheckout event.
      *
-     * This method is a wrapper of FacebookServerSideEvent::track() method.
+     * This method tracks an InitiateCheckout event via Signals.
      * It creates a Meta Pixel InitiateCheckout event data with the data
      * from the WooCommerce session, and then tracks the event.
      *
@@ -463,7 +463,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
             self::TRACKING_NAME
         );
 
-        FacebookServerSideEvent::get_instance()->track( $server_event );
+        ( new Signals() )->track_event( $server_event );
 
         self::enqueuePixelCode( $server_event );
     }

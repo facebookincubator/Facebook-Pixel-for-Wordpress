@@ -95,7 +95,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $events = array();
     \WP_Mock::expectFilter( 'before_conversions_api_event_sent', $events );
 
-      $events = FacebookServerSideEvent::send( $events );
+      $events = FacebookServerSideEvent::get_instance()->send( $events );
   }
 
   /**
@@ -209,7 +209,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $api->shouldReceive( 'init' )->never();
 
     $event  = ServerEventFactory::new_event( 'Lead' );
-    $result = FacebookServerSideEvent::send( array( $event ) );
+    $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
 
     $this->assertNull( $result );
   }
@@ -246,7 +246,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $api->shouldReceive( 'init' )->never();
 
     $event  = ServerEventFactory::new_event( 'Lead' );
-    $result = FacebookServerSideEvent::send( array( $event ) );
+    $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
 
     $this->assertFalse( $result['success'] );
     $this->assertStringContainsString( 'circuit', $result['error']['message'] );
@@ -283,7 +283,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     );
 
     $event  = ServerEventFactory::new_event( 'Lead' );
-    $result = FacebookServerSideEvent::send( array( $event ) );
+    $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
 
     $this->assertFalse( $result['success'] );
     $this->assertStringContainsString(
@@ -316,7 +316,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     \WP_Mock::userFunction( 'wp_doing_cron', array( 'return' => false ) );
 
     $event  = ServerEventFactory::new_event( 'Lead' );
-    $result = FacebookServerSideEvent::send( array( $event ) );
+    $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
 
     $this->assertNull( $result );
   }

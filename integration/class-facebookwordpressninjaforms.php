@@ -31,7 +31,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Core\FacebookWordPressOptions;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\PixelRenderer;
@@ -115,7 +115,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
                     self::TRACKING_NAME,
                     true
                 );
-                FacebookServerSideEvent::get_instance()->track( $event );
+                ( new Signals() )->track_event( $event );
                 break;
             }
         }
@@ -135,7 +135,7 @@ class FacebookWordpressNinjaForms extends FacebookWordpressIntegrationBase {
             return $data;
         }
 
-        $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
+        $events = ( new Signals() )->get_tracked_events();
         if ( empty( $events ) ) {
             return $data;
         }

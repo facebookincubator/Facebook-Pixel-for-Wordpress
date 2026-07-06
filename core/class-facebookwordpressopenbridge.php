@@ -29,7 +29,6 @@ namespace FacebookPixelPlugin\Core;
 
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -60,20 +59,32 @@ class FacebookWordpressOpenBridge {
     );
 
     /**
-     * Class constructor.
+     * Shared Signals service.
+     *
+     * @var Signals
      */
-    public function __construct() {
+    private $signals;
+
+    /**
+     * Class constructor.
+     *
+     * @param Signals $signals Shared signals service.
+     */
+    public function __construct( Signals $signals ) {
+        $this->signals = $signals;
     }
 
     /**
-     * Retrieves the instance of FacebookWordpressOpenBridge class.
+     * Retrieves the singleton instance, creating it on first call with the
+     * given Signals service.
      *
+     * @param Signals $signals Shared signals service.
      * @return FacebookWordpressOpenBridge The instance of
      * FacebookWordpressOpenBridge class.
      */
-    public static function get_instance() {
+    public static function get_instance( Signals $signals ) {
         if ( null === self::$instance ) {
-            self::$instance = new FacebookWordpressOpenBridge();
+            self::$instance = new FacebookWordpressOpenBridge( $signals );
         }
         return self::$instance;
     }
@@ -159,7 +170,7 @@ class FacebookWordpressOpenBridge {
             true
         );
         $event->setEventId( $data['event_id'] );
-        FacebookServerSideEvent::send( array( $event ) );
+        $this->signals->send( array( $event ) );
     }
 
     /**

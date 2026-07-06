@@ -172,7 +172,7 @@ class FacebookServerSideEvent {
      * @param string|null   $test_event_code Optional test event code.
      * @return array|null Result array with 'success' key, or null if skipped.
      */
-    public static function send( $events, $test_event_code = null ) {
+    public function send( $events, $test_event_code = null ) {
         $events = apply_filters( 'before_conversions_api_event_sent', $events );
         if ( empty( $events ) ) {
             return null;

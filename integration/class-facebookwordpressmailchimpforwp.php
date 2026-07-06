@@ -32,7 +32,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Core\PixelRenderer;
 
 /**
@@ -80,7 +80,7 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
             self::TRACKING_NAME,
             true
         );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
+        ( new Signals() )->track_event( $server_event );
 
         $code = PixelRenderer::render(
             array( $server_event ),
