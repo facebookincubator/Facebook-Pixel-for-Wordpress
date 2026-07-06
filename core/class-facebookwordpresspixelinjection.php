@@ -99,7 +99,7 @@ class FacebookWordpressPixelInjection {
                 FacebookPluginConfig::integration_config() as $key => $value
                 ) {
             $class_name = 'FacebookPixelPlugin\\Integration\\' . $value;
-            $class_name::inject_pixel_code();
+            ( new $class_name( $this->signals ) )->inject_pixel_code();
             }
             add_action(
                 'wp_footer',

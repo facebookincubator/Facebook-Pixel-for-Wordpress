@@ -87,11 +87,11 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
       array( $injection_obj, 'inject_pixel_noscript_code' )
     );
 
-    $spies = array();
-    foreach ( self::$integrations as $index => $integration ) {
-      $spies[] = \Mockery::spy(
-        'alias:FacebookPixelPlugin\\Integration\\' . $integration
+    foreach ( self::$integrations as $integration ) {
+      $mock = \Mockery::mock(
+        'overload:FacebookPixelPlugin\\Integration\\' . $integration
       );
+      $mock->shouldReceive( 'inject_pixel_code' )->once();
     }
 
     \WP_Mock::expectActionNotAdded(
@@ -107,10 +107,6 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 
     FacebookWordpressOptions::initialize();
     $injection_obj->inject();
-
-    foreach ( $spies as $index => $spy ) {
-      $spy->shouldHaveReceived( 'inject_pixel_code' );
-    }
   }
 
   /**
