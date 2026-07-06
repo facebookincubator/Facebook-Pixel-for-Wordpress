@@ -29,11 +29,9 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\Signals;
-use FacebookPixelPlugin\Core\PixelRenderer;
 
 /**
  * FacebookWordpressMailchimpForWp class.
@@ -80,10 +78,11 @@ class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
             self::TRACKING_NAME,
             true
         );
-        ( new Signals() )->track_event( $server_event );
+        $signals      = new Signals();
+        $signals->track_event( $server_event );
 
-        $code = PixelRenderer::render(
-            array( $server_event ),
+        $code = $signals->render(
+            $server_event,
             self::TRACKING_NAME
         );
         printf(

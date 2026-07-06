@@ -27,7 +27,7 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\FacebookPixel;
+use FacebookPixelPlugin\Core\BrowserEvents;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
@@ -40,7 +40,7 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * make sure tests are isolated.
  * Stop preserving global state from the parent process.
  */
-final class FacebookPixelTest extends FacebookWordpressTestBase {
+final class BrowserEventsTest extends FacebookWordpressTestBase {
   /**
    * Tests the ability to initialize, get, and set the pixel ID.
    *
@@ -51,10 +51,11 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
    * @return void
    */
   public function testCanGetAndSetPixelId() {
-    FacebookPixel::initialize( '123' );
-    $this->assertEquals( '123', FacebookPixel::get_pixel_id() );
-    FacebookPixel::set_pixel_id( '1' );
-    $this->assertEquals( '1', FacebookPixel::get_pixel_id() );
+    $browser = new BrowserEvents();
+    $browser->initialize( '123' );
+    $this->assertEquals( '123', $browser->get_pixel_id() );
+    $browser->set_pixel_id( '1' );
+    $this->assertEquals( '1', $browser->get_pixel_id() );
   }
 
   /**
@@ -118,12 +119,13 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
    * @return void
    */
   private function assertCodePattern( $method_name, $keyword ) {
-    FacebookPixel::set_pixel_id( '' );
-    $code = FacebookPixel::$method_name();
+    $browser = new BrowserEvents();
+    $browser->set_pixel_id( '' );
+    $code = $browser->$method_name();
     $this->assertEmpty( $code );
 
-    FacebookPixel::set_pixel_id( '123' );
-    $code = FacebookPixel::$method_name();
+    $browser->set_pixel_id( '123' );
+    $code = $browser->$method_name();
     $this->assertCodeStartAndEndWithScript( $code );
     $this->assertCodePatternMatch( $code, array( 'track', $keyword ) );
   }
@@ -161,15 +163,16 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
       )
     );
 
-    FacebookPixel::set_pixel_id( '' );
-    $code = FacebookPixel::get_pixel_track_code(
+    $browser = new BrowserEvents();
+    $browser->set_pixel_id( '' );
+    $code = $browser->get_pixel_track_code(
       'mockEvent',
       array( 'key' => 'value' )
     );
     $this->assertEmpty( $code );
 
-    FacebookPixel::set_pixel_id( '123' );
-    $code = FacebookPixel::get_pixel_track_code(
+    $browser->set_pixel_id( '123' );
+    $code = $browser->get_pixel_track_code(
       'mockEvent',
       array( 'key' => 'value' )
     );
@@ -180,7 +183,7 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
       $code
     );
 
-    $code = FacebookPixel::get_pixel_track_code(
+    $code = $browser->get_pixel_track_code(
       'mockEvent',
       '{"key": "value"}',
       '',
@@ -201,15 +204,16 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
    * @return void
    */
   public function testCanGetPixelNoScriptCode() {
-    FacebookPixel::set_pixel_id( '' );
-    $code = FacebookPixel::get_pixel_noscript_code(
+    $browser = new BrowserEvents();
+    $browser->set_pixel_id( '' );
+    $code = $browser->get_pixel_noscript_code(
       'mockEvent',
       array( 'key' => 'value' )
     );
     $this->assertEmpty( $code );
 
-    FacebookPixel::set_pixel_id( '123' );
-    $code = FacebookPixel::get_pixel_noscript_code(
+    $browser->set_pixel_id( '123' );
+    $code = $browser->get_pixel_noscript_code(
       'mockEvent',
       array( 'key' => 'value' )
     );

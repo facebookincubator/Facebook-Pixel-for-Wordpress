@@ -49,16 +49,90 @@ class Signals {
     private $server_events;
 
     /**
-     * Constructor. Side-effect free (hook registration is done via register()),
-     * so instances can be created freely. Signals is the facade over the CAPI
-     * event store, so it resolves that store itself.
+     * The browser-side pixel generator.
+     *
+     * @var BrowserEvents
+     */
+    private $browser;
+
+    /**
+     * Constructor. Side-effect free (subsystem wiring is done via boot()), so
+     * instances can be created freely. Signals is the facade over the whole
+     * signals domain, so it resolves/holds the server + browser sides itself.
      */
     public function __construct() {
         $this->server_events = FacebookServerSideEvent::get_instance();
+        $this->browser       = new BrowserEvents();
     }
 
     /**
-     * Registers the consent-state AJAX handler. Call once during bootstrap.
+     * Composition root for the signals subsystem. The plugin bootstrap calls
+     * this once; nothing outside Signals references the collaborators directly.
+     *
+     * @return void
+     */
+    public function boot() {
+        $this->browser->set_pixel_id(
+            FacebookWordpressOptions::get_active_pixel_id()
+        );
+        $this->register();
+        new ReleaseSignalsAjax( $this );
+        new FacebookCapiEvent( $this );
+        new ServerEventAsyncTask( $this );
+
+        if ( $this->should_hold_signals() ) {
+            $this->hold();
+        }
+
+        add_action( 'init', array( $this, 'inject_pixel' ), 0 );
+        add_action( 'parse_request', array( $this, 'handle_open_bridge' ), 0 );
+    }
+
+    /**
+     * Injects the browser pixel + wires integrations (hooked on `init`).
+     *
+     * @return void
+     */
+    public function inject_pixel() {
+        ( new FacebookWordpressPixelInjection( $this, $this->browser ) )->inject();
+    }
+
+    /**
+     * Handles an inbound Open Bridge request (hooked on `parse_request`).
+     *
+     * @return void
+     */
+    public function handle_open_bridge() {
+        if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+            return;
+        }
+        $request_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+
+        if (
+            FacebookPluginUtils::ends_with(
+                $request_uri,
+                FacebookPluginConfig::OPEN_BRIDGE_PATH
+            ) &&
+            isset( $_SERVER['REQUEST_METHOD'] )
+            && 'POST' === $_SERVER['REQUEST_METHOD']
+        ) {
+            $data = json_decode( file_get_contents( 'php://input' ), true );
+            if ( ! is_null( $data ) ) {
+                FacebookWordpressOpenBridge::get_instance( $this )
+                    ->handle_open_bridge_req( $data );
+            }
+            if ( isset( $_SERVER['HTTP_ORIGIN'] ) ) {
+                $origin = wp_kses( wp_unslash( $_SERVER['HTTP_ORIGIN'] ), array() );
+                header( "Access-Control-Allow-Origin: $origin" );
+                header( 'Access-Control-Allow-Credentials: true' );
+                header( 'Access-Control-Max-Age: 86400' );
+            }
+            exit();
+        }
+    }
+
+    /**
+     * Registers the consent-state AJAX handler. Called by boot().
      *
      * @return void
      */
@@ -129,7 +203,7 @@ class Signals {
      * @return string
      */
     public function render( $event, $tracking_name, $script_tag = true ) {
-        return PixelRenderer::render(
+        return $this->browser->render(
             array( $event ),
             $tracking_name,
             $script_tag

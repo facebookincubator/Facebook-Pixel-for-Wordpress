@@ -39,31 +39,17 @@ require_once plugin_dir_path( __FILE__ ) . 'core/class-signals.php';
 require_once plugin_dir_path( __FILE__ ) . 'core/class-facebooksignalstate.php';
 require_once plugin_dir_path( __FILE__ ) . 'core/class-releasesignalsajax.php';
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
-use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookWordpressOpenBridge;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
-use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
-use FacebookPixelPlugin\Core\ReleaseSignalsAjax;
 use FacebookPixelPlugin\Core\FacebookParamBuilder;
-use FacebookPixelPlugin\Core\FacebookCapiEvent;
-use FacebookPixelPlugin\Core\ServerEventAsyncTask;
 
 /**
  * FacebookForWordpress root class.
  */
 class FacebookForWordpress {
-    /**
-     * Shared Signals service (composition root).
-     *
-     * @var Signals
-     */
-    private $signals;
-
     /**
      * Plugin constructor. Initializes the plugin options, loads the translation files,
      * sets up the Facebook pixel, sets up the pixel injection, and sets up the settings
@@ -79,26 +65,16 @@ class FacebookForWordpress {
     );
 
     $options = FacebookWordpressOptions::get_options();
-    FacebookPixel::initialize( FacebookWordpressOptions::get_active_pixel_id() );
-    $this->signals = new Signals();
-    $this->signals->register();
-    new ReleaseSignalsAjax( $this->signals );
-    new FacebookCapiEvent( $this->signals );
-
-    if ( $this->signals->should_hold_signals() ) {
-        $this->signals->hold();
-    }
 
     // Initialize ParamBuilder server-side before pixel injection.
     FacebookParamBuilder::server_setup();
 
-    add_action( 'init', array( $this, 'register_pixel_injection' ), 0 );
-    add_action( 'parse_request', array( $this, 'handle_events_request' ), 0 );
+    // Signals is the facade for the whole events subsystem — pixel injection,
+    // CAPI, consent, open bridge and async send. The bootstrap only boots it.
+    ( new Signals() )->boot();
 
     $this->register_settings_page();
     add_action( 'admin_init', array( $this, 'maybe_reset_upgrade_notice' ) );
-
-    new ServerEventAsyncTask( $this->signals );
 
     self::update_db_for_wpcom();
     }
@@ -137,19 +113,6 @@ class FacebookForWordpress {
     }
 
     /**
-     * Registers the pixel injection. This method instantiates the
-     * FacebookWordpressPixelInjection and calls its inject method.
-     *
-     * The inject method is responsible for adding the necessary hooks to
-     * inject the Facebook pixel code into the footer of the WordPress page.
-     */
-    public function register_pixel_injection() {
-    $injection_obj = new FacebookWordpressPixelInjection();
-    $injection_obj->inject();
-    }
-
-
-    /**
      * Registers the settings page for the Facebook for WordPress plugin. This method
      * instantiates the FacebookWordpressSettingsPage and FacebookWordpressSettingsRecorder
      * objects. The settings page object is responsible for adding the necessary hooks
@@ -164,44 +127,6 @@ class FacebookForWordpress {
     }
     }
 
-
-    /**
-     * Handles incoming events requests by checking if the request URI
-     * ends with the configured open bridge path and if the request
-     * method is POST. If both conditions are met, it decodes the JSON
-     * payload from the request body and forwards it to the open bridge
-     * request handler. Additionally, it sets CORS headers to allow
-     * cross-origin requests if the origin is specified in the request
-     * headers.
-     */
-    public function handle_events_request() {
-    if ( isset( $_SERVER['REQUEST_URI'] ) ) {
-        $request_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-
-        if (
-        FacebookPluginUtils::ends_with(
-            $request_uri,
-            FacebookPluginConfig::OPEN_BRIDGE_PATH
-        ) &&
-        isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD']
-        ) {
-        $data = json_decode( file_get_contents( 'php://input' ), true );
-        if ( ! is_null( $data ) ) {
-            FacebookWordpressOpenBridge::get_instance( $this->signals )
-                ->handle_open_bridge_req(
-                    $data
-                );
-        }
-        if ( isset( $_SERVER['HTTP_ORIGIN'] ) ) {
-            $origin = wp_kses( wp_unslash( $_SERVER['HTTP_ORIGIN'] ), array() );
-            header( "Access-Control-Allow-Origin: $origin" );
-            header( 'Access-Control-Allow-Credentials: true' );
-            header( 'Access-Control-Max-Age: 86400' );
-        }
-        exit();
-        }
-    }
-    }
 
     /**
      * Declare WooCommerce HPOS (custom order tables) compatibility.

@@ -29,7 +29,7 @@ namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\FacebookSignalState;
-use FacebookPixelPlugin\Core\PixelRenderer;
+use FacebookPixelPlugin\Core\BrowserEvents;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
@@ -45,12 +45,12 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
  * make sure tests are isolated.
  * Stop preserving global state from the parent process.
  */
-final class PixelRendererTest extends FacebookWordpressTestBase {
+final class BrowserEventsRenderTest extends FacebookWordpressTestBase {
   /**
    * Test that the PixelRenderer renders
    * the expected code for a standard event.
    *
-   * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+   * @covers \FacebookPixelPlugin\Core\BrowserEvents::render
    */
   public function testPixelRenderForStandardEvent() {
     \WP_Mock::userFunction(
@@ -88,7 +88,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
       )
     );
 
-    $code = PixelRenderer::render( array( $event ), 'Test' );
+    $code = ( new BrowserEvents() )->render( array( $event ), 'Test' );
 
     $expected = sprintf(
         "<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
@@ -108,7 +108,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
    * keyword and that the event data and custom data are correctly formatted
    * and included in the output.
    *
-   * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+   * @covers \FacebookPixelPlugin\Core\BrowserEvents::render
    */
   public function testPixelRenderForCustomEvent() {
     \WP_Mock::userFunction(
@@ -136,7 +136,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
       ->setEventName( 'Custom' )
       ->setEventId( 'TestEventId' );
 
-    $code = PixelRenderer::render( array( $event ), 'Test' );
+    $code = ( new BrowserEvents() )->render( array( $event ), 'Test' );
 
     $expected = sprintf(
       "<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('trackCustom', 'Custom', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
@@ -155,7 +155,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
    * includes the 'track' keyword and that the custom data is correctly
    * formatted and included in the output.
    *
-   * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+   * @covers \FacebookPixelPlugin\Core\BrowserEvents::render
    */
   public function testPixelRenderForCustomData() {
     \WP_Mock::userFunction(
@@ -188,7 +188,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
       ->setEventId( 'TestEventId' )
       ->setCustomData( $custom_data );
 
-    $code = PixelRenderer::render( array( $event ), 'Test' );
+    $code = ( new BrowserEvents() )->render( array( $event ), 'Test' );
 
     $expected = sprintf(
       "<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Purchase', {\"value\":\"30.00\",\"currency\":\"usd\",\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
@@ -207,7 +207,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
    * tracked separately and that the output includes the correct event data
    * and event IDs for each event.
    *
-   * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+   * @covers \FacebookPixelPlugin\Core\BrowserEvents::render
    */
   public function testPixelRenderForMultipleEvents() {
     \WP_Mock::userFunction(
@@ -238,7 +238,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
       ->setEventName( 'Lead' )
       ->setEventId( 'TestEventId2' );
 
-    $code = PixelRenderer::render( array( $event1, $event2 ), 'Test' );
+    $code = ( new BrowserEvents() )->render( array( $event1, $event2 ), 'Test' );
 
     $expected = sprintf(
       "<script type='text/javascript'>fbq('set', 'agent', '%s', '');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId1\"});fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId2\"});</script>",
@@ -251,7 +251,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
   /**
    * Test that held rendering queues events instead of firing fbq directly.
    *
-   * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+   * @covers \FacebookPixelPlugin\Core\BrowserEvents::render
    */
   public function testPixelRenderQueuesEventsWhenHeld() {
     \WP_Mock::userFunction(
@@ -280,7 +280,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
       ->setEventId( 'TestEventId' )
       ->setEventTime( 1234 );
 
-    $code = PixelRenderer::render( array( $event ), 'Test' );
+    $code = ( new BrowserEvents() )->render( array( $event ), 'Test' );
 
     $this->assertStringContainsString( 'FacebookSignal.queueEvent(', $code );
     $this->assertStringContainsString( '"event_name":"Lead"', $code );
@@ -295,7 +295,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
   /**
    * Test that held raw rendering still returns queue-aware JS.
    *
-   * @covers \FacebookPixelPlugin\Core\PixelRenderer::render
+   * @covers \FacebookPixelPlugin\Core\BrowserEvents::render
    */
   public function testPixelRenderQueuesEventsWhenHeldWithoutScriptTag() {
     \WP_Mock::userFunction(
@@ -325,7 +325,7 @@ final class PixelRendererTest extends FacebookWordpressTestBase {
       ->setEventTime( 1234 )
       ->setCustomData( ( new CustomData() )->setValue( '10.00' ) );
 
-    $code = PixelRenderer::render( array( $event ), 'Test', false );
+    $code = ( new BrowserEvents() )->render( array( $event ), 'Test', false );
 
     $this->assertStringContainsString( 'FacebookSignal.queueEvent(', $code );
     $this->assertStringContainsString( '"event_name":"Purchase"', $code );

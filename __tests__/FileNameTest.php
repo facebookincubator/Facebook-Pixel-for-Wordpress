@@ -28,7 +28,6 @@
 
 namespace FacebookPixelPlugin\Tests;
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 
 /**
  * This is a testcase to make sure that the name of entry point file
