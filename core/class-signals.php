@@ -42,11 +42,14 @@ class Signals {
     const STATE_HELD   = 'held';
 
     /**
-     * Store of server-side (CAPI) events for the current request.
+     * Store of server-side (CAPI) events for the current request. Shared across
+     * all Signals instances (integrations construct their own Signals) so the
+     * request's tracked/pending events live in one place. Only Signals
+     * references FacebookServerSideEvent.
      *
-     * @var FacebookServerSideEvent
+     * @var FacebookServerSideEvent|null
      */
-    private $server_events;
+    private static $server_events = null;
 
     /**
      * The browser-side pixel generator.
@@ -58,11 +61,14 @@ class Signals {
     /**
      * Constructor. Side-effect free (subsystem wiring is done via boot()), so
      * instances can be created freely. Signals is the facade over the whole
-     * signals domain, so it resolves/holds the server + browser sides itself.
+     * signals domain, so it resolves/holds the server + browser sides itself;
+     * the server store is a single shared instance kept in a static.
      */
     public function __construct() {
-        $this->server_events = FacebookServerSideEvent::get_instance();
-        $this->browser       = new BrowserEvents();
+        if ( null === self::$server_events ) {
+            self::$server_events = new FacebookServerSideEvent();
+        }
+        $this->browser = new BrowserEvents();
     }
 
     /**
@@ -189,7 +195,7 @@ class Signals {
             $event->setEventId( $event_id );
         }
 
-        $this->server_events->track( $event );
+        self::$server_events->track( $event );
         return $event;
     }
 
@@ -218,7 +224,7 @@ class Signals {
      * @return void
      */
     public function flush_pending_events() {
-        $pending = $this->server_events->get_pending_events();
+        $pending = self::$server_events->get_pending_events();
         if ( count( $pending ) > 0 ) {
             do_action( 'send_server_events', $pending, count( $pending ) );
         }
@@ -234,7 +240,7 @@ class Signals {
      * @return array|null
      */
     public function send( $events, $test_event_code = null ) {
-        return $this->server_events->send( $events, $test_event_code );
+        return self::$server_events->send( $events, $test_event_code );
     }
 
     /*
@@ -254,7 +260,7 @@ class Signals {
      * @return void
      */
     public function track_event( $event, $send_now = true ) {
-        $this->server_events->track( $event, $send_now );
+        self::$server_events->track( $event, $send_now );
     }
 
     /**
@@ -263,7 +269,7 @@ class Signals {
      * @return array
      */
     public function get_tracked_events() {
-        return $this->server_events->get_tracked_events();
+        return self::$server_events->get_tracked_events();
     }
 
     /**
@@ -272,7 +278,7 @@ class Signals {
      * @return array
      */
     public function get_pending_events() {
-        return $this->server_events->get_pending_events();
+        return self::$server_events->get_pending_events();
     }
 
     /**
@@ -283,7 +289,7 @@ class Signals {
      * @return void
      */
     public function set_pending_pixel_event( $callback_name, $event ) {
-        $this->server_events->set_pending_pixel_event( $callback_name, $event );
+        self::$server_events->set_pending_pixel_event( $callback_name, $event );
     }
 
     /**
@@ -293,7 +299,7 @@ class Signals {
      * @return \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event|null
      */
     public function get_pending_pixel_event( $callback_name ) {
-        return $this->server_events->get_pending_pixel_event( $callback_name );
+        return self::$server_events->get_pending_pixel_event( $callback_name );
     }
 
     /**

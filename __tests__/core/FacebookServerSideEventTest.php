@@ -45,6 +45,18 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
   /**
+   * A fresh server-event store for each test.
+   *
+   * @var FacebookServerSideEvent
+   */
+  private $store;
+
+  public function setUp(): void {
+    parent::setUp();
+    $this->store = new FacebookServerSideEvent();
+  }
+
+  /**
    * Tests that the track method of FacebookServerSideEvent fires an action.
    *
    * This test ensures that when a 'Lead' event
@@ -71,11 +83,11 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
 
     $event = EventFactory::create( 'Lead' );
 
-    FacebookServerSideEvent::get_instance()->track( $event );
+    $this->store->track( $event );
 
     $this->assertEquals(
       1,
-      FacebookServerSideEvent::get_instance()->get_num_tracked_events()
+      $this->store->get_num_tracked_events()
     );
   }
 
@@ -95,7 +107,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $events = array();
     \WP_Mock::expectFilter( 'before_conversions_api_event_sent', $events );
 
-      $events = FacebookServerSideEvent::get_instance()->send( $events );
+      $events = $this->store->send( $events );
   }
 
   /**
@@ -124,15 +136,15 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $event1 = EventFactory::create( 'Lead' );
     $event2 = EventFactory::create( 'AddToCart' );
 
-    FacebookServerSideEvent::get_instance()->track( $event1, false );
-    FacebookServerSideEvent::get_instance()->track( $event2 );
+    $this->store->track( $event1, false );
+    $this->store->track( $event2 );
 
     $pending_events =
-    FacebookServerSideEvent::get_instance()->get_pending_events();
+    $this->store->get_pending_events();
 
     $this->assertEquals(
       2,
-      FacebookServerSideEvent::get_instance()->get_num_tracked_events()
+      $this->store->get_num_tracked_events()
     );
     $this->assertEquals(
       1,
@@ -170,10 +182,10 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
 
     $event = EventFactory::create( 'Lead' );
 
-    FacebookServerSideEvent::get_instance()
+    $this->store
       ->set_pending_pixel_event( 'test_callback', $event );
 
-    $pending_pixel_event = FacebookServerSideEvent::get_instance()
+    $pending_pixel_event = $this->store
       ->get_pending_pixel_event( 'test_callback' );
 
     $this->assertEquals(
@@ -209,7 +221,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $api->shouldReceive( 'init' )->never();
 
     $event  = EventFactory::create( 'Lead' );
-    $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
+    $result = $this->store->send( array( $event ) );
 
     $this->assertNull( $result );
   }
@@ -246,7 +258,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     $api->shouldReceive( 'init' )->never();
 
     $event  = EventFactory::create( 'Lead' );
-    $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
+    $result = $this->store->send( array( $event ) );
 
     $this->assertFalse( $result['success'] );
     $this->assertStringContainsString( 'circuit', $result['error']['message'] );
@@ -283,7 +295,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     );
 
     $event  = EventFactory::create( 'Lead' );
-    $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
+    $result = $this->store->send( array( $event ) );
 
     $this->assertFalse( $result['success'] );
     $this->assertStringContainsString(
@@ -316,7 +328,7 @@ final class FacebookServerSideEventTest extends FacebookWordpressTestBase {
     \WP_Mock::userFunction( 'wp_doing_cron', array( 'return' => false ) );
 
     $event  = EventFactory::create( 'Lead' );
-    $result = FacebookServerSideEvent::get_instance()->send( array( $event ) );
+    $result = $this->store->send( array( $event ) );
 
     $this->assertNull( $result );
   }

@@ -6,7 +6,6 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\Signals;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
@@ -353,7 +352,7 @@ final class SignalsTest extends FacebookWordpressTestBase {
       $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
     );
 
-    $tracked = FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $tracked = $signals->get_tracked_events();
     $this->assertCount( 1, $tracked );
     $this->assertSame( $event, $tracked[0] );
   }
@@ -406,7 +405,7 @@ final class SignalsTest extends FacebookWordpressTestBase {
   public function testFlushPendingEventsSendsQueuedEvents() {
     $event = new \stdClass();
     // Queue an event (track with send_now = false) on the shared store.
-    FacebookServerSideEvent::get_instance()->track( $event, false );
+    ( new Signals() )->track_event( $event, false );
 
     \WP_Mock::expectAction( 'send_server_events', array( $event ), 1 );
 

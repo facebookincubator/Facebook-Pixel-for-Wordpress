@@ -40,13 +40,6 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  */
 class FacebookServerSideEvent {
     /**
-     * The instance of the FacebookServerSideEvent class.
-     *
-     * @var FacebookServerSideEvent
-     */
-    private static $instance = null;
-
-    /**
      * Contains all the events triggered during the request.
      *
      * @var FacebookServerSideEvent
@@ -69,17 +62,12 @@ class FacebookServerSideEvent {
     private $pending_pixel_events = array();
 
     /**
-     * Retrieves the instance of FacebookServerSideEvent class.
+     * Lazily-initialized Conversions API client, reused across sends in the
+     * same request (the access token is request-stable).
      *
-     * @return FacebookServerSideEvent The instance of
-     * FacebookServerSideEvent class.
+     * @var \FacebookPixelPlugin\FacebookAds\Api|null
      */
-    public static function get_instance() {
-    if ( null === self::$instance ) {
-        self::$instance = new FacebookServerSideEvent();
-    }
-        return self::$instance;
-    }
+    private $api = null;
 
     /**
      * Tracks a given event and optionally sends it immediately.
@@ -207,7 +195,9 @@ class FacebookServerSideEvent {
         }
 
         try {
-            $api = Api::init( null, null, $access_token );
+            if ( null === $this->api ) {
+                $this->api = Api::init( null, null, $access_token );
+            }
 
             $request = ( new EventRequest( $pixel_id ) )
                     ->setEvents( $events )
