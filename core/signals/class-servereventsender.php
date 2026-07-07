@@ -28,6 +28,8 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * before_conversions_api_event_sent filter live in Signals; this class assumes
  * it is only handed events that should actually be sent. Reached only through
  * Signals.
+ *
+ * @internal Not part of the plugin's public API; use the Signals facade.
  */
 class ServerEventSender {
     /**

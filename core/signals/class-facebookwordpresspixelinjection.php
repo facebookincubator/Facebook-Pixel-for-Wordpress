@@ -36,6 +36,8 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * page, wires the integrations, and flushes queued server events. Created and
  * owned by Signals; it receives the shared Signals + BrowserEvents rather than
  * reaching for them.
+ *
+ * @internal Not part of the plugin's public API; use the Signals facade.
  */
 class FacebookWordpressPixelInjection {
     /**
@@ -163,7 +165,7 @@ class FacebookWordpressPixelInjection {
     public function enqueue_signal_script() {
         wp_enqueue_script(
             'facebook-signal',
-            plugins_url( '../js/facebook_signal.js', __FILE__ ),
+            plugins_url( '../../js/facebook_signal.js', __FILE__ ),
             array(),
             FacebookPluginConfig::PLUGIN_VERSION,
             false
@@ -191,6 +193,7 @@ class FacebookWordpressPixelInjection {
         $user_info = FacebookPluginUtils::is_internal_user()
             ? array()
             : FacebookWordpressOptions::get_user_info();
+			
         $options   = array( 'agent' => FacebookWordpressOptions::get_agent_string() );
 
         $config = array(
