@@ -107,7 +107,7 @@ class Signals {
         );
         $this->register();
         new ReleaseSignalsAjax( $this );
-        new FacebookCapiEvent( $this );
+        new AdminTestCapiEvent( $this );
         new ServerEventAsyncTask( $this );
 
         if ( $this->should_hold_signals() ) {
