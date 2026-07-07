@@ -5,8 +5,9 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
+use FacebookPixelPlugin\Core\EventFactory;
+use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\Signals;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
@@ -353,7 +354,7 @@ final class SignalsTest extends FacebookWordpressTestBase {
       $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
     );
 
-    $tracked = FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $tracked = $signals->get_tracked_events();
     $this->assertCount( 1, $tracked );
     $this->assertSame( $event, $tracked[0] );
   }
@@ -405,8 +406,8 @@ final class SignalsTest extends FacebookWordpressTestBase {
    */
   public function testFlushPendingEventsSendsQueuedEvents() {
     $event = new \stdClass();
-    // Queue an event (track with send_now = false) on the shared store.
-    FacebookServerSideEvent::get_instance()->track( $event, false );
+    // Track an event so it accumulates in the shared store's pending queue.
+    ( new Signals() )->track_event( $event );
 
     \WP_Mock::expectAction( 'send_server_events', array( $event ), 1 );
 
@@ -424,5 +425,65 @@ final class SignalsTest extends FacebookWordpressTestBase {
     ( new Signals() )->flush_pending_events();
 
     $this->assertConditionsMet();
+  }
+
+  /**
+   * send() applies the before_conversions_api_event_sent filter and returns
+   * null when there is nothing to send.
+   *
+   * @return void
+   */
+  public function testSendAppliesFilterAndSkipsEmpty() {
+    $events = array();
+    \WP_Mock::expectFilter( 'before_conversions_api_event_sent', $events );
+
+    $result = ( new Signals() )->send( $events );
+
+    $this->assertNull( $result );
+  }
+
+  /**
+   * send() suppresses frontend sends while signals are held, queueing the
+   * events for browser release instead of hitting the CAPI.
+   *
+   * @return void
+   */
+  public function testSendSuppressedWhenHeldOnFrontend() {
+    $this->mockEventHelpers();
+    \WP_Mock::userFunction( 'is_admin', array( 'return' => false ) );
+    \WP_Mock::userFunction( 'wp_doing_cron', array( 'return' => false ) );
+    FacebookSignalState::hold();
+
+    $event = EventFactory::create( 'Lead' );
+    \WP_Mock::expectFilter(
+      'before_conversions_api_event_sent',
+      array( $event )
+    );
+
+    $api = \Mockery::mock( 'alias:FacebookPixelPlugin\FacebookAds\Api' );
+    $api->shouldReceive( 'init' )->never();
+
+    $result = ( new Signals() )->send( array( $event ) );
+
+    $this->assertNull( $result );
+  }
+
+  /**
+   * track_event() while held records the event but routes it to the browser
+   * release queue instead of the send queue.
+   *
+   * @return void
+   */
+  public function testTrackEventWhenHeldQueuesInsteadOfPending() {
+    $this->mockEventHelpers();
+    \WP_Mock::userFunction( 'is_admin', array( 'return' => false ) );
+    \WP_Mock::userFunction( 'wp_doing_cron', array( 'return' => false ) );
+    FacebookSignalState::hold();
+
+    $signals = new Signals();
+    $signals->track_event( EventFactory::create( 'Lead' ) );
+
+    $this->assertCount( 1, $signals->get_tracked_events() );
+    $this->assertCount( 0, $signals->get_pending_events() );
   }
 }

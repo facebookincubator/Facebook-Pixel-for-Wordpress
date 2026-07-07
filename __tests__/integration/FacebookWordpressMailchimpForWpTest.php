@@ -29,7 +29,6 @@ namespace FacebookPixelPlugin\Tests\Integration;
 
 use FacebookPixelPlugin\Integration\FacebookWordpressMailchimpForWp;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\Signals;
 
 /**
@@ -145,8 +144,7 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
       '/mailchimp-for-wp[\s\S]+End Meta Pixel Event Code/'
     );
 
-    $tracked_events =
-    FacebookServerSideEvent::get_instance()->get_tracked_events();
+    $tracked_events = ( new Signals() )->get_tracked_events();
 
     $this->assertCount( 1, $tracked_events );
 

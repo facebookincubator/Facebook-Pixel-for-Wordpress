@@ -28,7 +28,6 @@
 namespace FacebookPixelPlugin\Core;
 
 use FacebookPixelPlugin\Core\AAMSettingsFields;
-use FacebookPixelPlugin\Core\ServerEventFactory;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -147,7 +146,7 @@ class FacebookWordpressOpenBridge {
      * Starts a new PHP session if one is not already active, and extracts the
      * event name, event ID, and event data from the request. If the event name
      * is in the list of blocked events, the method returns early without taking
-     * any action. Otherwise, it creates a ServerEvent using the event name and
+     * any action. Otherwise, it creates a server event using the event name and
      * data, and sends it to the Facebook pixel servers.
      *
      * @param array $data The event data, including the event name and ID.
@@ -162,10 +161,9 @@ class FacebookWordpressOpenBridge {
         if ( in_array( $event_name, self::$blocked_events, true ) ) {
             return;
         }
-        $event = ServerEventFactory::safe_create_event(
+        $event = EventFactory::create(
             $event_name,
-            array( $this, 'extract_from_databag' ),
-            array( $data ),
+            $this->extract_from_databag( $data ),
             'wp-cloudbridge-plugin',
             true
         );

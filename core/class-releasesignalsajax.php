@@ -134,8 +134,8 @@ class ReleaseSignalsAjax {
         $fbc    = ! empty( $body['fbc'] ) ?
             sanitize_text_field( $body['fbc'] ) : '';
 
-        // Expose queued attribution to ServerEventFactory so released events
-        // share the same attribution path as normal CAPI events.
+        // Expose queued attribution to EventFactory/UserPiiResolver so released
+        // events share the same attribution path as normal CAPI events.
         $restore_get_fbclid = $this->temporarily_set_superglobal_value( '_GET', 'fbclid', $fbclid );
         $restore_cookie_fbp = $this->temporarily_set_superglobal_value( '_COOKIE', '_fbp', $fbp );
         $restore_cookie_fbc = $this->temporarily_set_superglobal_value( '_COOKIE', '_fbc', $fbc );
@@ -189,8 +189,8 @@ class ReleaseSignalsAjax {
 
         wp_send_json_success(
             array(
-                'fbp'        => ServerEventFactory::get_fbp_value(),
-                'fbc'        => ServerEventFactory::get_fbc_value(),
+                'fbp'        => UserPiiResolver::get_fbp(),
+                'fbc'        => UserPiiResolver::get_fbc(),
                 'sent_count' => count( $events_to_send ),
                 'user_info'  => $user_info,
             )
@@ -235,7 +235,7 @@ class ReleaseSignalsAjax {
      */
     private function build_event( $event_data ) {
         $event_name = sanitize_text_field( $event_data['event_name'] );
-        $event      = ServerEventFactory::new_event( $event_name );
+        $event      = EventFactory::create( $event_name );
 
         if ( ! empty( $event_data['event_time'] ) ) {
             $event->setEventTime( absint( $event_data['event_time'] ) );

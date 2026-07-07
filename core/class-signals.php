@@ -42,11 +42,32 @@ class Signals {
     const STATE_HELD   = 'held';
 
     /**
-     * Store of server-side (CAPI) events for the current request.
+     * Request-scoped buffer of server-side (CAPI) events. Shared across all
+     * Signals instances (integrations construct their own Signals) so the
+     * request's tracked/pending events live in one place. Only Signals
+     * references it.
      *
-     * @var FacebookServerSideEvent
+     * @var ServerEventBuffer|null
      */
-    private $server_events;
+    private static $buffer = null;
+
+    /**
+     * Conversions API sender (owns the API client). Shared across all Signals
+     * instances so the API client is initialized once per request. Only Signals
+     * references it.
+     *
+     * @var ServerEventSender|null
+     */
+    private static $sender = null;
+
+    /**
+     * Callback-keyed queue of server events held until a specific WordPress
+     * callback renders them as pixel code. Shared across all Signals instances.
+     * Only Signals references it.
+     *
+     * @var PendingPixelEvents|null
+     */
+    private static $pending_pixel_events = null;
 
     /**
      * The browser-side pixel generator.
@@ -58,11 +79,20 @@ class Signals {
     /**
      * Constructor. Side-effect free (subsystem wiring is done via boot()), so
      * instances can be created freely. Signals is the facade over the whole
-     * signals domain, so it resolves/holds the server + browser sides itself.
+     * signals domain: it owns the shared server-event buffer + sender (single
+     * instances kept in statics) and the browser-side generator.
      */
     public function __construct() {
-        $this->server_events = FacebookServerSideEvent::get_instance();
-        $this->browser       = new BrowserEvents();
+        if ( null === self::$buffer ) {
+            self::$buffer = new ServerEventBuffer();
+        }
+        if ( null === self::$sender ) {
+            self::$sender = new ServerEventSender();
+        }
+        if ( null === self::$pending_pixel_events ) {
+            self::$pending_pixel_events = new PendingPixelEvents();
+        }
+        $this->browser = new BrowserEvents();
     }
 
     /**
@@ -178,7 +208,7 @@ class Signals {
             }
         );
 
-        $event = ServerEventFactory::create_from_data(
+        $event = EventFactory::create(
             $event_name,
             $clean,
             $tracking_name,
@@ -189,7 +219,7 @@ class Signals {
             $event->setEventId( $event_id );
         }
 
-        $this->server_events->track( $event );
+        $this->store_event( $event );
         return $event;
     }
 
@@ -218,7 +248,7 @@ class Signals {
      * @return void
      */
     public function flush_pending_events() {
-        $pending = $this->server_events->get_pending_events();
+        $pending = self::$buffer->get_pending_events();
         if ( count( $pending ) > 0 ) {
             do_action( 'send_server_events', $pending, count( $pending ) );
         }
@@ -227,21 +257,71 @@ class Signals {
     /**
      * Sends events straight to the Conversions API. The facade entry point for
      * one-off server sends (release flow, OpenBridge, CAPI event endpoint,
-     * async task) so callers never touch the event store directly.
+     * async task) so callers never touch the sender directly.
+     *
+     * Applies the before_conversions_api_event_sent filter and the consent gate
+     * (when signals are held on the frontend the events are queued for browser
+     * release instead of being sent), then delegates the actual send.
      *
      * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[] $events The events.
      * @param string|null                                                $test_event_code Optional test code.
      * @return array|null
      */
     public function send( $events, $test_event_code = null ) {
-        return $this->server_events->send( $events, $test_event_code );
+        $events = apply_filters( 'before_conversions_api_event_sent', $events );
+        if ( empty( $events ) ) {
+            return null;
+        }
+
+        if ( $this->should_suppress_frontend_send() ) {
+            foreach ( $events as $queued_event ) {
+                FacebookSignalState::queue_event( $queued_event );
+            }
+            return null;
+        }
+
+        return self::$sender->send( $events, $test_event_code );
+    }
+
+    /**
+     * Records an event and routes it: queued for browser release when signals
+     * are held on the frontend, otherwise queued to be sent to the CAPI.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event.
+     * @return void
+     */
+    private function store_event( $event ) {
+        self::$buffer->record( $event );
+        if ( $this->should_suppress_frontend_send() ) {
+            FacebookSignalState::queue_event( $event );
+        } else {
+            self::$buffer->queue_for_send( $event );
+        }
+    }
+
+    /**
+     * Whether the current request should suppress frontend sends (signals held
+     * on a non-admin, non-cron request), queueing events for browser release
+     * instead.
+     *
+     * @return bool
+     */
+    private function should_suppress_frontend_send() {
+        $is_admin_request = function_exists( 'is_admin' ) ? is_admin() : false;
+        $is_cron_request  = function_exists( 'wp_doing_cron' ) ?
+            wp_doing_cron() :
+            false;
+
+        return FacebookSignalState::is_held() &&
+            ! $is_admin_request &&
+            ! $is_cron_request;
     }
 
     /*
-     * Temporary redirects to the CAPI event store.
+     * Redirects to the server-event buffer.
      *
      * Legacy integrations and PixelInjection call these through Signals so the
-     * store is reached only via the facade. They are thin pass-throughs on
+     * buffer is reached only via the facade. They are thin pass-throughs on
      * purpose and are removed as each caller is converted to
      * track()/render()/flush_pending_events(). Do not add new callers.
      */
@@ -250,11 +330,10 @@ class Signals {
      * Tracks an already-built server event.
      *
      * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event.
-     * @param bool                                                     $send_now Send now or queue.
      * @return void
      */
-    public function track_event( $event, $send_now = true ) {
-        $this->server_events->track( $event, $send_now );
+    public function track_event( $event ) {
+        $this->store_event( $event );
     }
 
     /**
@@ -263,7 +342,7 @@ class Signals {
      * @return array
      */
     public function get_tracked_events() {
-        return $this->server_events->get_tracked_events();
+        return self::$buffer->get_tracked_events();
     }
 
     /**
@@ -272,7 +351,7 @@ class Signals {
      * @return array
      */
     public function get_pending_events() {
-        return $this->server_events->get_pending_events();
+        return self::$buffer->get_pending_events();
     }
 
     /**
@@ -283,7 +362,7 @@ class Signals {
      * @return void
      */
     public function set_pending_pixel_event( $callback_name, $event ) {
-        $this->server_events->set_pending_pixel_event( $callback_name, $event );
+        self::$pending_pixel_events->set( $callback_name, $event );
     }
 
     /**
@@ -293,7 +372,7 @@ class Signals {
      * @return \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event|null
      */
     public function get_pending_pixel_event( $callback_name ) {
-        return $this->server_events->get_pending_pixel_event( $callback_name );
+        return self::$pending_pixel_events->get( $callback_name );
     }
 
     /**
