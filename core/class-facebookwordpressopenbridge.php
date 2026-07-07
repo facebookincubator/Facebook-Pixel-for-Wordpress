@@ -146,7 +146,7 @@ class FacebookWordpressOpenBridge {
      * Starts a new PHP session if one is not already active, and extracts the
      * event name, event ID, and event data from the request. If the event name
      * is in the list of blocked events, the method returns early without taking
-     * any action. Otherwise, it creates a ServerEvent using the event name and
+     * any action. Otherwise, it creates a server event using the event name and
      * data, and sends it to the Facebook pixel servers.
      *
      * @param array $data The event data, including the event name and ID.

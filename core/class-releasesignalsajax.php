@@ -134,8 +134,8 @@ class ReleaseSignalsAjax {
         $fbc    = ! empty( $body['fbc'] ) ?
             sanitize_text_field( $body['fbc'] ) : '';
 
-        // Expose queued attribution to ServerEventFactory so released events
-        // share the same attribution path as normal CAPI events.
+        // Expose queued attribution to EventFactory/UserPiiResolver so released
+        // events share the same attribution path as normal CAPI events.
         $restore_get_fbclid = $this->temporarily_set_superglobal_value( '_GET', 'fbclid', $fbclid );
         $restore_cookie_fbp = $this->temporarily_set_superglobal_value( '_COOKIE', '_fbp', $fbp );
         $restore_cookie_fbc = $this->temporarily_set_superglobal_value( '_COOKIE', '_fbc', $fbc );

@@ -28,7 +28,6 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\EventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordpressOpenBridge;
 use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
