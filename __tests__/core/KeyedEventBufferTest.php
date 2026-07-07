@@ -1,6 +1,6 @@
 <?php
 /**
- * Facebook Pixel Plugin PendingPixelEventsTest class.
+ * Facebook Pixel Plugin KeyedEventBufferTest class.
  *
  * @package FacebookPixelPlugin
  */
@@ -19,12 +19,12 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\PendingPixelEvents;
+use FacebookPixelPlugin\Core\KeyedEventBuffer;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
- * PendingPixelEventsTest class.
+ * KeyedEventBufferTest class.
  *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
@@ -33,34 +33,34 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * make sure tests are isolated.
  * Stop preserving global state from the parent process.
  */
-final class PendingPixelEventsTest extends FacebookWordpressTestBase {
-  public function testSetAndGetByCallbackName() {
-    $queue = new PendingPixelEvents();
-    $event = ( new Event() )->setEventName( 'AddToCart' );
+final class KeyedEventBufferTest extends FacebookWordpressTestBase {
+  public function testSetAndGetByKey() {
+    $buffer = new KeyedEventBuffer();
+    $event  = ( new Event() )->setEventName( 'AddToCart' );
 
-    $queue->set( 'addPixelCodeToAddToCartFragment', $event );
+    $buffer->set( 'addPixelCodeToAddToCartFragment', $event );
 
     $this->assertSame(
       $event,
-      $queue->get( 'addPixelCodeToAddToCartFragment' )
+      $buffer->get( 'addPixelCodeToAddToCartFragment' )
     );
   }
 
-  public function testGetReturnsNullForUnknownCallback() {
-    $queue = new PendingPixelEvents();
+  public function testGetReturnsNullForUnknownKey() {
+    $buffer = new KeyedEventBuffer();
 
-    $this->assertNull( $queue->get( 'missing_callback' ) );
+    $this->assertNull( $buffer->get( 'missing_key' ) );
   }
 
-  public function testEventsAreKeyedIndependentlyPerCallback() {
-    $queue  = new PendingPixelEvents();
+  public function testEventsAreStoredIndependentlyPerKey() {
+    $buffer = new KeyedEventBuffer();
     $event1 = ( new Event() )->setEventName( 'AddToCart' );
     $event2 = ( new Event() )->setEventName( 'ViewContent' );
 
-    $queue->set( 'callback_a', $event1 );
-    $queue->set( 'callback_b', $event2 );
+    $buffer->set( 'key_a', $event1 );
+    $buffer->set( 'key_b', $event2 );
 
-    $this->assertSame( $event1, $queue->get( 'callback_a' ) );
-    $this->assertSame( $event2, $queue->get( 'callback_b' ) );
+    $this->assertSame( $event1, $buffer->get( 'key_a' ) );
+    $this->assertSame( $event2, $buffer->get( 'key_b' ) );
   }
 }

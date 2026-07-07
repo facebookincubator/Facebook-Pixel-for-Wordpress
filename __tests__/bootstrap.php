@@ -38,7 +38,7 @@ if ( ! defined( 'YEAR_IN_SECONDS' ) ) {
 }
 
 require_once __DIR__ . '/../core/class-signals.php';
-require_once __DIR__ . '/../core/class-facebooksignalstate.php';
-require_once __DIR__ . '/../core/class-releasesignalsajax.php';
+require_once __DIR__ . '/../core/signals/class-facebooksignalstate.php';
+require_once __DIR__ . '/../core/signals/class-releasesignalsajax.php';
 
 WP_Mock::bootstrap();

@@ -24,7 +24,9 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * accumulated and flushed together at a later point in the request. It only
  * holds events; it does not decide consent gating or send anything — Signals
  * owns that and ServerEventSender does the sending. The separate callback-keyed
- * pixel events live in PendingPixelEvents. Reached only through Signals.
+ * pixel events live in KeyedEventBuffer. Reached only through Signals.
+ *
+ * @internal Not part of the plugin's public API; use the Signals facade.
  */
 class ServerEventBuffer {
     /**

@@ -61,13 +61,13 @@ class Signals {
     private static $sender = null;
 
     /**
-     * Callback-keyed queue of server events held until a specific WordPress
-     * callback renders them as pixel code. Shared across all Signals instances.
-     * Only Signals references it.
+     * Key-addressed buffer of server events held until a specific WordPress
+     * callback renders them as pixel code (keyed by that callback's name).
+     * Shared across all Signals instances. Only Signals references it.
      *
-     * @var PendingPixelEvents|null
+     * @var KeyedEventBuffer|null
      */
-    private static $pending_pixel_events = null;
+    private static $keyed_event_buffer = null;
 
     /**
      * The browser-side pixel generator.
@@ -89,8 +89,8 @@ class Signals {
         if ( null === self::$sender ) {
             self::$sender = new ServerEventSender();
         }
-        if ( null === self::$pending_pixel_events ) {
-            self::$pending_pixel_events = new PendingPixelEvents();
+        if ( null === self::$keyed_event_buffer ) {
+            self::$keyed_event_buffer = new KeyedEventBuffer();
         }
         $this->browser = new BrowserEvents();
     }
@@ -355,24 +355,25 @@ class Signals {
     }
 
     /**
-     * Stores a server event to be emitted when a named callback fires.
+     * Stores a server event under a key (a callback name) to be emitted when
+     * that callback fires.
      *
-     * @param string                                                   $callback_name The callback name.
-     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event         The event.
+     * @param string                                                   $key   The key (callback name).
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event.
      * @return void
      */
-    public function set_pending_pixel_event( $callback_name, $event ) {
-        self::$pending_pixel_events->set( $callback_name, $event );
+    public function set_pending_pixel_event( $key, $event ) {
+        self::$keyed_event_buffer->set( $key, $event );
     }
 
     /**
-     * Returns a server event stored for a named callback.
+     * Returns a server event stored under a key (a callback name).
      *
-     * @param string $callback_name The callback name.
+     * @param string $key The key (callback name).
      * @return \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event|null
      */
-    public function get_pending_pixel_event( $callback_name ) {
-        return self::$pending_pixel_events->get( $callback_name );
+    public function get_pending_pixel_event( $key ) {
+        return self::$keyed_event_buffer->get( $key );
     }
 
     /**

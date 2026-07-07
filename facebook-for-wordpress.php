@@ -36,8 +36,8 @@ if ( file_exists( $local_config ) ) {
 
 require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
 require_once plugin_dir_path( __FILE__ ) . 'core/class-signals.php';
-require_once plugin_dir_path( __FILE__ ) . 'core/class-facebooksignalstate.php';
-require_once plugin_dir_path( __FILE__ ) . 'core/class-releasesignalsajax.php';
+require_once plugin_dir_path( __FILE__ ) . 'core/signals/class-facebooksignalstate.php';
+require_once plugin_dir_path( __FILE__ ) . 'core/signals/class-releasesignalsajax.php';
 
 use FacebookPixelPlugin\Core\Signals;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
