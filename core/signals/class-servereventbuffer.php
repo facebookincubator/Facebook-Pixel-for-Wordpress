@@ -64,12 +64,28 @@ class ServerEventBuffer {
     }
 
     /**
-     * Retrieves all the events tracked during the current request.
+     * Retrieves the events tracked during the current request.
      *
+     * When an event type is provided, only the tracked events whose event name
+     * matches are returned (re-indexed); otherwise all tracked events are
+     * returned in insertion order.
+     *
+     * @param string|null $event_type Optional event name to filter by (e.g. 'Lead').
      * @return array An array of tracked events.
      */
-    public function get_tracked_events() {
-        return $this->tracked_events;
+    public function get_tracked_events( $event_type = null ) {
+        if ( null === $event_type ) {
+            return $this->tracked_events;
+        }
+
+        return array_values(
+            array_filter(
+                $this->tracked_events,
+                function ( $event ) use ( $event_type ) {
+                    return $event->getEventName() === $event_type;
+                }
+            )
+        );
     }
 
     /**

@@ -337,12 +337,13 @@ class Signals {
     }
 
     /**
-     * Returns all events tracked this request.
+     * Returns events tracked this request, optionally filtered by event type.
      *
+     * @param string|null $event_type Optional event name to filter by (e.g. 'Lead').
      * @return array
      */
-    public function get_tracked_events() {
-        return self::$buffer->get_tracked_events();
+    public function get_tracked_events( $event_type = null ) {
+        return self::$buffer->get_tracked_events( $event_type );
     }
 
     /**
