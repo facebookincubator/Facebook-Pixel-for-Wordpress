@@ -93,11 +93,13 @@ jobs:
           HAS_RELEASE: ${{ steps.get_release.outputs.has_release }}
           LATEST_TAG: ${{ steps.get_release.outputs.latest_tag }}
           NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
+          CHANGELOG_BASE_BRANCH: ${{ github.ref_name }}
         with:
           script: |
             const newVersion = process.env.NEW_VERSION.trim();
             const hasRelease = process.env.HAS_RELEASE === 'true';
             const latestTag = process.env.LATEST_TAG;
+            const changelogBaseBranch = process.env.CHANGELOG_BASE_BRANCH.trim();
 
             // Determine the cutoff date for PRs included in this release.
             let since = null;
@@ -131,16 +133,17 @@ jobs:
                 `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
             }
 
-            // Query closed PRs directly — only returns PRs on this repo.
+            // Query closed PRs directly for the branch used to prepare this release.
             // Meta's sync flow closes PRs with a "Merged" label but leaves
             // merged_at empty, so closed_at is used as a fallback for those PRs.
+            console.log(`Querying PRs targeting ${changelogBaseBranch}`);
             const prs = await github.paginate(github.rest.pulls.list, {
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'closed',
               sort: 'updated',
               direction: 'desc',
-              base: 'main',
+              base: changelogBaseBranch,
               per_page: 100,
             });
 
