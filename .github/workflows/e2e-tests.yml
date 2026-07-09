@@ -16,6 +16,7 @@ concurrency:
 jobs:
   check-secrets:
     runs-on: ubuntu-latest
+    environment: QA
     outputs:
       has-secrets: ${{ steps.check.outputs.has-secrets }}
     steps:
@@ -35,6 +36,7 @@ jobs:
     needs: check-secrets
     if: needs.check-secrets.outputs.has-secrets == 'true'
     runs-on: ubuntu-latest
+    environment: QA
     strategy:
       fail-fast: false
       matrix:
