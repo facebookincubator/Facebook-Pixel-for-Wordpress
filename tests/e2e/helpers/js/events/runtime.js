@@ -14,7 +14,7 @@ function shellEscape(value) {
   return `'${String(value).replace(/'/g, `'"'"'`)}'`;
 }
 
-// WP-CLI runs inside the wp-env "cli" container.
+// WP-CLI runs against the local WordPress install.
 async function runWpCli(rawArgs) {
   const { stdout } = await wpEnvCli(rawArgs);
   return stdout;

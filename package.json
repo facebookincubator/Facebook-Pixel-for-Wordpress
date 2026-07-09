@@ -5,9 +5,6 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "env:start": "wp-env start",
-    "env:stop": "wp-env stop",
-    "env:destroy": "wp-env destroy",
     "env:seed": "bash tests/e2e/scripts/seed-store.sh",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
@@ -22,7 +19,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.51.1",
-    "@wordpress/env": "^9.10.0",
     "prettier": "^3.3.3"
   }
 }

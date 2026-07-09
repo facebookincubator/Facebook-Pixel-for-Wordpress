@@ -1,7 +1,7 @@
 /**
  * Event product helpers (variable/grouped fixtures and storefront interactions).
  *
- * Adapted for Meta Pixel for WordPress: fixtures are created via wp-env `wp eval`
+ * Adapted for Meta Pixel for WordPress: fixtures are created via local `wp eval`
  * (not a local wp binary), and the Facebook retailer id is computed with the same
  * rule the plugin's WooCommerce integration uses
  * (integration/class-facebookwordpresswoocommerce.php::getProductId):

@@ -75,7 +75,7 @@ async function globalSetup() {
     await execWP(`global \\$wpdb; \\$wpdb->query('ALTER TABLE ' . \\$wpdb->term_taxonomy . ' AUTO_INCREMENT = ${termStartId}');`);
     console.log(`🔢 AUTO_INCREMENT set (posts=${startId}, terms=${termStartId})`);
   } catch (err) {
-    console.warn(`⚠️ Could not set AUTO_INCREMENT (is wp-env running?): ${err.message}`);
+    console.warn(`⚠️ Could not set AUTO_INCREMENT (is WordPress running?): ${err.message}`);
   }
 
   if (fs.existsSync(customerAuthPath)) {

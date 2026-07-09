@@ -1,7 +1,7 @@
 /**
  * WordPress theme helpers for E2E tests.
  *
- * Runs WP-CLI through @wordpress/env (Docker) rather than a local `wp` binary,
+ * Runs WP-CLI against the local WordPress install (WORDPRESS_PATH) via exec.js,
  * so all theme queries/switches are async.
  */
 

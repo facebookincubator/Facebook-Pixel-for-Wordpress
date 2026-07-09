@@ -1,9 +1,9 @@
 /**
  * Plugin / mu-plugin management helpers for E2E tests.
  *
- * Under @wordpress/env the WordPress filesystem lives inside the Docker
- * container, so mu-plugins are written/removed via `wp eval`
- * (file_put_contents into WPMU_PLUGIN_DIR) rather than host fs writes.
+  * The WordPress filesystem is local (barebones install), but mu-plugins are
+  * still written/removed via `wp eval`
+  * (file_put_contents into WPMU_PLUGIN_DIR) so the path resolves inside WP.
  */
 
 const { execWP } = require('./exec');

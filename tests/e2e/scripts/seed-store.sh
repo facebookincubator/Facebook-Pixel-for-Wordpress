@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Seed the wp-env WordPress instance for the Pixel/CAPI E2E suite.
+# Seed the local WordPress install (WORDPRESS_PATH) for the Pixel/CAPI E2E suite.
 #
 # Configures: pretty permalinks, a WooCommerce store (base country, currency,
 # Cash-on-Delivery gateway), the Meta pixel config (pixel id + access token +
@@ -8,8 +8,7 @@
 # a deterministic simple product, and a Contact Form 7 form + page for Lead tests.
 #
 # All of the above is applied by a single base64-encoded `wp eval` so we never
-# fight host -> docker -> container shell quoting, and never need to know the
-# plugin's in-container directory name.
+# fight shell quoting of the payload, regardless of how wp is invoked.
 #
 # Required env:
 #   FB_PIXEL_ID, FB_ACCESS_TOKEN
@@ -20,13 +19,12 @@ set -euo pipefail
 
 : "${FB_PIXEL_ID:?FB_PIXEL_ID must be set (Meta pixel id)}"
 : "${FB_ACCESS_TOKEN:?FB_ACCESS_TOKEN must be set (Meta CAPI access token)}"
+: "${WORDPRESS_PATH:?WORDPRESS_PATH must be set (path to the WordPress install)}"
 
 CUSTOMER_USERNAME="${WP_CUSTOMER_USERNAME:-customer}"
 CUSTOMER_PASSWORD="${WP_CUSTOMER_PASSWORD:-customerpass}"
 CUSTOMER_EMAIL="${WP_CUSTOMER_EMAIL:-customer@example.com}"
-
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-cd "$REPO_ROOT"
+WP_CLI="${WP_CLI_PATH:-wp}"
 
 read -r -d '' PHP_SEED <<PHP || true
 // --- Pretty permalinks (product/shop URLs) ---
@@ -128,6 +126,6 @@ PHP
 
 ENCODED="$(printf '%s' "$PHP_SEED" | base64 | tr -d '\n')"
 
-echo "🌱 Seeding wp-env store + pixel config..."
-npx wp-env run --quiet cli wp eval "eval(base64_decode('${ENCODED}'));"
+echo "🌱 Seeding store + pixel config..."
+"$WP_CLI" eval "eval(base64_decode('${ENCODED}'));" --path="$WORDPRESS_PATH" --allow-root
 echo "✅ Seed complete."

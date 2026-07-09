@@ -1,17 +1,40 @@
 name: E2E Tests (Pixel/CAPI)
 
-# Runs the Playwright Pixel/CAPI event suite under @wordpress/env.
-# Requires repository secrets FB_PIXEL_ID and FB_ACCESS_TOKEN (a real Meta pixel
-# id + Conversions API access token); TEST_FBCLID is optional.
+# Barebones WordPress setup (WordPress tarball + `php -S` + WP-CLI against a MySQL
+# service) — modeled on the Meta for WooCommerce plugin's product-creation-tests.yml.
+# No Docker / wp-env. Requires FB_PIXEL_ID and FB_ACCESS_TOKEN in the "QA"
+# environment (a real Meta pixel id + Conversions API token).
 on:
   pull_request:
   workflow_dispatch:
   schedule:
     - cron: '0 6 * * 1' # Mondays 06:00 UTC
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  WORDPRESS_PATH: /tmp/wordpress
+  PLUGIN_PATH: /tmp/wordpress/wp-content/plugins/facebook-for-wordpress
+  WP_DEBUG_LOG: /tmp/wordpress/wp-content/debug.log
+  WORDPRESS_URL: http://localhost:8080
+  WP_USERNAME: admin
+  WP_PASSWORD: admin
+  # E2E CAPI logging hook config (read by core/class-facebookserversideevent.php).
+  FB_E2E_TEST_COOKIE_NAME: facebook_test_id
+  FB_E2E_LOGGER_PATH: /tests/e2e/helpers/php/event-logger.php
+  # Deterministic test customer (created during setup, used by global-setup login).
+  WP_CUSTOMER_USERNAME: e2e_customer
+  WP_CUSTOMER_PASSWORD: e2e_password
+  WP_CUSTOMER_EMAIL: e2e_customer@example.com
+  # Storefront URLs seeded by seed-store.sh.
+  TEST_PRODUCT_URL: /product/testp/
+  TEST_LEAD_FORM_URL: /e2e-lead/
+  TEST_FBCLID: ${{ secrets.TEST_FBCLID }}
 
 jobs:
   check-secrets:
@@ -27,9 +50,10 @@ jobs:
         run: |
           if [ -n "$FB_PIXEL_ID" ] && [ -n "$FB_ACCESS_TOKEN" ]; then
             echo "has-secrets=true" >> "$GITHUB_OUTPUT"
+            echo "✅ QA secrets present"
           else
             echo "has-secrets=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::FB_PIXEL_ID / FB_ACCESS_TOKEN not set — skipping E2E (CAPI cannot run without real credentials)."
+            echo "::warning::FB_PIXEL_ID / FB_ACCESS_TOKEN not set in the QA environment — skipping E2E."
           fi
 
   e2e:
@@ -37,118 +61,193 @@ jobs:
     if: needs.check-secrets.outputs.has-secrets == 'true'
     runs-on: ubuntu-latest
     environment: QA
-    strategy:
-      fail-fast: false
-      matrix:
-        project:
-          - chromium-wp-customer
-          - chromium-wp-guest
-          - chromium-wp-customer-classic-theme
-          - chromium-wp-customer-block-theme
-          - chromium-privacy-sandbox-wp-customer
-          - edge-wp-customer
-          - firefox-wp-customer
-          - brave-wp-customer
-          - opera-wp-customer
-          - android-pixel-wp-customer
-          - safari-ios-wp-customer
+    timeout-minutes: 90
     env:
-      WORDPRESS_URL: http://localhost:8888
-      TEST_PRODUCT_URL: /product/testp/
-      TEST_LEAD_FORM_URL: /e2e-lead/
-      # Deterministic test customer — created by the seed step (wp CLI) and used
-      # by global-setup to log in. Not a secret; it only exists in the ephemeral
-      # wp-env instance.
-      WP_CUSTOMER_USERNAME: e2e_customer
-      WP_CUSTOMER_PASSWORD: e2e_password
-      WP_CUSTOMER_EMAIL: e2e_customer@example.com
       FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
       FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
-      TEST_FBCLID: ${{ secrets.TEST_FBCLID }}
+      # Force the plugin's non-production gate so the CAPI test logger is active.
+      WP_ENVIRONMENT_TYPE: local
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: wordpress
+          MYSQL_DATABASE: wordpress
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
-          tools: composer
+          extensions: mysqli, zip, gd, curl, dom, fileinfo, mbstring
+          ini-values: |
+            date.timezone=UTC
+            memory_limit=1024M
+            max_execution_time=300
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      # Composer deps must exist before wp-env mounts the plugin ("." mapping),
-      # so PSR-4 autoload + bundled FacebookAds SDK are present in the container.
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: Install Node dependencies
-        run: npm ci
-
-      # Pick the right browser engine for this project.
-      - name: Install Playwright browsers
+      - name: Install WP-CLI
         run: |
-          case "${{ matrix.project }}" in
-            *privacy-sandbox*) npx playwright install --with-deps chromium chrome ;;
-            edge-*)            npx playwright install --with-deps chromium msedge ;;
-            firefox-*)         npx playwright install --with-deps firefox ;;
-            safari-ios-*)      npx playwright install --with-deps webkit ;;
-            *)                 npx playwright install --with-deps chromium ;;
-          esac
+          curl -sL -o wp-cli.phar https://github.com/wp-cli/wp-cli/releases/download/v2.10.0/wp-cli-2.10.0.phar
+          chmod +x wp-cli.phar
+          sudo mv wp-cli.phar /usr/local/bin/wp
+          wp --version
 
-      - name: Prepare captured-events dir (Docker-writable)
+      - name: Create WordPress test environment
         run: |
-          mkdir -p tests/e2e/captured-events
-          chmod -R 777 tests/e2e/captured-events
+          mkdir -p "$WORDPRESS_PATH"
+          cd "$WORDPRESS_PATH"
+          curl -sO https://wordpress.org/latest.tar.gz
+          tar -xzf latest.tar.gz --strip-components=1
+          cp wp-config-sample.php wp-config.php
+          sed -i "s/database_name_here/wordpress/" wp-config.php
+          sed -i "s/username_here/wordpress/" wp-config.php
+          sed -i "s/password_here/wordpress/" wp-config.php
+          sed -i "s/localhost/127.0.0.1/" wp-config.php
+          cat >> wp-config.php << 'EOF'
+          define('WP_DEBUG', true);
+          define('WP_DEBUG_LOG', true);
+          define('WP_DEBUG_DISPLAY', false);
+          define('WP_ENVIRONMENT_TYPE', 'local');
+          @ini_set('log_errors', 'On');
+          EOF
+          touch "$WP_DEBUG_LOG"; chmod 777 "$WP_DEBUG_LOG"
 
-      - name: Start wp-env
-        run: npx wp-env start
-
-      - name: Seed store + pixel config
-        run: npm run env:seed
-
-      - name: Sanity check (plugins + pixel option)
+      - name: Start PHP server
         run: |
-          echo "Active plugins:"
-          npx wp-env run --quiet cli wp plugin list --status=active --field=name
-          # Fail loudly if the standalone WooCommerce Facebook plugin sneaks in,
-          # which would suppress this plugin's commerce events.
-          if npx wp-env run --quiet cli wp plugin is-active facebook-for-woocommerce; then
-            echo "::error::facebook-for-woocommerce must NOT be active for this suite."; exit 1
+          cd "$WORDPRESS_PATH"
+          php -S 127.0.0.1:8080 -t . >/tmp/php-server.log 2>&1 &
+          echo $! > /tmp/php-server.pid
+          sleep 3
+          echo "✅ PHP server started on :8080"
+
+      - name: Install WordPress core
+        run: |
+          wp core install --path="$WORDPRESS_PATH" --url="$WORDPRESS_URL" \
+            --title="E2E Test Site" --admin_user="$WP_USERNAME" --admin_password="$WP_PASSWORD" \
+            --admin_email=test@example.com --skip-email --allow-root
+
+      - name: Install themes, WooCommerce and Contact Form 7
+        run: |
+          P="--path=$WORDPRESS_PATH --allow-root"
+          wp theme install storefront --activate $P
+          wp theme install twentytwentyone $P
+          wp theme install twentytwentyfive $P
+          wp plugin install woocommerce --activate $P
+          wp plugin install contact-form-7 --activate $P
+          # Make the store live so shop/checkout render.
+          wp option update woocommerce_coming_soon "no" $P || true
+          wp option update woocommerce_store_pages_only "no" $P || true
+
+      - name: Install this plugin (from checkout)
+        run: |
+          cp -r "$GITHUB_WORKSPACE" "$PLUGIN_PATH"
+          cd "$PLUGIN_PATH"
+          composer install --no-dev --optimize-autoloader --no-interaction
+          wp plugin activate facebook-for-wordpress --path="$WORDPRESS_PATH" --allow-root
+
+      - name: Seed store, pixel config, customer, product, CF7 form
+        run: bash "$PLUGIN_PATH/tests/e2e/scripts/seed-store.sh"
+
+      - name: Sanity checks
+        run: |
+          P="--path=$WORDPRESS_PATH --allow-root"
+          echo "Active plugins:"; wp plugin list --status=active --field=name $P
+          # The standalone WooCommerce Facebook plugin must NOT be present, or this
+          # plugin's commerce events no-op.
+          if wp plugin is-active facebook-for-woocommerce $P 2>/dev/null; then
+            echo "::error::facebook-for-woocommerce must NOT be active."; exit 1
           fi
-          PIXEL=$(npx wp-env run --quiet cli wp eval "echo \FacebookPixelPlugin\Core\FacebookWordpressOptions::get_active_pixel_id();")
-          echo "Configured pixel id: ${PIXEL}"
+          PIXEL=$(wp eval "echo \FacebookPixelPlugin\Core\FacebookWordpressOptions::get_active_pixel_id();" $P)
+          echo "Configured pixel id: $PIXEL"
           test -n "${PIXEL//[^0-9]/}" || { echo "::error::Pixel id not configured"; exit 1; }
+          curl -sf "$WORDPRESS_URL/product/testp/" >/dev/null && echo "✅ product page reachable"
 
-      - name: Run Playwright (${{ matrix.project }})
-        run: xvfb-run --auto-servernum npx playwright test --project="${{ matrix.project }}"
-
-      - name: Assert Privacy Sandbox not skipped
-        if: matrix.project == 'chromium-privacy-sandbox-wp-customer'
+      - name: Install Playwright + browsers
+        working-directory: ${{ env.PLUGIN_PATH }}
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          # Guard against silently skipping the privacy-sandbox assertions.
-          if grep -Rq "Privacy Sandbox test only runs" playwright-report 2>/dev/null; then
-            echo "::warning::Privacy Sandbox tests appear skipped — verify Chrome channel is installed."
-          fi
+          npm ci
+          timeout 15m npx playwright install --with-deps chromium chrome webkit firefox
 
-      - name: Collect WP debug.log
+      - name: Install Edge / Brave / Opera + Xvfb
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y xvfb wget gnupg2
+          # Edge
+          wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /usr/share/keyrings/microsoft.gpg >/dev/null
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main" | sudo tee /etc/apt/sources.list.d/microsoft-edge.list
+          # Brave
+          sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+          # Opera
+          wget -qO- https://deb.opera.com/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/opera.gpg
+          echo "deb [signed-by=/usr/share/keyrings/opera.gpg] https://deb.opera.com/opera-stable/ stable non-free" | sudo tee /etc/apt/sources.list.d/opera-stable.list
+          sudo apt-get update
+          sudo apt-get install -y microsoft-edge-stable brave-browser opera-stable gsettings-desktop-schemas dbus-x11 || true
+          {
+            echo "EDGE_EXECUTABLE_PATH=$(command -v microsoft-edge-stable || true)"
+            echo "BRAVE_EXECUTABLE_PATH=$(command -v brave-browser || true)"
+            echo "OPERA_EXECUTABLE_PATH=$(command -v opera-stable || command -v opera || true)"
+          } >> "$GITHUB_ENV"
+
+      - name: Run E2E (all projects)
+        working-directory: ${{ env.PLUGIN_PATH }}
+        env:
+          REQUIRE_REAL_EDGE: '1'
+          REQUIRE_REAL_BRAVE: '1'
+          REQUIRE_REAL_OPERA: '1'
+        run: |
+          set -x
+          # Headless-capable engines.
+          npx playwright test --project=chromium-wp-customer --workers=1
+          npx playwright test --project=chromium-wp-guest --workers=1
+          npx playwright test --project=chromium-wp-customer-classic-theme --workers=1
+          npx playwright test --project=chromium-wp-customer-block-theme --workers=1
+          npx playwright test --project=firefox-wp-customer --workers=1
+          npx playwright test --project=android-pixel-wp-customer --workers=1
+          npx playwright test --project=safari-ios-wp-customer --workers=1
+          # Real Chrome-family channels need a display (headed under Xvfb).
+          xvfb-run --auto-servernum npx playwright test --project=chromium-privacy-sandbox-wp-customer --headed --workers=1
+          xvfb-run --auto-servernum npx playwright test --project=edge-wp-customer --headed --workers=1
+          xvfb-run --auto-servernum npx playwright test --project=brave-wp-customer --headed --workers=1
+          xvfb-run --auto-servernum npx playwright test --project=opera-wp-customer --headed --workers=1
+
+      - name: PHP error gate
         if: always()
         run: |
-          npx wp-env run --quiet cli bash -c "cat wp-content/debug.log 2>/dev/null" > debug.log || true
-          echo "---- fatal/parse errors ----"
-          grep -iE "PHP (Fatal|Parse) error" debug.log || echo "none"
+          if [ -f "$WP_DEBUG_LOG" ]; then
+            ERRORS=$(grep -iE "PHP (Fatal|Parse) error" "$WP_DEBUG_LOG" || true)
+            if [ -n "$ERRORS" ]; then echo "❌ PHP errors:"; echo "$ERRORS"; exit 1; fi
+          fi
+          echo "✅ No fatal PHP errors"
 
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-${{ matrix.project }}
+          name: e2e-artifacts
           path: |
-            playwright-report/
-            test-results/
-            tests/e2e/captured-events/
-            debug.log
+            ${{ env.PLUGIN_PATH }}/playwright-report/
+            ${{ env.PLUGIN_PATH }}/test-results/
+            ${{ env.PLUGIN_PATH }}/tests/e2e/captured-events/
+            ${{ env.WP_DEBUG_LOG }}
           retention-days: 7
           if-no-files-found: ignore
