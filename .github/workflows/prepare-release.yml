@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.inputs.version }}
@@ -98,7 +99,7 @@ jobs:
             const hasRelease = process.env.HAS_RELEASE === 'true';
             const latestTag = process.env.LATEST_TAG;
 
-            // Determine the cutoff date for merged PRs
+            // Determine the cutoff date for PRs included in this release.
             let since = null;
             if (hasRelease) {
               const release = await github.rest.repos.getReleaseByTag({
@@ -107,12 +108,32 @@ jobs:
                 tag: latestTag,
               });
               since = new Date(release.data.published_at);
-              console.log(`Including PRs merged after ${since.toISOString()}`);
+              console.log(`Including PRs closed/merged after ${since.toISOString()}`);
             } else {
               console.log("No previous release. Including all merged PRs.");
             }
 
-            // Query merged PRs directly — only returns PRs on this repo
+            function categoryLabel(category) {
+              const normalized = category.toLowerCase();
+              const labels = {
+                add: 'Added',
+                added: 'Added',
+                change: 'Changed',
+                changed: 'Changed',
+                fix: 'Fixed',
+                fixed: 'Fixed',
+                remove: 'Removed',
+                removed: 'Removed',
+                security: 'Security',
+              };
+
+              return labels[normalized] ||
+                `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
+            }
+
+            // Query closed PRs directly — only returns PRs on this repo.
+            // Meta's sync flow closes PRs with a "Merged" label but leaves
+            // merged_at empty, so closed_at is used as a fallback for those PRs.
             const prs = await github.paginate(github.rest.pulls.list, {
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -123,20 +144,40 @@ jobs:
               per_page: 100,
             });
 
-            const changelog = [];
+            const entries = [];
+            const labelPrefix = "changelog:";
             for (const pr of prs) {
-              if (!pr.merged_at) continue;
-              if (since && new Date(pr.merged_at) < since) continue;
+              const labelNames = pr.labels.map(l => l.name);
+              const lowerLabels = labelNames.map(l => l.toLowerCase());
+              const isMerged = Boolean(pr.merged_at) || lowerLabels.includes('merged');
+              if (!isMerged) continue;
 
-              const labelPrefix = "changelog:";
-              const labels = pr.labels
-                .map(l => l.name)
+              const changeDateValue = pr.merged_at || pr.closed_at;
+              if (!changeDateValue) continue;
+
+              const changeDate = new Date(changeDateValue);
+              if (since && changeDate <= since) continue;
+
+              const changelogLabels = lowerLabels
                 .filter(l => l.startsWith(labelPrefix))
-                .map(l => l.replace(labelPrefix, "").trim());
-              if (labels.length === 0 || labels[0].toLowerCase() === 'none') continue;
+                .map(l => l.replace(labelPrefix, '').trim());
+              if (changelogLabels.includes('none')) continue;
+              if (/^release\s+\d+\.\d+\.\d+/i.test(pr.title)) continue;
 
-              const category = labels[0];
-              changelog.push(`* ${category.charAt(0).toUpperCase()}${category.slice(1)} - ${pr.title} by @${pr.user.login} in #${pr.number}`);
+              if (changelogLabels.length === 0) continue;
+
+              const category = changelogLabels[0];
+              const entry = `${categoryLabel(category)} - ${pr.title}`;
+              entries.push({
+                date: changeDate,
+                line: `* ${entry} by @${pr.user.login} in #${pr.number}`,
+              });
+            }
+
+            entries.sort((a, b) => a.date - b.date);
+            const changelog = entries.map(entry => entry.line);
+            if (changelog.length === 0) {
+              throw new Error('Generated changelog is empty. Check PR merge state, labels, and the release cutoff.');
             }
 
             const date = new Date().toISOString().slice(0, 10);
