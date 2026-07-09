@@ -1,0 +1,152 @@
+name: E2E Tests (Pixel/CAPI)
+
+# Runs the Playwright Pixel/CAPI event suite under @wordpress/env.
+# Requires repository secrets FB_PIXEL_ID and FB_ACCESS_TOKEN (a real Meta pixel
+# id + Conversions API access token); TEST_FBCLID is optional.
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      has-secrets: ${{ steps.check.outputs.has-secrets }}
+    steps:
+      - id: check
+        env:
+          FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
+          FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+        run: |
+          if [ -n "$FB_PIXEL_ID" ] && [ -n "$FB_ACCESS_TOKEN" ]; then
+            echo "has-secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::FB_PIXEL_ID / FB_ACCESS_TOKEN not set — skipping E2E (CAPI cannot run without real credentials)."
+          fi
+
+  e2e:
+    needs: check-secrets
+    if: needs.check-secrets.outputs.has-secrets == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - chromium-wp-customer
+          - chromium-wp-guest
+          - chromium-wp-customer-classic-theme
+          - chromium-wp-customer-block-theme
+          - chromium-privacy-sandbox-wp-customer
+          - edge-wp-customer
+          - firefox-wp-customer
+          - brave-wp-customer
+          - opera-wp-customer
+          - android-pixel-wp-customer
+          - safari-ios-wp-customer
+    env:
+      WORDPRESS_URL: http://localhost:8888
+      TEST_PRODUCT_URL: /product/testp/
+      TEST_LEAD_FORM_URL: /e2e-lead/
+      # Deterministic test customer — created by the seed step (wp CLI) and used
+      # by global-setup to log in. Not a secret; it only exists in the ephemeral
+      # wp-env instance.
+      WP_CUSTOMER_USERNAME: e2e_customer
+      WP_CUSTOMER_PASSWORD: e2e_password
+      WP_CUSTOMER_EMAIL: e2e_customer@example.com
+      FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
+      FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+      TEST_FBCLID: ${{ secrets.TEST_FBCLID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Composer deps must exist before wp-env mounts the plugin ("." mapping),
+      # so PSR-4 autoload + bundled FacebookAds SDK are present in the container.
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      # Pick the right browser engine for this project.
+      - name: Install Playwright browsers
+        run: |
+          case "${{ matrix.project }}" in
+            *privacy-sandbox*) npx playwright install --with-deps chromium chrome ;;
+            edge-*)            npx playwright install --with-deps chromium msedge ;;
+            firefox-*)         npx playwright install --with-deps firefox ;;
+            safari-ios-*)      npx playwright install --with-deps webkit ;;
+            *)                 npx playwright install --with-deps chromium ;;
+          esac
+
+      - name: Prepare captured-events dir (Docker-writable)
+        run: |
+          mkdir -p tests/e2e/captured-events
+          chmod -R 777 tests/e2e/captured-events
+
+      - name: Start wp-env
+        run: npx wp-env start
+
+      - name: Seed store + pixel config
+        run: npm run env:seed
+
+      - name: Sanity check (plugins + pixel option)
+        run: |
+          echo "Active plugins:"
+          npx wp-env run --quiet cli wp plugin list --status=active --field=name
+          # Fail loudly if the standalone WooCommerce Facebook plugin sneaks in,
+          # which would suppress this plugin's commerce events.
+          if npx wp-env run --quiet cli wp plugin is-active facebook-for-woocommerce; then
+            echo "::error::facebook-for-woocommerce must NOT be active for this suite."; exit 1
+          fi
+          PIXEL=$(npx wp-env run --quiet cli wp eval "echo \FacebookPixelPlugin\Core\FacebookWordpressOptions::get_active_pixel_id();")
+          echo "Configured pixel id: ${PIXEL}"
+          test -n "${PIXEL//[^0-9]/}" || { echo "::error::Pixel id not configured"; exit 1; }
+
+      - name: Run Playwright (${{ matrix.project }})
+        run: xvfb-run --auto-servernum npx playwright test --project="${{ matrix.project }}"
+
+      - name: Assert Privacy Sandbox not skipped
+        if: matrix.project == 'chromium-privacy-sandbox-wp-customer'
+        run: |
+          # Guard against silently skipping the privacy-sandbox assertions.
+          if grep -Rq "Privacy Sandbox test only runs" playwright-report 2>/dev/null; then
+            echo "::warning::Privacy Sandbox tests appear skipped — verify Chrome channel is installed."
+          fi
+
+      - name: Collect WP debug.log
+        if: always()
+        run: |
+          npx wp-env run --quiet cli bash -c "cat wp-content/debug.log 2>/dev/null" > debug.log || true
+          echo "---- fatal/parse errors ----"
+          grep -iE "PHP (Fatal|Parse) error" debug.log || echo "none"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.project }}
+          path: |
+            playwright-report/
+            test-results/
+            tests/e2e/captured-events/
+            debug.log
+          retention-days: 7
+          if-no-files-found: ignore
