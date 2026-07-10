@@ -86,28 +86,34 @@ jobs:
               }
             }
 
+      - name: Get release cutoff date
+        id: get_release_cutoff
+        if: steps.get_release.outputs.has_release == 'true'
+        env:
+          LATEST_TAG: ${{ steps.get_release.outputs.latest_tag }}
+        run: |
+          git fetch origin tag "$LATEST_TAG"
+          TAG_COMMIT_TIMESTAMP=$(git log -1 --format=%ct "$LATEST_TAG")
+          echo "Latest release tag commit timestamp: $TAG_COMMIT_TIMESTAMP"
+          echo "cutoff_timestamp=$TAG_COMMIT_TIMESTAMP" >> "$GITHUB_OUTPUT"
+
       - name: Build changelog from PRs
         id: changelog
         uses: actions/github-script@v8
         env:
           HAS_RELEASE: ${{ steps.get_release.outputs.has_release }}
-          LATEST_TAG: ${{ steps.get_release.outputs.latest_tag }}
+          RELEASE_CUTOFF_TIMESTAMP: ${{ steps.get_release_cutoff.outputs.cutoff_timestamp }}
           NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
         with:
           script: |
             const newVersion = process.env.NEW_VERSION.trim();
             const hasRelease = process.env.HAS_RELEASE === 'true';
-            const latestTag = process.env.LATEST_TAG;
+            const releaseCutoffTimestamp = process.env.RELEASE_CUTOFF_TIMESTAMP;
 
             // Determine the cutoff date for PRs included in this release.
             let since = null;
             if (hasRelease) {
-              const release = await github.rest.repos.getReleaseByTag({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag: latestTag,
-              });
-              since = new Date(release.data.published_at);
+              since = new Date(Number(releaseCutoffTimestamp) * 1000);
               console.log(`Including PRs closed/merged after ${since.toISOString()}`);
             } else {
               console.log("No previous release. Including all merged PRs.");
