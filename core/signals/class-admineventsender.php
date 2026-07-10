@@ -22,9 +22,8 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  *
  * Sends admin "Test Events" to the Conversions API and returns the result so
  * the admin panel can report it (events_received on success, the error message
- * otherwise). Unlike ServerEventSender it does NOT engage the circuit breaker:
- * a malformed or rejected test event must not trip the breaker for real
- * traffic.
+ * otherwise). Unlike ServerEventSender it never consults the circuit breaker,
+ * so a rejected test event cannot block real traffic.
  *
  * @internal Not part of the plugin's public API.
  */
