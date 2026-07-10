@@ -117,13 +117,14 @@ jobs:
           sed -i "s/username_here/wordpress/" wp-config.php
           sed -i "s/password_here/wordpress/" wp-config.php
           sed -i "s/localhost/127.0.0.1/" wp-config.php
-          cat >> wp-config.php << 'EOF'
-          define('WP_DEBUG', true);
-          define('WP_DEBUG_LOG', true);
-          define('WP_DEBUG_DISPLAY', false);
-          define('WP_ENVIRONMENT_TYPE', 'local');
-          @ini_set('log_errors', 'On');
-          EOF
+          # Use `wp config set` (not appended defines) so we UPDATE the sample's
+          # existing `define('WP_DEBUG', false)` in place — a second define() would
+          # be ignored (first one wins) and only emit a "already defined" warning.
+          # WP_DEBUG_LOG=true logs to wp-content/debug.log, which is exactly $WP_DEBUG_LOG.
+          wp config set WP_DEBUG true --raw --type=constant --path="$WORDPRESS_PATH" --allow-root
+          wp config set WP_DEBUG_LOG true --raw --type=constant --path="$WORDPRESS_PATH" --allow-root
+          wp config set WP_DEBUG_DISPLAY false --raw --type=constant --path="$WORDPRESS_PATH" --allow-root
+          wp config set WP_ENVIRONMENT_TYPE local --type=constant --path="$WORDPRESS_PATH" --allow-root
           touch "$WP_DEBUG_LOG"; chmod 777 "$WP_DEBUG_LOG"
 
       - name: Start PHP server
@@ -171,10 +172,27 @@ jobs:
           if wp plugin is-active facebook-for-woocommerce $P 2>/dev/null; then
             echo "::error::facebook-for-woocommerce must NOT be active."; exit 1
           fi
-          PIXEL=$(wp eval "echo \FacebookPixelPlugin\Core\FacebookWordpressOptions::get_active_pixel_id();" $P)
-          echo "Configured pixel id: $PIXEL"
-          test -n "${PIXEL//[^0-9]/}" || { echo "::error::Pixel id not configured"; exit 1; }
+          # The base pixel only injects when the id is a positive integer
+          # (ctype_digit). Assert that explicitly so a malformed secret fails here
+          # with a clear message instead of silently emitting no pixel.
+          POSINT=$(wp eval "echo \FacebookPixelPlugin\Core\FacebookPluginUtils::is_positive_integer(\FacebookPixelPlugin\Core\FacebookWordpressOptions::get_active_pixel_id()) ? 'yes' : 'no';" $P)
+          echo "pixel id is positive integer: $POSINT"
+          if [ "$POSINT" != "yes" ]; then
+            echo "::error::FB_PIXEL_ID is not a positive integer — the pixel will not inject. Check the QA secret for stray whitespace/characters."; exit 1
+          fi
           curl -sf "$WORDPRESS_URL/product/testp/" >/dev/null && echo "✅ product page reachable"
+
+          # Diagnostic: confirm the base pixel code actually renders on the homepage.
+          echo "=== homepage pixel diagnostic ==="
+          HOME_HTML=$(curl -s "$WORDPRESS_URL/")
+          if echo "$HOME_HTML" | grep -q "connect.facebook.net/en_US/fbevents.js"; then
+            echo "✅ Meta Pixel base code present on homepage"
+          else
+            echo "::error::Meta Pixel base code NOT found on homepage (<head>)."
+            echo "$HOME_HTML" | sed -n '/<head/,/<\/head>/p' | head -80
+            echo "--- recent debug.log ---"; tail -60 "$WP_DEBUG_LOG" 2>/dev/null || true
+            exit 1
+          fi
 
       - name: Install Playwright + browsers
         working-directory: ${{ env.PLUGIN_PATH }}

@@ -203,7 +203,7 @@ class PixelCapture {
 
     const ingestParam = (key, value) => {
       if (key.startsWith('cd[')) {
-        const cdKey = key.replace('cd[', '').replace(']', '');
+        const cdKey = key.replace(/^cd\[/, '').replace(/\]$/, '');
         const decodedValue = decodeURIComponent(value);
 
         try {
