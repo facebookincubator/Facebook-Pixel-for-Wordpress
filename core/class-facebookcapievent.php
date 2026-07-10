@@ -87,6 +87,8 @@ class FacebookCapiEvent {
 
     /**
      * Hook into WordPress's AJAX actions to handle sending a CAPI event.
+     *
+     * @param AdminEventSender|null $sender Sender for admin test events.
      */
     public function __construct( AdminEventSender $sender = null ) {
         $this->sender = null === $sender ? new AdminEventSender() : $sender;

@@ -15,6 +15,8 @@
 
 namespace FacebookPixelPlugin\Core;
 
+use FacebookPixelPlugin\FacebookAds\Http\Exception\RequestException;
+
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 /**
@@ -37,11 +39,13 @@ class AdminEventSender extends CapiSenderBase {
      */
     public function send( array $events, $test_event_code = null ) {
         if ( ! $this->has_config() ) {
+            $message = 'Pixel ID or access token is not configured.';
             return array(
                 'success' => false,
                 'error'   => array(
-                    'message' => 'Pixel ID or access token is not configured.',
-                    'code'    => 0,
+                    'message'        => $message,
+                    'error_user_msg' => $message,
+                    'code'           => 0,
                 ),
             );
         }
@@ -59,11 +63,36 @@ class AdminEventSender extends CapiSenderBase {
         } catch ( \Exception $e ) {
             return array(
                 'success' => false,
-                'error'   => array(
-                    'message' => $e->getMessage(),
-                    'code'    => $e->getCode(),
-                ),
+                'error'   => $this->build_error_payload( $e ),
             );
         }
+    }
+
+    /**
+     * Builds a user-facing error payload from a failed send.
+     *
+     * Conversions API rejections arrive as RequestException, which carries a
+     * user-friendly message distinct from the generic exception message;
+     * surface that to the admin panel, falling back to the generic message.
+     *
+     * @param \Exception $e The exception raised by the send.
+     * @return array
+     */
+    private function build_error_payload( \Exception $e ) {
+        $message      = $e->getMessage();
+        $user_message = $message;
+
+        if ( $e instanceof RequestException ) {
+            $user_message = $e->getErrorUserMessage();
+            if ( empty( $user_message ) ) {
+                $user_message = $message;
+            }
+        }
+
+        return array(
+            'message'        => $message,
+            'error_user_msg' => $user_message,
+            'code'           => $e->getCode(),
+        );
     }
 }

@@ -21,6 +21,7 @@ namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\AdminEventSender;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
+use FacebookPixelPlugin\FacebookAds\Http\Exception\RequestException;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
@@ -99,5 +100,27 @@ final class AdminEventSenderTest extends FacebookWordpressTestBase {
     $this->assertFalse( $result['success'] );
     $this->assertEquals( 'boom', $result['error']['message'] );
     $this->assertConditionsMet();
+  }
+
+  public function testSendSurfacesUserMessageFromRequestException() {
+    self::mockFacebookWordpressOptions();
+
+    // A Conversions API rejection carries a user-friendly message distinct from
+    // the generic exception message.
+    $exception = \Mockery::mock( RequestException::class );
+    $exception->shouldReceive( 'getErrorUserMessage' )
+      ->andReturn( 'Please check your access token.' );
+
+    $api = \Mockery::mock( 'alias:FacebookPixelPlugin\FacebookAds\Api' );
+    $api->shouldReceive( 'init' )->andThrow( $exception );
+
+    $event  = ( new Event() )->setEventName( 'Lead' );
+    $result = $this->sender->send( array( $event ) );
+
+    $this->assertFalse( $result['success'] );
+    $this->assertEquals(
+      'Please check your access token.',
+      $result['error']['error_user_msg']
+    );
   }
 }
