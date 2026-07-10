@@ -15,100 +15,79 @@
 
 namespace FacebookPixelPlugin\Core;
 
-use FacebookPixelPlugin\FacebookAds\Api;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventRequest;
-
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 /**
  * Class ServerEventSender
  *
- * Sends server-side (CAPI) events to the Conversions API and owns the API
- * client instance. It is a plain sender: consent gating and the
+ * Sends server-side (CAPI) events to the Conversions API as fire-and-forget: it
+ * engages the circuit breaker and returns nothing. Consent gating and the
  * before_conversions_api_event_sent filter live in Signals; this class assumes
  * it is only handed events that should actually be sent. Reached only through
  * Signals.
  *
  * @internal Not part of the plugin's public API; use the Signals facade.
  */
-class ServerEventSender {
+class ServerEventSender extends RestCallBase {
     /**
-     * Lazily-initialized Conversions API client, reused across sends in the
-     * same request (the access token is request-stable).
+     * Sends a list of events to the Conversions API. Fire-and-forget.
      *
-     * @var \FacebookPixelPlugin\FacebookAds\Api|null
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[] $events The events to send.
+     * @return void
      */
-    private $api = null;
-
-    /**
-     * Sends a list of events to the Conversions API.
-     *
-     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[] $events          The events to send.
-     * @param string|null                                                $test_event_code Optional test event code.
-     * @return array|null Result array with a 'success' key, or null if skipped.
-     */
-    public function send( $events, $test_event_code = null ) {
-        $pixel_id     = FacebookWordpressOptions::get_active_pixel_id();
-        $access_token = FacebookWordpressOptions::get_active_access_token();
-        $agent        = FacebookWordpressOptions::get_agent_string();
-
-        if ( self::is_open_bridge_event( $events ) ) {
-            $agent .= '_ob';
-        }
-
-        if ( empty( $pixel_id ) || empty( $access_token ) ) {
-            return null;
-        }
-
-        if ( ! FacebookCapiCircuitBreaker::is_send_allowed() ) {
-            return array(
-                'success' => false,
-                'error'   => array(
-                    'message' => 'Connection invalid (circuit open)',
-                    'code'    => 0,
-                ),
-            );
-        }
-
-        try {
-            if ( null === $this->api ) {
-                $this->api = Api::init( null, null, $access_token );
-            }
-
-            $request = ( new EventRequest( $pixel_id ) )
-                    ->setEvents( $events )
-                    ->setPartnerAgent( $agent );
-
-            if ( $test_event_code ) {
-                $request->setTestEventCode( $test_event_code );
-            }
-
-            $response = $request->execute();
-
-            FacebookCapiCircuitBreaker::record_success();
-
-            return array(
-                'success'         => true,
-                'events_received' => $response->getEventsReceived(),
-            );
-        } catch ( \Exception $e ) {
-            FacebookCapiCircuitBreaker::record_exception( $e );
-            // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            error_log( '[Facebook Pixel for WordPress] CAPI error: ' . $e->getMessage() );
-            error_log( $e->getTraceAsString() );
-            // phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            return array(
-                'success' => false,
-                'error'   => array(
-                    'message' => $e->getMessage(),
-                    'code'    => $e->getCode(),
-                ),
-            );
-        }
+    public function send( $events ) {
+        $this->call( $events );
     }
 
     /**
-     * Checks if the given event is an OpenBridge event.
+     * Suffixes the partner agent with '_ob' for OpenBridge events.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[] $events The events.
+     * @return string
+     */
+    protected function partner_agent( $events = array() ) {
+        $agent = parent::partner_agent();
+        if ( self::is_open_bridge_event( $events ) ) {
+            $agent .= '_ob';
+        }
+        return $agent;
+    }
+
+    /**
+     * Gates sending on the circuit breaker.
+     *
+     * @return bool
+     */
+    protected function can_call() {
+        return FacebookCapiCircuitBreaker::is_send_allowed();
+    }
+
+    /**
+     * Records the successful send with the circuit breaker.
+     *
+     * @param mixed $response The EventResponse.
+     * @return void
+     */
+    protected function handle_success( $response ) {
+        FacebookCapiCircuitBreaker::record_success();
+    }
+
+    /**
+     * Records the failure with the circuit breaker and logs it.
+     *
+     * @param \Exception $e The caught exception.
+     * @return void
+     */
+    protected function handle_error( \Exception $e ) {
+        FacebookCapiCircuitBreaker::record_exception( $e );
+        // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        error_log( '[Facebook Pixel for WordPress] CAPI error: ' . $e->getMessage() );
+        error_log( $e->getTraceAsString() );
+        // phpcs:enable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+    }
+
+    /**
+     * Checks if the given events are a single OpenBridge event.
      *
      * Determines whether the array contains exactly one event whose custom data
      * has a 'fb_integration_tracking' property set to 'wp-cloudbridge-plugin',

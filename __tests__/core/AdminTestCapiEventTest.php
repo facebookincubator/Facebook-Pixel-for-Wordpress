@@ -20,19 +20,20 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\AdminTestCapiEvent;
-use FacebookPixelPlugin\Core\Signals;
+use FacebookPixelPlugin\Core\AdminEventSender;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
  * AdminTestCapiEventTest class.
  *
- * Characterizes the admin "Test Events" endpoint (wp_ajax_send_capi_event) as a
- * behavior baseline for the upcoming refactor that offloads event structure to
- * EventFactory + the SDK objects. The contract that must not regress:
- *  - the posted payload is mapped to Event(s) and passed to Signals::send()
- *    (one event per data entry, with the right event name), and
- *  - the Signals::send() result is captured and returned to the admin panel —
- *    events_received on success, the error message on a non-success result.
+ * Characterizes the admin "Test Events" endpoint (wp_ajax_send_capi_event). The
+ * event structure is offloaded to EventFactory + the SDK objects. The contract
+ * that must not regress:
+ *  - the posted payload is mapped to Event(s) and passed to
+ *    AdminEventSender::send() (one event per data entry, right event name), and
+ *  - the AdminEventSender::send() result is captured and returned to the admin
+ *    panel — events_received on success, the error message on a non-success
+ *    result.
  *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
@@ -95,7 +96,7 @@ final class AdminTestCapiEventTest extends FacebookWordpressTestBase {
    * result, capturing the JSON response and the events handed to send().
    *
    * @param array $post          The $_POST payload.
-   * @param mixed $send_result   What Signals::send() should return.
+   * @param mixed $send_result   What AdminEventSender::send() should return.
    * @param bool  $nonce_valid   Whether wp_verify_nonce passes.
    * @param bool  $expect_send   Whether send() is expected to be called.
    *
@@ -128,10 +129,10 @@ final class AdminTestCapiEventTest extends FacebookWordpressTestBase {
       )
     );
 
-    $sent    = null;
-    $signals = \Mockery::mock( Signals::class );
+    $sent   = null;
+    $sender = \Mockery::mock( AdminEventSender::class );
     if ( $expect_send ) {
-      $signals->shouldReceive( 'send' )
+      $sender->shouldReceive( 'send' )
         ->andReturnUsing(
           function ( $events, $code = null ) use ( &$sent, $send_result ) {
             $sent = $events;
@@ -139,7 +140,7 @@ final class AdminTestCapiEventTest extends FacebookWordpressTestBase {
           }
         );
     } else {
-      $signals->shouldReceive( 'send' )->never();
+      $sender->shouldReceive( 'send' )->never();
     }
 
     $captured = null;
@@ -164,7 +165,7 @@ final class AdminTestCapiEventTest extends FacebookWordpressTestBase {
 
     $_POST = $post;
 
-    $obj = new AdminTestCapiEvent( $signals );
+    $obj = new AdminTestCapiEvent( $sender );
     try {
       $obj->send_capi_event();
     } catch ( \RuntimeException $e ) {

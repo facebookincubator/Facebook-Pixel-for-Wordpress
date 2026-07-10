@@ -107,7 +107,7 @@ class Signals {
         );
         $this->register();
         new ReleaseSignalsAjax( $this );
-        new AdminTestCapiEvent( $this );
+        new AdminTestCapiEvent( new AdminEventSender() );
         new ServerEventAsyncTask( $this );
 
         if ( $this->should_hold_signals() ) {
@@ -255,32 +255,33 @@ class Signals {
     }
 
     /**
-     * Sends events straight to the Conversions API. The facade entry point for
-     * one-off server sends (release flow, OpenBridge, CAPI event endpoint,
-     * async task) so callers never touch the sender directly.
+     * Sends events to the Conversions API. The facade entry point for server
+     * dispatch (release flow, OpenBridge, async task, integrations) so callers
+     * never touch the sender directly.
      *
      * Applies the before_conversions_api_event_sent filter and the consent gate
      * (when signals are held on the frontend the events are queued for browser
-     * release instead of being sent), then delegates the actual send.
+     * release instead of being sent), then hands off to the sender.
+     * Fire-and-forget: nothing is returned. (The admin "Test Events" path is
+     * handled separately by AdminEventSender, which reports its result.)
      *
      * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[] $events The events.
-     * @param string|null                                                $test_event_code Optional test code.
-     * @return array|null
+     * @return void
      */
-    public function send( $events, $test_event_code = null ) {
+    public function send( $events ) {
         $events = apply_filters( 'before_conversions_api_event_sent', $events );
         if ( empty( $events ) ) {
-            return null;
+            return;
         }
 
         if ( $this->should_suppress_frontend_send() ) {
             foreach ( $events as $queued_event ) {
                 FacebookSignalState::queue_event( $queued_event );
             }
-            return null;
+            return;
         }
 
-        return self::$sender->send( $events, $test_event_code );
+        self::$sender->send( $events );
     }
 
     /**

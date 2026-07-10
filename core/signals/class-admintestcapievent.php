@@ -34,25 +34,27 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  *
  * Admin "Test Events" endpoint (wp_ajax_send_capi_event). It is a thin
  * controller: read the admin-supplied inputs, map them to server Event(s) via
- * EventFactory, send them through Signals, and return the result to the admin
- * panel. The event structure lives in EventFactory / the SDK objects, not here;
- * a malformed event surfaces as a non-success result from the Conversions API.
+ * EventFactory, send them through the AdminEventSender, and return the result
+ * to the admin panel. The event structure lives in EventFactory / the SDK
+ * objects, not here; a malformed event surfaces as a non-success result from
+ * the Conversions API. The AdminEventSender deliberately bypasses the circuit
+ * breaker so a rejected test event never blocks real traffic.
  */
 class AdminTestCapiEvent {
     /**
-     * Shared Signals service.
+     * Sender for admin test events (circuit breaker bypassed).
      *
-     * @var Signals
+     * @var AdminEventSender
      */
-    private $signals;
+    private $sender;
 
     /**
      * Hook into WordPress's AJAX actions to handle sending a CAPI event.
      *
-     * @param Signals $signals Shared signals service.
+     * @param AdminEventSender $sender Sender for admin test events.
      */
-    public function __construct( Signals $signals ) {
-        $this->signals = $signals;
+    public function __construct( AdminEventSender $sender ) {
+        $this->sender = $sender;
         add_action(
             'wp_ajax_send_capi_event',
             array( $this, 'send_capi_event' )
@@ -63,8 +65,9 @@ class AdminTestCapiEvent {
      * Handles the admin "Test Events" request.
      *
      * Reads the posted inputs, maps them to server Event(s) via EventFactory,
-     * sends them through Signals, and returns the Conversions API result to the
-     * admin panel (events_received on success, the error message otherwise).
+     * sends them through the AdminEventSender, and returns the Conversions API
+     * result to the admin panel (events_received on success, the error message
+     * otherwise).
      */
     public function send_capi_event() {
         $nonce = isset( $_POST['nonce'] ) ?
@@ -141,7 +144,7 @@ class AdminTestCapiEvent {
             }
         }
 
-        $result = $this->signals->send( $events, $test_event_code );
+        $result = $this->sender->send( $events, $test_event_code );
 
         if ( $result && $result['success'] ) {
             wp_send_json_success(

@@ -1,6 +1,6 @@
 <?php
 /**
- * Facebook Pixel Plugin ServerEventSenderTest class.
+ * Facebook Pixel Plugin AdminEventSenderTest class.
  *
  * @package FacebookPixelPlugin
  */
@@ -19,17 +19,17 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
+use FacebookPixelPlugin\Core\AdminEventSender;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
-use FacebookPixelPlugin\Core\ServerEventSender;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
- * ServerEventSenderTest class.
+ * AdminEventSenderTest class.
  *
- * ServerEventSender is fire-and-forget: send() returns nothing, so these tests
- * assert its side effects (whether it attempts the API call) rather than a
- * return value.
+ * AdminEventSender sends admin "Test Events" and returns the result for the
+ * admin panel. Unlike ServerEventSender it never consults the circuit breaker,
+ * so a rejected test event cannot block real traffic.
  *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
@@ -38,20 +38,20 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * make sure tests are isolated.
  * Stop preserving global state from the parent process.
  */
-final class ServerEventSenderTest extends FacebookWordpressTestBase {
+final class AdminEventSenderTest extends FacebookWordpressTestBase {
   /**
    * A fresh sender for each test.
    *
-   * @var ServerEventSender
+   * @var AdminEventSender
    */
   private $sender;
 
   public function setUp(): void {
     parent::setUp();
-    $this->sender = new ServerEventSender();
+    $this->sender = new AdminEventSender();
   }
 
-  public function testSendDoesNotCallApiWhenNoCredentials() {
+  public function testSendReturnsErrorWhenNoCredentials() {
     self::mockFacebookWordpressOptions(
       array(
         'pixel_id'     => '',
@@ -62,32 +62,42 @@ final class ServerEventSenderTest extends FacebookWordpressTestBase {
     $api = \Mockery::mock( 'alias:FacebookPixelPlugin\FacebookAds\Api' );
     $api->shouldReceive( 'init' )->never();
 
-    $event = ( new Event() )->setEventName( 'Lead' );
-    $this->sender->send( array( $event ) );
+    $event  = ( new Event() )->setEventName( 'Lead' );
+    $result = $this->sender->send( array( $event ) );
 
-    $this->assertConditionsMet();
+    $this->assertFalse( $result['success'] );
+    $this->assertStringContainsString(
+      'configured',
+      $result['error']['message']
+    );
   }
 
-  public function testSendIsBlockedWhenCircuitOpen() {
+  public function testSendBypassesCircuitBreaker() {
     self::mockFacebookWordpressOptions();
 
-    // Fresh transient → circuit open → the sender must not attempt the call.
+    // Fresh transient → circuit would be open for ServerEventSender. The admin
+    // sender must ignore it and still attempt the call (init is reached).
     \WP_Mock::userFunction(
       'get_transient',
       array(
         'args'   => array(
           FacebookPluginConfig::CONNECTION_INVALID_TRANSIENT,
         ),
-        'return' => time() - 10,
+        'return' => time(),
       )
     );
 
     $api = \Mockery::mock( 'alias:FacebookPixelPlugin\FacebookAds\Api' );
-    $api->shouldReceive( 'init' )->never();
+    $api->shouldReceive( 'init' )
+      ->once()
+      ->andThrow( new \Exception( 'boom' ) );
 
-    $event = ( new Event() )->setEventName( 'Lead' );
-    $this->sender->send( array( $event ) );
+    $event  = ( new Event() )->setEventName( 'Lead' );
+    $result = $this->sender->send( array( $event ) );
 
+    // Reached the API (breaker bypassed) and surfaced the error to the caller.
+    $this->assertFalse( $result['success'] );
+    $this->assertEquals( 'boom', $result['error']['message'] );
     $this->assertConditionsMet();
   }
 }
