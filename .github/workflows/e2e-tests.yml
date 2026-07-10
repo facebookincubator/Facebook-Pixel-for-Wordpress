@@ -185,6 +185,8 @@ jobs:
           # Diagnostic: confirm the base pixel code actually renders on the homepage.
           echo "=== homepage pixel diagnostic ==="
           HOME_HTML=$(curl -s "$WORDPRESS_URL/")
+          echo "includeCapiIntegration present: $(echo "$HOME_HTML" | grep -c 'includeCapiIntegration')"
+          echo "openbridge/capig config: $(echo "$HOME_HTML" | grep -oE '\"capig\":\"?[01]\"?' | head -1)"
           if echo "$HOME_HTML" | grep -q "connect.facebook.net/en_US/fbevents.js"; then
             echo "✅ Meta Pixel base code present on homepage"
           else

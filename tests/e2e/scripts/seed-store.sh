@@ -68,6 +68,11 @@ update_option('facebook_business_extension_config', array(
   'facebook_is_fbe_installed' => '1',
 ));
 update_option('facebook_capi_integration_status', '1');
+// Keep PageView OUT of the CAPI events filter so CAPI PageView (via OpenBridge)
+// is enabled — this is the default, set explicitly for determinism.
+update_option('facebook_capi_integration_events_filter', 'Microdata,SubscribedButtonClick');
+// CAPI Gateway on (default) — required for the OpenBridge / optinMetaEnabledCapi path.
+update_option('facebook_capig', '1');
 
 // --- Customer user (matches WP_CUSTOMER_USERNAME used by global-setup) ---
 \$customer = get_user_by('login', '${CUSTOMER_USERNAME}');

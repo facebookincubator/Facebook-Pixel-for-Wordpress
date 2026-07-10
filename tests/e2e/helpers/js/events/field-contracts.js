@@ -55,11 +55,12 @@ const CUSTOM_DATA_BASE = { pixel: [], capi: [] };
 // Event-level overlays (only event-specific deltas)
 // -----------------------------------------------------------------------------
 const EVENT_OVERLAYS = {
-  // The base PageView pixel is client-only in this plugin: it carries no
-  // event_id and there is no server-side PageView, so it's Pixel-only (no dedup).
+  // PageView is dual-channel: with CAPI integration on (default) and PageView not
+  // in the events filter (default), OpenBridge forwards the browser PageView to
+  // CAPI server-side with a shared event_id for dedup.
   PageView: {
-    channels: ['pixel'],
-    custom_data: { pixel: [] },
+    channels: ['pixel', 'capi'],
+    custom_data: { pixel: [], capi: [] },
   },
 
   ViewContent: {
