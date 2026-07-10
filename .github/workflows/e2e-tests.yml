@@ -233,20 +233,24 @@ jobs:
           REQUIRE_REAL_BRAVE: '1'
           REQUIRE_REAL_OPERA: '1'
         run: |
-          set -x
+          # Run every project; don't abort on the first failure so we get a full
+          # per-project signal. Aggregate exit status at the end.
+          FAILED=""
+          run_project() { echo "::group::$*"; "$@"; local rc=$?; echo "::endgroup::"; [ $rc -eq 0 ] || FAILED="$FAILED"$'\n'"  - $*"; }
           # Headless-capable engines.
-          npx playwright test --project=chromium-wp-customer --workers=1
-          npx playwright test --project=chromium-wp-guest --workers=1
-          npx playwright test --project=chromium-wp-customer-classic-theme --workers=1
-          npx playwright test --project=chromium-wp-customer-block-theme --workers=1
-          npx playwright test --project=firefox-wp-customer --workers=1
-          npx playwright test --project=android-pixel-wp-customer --workers=1
-          npx playwright test --project=safari-ios-wp-customer --workers=1
+          run_project npx playwright test --project=chromium-wp-customer --workers=1
+          run_project npx playwright test --project=chromium-wp-guest --workers=1
+          run_project npx playwright test --project=chromium-wp-customer-classic-theme --workers=1
+          run_project npx playwright test --project=chromium-wp-customer-block-theme --workers=1
+          run_project npx playwright test --project=firefox-wp-customer --workers=1
+          run_project npx playwright test --project=android-pixel-wp-customer --workers=1
+          run_project npx playwright test --project=safari-ios-wp-customer --workers=1
           # Real Chrome-family channels need a display (headed under Xvfb).
-          xvfb-run --auto-servernum npx playwright test --project=chromium-privacy-sandbox-wp-customer --headed --workers=1
-          xvfb-run --auto-servernum npx playwright test --project=edge-wp-customer --headed --workers=1
-          xvfb-run --auto-servernum npx playwright test --project=brave-wp-customer --headed --workers=1
-          xvfb-run --auto-servernum npx playwright test --project=opera-wp-customer --headed --workers=1
+          run_project xvfb-run --auto-servernum npx playwright test --project=chromium-privacy-sandbox-wp-customer --headed --workers=1
+          run_project xvfb-run --auto-servernum npx playwright test --project=edge-wp-customer --headed --workers=1
+          run_project xvfb-run --auto-servernum npx playwright test --project=brave-wp-customer --headed --workers=1
+          run_project xvfb-run --auto-servernum npx playwright test --project=opera-wp-customer --headed --workers=1
+          if [ -n "$FAILED" ]; then echo "::error::Projects with failures:$FAILED"; exit 1; fi
 
       - name: PHP error gate
         if: always()

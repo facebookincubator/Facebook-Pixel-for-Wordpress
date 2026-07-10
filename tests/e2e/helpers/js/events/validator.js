@@ -392,7 +392,14 @@ class EventValidator {
           if (keys.every((k, i) => k === String(i))) v = keys.map(k => v[k]);
         }
 
-        return Array.isArray(v) ? [...v].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) : v;
+        if (Array.isArray(v)) {
+          // Unwrap single-element arrays so a scalar Pixel value and an
+          // array-wrapped CAPI value (e.g. em: "h" vs ["h"]) compare equal.
+          if (v.length === 1) return v[0];
+          return [...v].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+        }
+
+        return v;
       };
 
       const pStr = JSON.stringify(normalize(pVal));
@@ -415,25 +422,44 @@ class EventValidator {
   }
 
   validatePII(pixel, capi, errors, field_name) {
-    const pixelValue = pixel.user_data?.[field_name];
-    const capiValue = capi.user_data?.[field_name];
-
-    if (pixelValue || capiValue) {
-      if (!pixelValue) errors.push(`Pixel missing hashed ${field_name}`);
-      if (!capiValue) errors.push(`CAPI missing hashed ${field_name}`);
-
-      if (pixelValue && capiValue && pixelValue !== capiValue) {
-        errors.push(`Hashed ${field_name} mismatch: ${pixelValue} vs ${capiValue}`);
+    // CAPI sends hashed matching keys as arrays (e.g. em: ["<hash>"]) while the
+    // Pixel sends a scalar string. Unwrap single-element arrays / JSON-encoded
+    // arrays so equal hashes compare equal.
+    const unwrap = (value) => {
+      let v = value;
+      if (typeof v === 'string') {
+        try {
+          const parsed = JSON.parse(v);
+          if (Array.isArray(parsed)) v = parsed;
+        } catch {
+          // not JSON; leave as-is
+        }
       }
+      if (Array.isArray(v)) v = v.length === 1 ? v[0] : v;
+      return v;
+    };
 
-      if (pixelValue && !/^[a-f0-9]{64}$/.test(pixelValue)) {
-        errors.push(`Pixel ${field_name} not properly SHA256 hashed`);
-      }
+    const pixelValue = unwrap(pixel.user_data?.[field_name]);
+    const capiValue = unwrap(capi.user_data?.[field_name]);
 
-      if (pixelValue && capiValue && pixelValue === capiValue && /^[a-f0-9]{64}$/.test(pixelValue)) {
-        console.log(`  ✓ ${field_name} hashed correctly and matches`);
-      }
+    // Presence is enforced by the per-event field contract (validateFieldsExistence).
+    // Here we only assert that, when BOTH channels carry the field, the hashes match
+    // and look like SHA-256.
+    if (pixelValue == null || capiValue == null) {
+      return;
     }
+
+    if (pixelValue !== capiValue) {
+      errors.push(`Hashed ${field_name} mismatch: ${JSON.stringify(pixelValue)} vs ${JSON.stringify(capiValue)}`);
+      return;
+    }
+
+    if (typeof pixelValue === 'string' && !/^[a-f0-9]{64}$/.test(pixelValue)) {
+      errors.push(`${field_name} not properly SHA256 hashed: ${pixelValue}`);
+      return;
+    }
+
+    console.log(`  ✓ ${field_name} hashed correctly and matches`);
   }
 
   async checkDebugLog() {

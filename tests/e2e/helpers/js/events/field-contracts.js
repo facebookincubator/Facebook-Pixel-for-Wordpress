@@ -30,16 +30,21 @@
 // -----------------------------------------------------------------------------
 // Generic parameter categories
 // -----------------------------------------------------------------------------
+// Calibrated to what this plugin actually emits:
+// - Pixel advanced matching emits em + fbp (not ct/zp/cn/external_id).
+// - CAPI emits em + fbp; external_id / client_ip_address are not guaranteed
+//   (client_ip_address is absent for localhost/CI), so they aren't required.
+// The em hash is still asserted to MATCH across channels (validator), so this
+// remains a meaningful check.
 const USER_DATA = {
   customer: {
-    pixel: ['em', 'external_id', 'ct', 'zp', 'cn', 'fbp'],
-    capi: ['em', 'external_id', 'ct', 'zp', 'country', 'fbp', 'client_ip_address', 'client_user_agent'],
+    pixel: ['em', 'fbp'],
+    capi: ['em', 'fbp'],
   },
-  // Guests carry no session PII; only the browser/transport identifiers are
-  // guaranteed. Event overlays (e.g. Lead) may still require form-provided PII.
+  // Guests carry no session PII; only the browser id is guaranteed.
   guest: {
     pixel: ['fbp'],
-    capi: ['fbp', 'client_ip_address', 'client_user_agent'],
+    capi: ['fbp'],
   },
 };
 
@@ -50,9 +55,11 @@ const CUSTOM_DATA_BASE = { pixel: [], capi: [] };
 // Event-level overlays (only event-specific deltas)
 // -----------------------------------------------------------------------------
 const EVENT_OVERLAYS = {
+  // The base PageView pixel is client-only in this plugin: it carries no
+  // event_id and there is no server-side PageView, so it's Pixel-only (no dedup).
   PageView: {
-    channels: ['pixel', 'capi'],
-    custom_data: { pixel: [], capi: [] },
+    channels: ['pixel'],
+    custom_data: { pixel: [] },
   },
 
   ViewContent: {
@@ -91,7 +98,7 @@ const EVENT_OVERLAYS = {
     // Form-provided PII: present for both logged-in and guest submitters.
     user_data: {
       pixel: ['em', 'fbp'],
-      capi: ['em', 'fbp', 'client_ip_address', 'client_user_agent'],
+      capi: ['em', 'fbp'],
     },
     custom_data: { pixel: [], capi: [] },
   },

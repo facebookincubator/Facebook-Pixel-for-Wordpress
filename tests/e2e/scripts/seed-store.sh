@@ -109,6 +109,12 @@ if (function_exists('wc_get_product') && !get_page_by_path('testp', OBJECT, 'pro
   echo 'PRODUCT_ID=' . \$product->get_id() . "\n";
 }
 
+// --- Force wp_mail() success so Contact Form 7 reports mail_sent in CI ---
+// (no SMTP in the test env; the Lead event only fires on a 'mail_sent' status).
+\$mu_dir = defined('WPMU_PLUGIN_DIR') ? WPMU_PLUGIN_DIR : WP_CONTENT_DIR . '/mu-plugins';
+if (!is_dir(\$mu_dir)) { wp_mkdir_p(\$mu_dir); }
+file_put_contents(\$mu_dir . '/e2e-mailer.php', "<?php add_filter('pre_wp_mail', '__return_true');\n");
+
 // --- Contact Form 7 form + page for Lead tests ---
 if (class_exists('WPCF7_ContactForm')) {
   \$existing = get_posts(array('post_type' => 'wpcf7_contact_form', 'title' => 'E2E Lead Form', 'posts_per_page' => 1, 'post_status' => 'any'));
