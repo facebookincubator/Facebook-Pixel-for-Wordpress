@@ -21,6 +21,16 @@ set -euo pipefail
 : "${FB_ACCESS_TOKEN:?FB_ACCESS_TOKEN must be set (Meta CAPI access token)}"
 : "${WORDPRESS_PATH:?WORDPRESS_PATH must be set (path to the WordPress install)}"
 
+# Defensively strip whitespace: a secret pasted with a trailing newline/space
+# would otherwise make the pixel id fail ctype_digit() and the plugin would
+# inject no pixel at all. Pixel ids are all-digits; tokens have no whitespace.
+FB_PIXEL_ID="$(printf '%s' "$FB_PIXEL_ID" | tr -d '[:space:]')"
+FB_ACCESS_TOKEN="$(printf '%s' "$FB_ACCESS_TOKEN" | tr -d '[:space:]')"
+if ! printf '%s' "$FB_PIXEL_ID" | grep -Eq '^[0-9]+$'; then
+  echo "❌ FB_PIXEL_ID is not all digits after trimming — check the QA secret value." >&2
+  exit 1
+fi
+
 CUSTOMER_USERNAME="${WP_CUSTOMER_USERNAME:-customer}"
 CUSTOMER_PASSWORD="${WP_CUSTOMER_PASSWORD:-customerpass}"
 CUSTOMER_EMAIL="${WP_CUSTOMER_EMAIL:-customer@example.com}"
