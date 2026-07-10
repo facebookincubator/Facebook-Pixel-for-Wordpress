@@ -181,6 +181,13 @@ jobs:
             echo "::error::FB_PIXEL_ID is not a positive integer — the pixel will not inject. Check the QA secret for stray whitespace/characters."; exit 1
           fi
           curl -sf "$WORDPRESS_URL/product/testp/" >/dev/null && echo "✅ product page reachable"
+          # Confirm the Contact Form 7 Lead form actually renders (not "form not found").
+          if curl -s "$WORDPRESS_URL/e2e-lead/" | grep -q "wpcf7-form"; then
+            echo "✅ CF7 Lead form renders on /e2e-lead/"
+          else
+            echo "::warning::CF7 Lead form did NOT render on /e2e-lead/ — Lead test will fail."
+            curl -s "$WORDPRESS_URL/e2e-lead/" | grep -iE "contact form|wpcf7|not found" | head -5 || true
+          fi
 
           # Diagnostic: confirm the base pixel code actually renders on the homepage.
           echo "=== homepage pixel diagnostic ==="

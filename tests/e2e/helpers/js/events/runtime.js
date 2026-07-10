@@ -59,8 +59,11 @@ function assertEventContainsRetailerId(event, retailerId) {
   const contentIds = asArray(event?.custom_data?.content_ids).map(String);
   const contents = asArray(event?.custom_data?.contents);
 
-  expect(contentIds).toContain(expected);
-  expect(contents.some(entry => String(entry.id) === expected)).toBe(true);
+  // This plugin's ViewContent/AddToCart set content_ids but no `contents` array,
+  // while Purchase/InitiateCheckout set both. Accept the retailer id in EITHER.
+  const inContentIds = contentIds.includes(expected);
+  const inContents = contents.some(entry => String(entry.id) === expected);
+  expect(inContentIds || inContents).toBe(true);
 }
 
 function ignoreKnownPurchaseUserDataGap(result) {

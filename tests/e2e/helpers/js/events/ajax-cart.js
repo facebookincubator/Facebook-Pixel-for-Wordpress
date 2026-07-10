@@ -45,8 +45,10 @@ function getProductSlug(productUrl) {
   if (!productUrl) return null;
 
   try {
-    const parsed = new URL(productUrl);
-    const segments = parsed.pathname.split('/').filter(Boolean);
+    // TEST_PRODUCT_URL is typically a relative path (e.g. /product/testp/), which
+    // `new URL()` rejects without a base — parse the pathname directly.
+    const pathname = /^https?:\/\//i.test(productUrl) ? new URL(productUrl).pathname : productUrl;
+    const segments = pathname.split('?')[0].split('/').filter(Boolean);
     const productIdx = segments.findIndex(segment => segment === 'product');
     if (productIdx >= 0 && segments[productIdx + 1]) {
       return segments[productIdx + 1];

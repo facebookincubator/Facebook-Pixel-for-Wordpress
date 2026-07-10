@@ -131,12 +131,14 @@ if (class_exists('WPCF7_ContactForm')) {
     \$cf7 = WPCF7_ContactForm::get_template(array('title' => 'E2E Lead Form'));
     \$cf7->set_properties(array('form' => \$form_markup));
     \$form_id = \$cf7->save();
+    // Modern CF7 shortcodes resolve by hash; fall back to the numeric id.
+    \$form_ref = method_exists(\$cf7, 'hash') && \$cf7->hash() ? \$cf7->hash() : \$form_id;
     \$page_id = wp_insert_post(array(
       'post_title'   => 'E2E Lead',
       'post_name'    => 'e2e-lead',
       'post_status'  => 'publish',
       'post_type'    => 'page',
-      'post_content' => '[contact-form-7 id="' . \$form_id . '" title="E2E Lead Form"]',
+      'post_content' => '[contact-form-7 id="' . \$form_ref . '" title="E2E Lead Form"]',
     ));
     echo 'LEAD_FORM_ID=' . \$form_id . ' LEAD_PAGE=' . get_permalink(\$page_id) . "\n";
   }

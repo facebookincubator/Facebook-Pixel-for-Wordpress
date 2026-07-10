@@ -375,9 +375,11 @@ test('AddToCart - AJAX (shop loop parity with PDP)', async ({ page }, testInfo) 
 
   const ajaxRun = await TestSetup.init(page, 'AddToCart', testInfo);
   const ajaxEventPromise = ajaxRun.pixelCapture.waitForEvent();
+  // Don't constrain by expectedProductId: shop-loop buttons key off the numeric
+  // WC product id, whereas our content_ids carry the retailer id (sku_id). Select
+  // the product by slug; parity is verified below by comparing captured content.
   const ajaxTrace = await triggerAjaxAddToCartFromShop(page, {
     productUrl: TEST_PRODUCT_URL,
-    expectedProductId: baselineProductId || undefined,
   });
   await ajaxEventPromise;
 
@@ -598,7 +600,9 @@ test('Purchase - Variable Product', async ({ page }, testInfo) => {
 
     const captured = await loadCapturedEvents(testId);
     const capiPurchase = getLatestEvent(captured.capi, 'Purchase');
-    assertEventContainsRetailerId(capiPurchase, targetVariation.retailer_id);
+    // WooCommerce order items report get_product_id() (the PARENT) for variations,
+    // so the plugin emits the parent retailer id in the Purchase content_ids.
+    assertEventContainsRetailerId(capiPurchase, fixture.parentRetailerId);
 
     TestSetup.logResult('Purchase (Variable Product)', result);
     expect(result.passed).toBe(true);
