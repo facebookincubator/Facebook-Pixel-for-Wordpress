@@ -54,6 +54,15 @@ final class MockContactForm7 {
     }
 
     /**
+     * Returns the form id (real Contact Form 7 forms expose this).
+     *
+     * @return int The form id.
+     */
+    public function id() {
+        return 1;
+    }
+
+    /**
      * Adds a form tag to the mock plugin.
      *
      * @param string $basetype The base type of the tag.

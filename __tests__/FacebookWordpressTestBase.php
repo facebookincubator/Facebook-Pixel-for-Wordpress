@@ -32,6 +32,9 @@ use WP_Mock\Tools\Constraints\ExpectationsMet;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 use FacebookPixelPlugin\Core\FacebookSignalState;
+use FacebookPixelPlugin\Core\FacebookSignalsBase;
+use FacebookPixelPlugin\Core\Capi;
+use FacebookPixelPlugin\Core\Pixel;
 
 /**
  * FacebookWordpressTestBase class.
@@ -50,6 +53,77 @@ abstract class FacebookWordpressTestBase extends TestCase {
      * @var mixed
      */
     protected $mocked_options;
+
+    /**
+     * Events sent to CAPI (via capi->send) during a test.
+     *
+     * @var \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[]
+     */
+    protected $captured_events = array();
+
+    /**
+     * Events enqueued to the browser Pixel (via pixel->enqueue) during a test —
+     * the non-AJAX footer-render path.
+     *
+     * @var \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[]
+     */
+    protected $enqueued_events = array();
+
+    /**
+     * Footer markup registered with the Pixel (via register_ajax_dom_element) —
+     * the AJAX listener / cart-fragment container.
+     *
+     * @var string[]
+     */
+    protected $registered_ajax_dom = array();
+
+    /**
+     * Builds a signals double for driving instance-based integrations.
+     *
+     * generate_event() runs for real (so a real Event is built and normalized).
+     * The Pixel/CAPI collaborators are stubbed and record what the integration
+     * hands them so tests can assert the same behavior the legacy tests did:
+     *  - capi->send()               -> $this->captured_events (server event)
+     *  - pixel->enqueue()           -> $this->enqueued_events (footer-render path)
+     *  - pixel->register_ajax_dom_element() -> $this->registered_ajax_dom (listener)
+     *
+     * @return FacebookSignalsBase The signals double.
+     */
+    protected function make_signals() {
+        $this->captured_events     = array();
+        $this->enqueued_events     = array();
+        $this->registered_ajax_dom = array();
+
+        $signals = \Mockery::mock( FacebookSignalsBase::class )->makePartial();
+
+        $capi = \Mockery::mock( Capi::class );
+        $capi->shouldReceive( 'send' )->andReturnUsing(
+            function ( $events ) {
+                foreach ( $events as $event ) {
+                    $this->captured_events[] = $event;
+                }
+            }
+        );
+        $signals->capi = $capi;
+
+        $pixel = \Mockery::mock( Pixel::class );
+        $pixel->shouldReceive( 'enqueue' )->andReturnUsing(
+            function ( $event ) {
+                $this->enqueued_events[] = $event;
+            }
+        );
+        $pixel->shouldReceive( 'register_ajax_dom_element' )->andReturnUsing(
+            function ( $markup ) {
+                $this->registered_ajax_dom[] = $markup;
+            }
+        );
+        $pixel->shouldReceive( 'generate_script_for_event' )->andReturn(
+            "fbq('track', 'Lead', {});"
+        );
+        $signals->pixel = $pixel;
+
+        return $signals;
+    }
 
     /**
      * Sets up the environment for each test.

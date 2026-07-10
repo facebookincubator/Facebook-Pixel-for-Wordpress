@@ -2,15 +2,9 @@
 /**
  * Facebook Pixel Plugin FacebookWordpressWPForms class.
  *
- * This file contains the main logic for FacebookWordpressWPForms.
+ * This file contains the tracking integration for WPForms.
  *
  * @package FacebookPixelPlugin
- */
-
-/**
- * Define FacebookWordpressWPForms class.
- *
- * @return void
  */
 
 /*
@@ -29,499 +23,259 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\FacebookWordPressOptions;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\PixelRenderer;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
+use FacebookPixelPlugin\Utils\StringUtils;
+use FacebookPixelPlugin\Utils\WordPressUtils;
+use Override;
 
 /**
- * FacebookWordpressWPForms class.
+ * Tracking integration for the WPForms plugin.
  */
-class FacebookWordpressWPForms extends FacebookWordpressIntegrationBase {
-    const PLUGIN_FILE   = 'wpforms-lite/wpforms.php';
-    const TRACKING_NAME = 'wpforms-lite';
+class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
 
+    const PLUGIN_FILE      = 'wpforms-lite/wpforms.php';
+    const INTEGRATION_NAME = 'wpforms-lite';
+
+    const AJAX_PIXEL_CONTAINER = 'wp_form_pxl_container';
     /**
-     * Hooks into WPForms to inject the Pixel code.
+     * Initialize the integration.
      *
-     * This method adds an action to the 'wpforms_process_before' hook,
-     * which will trigger the 'trackEvent' method. It ensures that
-     * the Pixel code is injected during the form processing stage.
+     * @return void
      */
-    public static function inject_pixel_code() {
-        // Tracks server and browser events when a submission is processed.
+    protected function set_up_tracking() {
+        if ( FacebookPluginUtils::is_internal_user() ) {
+            return;
+        }
         add_action(
             'wpforms_process_before',
-            array( __CLASS__, 'trackEvent' ),
+            array( $this, 'capture_submitted_form' ),
             20,
             2
         );
 
-        // Enriches AJAX responses (success or redirect) with pixel code.
-        add_filter(
-            'wpforms_ajax_submit_success_response',
-            array( __CLASS__, 'injectLeadEventAjax' ),
-            20,
-            3
-        );
-        add_filter(
-            'wpforms_ajax_submit_redirect',
-            array( __CLASS__, 'injectLeadEventAjax' ),
-            20,
-            3
-        );
-
-        // Adds a front-end listener that fires pixel code returned in AJAX responses.
-        add_action(
-            'wp_footer',
-            array( __CLASS__, 'injectAjaxListener' ),
-            9
-        );
+        $this->register_ajax_container( $this->get_listener_js() );
     }
 
     /**
-     * Tracks a server-side event for a form submission in WPForms.
+     * Captures a submitted form and delivers the Lead event (AJAX submits via
+     * the footer listener, non-AJAX via the footer flush).
      *
-     * This method is hooked into the 'wpforms_process_before' action, which is
-     * fired by WPForms before a form is processed.
-     * It then calls the track method
-     * on the FacebookServerSideEvent instance, which generates a lead event for
-     * the form submission.
-     *
-     * If the user is an internal user, the method returns without tracking
-     * any event.
-     *
-     * @param array $entry The form entry data.
-     * @param array $form_data The form data.
-     *
+     * @param mixed ...$args The WPForms submit-hook arguments (entries, form
+     *                       data).
      * @return void
      */
-    public static function trackEvent( $entry, $form_data ) {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
+    public function capture_submitted_form( ...$args ) {
+        $event = $this->generate_event( self::EVENT_NAME, $this->extract_lead_data( ...$args ) );
+
+        // WPForms fires this hook for both AJAX and non-AJAX submits.
+        $is_ajax = wp_doing_ajax();
+        if ( $is_ajax ) {
+            $this->deliver( $event, self::BROWSER_AJAX, self::SERVER_SYNC, array( $event ) );
+        } else {
+            $this->deliver( $event );
         }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'Lead',
-            array( __CLASS__, 'readFormData' ),
-            array( $entry, $form_data ),
-            self::TRACKING_NAME,
-            true
-        );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        add_action(
-            'wp_footer',
-            array( __CLASS__, 'injectLeadEvent' ),
-            20
-        );
     }
 
     /**
-     * Injects lead event code into the footer.
+     * Injects the Lead pixel code into the WPForms AJAX response so the footer
+     * listener can eval it.
      *
-     * This method retrieves tracked events from the FacebookServerSideEvent
-     * instance and renders them into pixel code using the PixelRenderer.
-     * The resulting code is printed into the footer section of the page.
-     * If the user is an internal user, the method returns without injecting
-     * any code.
-     *
+     * @param array $args Arguments from deliver(); $args[0] is the Lead event.
+     * @throws \Exception When the request is not AJAX or no event is provided.
      * @return void
      */
-    public static function injectLeadEvent() {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
+    #[Override]
+    protected function deliver_ajax_browser_event( $args ) {
+        $is_ajax = wp_doing_ajax();
+        if ( ! $is_ajax ) {
+            throw new \Exception( 'This request is not AJAX.' );
         }
-
-        $events     =
-            FacebookServerSideEvent::get_instance()->get_tracked_events();
-        $pixel_code = PixelRenderer::render( $events, self::TRACKING_NAME );
-
-        printf(
-            '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-          ',
-            $pixel_code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        );
-    }
-
-    /**
-     * Add pixel code into AJAX success/redirect responses.
-     *
-     * @param array $response  Existing AJAX response payload.
-     * @param int   $form_id   Form ID (provided by WPForms).
-     * @param mixed $extra     Unused extra parameter (URL or form data).
-     *
-     * @return array Modified response containing fb_pxl_code when available.
-     */
-    public static function injectLeadEventAjax( $response, $form_id = null, $extra = null ) {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return $response;
+        if ( empty( $args ) ) {
+            throw new \Exception( '$args cannot be empty.' );
         }
-
-        $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
-        if ( empty( $events ) ) {
-            return $response;
-        }
-
-        $response['fb_pxl_code'] = PixelRenderer::render(
-            $events,
-            self::TRACKING_NAME,
-            false // Return raw fbq calls; they will be eval'd on the client.
-        );
-
-        return $response;
-    }
-
-    /**
-     * Outputs a JS listener that evaluates fb_pxl_code from WPForms AJAX responses.
-     *
-     * This covers the default WPForms AJAX path where the page is not reloaded
-     * and no wp_footer hook is executed after submission.
-     *
-     * @return void
-     */
-    public static function injectAjaxListener() {
-        ?>
-        <!-- Meta Pixel Event Code -->
-        <script type='text/javascript'>
-        (function ( $ ) {
-            if ( ! $ || typeof document === 'undefined' ) {
-                return;
+        $event        = $args[0];
+        $pixel_code   = $this->signals->pixel->generate_script_for_event( $event, false );
+        $response_key = self::AJAX_PIXEL_CONTAINER;
+        WordPressUtils::register_filter_hooks(
+            array( 'wpforms_ajax_submit_success_response', 'wpforms_ajax_submit_redirect' ),
+            function ( $response ) use ( $pixel_code, $response_key ) {
+                return $this->add_tracking_code_to_ajax_response( $response, $pixel_code, $response_key );
             }
-            // WPForms triggers this jQuery event and passes the AJAX response object.
-            $( document ).on( 'wpformsAjaxSubmitSuccess', function ( event, data ) {
-                if ( data && data.data && data.data.fb_pxl_code ) {
-                    try {
-                        new Function( data.data.fb_pxl_code )();
-                    } catch ( e ) {
-                        console && console.warn && console.warn( 'Meta Pixel eval failed', e );
+        );
+    }
+
+    /**
+     * Returns the WPForms listener JavaScript: on wpformsAjaxSubmitSuccess it
+     * hands the response object to the shared fbHandleResponse() helper.
+     *
+     * @return string The listener JavaScript.
+     */
+    private function get_listener_js() {
+        $response_key = self::AJAX_PIXEL_CONTAINER;
+        return <<<JS
+        (function () {
+            function fbHandleResponse(response) {
+                var code = response && response['{$response_key}'];
+                if (!code) {
+                    return;
+                }
+                try {
+                    new Function(code)();
+                } catch (e) {
+                    if (window.console && console.warn) {
+                        console.warn('Meta Pixel eval failed. Please check if your pixel is connected.', e);
                     }
                 }
-            } );
-        })( window.jQuery );
-        </script>
-        <!-- End Meta Pixel Event Code -->
-        <?php
+            }
+            if (window.jQuery) {
+                window.jQuery(document).on('wpformsAjaxSubmitSuccess', function (event, data) {
+                    if (data) {
+                        fbHandleResponse(data.data);
+                    }
+                });
+            }
+        })();
+        JS;
     }
 
     /**
-     * Reads the form submission data and extracts user information.
+     * Reads the form id from the plugin submit-hook arguments.
      *
-     * This method processes the form entry and form
-     * data to extract user-related
-     * information such as email, first name, last name,
-     * and phone number. It also
-     * retrieves the address data, including city,
-     * state, country, and postal code.
-     *
-     * If either the form entry or form data is
-     * empty, an empty array is returned.
-     *
-     * @param array $entry The form entry data.
-     * @param array $form_data The form schema data.
-     *
-     * @return array An associative array
-     *               containing user and address information
-     *               extracted from the form entry.
+     * @param mixed ...$args The WPForms submit-hook arguments.
+     * @return mixed The form identifier.
      */
-    public static function readFormData( $entry, $form_data ) {
-        if ( empty( $entry ) || empty( $form_data ) ) {
+    protected function get_form_id( ...$args ) {
+        $form_data = $args[1];
+        return $form_data['id'];
+    }
+
+    /**
+     * Yields the submitted form parameters as normalized rows.
+     *
+     * @param mixed ...$args The WPForms submit-hook arguments (entries, form
+     *                       data).
+     * @return \Generator|array Rows of ['name'=>, 'type'=>, 'value'=>, 'format'=>,
+     *                          'scheme'=>], or an empty array when arguments are
+     *                          missing.
+     */
+    protected function get_form_param_iterator( ...$args ) {
+        if ( empty( $args ) || empty( $args[0] ) || empty( $args[1] ) ) {
             return array();
         }
-
-        $name = self::getName( $entry, $form_data );
-
-        $event_data = array(
-            'email'      => self::getEmail( $entry, $form_data ),
-            'first_name' => ! empty( $name ) ? $name[0] : null,
-            'last_name'  => ! empty( $name ) ? $name[1] : null,
-            'phone'      => self::getPhone( $entry, $form_data ),
-        );
-
-        $event_data = array_merge(
-            $event_data,
-            self::getAddress( $entry, $form_data )
-        );
-
-        return $event_data;
-    }
-
-    /**
-     * Retrieves the phone number from the form data.
-     *
-     * This method extracts the phone number field from the provided form entry
-     * and form data.
-     *
-     * @param array $entry The form entry data.
-     * @param array $form_data The form schema data.
-     *
-     * @return string|null The phone number, or null if no phone field is found.
-     */
-    private static function getPhone( $entry, $form_data ) {
-        $phone = self::getField( $entry, $form_data, 'phone' );
-        if ( ! is_null( $phone ) && '' !== $phone ) {
-            return $phone;
-        }
-
-        return self::getTextFieldByLabel(
-            $entry,
-            $form_data,
-            array( 'phone', 'tel', 'telephone', 'mobile' )
-        );
-    }
-
-    /**
-     * Retrieves the email address from the form data.
-     *
-     * This method extracts the email address field from the provided form entry
-     * and form data.
-     *
-     * @param array $entry The form entry data.
-     * @param array $form_data The form schema data.
-     *
-     * @return string|null The email address, or null
-     *                     if no email field is found.
-     */
-    private static function getEmail( $entry, $form_data ) {
-        return self::getField( $entry, $form_data, 'email' );
-    }
-
-    /**
-     * Retrieves the address data from the form data.
-     *
-     * This method extracts the address data (city, state, country, and zip)
-     * from the provided form entry
-     * and form data. The country is sent in ISO format.
-     *
-     * Note that if the address scheme is 'us' and country
-     * is not present, 'US' is used as the country.
-     *
-     * @param array $entry The form entry data.
-     * @param array $form_data The form schema data.
-     *
-     * @return array The address data.
-     */
-    private static function getAddress( $entry, $form_data ) {
-        $address_field_data = self::getField( $entry, $form_data, 'address' );
-        if ( is_null( $address_field_data ) ) {
-            // Fall back to individual text fields when the Address fancy field
-            // is not available in WPForms Lite.
-            return self::getAddressFromTextFields( $entry, $form_data );
-        }
-
-        $address_data = array();
-        if ( isset( $address_field_data['city'] ) ) {
-            $address_data['city'] = $address_field_data['city'];
-        }
-
-        if ( isset( $address_field_data['state'] ) ) {
-            $address_data['state'] = $address_field_data['state'];
-        }
-
-        if ( isset( $address_field_data['country'] ) ) {
-            $address_data['country'] = $address_field_data['country'];
+        $entries   = $args[0];
+        $form_data = $args[1];
+        if ( ! isset( $entries['fields'] ) ) {
+            return;
         } else {
-            $address_scheme = self::getAddressScheme( $form_data );
-            if ( 'us' === $address_scheme ) {
-                $address_data['country'] = 'US';
+            foreach ( $entries['fields'] as $field_id => $field_value ) {
+                if ( ! isset( $form_data['fields'][ $field_id ] ) ) {
+                    continue;
+                }
+                if ( empty( $field_value ) ) {
+                    continue;
+                }
+                $label  = $this->get_if_isset( $form_data['fields'][ $field_id ], 'label' );
+                $name   = empty( $label ) ? '' : strtolower( trim( $label ) );
+                $type   = $this->get_if_isset( $form_data['fields'][ $field_id ], 'type' );
+                $scheme = $this->get_if_isset( $form_data['fields'][ $field_id ], 'scheme' );
+                $format = $this->get_if_isset( $form_data['fields'][ $field_id ], 'format' );
+                yield self::get_iterator_yield_output( $name, $type, $field_value, 'format', $format, 'scheme', $scheme );
             }
         }
-
-        if ( isset( $address_field_data['postal'] ) ) {
-            $address_data['zip'] = $address_field_data['postal'];
-        }
-
-        return $address_data;
     }
 
     /**
-     * Retrieves the user's name from the form data.
+     * Returns an array value by key when set, otherwise null.
      *
-     * This method extracts the name field from the provided form entry
-     * and form data. It supports two formats:
-     * - 'simple': where the name is a single string,
-     * split into first and last name.
-     * - 'first-last': where the name is provided as separate
-     * 'first' and 'last' fields.
-     *
-     * @param array $entry The form entry data.
-     * @param array $form_data The form schema data.
-     *
-     * @return array|null An array containing the first and
-     *                    last name, or null if no name field is found.
+     * @param array  $input      The array to read from.
+     * @param string $param_name The key to look up.
+     * @return mixed The value when set, otherwise null.
      */
-    private static function getName( $entry, $form_data ) {
-        if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
-            return null;
+    private static function get_if_isset( $input, $param_name ) {
+        if ( isset( $input[ $param_name ] ) ) {
+            return $input[ $param_name ];
         }
+        return null;
+    }
 
-        $entries = $entry['fields'];
-        foreach ( $form_data['fields'] as $field ) {
-            if ( 'name' === $field['type'] ) {
-                if ( 'simple' === $field['format'] ) {
-                    return ServerEventFactory::split_name(
-                        $entries[ $field['id'] ]
-                    );
-                } elseif ( 'first-last' === $field['format'] ) {
-                    return array(
-                        $entries[ $field['id'] ]['first'],
-                        $entries[ $field['id'] ]['last'],
-                    );
+    /**
+     * Hard-coded extraction used when no mapping is configured for the form.
+     *
+     * @param iterable $form_param_iterator Rows of ['name'=>, 'type'=>, 'value'=>,
+     *                                      'format'=>, 'scheme'=>].
+     * @return array Normalized lead data keyed by Lead parameter name.
+     */
+    protected function extract_lead_data_fallback( $form_param_iterator ) {
+        $result = array();
+        foreach ( $form_param_iterator as $param ) {
+            $name   = $param['name'];
+            $type   = $param['type'];
+            $value  = $param['value'];
+            $format = $param['format'];
+            $scheme = $param['scheme'];
+
+            if ( 'name' === $type ) {
+                if ( 'simple' === $format ) {
+                    $temp                 = StringUtils::split_name( $value );
+                    $result['first_name'] = $temp[0];
+                    $result['last_name']  = $temp[1];
+                } elseif ( 'first-last' === $format ) {
+                    $result['first_name'] = $value['first'];
+                    $result['last_name']  = $value['last'];
+                }
+            } elseif ( 'email' === $type ) {
+                $result['email'] = $value;
+            } elseif ( 'phone' === $type ) {
+                if ( ! empty( $value ) ) {
+                    $result['phone'] = $value;
+                }
+            } elseif ( 'address' === $type ) {
+                if ( ! empty( $value ) ) {
+                    $address_inputs = $this->get_address_param_breakdown( $value );
+                    $result         = array_merge( $result, $address_inputs );
+                    if ( ! isset( $result['country'] ) && ! empty( $scheme ) && 2 === strlen( $scheme ) ) {
+                        $result['country'] = strtoupper( $scheme );
+                    }
+                }
+            } elseif ( in_array( $name, array( 'city', 'town' ), true ) && ! empty( $value ) ) {
+                $result['city'] = $value;
+            } elseif ( in_array( $name, array( 'state', 'province', 'region', 'county' ), true ) && ! empty( $value ) ) {
+                $result['state'] = $value;
+            } elseif ( in_array( $name, array( 'zip', 'postal', 'postcode', 'zip code' ), true ) && ! empty( $value ) ) {
+                $result['zip'] = $value;
+            } elseif ( in_array( $name, array( 'country', 'country/region' ), true ) && ! empty( $value ) ) {
+                $result['country'] = $value;
+            }
+            if ( ! empty( $name ) && in_array( $name, array( 'phone', 'tel', 'telephone', 'mobile' ), true ) ) {
+                $result['phone'] = $value;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Breaks an address field value into individual city/state/zip/country
+     * lead parameters.
+     *
+     * @param array $address_field_value The address field value, keyed by
+     *                                   address component.
+     * @return array Normalized address lead data keyed by Lead parameter name.
+     */
+    private function get_address_param_breakdown( $address_field_value ) {
+        $result = array();
+        $fn     = function ( $input_param_name, $input, $result_param_name = null ) use ( &$result ) {
+            if ( isset( $input[ $input_param_name ] ) ) {
+                if ( empty( $result_param_name ) ) {
+                    $result[ $input_param_name ] = $input[ $input_param_name ];
+                } else {
+                    $result[ $result_param_name ] = $input[ $input_param_name ];
                 }
             }
-        }
-
-        return null;
-    }
-
-    /**
-     * Retrieves the value of a specific field type from the form entry data.
-     *
-     * This method searches through the form schema data to find a field of
-     * the specified type and returns the corresponding value from the form
-     * entry data.
-     *
-     * @param array  $entry The form entry data.
-     * @param array  $form_data The form schema data.
-     * @param string $type The type of the field to retrieve.
-     *
-     * @return mixed|null The value of the field, or null if no
-     *                    field of the specified type is found.
-     */
-    private static function getField( $entry, $form_data, $type ) {
-        if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
-            return null;
-        }
-
-        foreach ( $form_data['fields'] as $field ) {
-            if ( $field['type'] === $type ) {
-                return $entry['fields'][ $field['id'] ];
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Retrieves a text field value by matching its label.
-     *
-     * WPForms Lite users often rely on generic "text" fields instead of
-     * the premium/fancy types. This helper lets us recover values for
-     * phone/address-like fields when their labels match expected names.
-     *
-     * @param array    $entry   The form entry data.
-     * @param array    $form_data The form schema data.
-     * @param string[] $labels Candidate labels (case-insensitive).
-     * @return string|null
-     */
-    private static function getTextFieldByLabel( $entry, $form_data, $labels ) {
-        if ( empty( $form_data['fields'] ) || empty( $entry['fields'] ) ) {
-            return null;
-        }
-
-        $normalized_labels = array_map( array( self::class, 'normalizeLabel' ), $labels );
-
-        foreach ( $form_data['fields'] as $field ) {
-            if ( 'text' !== $field['type'] || empty( $field['label'] ) ) {
-                continue;
-            }
-
-            $label = self::normalizeLabel( $field['label'] );
-            if ( in_array( $label, $normalized_labels, true ) ) {
-                $value = isset( $entry['fields'][ $field['id'] ] )
-                    ? $entry['fields'][ $field['id'] ]
-                    : null;
-
-                return '' !== $value ? $value : null;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Builds address data from individual text fields when the Address field
-     * isn't present.
-     *
-     * @param array $entry     The form entry data.
-     * @param array $form_data The form schema data.
-     *
-     * @return array
-     */
-    private static function getAddressFromTextFields( $entry, $form_data ) {
-        $address_data = array();
-
-        $address_data['city'] = self::getTextFieldByLabel(
-            $entry,
-            $form_data,
-            array( 'city', 'town' )
-        );
-
-        $address_data['state'] = self::getTextFieldByLabel(
-            $entry,
-            $form_data,
-            array( 'state', 'province', 'region', 'county' )
-        );
-
-        $address_data['country'] = self::getTextFieldByLabel(
-            $entry,
-            $form_data,
-            array( 'country', 'country/region' )
-        );
-
-        $address_data['zip'] = self::getTextFieldByLabel(
-            $entry,
-            $form_data,
-            array( 'zip', 'postal', 'postcode', 'zip code' )
-        );
-
-        // Remove null/empty values so we don't send sparse keys.
-        return array_filter(
-            $address_data,
-            function ( $value ) {
-                return ! is_null( $value ) && '' !== $value;
-            }
-        );
-    }
-
-    /**
-     * Normalizes labels for case-insensitive comparison.
-     *
-     * @param string $label The label to normalize.
-     * @return string
-     */
-    private static function normalizeLabel( $label ) {
-        return strtolower( trim( $label ) );
-    }
-
-    /**
-     * Retrieves the address scheme from the form data.
-     *
-     * This method searches through the form schema data to find the first
-     * 'address' field and returns its 'scheme' value, which is either 'us' or
-     * 'international'. If no address field is found, or if the address field
-     * does not have a scheme, this method returns null.
-     *
-     * @param array $form_data The form schema data.
-     *
-     * @return string|null The address scheme, or
-     *                     null if no address field is found.
-     */
-    private static function getAddressScheme( $form_data ) {
-        foreach ( $form_data['fields'] as $field ) {
-            if ( 'address' === $field['type'] ) {
-                if ( isset( $field['scheme'] ) ) {
-                    return $field['scheme'];
-                }
-            }
-        }
-        return null;
+        };
+        $fn( 'city', $address_field_value );
+        $fn( 'state', $address_field_value );
+        $fn( 'country', $address_field_value );
+        $fn( 'postal', $address_field_value, 'zip' );
+        return $result;
     }
 }

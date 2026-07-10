@@ -2,15 +2,9 @@
 /**
  * Facebook Pixel Plugin FacebookWordpressContactForm7 class.
  *
- * This file contains the main logic for FacebookWordpressContactForm7.
+ * This file contains the lead-tracking integration for Contact Form 7.
  *
  * @package FacebookPixelPlugin
- */
-
-/**
- * Define FacebookWordpressContactForm7 class.
- *
- * @return void
  */
 
 /*
@@ -30,243 +24,187 @@ namespace FacebookPixelPlugin\Integration;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\FacebookWordPressOptions;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\PixelRenderer;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
+use FacebookPixelPlugin\Utils\StringUtils;
+use FacebookPixelPlugin\Utils\WordPressUtils;
+use Override;
 
 /**
- * FacebookWordpressContactForm7 class.
+ * Lead-tracking integration for the Contact Form 7 plugin.
  */
-class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
-    const PLUGIN_FILE   = 'contact-form-7/wp-contact-form-7.php';
-    const TRACKING_NAME = 'contact-form-7';
+class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
+
+    const PLUGIN_FILE      = 'contact-form-7/wp-contact-form-7.php';
+    const INTEGRATION_NAME = 'contact-form-7';
+
+    const AJAX_PIXEL_CONTAINER = 'contact_form_7_pxl_container';
 
     /**
-     * Add hooks to inject the Contact Form 7 tracking code.
-     *
-     * Adds the following hooks:
-     *  - wpcf7_submit: Triggers a server-side event when the form is submitted.
-     *  - wp_footer: Injects the mail sent listener.
-     */
-    public static function inject_pixel_code() {
-        add_action(
-            'wpcf7_submit',
-            array( __CLASS__, 'trackServerEvent' ),
-            10,
-            2
-        );
-        add_action(
-            'wp_footer',
-            array( __CLASS__, 'injectMailSentListener' ),
-            10,
-            2
-        );
-    }
-
-    /**
-     * Injects a JavaScript listener for the 'wpcf7mailsent' event,
-     * which is triggered when a form is submitted.
-     *
-     * The listener executes the Pixel code sent in the response
-     * via the 'fb_pxl_code' key.
+     * Initialize the integration.
      *
      * @return void
      */
-    public static function injectMailSentListener() {
-        ob_start();
-    ?>
-    <!-- Meta Pixel Event Code -->
-    <script type='text/javascript'>
-        document.addEventListener( 'wpcf7mailsent', function( event ) {
-        if( "fb_pxl_code" in event.detail.apiResponse){
-            eval(event.detail.apiResponse.fb_pxl_code);
-        }
-        }, false );
-    </script>
-    <!-- End Meta Pixel Event Code -->
-        <?php
-        $listener_code = ob_get_clean();
-        echo $listener_code; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-    }
-
-    /**
-     * Triggers a server-side event when a form is submitted.
-     *
-     * If the user is an internal user or the form submission failed,
-     * the event is not tracked.
-     *
-     * @param array $form The form object.
-     * @param array $result The form submission result.
-     *
-     * @return array The submission result.
-     */
-    public static function trackServerEvent( $form, $result ) {
-        $is_internal_user = FacebookPluginUtils::is_internal_user();
-        $submit_failed    = 'mail_sent' !== $result['status'];
-        if ( $is_internal_user || $submit_failed ) {
-            return $result;
-        }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'Lead',
-            array( __CLASS__, 'readFormData' ),
-            array( $form ),
-            self::TRACKING_NAME,
-            true
-        );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        add_action(
-            'wpcf7_feedback_response',
-            array( __CLASS__, 'injectLeadEvent' ),
-            20,
-            2
-        );
-
-        return $result;
-    }
-
-    /**
-     * Injects the Pixel code into the Contact Form 7 response.
-     *
-     * Hooks into the `wpcf7_feedback_response` action and checks if the form
-     * is submitted successfully and if the user is not an internal user.
-     * If conditions are met, it renders the Pixel code using the `PixelRenderer` class
-     * and appends the code to the form response.
-     *
-     * @param array $response The Contact Form 7 response.
-     * @param array $result   The form data.
-     *
-     * @return array The modified Contact Form 7 response.
-     */
-    public static function injectLeadEvent( $response, $result ) {
+    protected function set_up_tracking() {
+        // TODO: Make it configurable so internal users can choose to track/not track their actions.
         if ( FacebookPluginUtils::is_internal_user() ) {
-            return $response;
+            return;
         }
+        add_action( 'wpcf7_submit', array( $this, 'capture_submitted_form' ), 10, 2 );
 
-            $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
-        if ( count( $events ) === 0 ) {
-            return $response;
-        }
-        $event_id  = $events[0]->getEventId();
-        $fbq_calls = PixelRenderer::render(
-            $events,
-            self::TRACKING_NAME,
-            false
-        );
-        $code      = sprintf(
-            "
-    if( typeof window.pixelLastGeneratedLeadEvent === 'undefined'
-    || window.pixelLastGeneratedLeadEvent != '%s' ){
-    window.pixelLastGeneratedLeadEvent = '%s';
-    %s
-    }
-        ",
-            $event_id,
-            $event_id,
-            $fbq_calls
-        );
-
-        $response['fb_pxl_code'] = $code;
-        return $response;
+        $this->register_ajax_container( $this->get_listener_js() );
     }
 
     /**
-     * Reads the form data from the Contact Form 7 submission.
+     * Captures a successful Contact Form 7 submission and delivers a Lead event.
      *
-     * @param object $form The Contact Form 7 form object.
-     *
-     * @return array The form data in the format expected
-     * by the `FacebookServerSideEvent` class.
+     * @param \WPCF7_ContactForm $form   The submitted contact form.
+     * @param array              $result The submission result data.
+     * @return void
      */
-    public static function readFormData( $form ) {
-        if ( empty( $form ) ) {
-            return array();
+    public function capture_submitted_form( $form, $result ) {
+        $submit_failed = 'mail_sent' !== $result['status'];
+        if ( $submit_failed ) {
+            return;
         }
 
-        $form_tags = $form->scan_form_tags();
-        $name      = self::getName( $form_tags );
+        // A submission that mail_sent should still be tracked even if reading the
+        // form fields fails; fall back to an empty payload so the Lead fires.
+        try {
+            $lead_data = $this->extract_lead_data( $form );
+        } catch ( \Exception $e ) {
+            $lead_data = array();
+        }
 
-        return array(
-            'email'      => self::getEmail( $form_tags ),
-            'first_name' => $name[0],
-            'last_name'  => $name[1],
-            'phone'      => self::getPhone( $form_tags ),
+        $event = $this->generate_event( static::EVENT_NAME, $lead_data );
+
+        // Contact Form 7 submits over AJAX, so the browser event rides the response.
+        $is_ajax = wp_doing_ajax();
+        if ( $is_ajax ) {
+            $this->deliver( $event, self::BROWSER_AJAX, self::SERVER_SYNC, array( $event ) );
+        } else {
+            $this->deliver( $event );
+        }
+    }
+
+    /**
+     * Injects the Lead pixel code into the Contact Form 7 AJAX feedback response
+     * so the footer listener can eval it.
+     *
+     * @param array $args Arguments from deliver(); $args[0] is the Lead event.
+     * @throws \Exception When the request is not AJAX or no event is provided.
+     * @return void
+     */
+    #[Override]
+    protected function deliver_ajax_browser_event( $args ) {
+        if ( ! wp_doing_ajax() ) {
+            throw new \Exception( 'This request is not AJAX.' );
+        }
+        if ( empty( $args ) ) {
+            throw new \Exception( '$args cannot be empty.' );
+        }
+        $event        = $args[0];
+        $pixel_code   = $this->signals->pixel->generate_script_for_event( $event, false );
+        $response_key = self::AJAX_PIXEL_CONTAINER;
+        WordPressUtils::register_filter_hooks(
+            array( 'wpcf7_feedback_response' ),
+            function ( $response ) use ( $pixel_code, $response_key ) {
+                return $this->add_tracking_code_to_ajax_response( $response, $pixel_code, $response_key );
+            }
         );
     }
 
     /**
-     * Retrieves the email address from the form submission.
+     * Returns the Contact Form 7 listener JavaScript: on wpcf7mailsent it hands
+     * the API response object to the shared fbHandleResponse() helper.
      *
-     * @param array $form_tags The form tags.
-     *
-     * @return string|null The email address, or null if no email tag found.
+     * @return string The listener JavaScript.
      */
-    private static function getEmail( $form_tags ) {
-        if ( empty( $form_tags ) ) {
-            return null;
-        }
+    private function get_listener_js() {
+        $response_key = self::AJAX_PIXEL_CONTAINER;
+        return <<<JS
+        (function () {
+            function fbHandleResponse(response) {
+                var code = response && response['{$response_key}'];
+                if (!code) {
+                    return;
+                }
+                try {
+                    new Function(code)();
+                } catch (e) {
+                    if (window.console && console.warn) {
+                        console.warn('Meta Pixel eval failed. Please check if your pixel is connected.', e);
+                    }
+                }
+            }
+            document.addEventListener('wpcf7mailsent', function (event) {
+                if (event.detail) {
+                    fbHandleResponse(event.detail.apiResponse);
+                }
+            }, false);
+        })();
+        JS;
+    }
 
-        foreach ( $form_tags as $tag ) {
-            if ( 'email' === $tag->basetype && isset( $_POST[ $tag->name ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-                return sanitize_text_field( wp_unslash( $_POST[ $tag->name ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    /**
+     * Reads the form id from the plugin submit-hook arguments.
+     *
+     * @param mixed ...$args The plugin submit-hook arguments.
+     * @return mixed The Contact Form 7 form identifier.
+     */
+    protected function get_form_id( ...$args ) {
+        $form = $args[0];
+        return $form->id();
+    }
+
+    /**
+     * Yields the submitted form fields as normalized parameter rows.
+     *
+     * @param mixed ...$args The plugin submit-hook arguments.
+     * @return \Generator Normalized form-parameter rows.
+     */
+    protected function get_form_param_iterator( ...$args ) {
+        $form = $args[0];
+        foreach ( $form->scan_form_tags() as $tag ) {
+            $tag_name = $tag->name;
+            $value    = WordPressUtils::get_from_post( $tag->name );
+
+            if ( empty( $value ) ) {
+                continue;
+            }
+            yield self::get_iterator_yield_output(
+                $tag_name,
+                $tag->basetype,
+                $value
+            );
+        }
+    }
+
+    /**
+     * Hard-coded extraction of Lead data used when no mapping is configured.
+     *
+     * @param iterable $form_param_iterator Normalized form-parameter rows.
+     * @return array Normalized lead data keyed by Lead parameter name.
+     */
+    protected function extract_lead_data_fallback( $form_param_iterator ) {
+        $result = array();
+        foreach ( $form_param_iterator as $form_param ) {
+            if ( empty( $form_param ) ) {
+                continue;
+            }
+            $type  = $form_param['type'];
+            $value = $form_param['value'];
+
+            if ( 'text' === $type ) {
+                if ( strpos( strtolower( $form_param['name'] ), 'name' ) !== false ) {
+                    $name                 = StringUtils::split_name( $value );
+                    $result['first_name'] = $name[0];
+                    $result['last_name']  = $name[1];
+                }
+            } elseif ( 'tel' === $type ) {
+                $result['phone'] = $value;
+            } elseif ( 'email' === $type ) {
+                $result['email'] = $value;
             }
         }
-
-        return null;
-    }
-
-    /**
-     * Retrieves the first and last name from the form submission.
-     *
-     * @param array $form_tags The form tags.
-     *
-     * @return array|null An array containing the first and
-     * last name, or null if no name tag found.
-     */
-    private static function getName( $form_tags ) {
-        if ( empty( $form_tags ) ) {
-            return null;
-        }
-
-        foreach ( $form_tags as $tag ) {
-            if ( 'text' === $tag->basetype
-            && strpos( strtolower( $tag->name ), 'name' ) !== false ) {
-                return ServerEventFactory::split_name(
-                    sanitize_text_field(
-                        wp_unslash( $_POST[ $tag->name ] ?? null ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
-                    )
-                );
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Retrieves the phone number from the form submission.
-     *
-     * @param array $form_tags The form tags.
-     *
-     * @return string|null The phone number, or null if no phone tag found.
-     */
-    private static function getPhone( $form_tags ) {
-        if ( empty( $form_tags ) ) {
-            return null;
-        }
-
-        foreach ( $form_tags as $tag ) {
-            if ( 'tel' === $tag->basetype ) {
-                return isset( $_POST[ $tag->name ] ) ? // phpcs:ignore WordPress.Security.NonceVerification.Missing
-                sanitize_text_field(
-                    wp_unslash( $_POST[ $tag->name ] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
-                ) : null;
-            }
-        }
-
-        return null;
+        return $result;
     }
 }

@@ -310,22 +310,51 @@ class ServerEventFactory {
      * @param array $data Data extracted by the integration.
      * @return array
      */
+    /**
+     * Maps the normalized (friendly) field names produced by the integration
+     * classes to their AAM user-data field codes. This is the single source of
+     * truth for which extracted keys are treated as customer-matching user_data
+     * (hashed) versus falling through to custom_data. Keep additions here.
+     *
+     * @var array<string,string>
+     */
+    const USER_DATA_FIELD_MAP = array(
+        'email'         => AAMSettingsFields::EMAIL,
+        'first_name'    => AAMSettingsFields::FIRST_NAME,
+        'last_name'     => AAMSettingsFields::LAST_NAME,
+        'phone'         => AAMSettingsFields::PHONE,
+        'state'         => AAMSettingsFields::STATE,
+        'country'       => AAMSettingsFields::COUNTRY,
+        'city'          => AAMSettingsFields::CITY,
+        'zip'           => AAMSettingsFields::ZIP_CODE,
+        'gender'        => AAMSettingsFields::GENDER,
+        'date_of_birth' => AAMSettingsFields::DATE_OF_BIRTH,
+        'external_id'   => AAMSettingsFields::EXTERNAL_ID,
+    );
+
+    /**
+     * The recognized friendly user-data field names (keys of
+     * USER_DATA_FIELD_MAP). Any extracted field not in this list is routed to
+     * custom_data rather than user_data.
+     *
+     * @return string[]
+     */
+    public static function get_user_data_field_names() {
+        return array_keys( self::USER_DATA_FIELD_MAP );
+    }
+
+    /**
+     * Splits a flat event-data array into AAM-normalized user_data and the
+     * remaining custom_data, using USER_DATA_FIELD_MAP to decide which keys are
+     * customer-matching user data.
+     *
+     * @param array $data The flat event data keyed by friendly field name.
+     * @return array A two-element array: [ $user_data, $custom_data ].
+     */
     private static function split_user_data_and_custom_data( $data ) {
         $user_data        = array();
         $custom_data      = array();
-        $key_to_aam_field = array(
-            'email'         => AAMSettingsFields::EMAIL,
-            'first_name'    => AAMSettingsFields::FIRST_NAME,
-            'last_name'     => AAMSettingsFields::LAST_NAME,
-            'phone'         => AAMSettingsFields::PHONE,
-            'state'         => AAMSettingsFields::STATE,
-            'country'       => AAMSettingsFields::COUNTRY,
-            'city'          => AAMSettingsFields::CITY,
-            'zip'           => AAMSettingsFields::ZIP_CODE,
-            'gender'        => AAMSettingsFields::GENDER,
-            'date_of_birth' => AAMSettingsFields::DATE_OF_BIRTH,
-            'external_id'   => AAMSettingsFields::EXTERNAL_ID,
-        );
+        $key_to_aam_field = self::USER_DATA_FIELD_MAP;
         foreach ( $data as $key => $value ) {
             if ( isset( $key_to_aam_field[ $key ] ) ) {
                 $user_data[ $key_to_aam_field[ $key ] ] = $value;

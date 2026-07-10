@@ -84,6 +84,10 @@ class FacebookForWordpress {
     FacebookParamBuilder::server_setup();
 
     add_action( 'init', array( $this, 'register_pixel_injection' ), 0 );
+
+    // Initialize the third-party plugin integrations.
+    add_action( 'init', array( $this, 'initialize_integrations' ), 0 );
+
     add_action( 'parse_request', array( $this, 'handle_events_request' ), 0 );
 
     $this->register_settings_page();
@@ -137,6 +141,24 @@ class FacebookForWordpress {
     public function register_pixel_injection() {
     $injection_obj = new FacebookWordpressPixelInjection();
     $injection_obj->inject();
+    }
+
+    /**
+     * Initializes the third-party plugin integrations.
+     *
+     * Replaces the removed FacebookPluginConfig::integration_config() and the
+     * legacy integration loop in FacebookWordpressPixelInjection::inject(). This
+     * should instantiate the new *Integration classes (e.g.
+     * FacebookWordpressContactForm7, FacebookWordpressFormidableForm,
+     * FacebookWordpressWooCommerce, ...) with an injected FacebookSignalsBase
+     * and call each one's initialize() method.
+     *
+     * @throws \Exception Always, until this is implemented.
+     * @return void
+     */
+    public function initialize_integrations() {
+        // TODO: Instantiate and initialize the new integration classes.
+        throw new \Exception( 'Not Implemented' );
     }
 
 

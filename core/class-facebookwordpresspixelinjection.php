@@ -71,12 +71,6 @@ class FacebookWordpressPixelInjection {
                 'wp_body_open',
                 array( $this, 'inject_pixel_noscript_code' )
             );
-            foreach (
-                FacebookPluginConfig::integration_config() as $key => $value
-                ) {
-            $class_name = 'FacebookPixelPlugin\\Integration\\' . $value;
-            $class_name::inject_pixel_code();
-            }
             add_action(
                 'wp_footer',
                 array( $this, 'send_pending_events' )

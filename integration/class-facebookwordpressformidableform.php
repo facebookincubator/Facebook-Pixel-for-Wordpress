@@ -2,15 +2,9 @@
 /**
  * Facebook Pixel Plugin FacebookWordpressFormidableForm class.
  *
- * This file contains the main logic for FacebookWordpressFormidableForm.
+ * This file contains the lead-tracking integration for Formidable Forms.
  *
  * @package FacebookPixelPlugin
- */
-
-/**
- * Define FacebookWordpressFormidableForm class.
- *
- * @return void
  */
 
 /*
@@ -29,290 +23,144 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\FacebookWordPressOptions;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\PixelRenderer;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
 
 /**
- * FacebookWordpressFormidableForm class.
+ * Lead-tracking integration for the Formidable Forms plugin.
  */
-class FacebookWordpressFormidableForm extends FacebookWordpressIntegrationBase {
-  const PLUGIN_FILE   = 'formidable/formidable.php';
-  const TRACKING_NAME = 'formidable-lite';
+class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
+
+    const PLUGIN_FILE      = 'formidable/formidable.php';
+    const INTEGRATION_NAME = 'formidable-lite';
 
     /**
-     * Injects pixel code for the Formidable Form plugin.
-     *
-     * This method hooks into the 'frm_after_create_entry' action, which is
-     * fired by the Formidable Form plugin after a form entry is created. It
-     * then calls the trackServerEvent method, which generates a lead event
-     * for the form submission.
+     * Initialize the integration.
      *
      * @return void
      */
-    public static function inject_pixel_code() {
-        add_action(
-            'frm_after_create_entry',
-            array( __CLASS__, 'trackServerEvent' ),
-            20,
-            2
-        );
-    }
-
-    /**
-     * Tracks a server-side event for a form submission in Formidable Form.
-     *
-     * This method is hooked into the 'frm_after_create_entry' action, which is
-     * fired by the Formidable Form plugin after a form entry is created. It
-     * then calls the track method on the FacebookServerSideEvent instance,
-     * which generates a lead event for the form submission.
-     *
-     * @param int $entry_id The ID of the form entry.
-     * @param int $form_id The ID of the form.
-     *
-     * @return void
-     */
-    public static function trackServerEvent( $entry_id, $form_id ) {
+    protected function set_up_tracking() {
         if ( FacebookPluginUtils::is_internal_user() ) {
             return;
         }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'Lead',
-            array( __CLASS__, 'readFormData' ),
-            array( $entry_id ),
-            self::TRACKING_NAME,
-            true
-        );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        add_action(
-            'wp_footer',
-            array( __CLASS__, 'injectLeadEvent' ),
-            20
-        );
+        add_action( 'frm_after_create_entry', array( $this, 'capture_submitted_form' ), 20, 2 );
     }
 
     /**
-     * Injects lead event code into the footer.
+     * Captures a created Formidable Forms entry and sends a Lead event.
      *
-     * This method retrieves tracked events from the FacebookServerSideEvent
-     * instance and renders them into pixel code using the PixelRenderer.
-     * The resulting code is printed into the footer section of the page.
-     * If the user is an internal user, the method returns without injecting
-     * any code.
-     *
+     * @param int   $entry_id The created entry identifier.
+     * @param mixed $form_id  The form identifier.
      * @return void
      */
-    public static function injectLeadEvent() {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
-        }
+    public function capture_submitted_form( $entry_id, $form_id ) {
 
-        $events = FacebookServerSideEvent::get_instance()->get_tracked_events();
-        $code   = PixelRenderer::render( $events, self::TRACKING_NAME );
-
-        printf(
-            '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-          ',
-            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        $event = $this->signals->generate_event(
+            static::EVENT_NAME,
+            $this->extract_lead_data( $form_id, $entry_id ),
+            static::INTEGRATION_NAME
         );
+
+        $this->signals->capi->send( array( $event ) );
+
+        $this->signals->pixel->enqueue( $event );
     }
 
     /**
-     * Reads form data for a given entry ID.
+     * Reads the form id from the plugin submit-hook arguments.
      *
-     * This method retrieves the entry values from Formidable
-     * Forms using the provided
-     * entry ID. It extracts specific user information such as
-     * email, first name,
-     * last name, and phone, and combines this information with address data.
-     *
-     * @param int $entry_id The ID of the form entry.
-     * @return array An associative array containing user and
-     *               address information,
-     *               or an empty array if the entry ID is
-     *               empty or no data is found.
+     * @param mixed ...$args The plugin submit-hook arguments.
+     * @return mixed The Formidable form identifier.
      */
-    public static function readFormData( $entry_id ) {
-    if ( empty( $entry_id ) ) {
-        return array();
+    protected function get_form_id( ...$args ) {
+        return $args[0];
     }
 
-        $entry_values =
-        IntegrationUtils::get_formidable_forms_entry_values( $entry_id );
-
+    /**
+     * Yields the submitted form fields as normalized parameter rows.
+     *
+     * @param mixed ...$args The plugin submit-hook arguments.
+     * @return \Generator Normalized form-parameter rows.
+     * @throws \Exception When the Formidable FrmEntryValues class is unavailable.
+     */
+    protected function get_form_param_iterator( ...$args ) {
+        if ( ! class_exists( 'FrmEntryValues' ) ) {
+            throw new \Exception();
+        }
+        $entry_id     = $args[1];
+        $entry_values = new \FrmEntryValues( $entry_id );
         $field_values = $entry_values->get_field_values();
-        if ( ! empty( $field_values ) ) {
-            $user_data    = array(
-                'email'      => self::getEmail( $field_values ),
-                'first_name' => self::getFirstName( $field_values ),
-                'last_name'  => self::getLastName( $field_values ),
-                'phone'      => self::getPhone( $field_values ),
+
+        if ( empty( $field_values ) ) {
+            return;
+        }
+        foreach ( $field_values as $field_value ) {
+            $field = $field_value->get_field();
+            yield self::get_iterator_yield_output(
+                $field->name,
+                $field->type,
+                $field_value->get_saved_value(),
+                'description',
+                $field->description
             );
-            $address_data = self::getAddressInformation( $field_values );
-            return array_merge( $user_data, $address_data );
         }
-
-        return array();
     }
 
     /**
-     * Retrieves the email address from the form data.
+     * Hard-coded extraction of Lead data used when no mapping is configured.
      *
-     * @param array $field_values An associative array of field values.
-     * @return string|null The email address, or null if
-     * no email field is found.
+     * @param iterable $form_param_iterator Normalized form-parameter rows.
+     * @return array Normalized lead data keyed by Lead parameter name.
      */
-    private static function getEmail( $field_values ) {
-        return self::getFieldValueByType( $field_values, 'email' );
-    }
-
-    /**
-     * Retrieves the first name from the form data.
-     *
-     * This method extracts the first name field from the provided field values.
-     *
-     * @param array $field_values An associative array of field values.
-     * @return string|null The first name, or null if no first
-     * name field is found.
-     */
-    private static function getFirstName( $field_values ) {
-        return self::getFieldValue( $field_values, 'text', 'Name', 'First' );
-    }
-
-    /**
-     * Retrieves the last name from the form data.
-     *
-     * This method extracts the last name field from the provided field values.
-     *
-     * @param array $field_values An associative array of field values.
-     * @return string|null The last name, or null if no
-     * last name field is found.
-     */
-    private static function getLastName( $field_values ) {
-        return self::getFieldValue( $field_values, 'text', 'Last', 'Last' );
-    }
-
-    /**
-     * Retrieves the phone number from the form data.
-     *
-     * This method extracts the phone field from the provided field values.
-     *
-     * @param array $field_values An associative array of field values.
-     * @return string|null The phone number, or null if no phone field is found.
-     */
-    private static function getPhone( $field_values ) {
-        return self::getFieldValueByType( $field_values, 'phone' );
-    }
-
-    /**
-     * Retrieves address information from the form data.
-     *
-     * This method extracts address information
-     * (city, state, country, and zip code)
-     * from the provided field values. It returns an
-     * associative array containing
-     * the extracted address information, or an empty
-     * array if no address information
-     * is found.
-     *
-     * @param array $field_values An associative array of field values.
-     * @return array An associative array containing address information.
-     */
-    private static function getAddressInformation( $field_values ) {
-        $address_saved_value = self::getFieldValueByType(
-            $field_values,
-            'address'
-        );
-        $address_data        = array();
-        if ( $address_saved_value ) {
-            if ( isset( $address_saved_value['city'] ) ) {
-            $address_data['city'] = $address_saved_value['city'];
+    protected function extract_lead_data_fallback( $form_param_iterator ) {
+        $result = array();
+        foreach ( $form_param_iterator as $form_param ) {
+            if ( empty( $form_param ) ) {
+                continue;
             }
-            if ( isset( $address_saved_value['state'] ) ) {
-                $address_data['state'] = $address_saved_value['state'];
-            }
-            if (
-            isset( $address_saved_value['country'] )
-            && strlen( $address_saved_value['country'] ) === 2
-            ) {
-                $address_data['country'] = $address_saved_value['country'];
-            }
-            if ( isset( $address_saved_value['zip'] ) ) {
-                $address_data['zip'] = $address_saved_value['zip'];
+            $name        = $form_param['name'];
+            $type        = $form_param['type'];
+            $value       = $form_param['value'];
+            $description = isset( $form_param['description'] ) ? $form_param['description'] : '';
+
+            if ( 'email' === $type ) {
+                $result['email'] = $value;
+            } elseif ( 'phone' === $type ) {
+                $result['phone'] = $value;
+            } elseif ( 'text' === $type ) {
+                if ( 'Last' === $name && 'Last' === $description ) {
+                    $result['last_name'] = $value;
+                } elseif ( 'Name' === $name && 'First' === $description ) {
+                    $result['first_name'] = $value;
+                }
+            } elseif ( 'address' === $type ) {
+                $result = array_merge( $result, $this->get_address_param_breakdown( $value ) );
             }
         }
-        return $address_data;
+        return $result;
     }
 
     /**
-     * Retrieves the saved value of a specific field type
-     * from the given field values.
+     * Breaks an address field value into its individual Lead parameters.
      *
-     * This method iterates through the provided field values to find a field
-     * that matches the specified type. If a matching field is found, it returns
-     * the saved value of that field. If no matching field
-     * is found, it returns null.
-     *
-     * @param array  $field_values An array of field values.
-     * @param string $type The type of the field to retrieve the value for.
-     * @return mixed|null The saved value of the field,
-     * or null if no matching field is found.
+     * @param array $address_field_value The address field value, keyed by
+     *                                   'city', 'state', 'country' and 'zip'.
+     * @return array Normalized address data keyed by Lead parameter name.
      */
-    private static function getFieldValueByType( $field_values, $type ) {
-        foreach ( $field_values as $field_value ) {
-            $field = $field_value->get_field();
-            if ( $field->type === $type ) {
-            return $field_value->get_saved_value();
-            }
+    private function get_address_param_breakdown( $address_field_value ) {
+        $result = array();
+        $value  = $address_field_value;
+        if ( isset( $value['city'] ) ) {
+            $result['city'] = $value['city'];
         }
-
-        return null;
-    }
-
-    /**
-     * Retrieves the saved value of a field that matches the given criteria.
-     *
-     * This method iterates through the provided field
-     * values to find a field that
-     * matches the specified type, name, and description.
-     * If a matching field is found,
-     * it returns the saved value of that field. If no
-     * matching field is found, it returns
-     * null.
-     *
-     * @param array  $field_values An array of field values.
-     * @param string $type The type of the field to retrieve the value for.
-     * @param string $name The name of the field to retrieve the value for.
-     * @param string $description The description of the
-     * field to retrieve the value for.
-     * @return mixed|null The saved value of the field,
-     * or null if no matching field is found.
-     */
-    private static function getFieldValue(
-        $field_values,
-        $type,
-        $name,
-        $description
-    ) {
-        foreach ( $field_values as $field_value ) {
-            $field = $field_value->get_field();
-            if ( $field->type === $type &&
-            $field->name === $name &&
-            $field->description === $description ) {
-            return $field_value->get_saved_value();
-            }
+        if ( isset( $value['state'] ) ) {
+            $result['state'] = $value['state'];
         }
-
-        return null;
+        if ( isset( $value['country'] ) && 2 === strlen( $value['country'] ) ) {
+            $result['country'] = $value['country'];
+        }
+        if ( isset( $value['zip'] ) ) {
+            $result['zip'] = $value['zip'];
+        }
+        return $result;
     }
 }

@@ -2,15 +2,9 @@
 /**
  * Facebook Pixel Plugin FacebookWordpressWooCommerce class.
  *
- * This file contains the main logic for FacebookWordpressWooCommerce.
+ * This file contains the tracking integration for WooCommerce.
  *
  * @package FacebookPixelPlugin
- */
-
-/**
- * Define FacebookWordpressWooCommerce class.
- *
- * @return void
  */
 
 /*
@@ -29,188 +23,141 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\PixelRenderer;
+use FacebookPixelPlugin\Utils\WordPressUtils;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content;
+use FacebookPixelPlugin\Integration\Helpers\WooCommerceIntegrationHelper;
+use Override;
 
 /**
- * FacebookWordpressWooCommerce class.
+ * Tracking integration for the WooCommerce plugin.
  */
-class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
-    const PLUGIN_FILE   =
-    'facebook-for-woocommerce/facebook-for-woocommerce.php';
-    const TRACKING_NAME = 'woocommerce';
+class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
 
-    const FB_ID_PREFIX = 'wc_post_id_';
+    const PLUGIN_FILE      = 'woocommerce/woocommerce.php';
+    const INTEGRATION_NAME = 'woocommerce';
 
-    const DIV_ID_FOR_AJAX_PIXEL_EVENTS = 'fb-pxl-ajax-code';
-
+    const FB_ID_PREFIX         = 'wc_post_id_';
+    const AJAX_PIXEL_CONTAINER = 'fb-pxl-ajax-code';
     /**
-     * Injects Facebook Pixel events for WooCommerce.
-     *
-     * This method sets up WordPress actions to inject Facebook Pixel events
-     * for different stages of the WooCommerce process, only if the
-     * Facebook for WooCommerce plugin is not active.
-     *
-     * - InitiateCheckout: Injects pixel event after checkout form.
-     * - AddToCart: Tracks add to cart actions.
-     * - Purchase: Fires pixel event on purchase completion.
-     * - ViewContent: Tracks product page views.
-     * - AJAX: Adds a footer div for AJAX-triggered events.
-     *
-     * Hooks are added with a priority of 40, and the add to cart event
-     * includes four parameters.
+     * Registers the WordPress action hooks used to track WooCommerce events
+     * (initiate checkout, add to cart, purchase and view content). Tracking is
+     * skipped for internal users and when Facebook for WooCommerce is active.
      *
      * @return void
      */
-    public static function inject_pixel_code() {
-        if ( ! self::isFacebookForWooCommerceActive() ) {
-            // InitiateCheckout events for classic checkout.
-            add_action(
-                'woocommerce_after_checkout_form',
-                array( __CLASS__, 'trackInitiateCheckout' ),
-                40
-            );
-            // InitiateCheckout events for block-based checkout.
-            add_action(
-                'woocommerce_blocks_checkout_enqueue_data',
-                array( __CLASS__, 'trackInitiateCheckout' )
-            );
-
-            add_action(
-                'woocommerce_add_to_cart',
-                array( __CLASS__, 'trackAddToCartEvent' ),
-                40,
-                4
-            );
-
-            add_action(
-                'woocommerce_thankyou',
-                array( __CLASS__, 'trackPurchaseEvent' ),
-                40
-            );
-
-            add_action(
-                'woocommerce_payment_complete',
-                array( __CLASS__, 'trackPurchaseEvent' ),
-                40
-            );
-
-            add_action(
-                'woocommerce_after_single_product',
-                array( __CLASS__, 'trackViewContentEvent' ),
-                40
-            );
-
-            add_action(
-                'wp_footer',
-                array( __CLASS__, 'addDivForAjaxPixelEvent' )
-            );
-        }
-    }
-
-    /**
-     * Injects a hidden div with an id of
-     * 'fb-pxl-ajax-code' into the page footer.
-     * This div is used to inject pixel events via AJAX requests.
-     */
-    public static function addDivForAjaxPixelEvent() {
-        echo wp_kses(
-            self::getDivForAjaxPixelEvent(),
-            array(
-                'div' => array(
-                    'id' => array(),
-                ),
-            )
-        );
-    }
-
-    /**
-     * Generates a div element with a specific ID for
-     * AJAX-triggered pixel events.
-     *
-     * This method returns a div element with the ID defined
-     * by DIV_ID_FOR_AJAX_PIXEL_EVENTS.
-     * The function allows for optional content to be included inside the div.
-     *
-     * @param string $content Optional content to be placed inside the div.
-     * @return string HTML div element as a string.
-     */
-    public static function getDivForAjaxPixelEvent( $content = '' ) {
-        return "<div id='" . self::DIV_ID_FOR_AJAX_PIXEL_EVENTS . "'>"
-        . $content . '</div>';
-    }
-
-    /**
-     * Injects a ViewContent event into the page, but only if the user is not an
-     * internal user (i.e. an admin user).
-     *
-     * The event is only injected if a valid product
-     * object can be retrieved from
-     * the current post ID. If not, the method simply exits.
-     *
-     * The ViewContent event is generated by calling
-     * the createViewContentEvent method
-     * and passing in the product object as an argument.
-     * The event is then tracked
-     * using the FacebookServerSideEvent singleton,
-     * and the pixel code is enqueued
-     * for output.
-     *
-     * @return void
-     */
-    public static function trackViewContentEvent() {
+    protected function set_up_tracking() {
         if ( FacebookPluginUtils::is_internal_user() ) {
             return;
         }
 
+        if ( self::is_facebook_for_woocommerce_active() ) {
+            return;
+        }
+
+        $this->signals->pixel->register_ajax_dom_element( sprintf( "<div id='%s'></div>", esc_attr( self::AJAX_PIXEL_CONTAINER ) ) );
+
+        // InitiateCheckout events for classic checkout.
+        add_action(
+            'woocommerce_after_checkout_form',
+            array( $this, 'track_initiate_checkout_event' ),
+            40
+        );
+        // InitiateCheckout events for block-based checkout.
+        add_action(
+            'woocommerce_blocks_checkout_enqueue_data',
+            array( $this, 'track_initiate_checkout_event' )
+        );
+
+        add_action(
+            'woocommerce_add_to_cart',
+            array( $this, 'track_add_to_cart_event' ),
+            40,
+            4
+        );
+
+        add_action(
+            'woocommerce_thankyou',
+            array( $this, 'track_purchase_event' ),
+            40
+        );
+
+        add_action(
+            'woocommerce_payment_complete',
+            array( $this, 'track_purchase_event' ),
+            40
+        );
+
+        add_action(
+            'woocommerce_after_single_product',
+            array( $this, 'track_view_content_event' ),
+            40
+        );
+    }
+
+    /**
+     * Generates and sends a ViewContent event for the current product page
+     * through both the Conversions API and the Pixel.
+     *
+     * @return void
+     */
+    public function track_view_content_event() {
         global $post;
         if ( ! isset( $post->ID ) ) {
             return;
         }
 
-        $product = wc_get_product( $post->ID );
+        $product = WooCommerceIntegrationHelper::get_product( $post->ID );
         if ( ! $product ) {
             return;
         }
 
-        $server_event = ServerEventFactory::safe_create_event(
-            'ViewContent',
-            array( __CLASS__, 'createViewContentEvent' ),
-            array( $product ),
-            self::TRACKING_NAME
-        );
-
-        FacebookServerSideEvent::get_instance()->track( $server_event, false );
-
-        self::enqueuePixelCode( $server_event );
+        // Page-render event: use the current (product page) URL, not the referrer.
+        $event = $this->generate_event( 'ViewContent', $this->get_view_content_event_data( $product ), false );
+        $this->deliver( $event, self::BROWSER_INLINE );
     }
 
     /**
-     * Generates a ViewContent event data.
+     * Generates and sends a Purchase event for the given order through both the
+     * Conversions API and the Pixel.
      *
-     * The ViewContent event is generated by
-     * setting fields such as content_type,
-     * currency, value, content_ids, content_name and content_category.
-     *
-     * @param WC_Product $product Product object.
-     * @return array The event data.
+     * @param int $order_id The WooCommerce order ID.
+     * @return void
      */
-    public static function createViewContentEvent( $product ) {
-        $event_data = self::getPIIFromSession();
+    public function track_purchase_event( $order_id ) {
+        // Page-render event: use the current (thank-you page) URL, not the referrer.
+        $event = $this->generate_event( 'Purchase', $this->get_purchase_event_data( $order_id ), false );
+        $this->deliver( $event, self::BROWSER_INLINE );
+    }
 
-        $product_id   = self::getProductId( $product );
+    /**
+     * Builds the event data array for a ViewContent event from a product,
+     * including user information, content type, currency, value, content IDs,
+     * content name, contents and content category.
+     *
+     * @param \WC_Product $product The WooCommerce product object.
+     * @return array The filtered ViewContent event data.
+     */
+    private function get_view_content_event_data( $product ) {
+        $event_data = WordPressUtils::get_user_info();
+
+        $product_id   = self::get_product_id( $product );
         $content_type = $product->is_type( 'variable' ) ?
         'product_group' : 'product';
 
         $event_data['content_type']     = $content_type;
-        $event_data['currency']         = \get_woocommerce_currency();
+        $event_data['currency']         = WooCommerceIntegrationHelper::get_currency();
         $event_data['value']            = $product->get_price();
         $event_data['content_ids']      = array( $product_id );
         $event_data['content_name']     = $product->get_title();
+        $event_data['contents']         = wp_json_encode(
+            array(
+                            array(
+                                'id'       => $product_id,
+                                'quantity' => 1,
+                            ),
+                        )
+        );
         $event_data['content_category'] = self::getProductCategory(
             $product->get_id()
         );
@@ -238,65 +185,114 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     }
 
     /**
-     * Tracks a Meta Pixel Purchase event.
+     * Generates and sends an AddToCart event for the added item. The event is
+     * enqueued directly for AJAX requests, or injected into the cart fragments
+     * otherwise, and is always sent through the Conversions API.
      *
-     * This method is a callback for the `woocommerce_thankyou` action hook.
-     * It tracks a Meta Pixel Purchase event whenever a purchase is completed.
-     *
-     * @param int $order_id The order ID.
-     *
-     * @since 1.0.0
+     * @param string $cart_item_key The generated cart item key.
+     * @param int    $product_id    The added product ID.
+     * @param int    $quantity      The quantity added to the cart.
+     * @param int    $variation_id  The variation ID, if applicable.
+     * @return void
      */
-    public static function trackPurchaseEvent( $order_id ) {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
-        }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'Purchase',
-            array( __CLASS__, 'createPurchaseEvent' ),
-            array( $order_id ),
-            self::TRACKING_NAME
+    public function track_add_to_cart_event(
+        $cart_item_key,
+        $product_id,
+        $quantity,
+        $variation_id
+    ) {
+        $event = $this->generate_event(
+            'AddToCart',
+            $this->get_add_to_cart_event_data( $cart_item_key, $product_id, $quantity, $variation_id )
         );
-
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        self::enqueuePixelCode( $server_event );
+        // woocommerce_add_to_cart fires for both AJAX and non-AJAX add-to-cart:
+        // AJAX delivers via the cart-fragment channel, non-AJAX via the footer flush.
+        $is_ajax = wp_doing_ajax();
+        if ( $is_ajax ) {
+            $this->deliver( $event, self::BROWSER_AJAX, self::SERVER_SYNC, array( $event ) );
+        } else {
+            $this->deliver( $event );
+        }
     }
 
     /**
-     * Generates a Meta Pixel Purchase event data.
+     * Injects the AddToCart pixel code into the WooCommerce cart fragments so it
+     * is executed during the AJAX cart update.
      *
-     * The Purchase event is fired when a customer completes a purchase.
-     * It is typically sent when a customer submits an order.
-     *
-     * The method loops through the items in the order and creates a
-     * Meta Pixel Content object for each item. The method then sets the
-     * content_type, currency, value, content_ids and contents fields in
-     * the event data.
-     *
-     * @param int $order_id The order ID.
-     *
-     * @return array The event data.
-     *
-     * @since 1.0.0
+     * @param array $args Arguments from deliver(); $args[0] is the AddToCart event.
+     * @throws \Exception When the request is not AJAX or no event is provided.
+     * @return void
      */
-    public static function createPurchaseEvent( $order_id ) {
-        $order = wc_get_order( $order_id );
+    #[Override]
+    protected function deliver_ajax_browser_event( $args ) {
+        $is_ajax = wp_doing_ajax();
+        if ( ! $is_ajax ) {
+            throw new \Exception( 'This request is not AJAX.' );
+        }
+        if ( empty( $args ) ) {
+            throw new \Exception( '$args cannot be empty.' );
+        }
+        $event        = $args[0];
+        $pixel_code   = $this->signals->pixel->generate_script_for_event( $event, true );
+        $div_selector = self::AJAX_PIXEL_CONTAINER;
+        add_filter(
+            'woocommerce_add_to_cart_fragments',
+            function ( $response ) use ( $pixel_code, $div_selector ) {
+                return $this->add_js_tracking_code_to_cart_fragment( $response, $pixel_code, $div_selector );
+            }
+        );
+    }
+
+    /**
+     * Adds the AddToCart pixel code to the WooCommerce cart fragments, wrapped in
+     * the container div the footer listener swaps in. A non-array response or an
+     * empty pixel code leaves the fragments untouched.
+     *
+     * @param mixed  $response     The cart fragments.
+     * @param string $pixel_code   The pixel script to inject.
+     * @param string $div_selector The container element id.
+     * @return mixed The (possibly enriched) fragments.
+     */
+    public function add_js_tracking_code_to_cart_fragment( $response, $pixel_code, $div_selector ) {
+        if ( is_array( $response ) && ! empty( $pixel_code ) ) {
+            $response[ '#' . $div_selector ] = sprintf(
+                "<div id='%s'>%s</div>",
+                esc_attr( $div_selector ),
+                $pixel_code
+            );
+        }
+        return $response;
+    }
+
+    /**
+     * Builds the event data array for a Purchase event from the given order,
+     * including billing PII, content type, currency, value, content IDs and the
+     * list of purchased contents.
+     *
+     * @param int $order_id The WooCommerce order ID.
+     * @return array The Purchase event data.
+     */
+    private function get_purchase_event_data( $order_id ) {
+        $order = WooCommerceIntegrationHelper::get_order( $order_id );
 
         $content_type = 'product';
         $product_ids  = array();
         $contents     = array();
 
         foreach ( $order->get_items() as $item ) {
-            $product = wc_get_product( $item->get_product_id() );
-            if ( 'product_group' !== $content_type
-            && $product->is_type( 'variable' ) ) {
-            $content_type = 'product_group';
+
+            $product = WooCommerceIntegrationHelper::get_product( $item->get_product_id() );
+
+            if ( empty( $product ) ) {
+                continue;
+            }
+
+            if ( 'product_group' !== $content_type && $product->is_type( 'variable' ) ) {
+                $content_type = 'product_group';
             }
 
             $quantity   = $item->get_quantity();
-            $product_id = self::getProductId( $product );
+            $product_id = self::get_product_id( $product );
 
             $content = new Content();
             $content->setProductId( $product_id );
@@ -311,7 +307,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
             $order
         );
         $event_data['content_type'] = $content_type;
-        $event_data['currency']     = \get_woocommerce_currency();
+        $event_data['currency']     = WooCommerceIntegrationHelper::get_currency();
         $event_data['value']        = $order->get_total();
         $event_data['content_ids']  = $product_ids;
         $event_data['contents']     = $contents;
@@ -320,183 +316,34 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     }
 
     /**
-     * Generates a Meta Pixel AddToCart event data.
+     * Builds the event data array for an AddToCart event, including user
+     * information, currency, content type, content IDs and value derived from
+     * the cart item.
      *
-     * The AddToCart event is fired when a customer
-     * adds a product to their cart.
-     * It is typically sent when a customer submits a
-     * form to add a product to their cart.
-     *
-     * The method loops through the items in the cart and creates a
-     * Meta Pixel Content object for each item. The method then sets the
-     * content_type, currency, value, content_ids and contents fields in
-     * the event data.
-     *
-     * @param string $cart_item_key The cart item key.
-     * @param int    $product_id    The product ID.
-     * @param int    $quantity      The quantity of the item in the cart.
-     * @param int    $variation_id  The variation ID.
-     *
-     * @since 1.0.0
+     * @param string $cart_item_key The generated cart item key.
+     * @param int    $product_id    The added product ID.
+     * @param int    $quantity      The quantity added to the cart.
+     * @param int    $variation_id  The variation ID, if applicable.
+     * @return array The AddToCart event data.
      */
-    public static function trackAddToCartEvent(
+    private function get_add_to_cart_event_data(
         $cart_item_key,
         $product_id,
         $quantity,
         $variation_id
     ) {
-        if ( FacebookPluginUtils::is_internal_user() ) {
-            return;
-        }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'AddToCart',
-            array( __CLASS__, 'createAddToCartEvent' ),
-            array( $cart_item_key, $product_id, $quantity ),
-            self::TRACKING_NAME
-        );
-
-            $is_ajax_request = wp_doing_ajax();
-
-        FacebookServerSideEvent::get_instance()->track(
-            $server_event,
-            $is_ajax_request
-        );
-
-        if ( ! $is_ajax_request ) {
-            self::enqueuePixelCode( $server_event );
-        } else {
-            FacebookServerSideEvent::get_instance()->set_pending_pixel_event(
-                'addPixelCodeToAddToCartFragment',
-                $server_event
-            );
-            add_filter(
-                'woocommerce_add_to_cart_fragments',
-                array( __CLASS__, 'addPixelCodeToAddToCartFragment' )
-            );
-        }
-    }
-
-    /**
-     * Modifies the WooCommerce "add to cart" AJAX fragment response
-     * to include the Meta Pixel code.
-     *
-     * This method is used to inject the Meta Pixel code into the
-     * page after the user has added a product to their cart.
-     *
-     * @param array $fragments The response array passed to the
-     *                          "woocommerce_add_to_cart_fragments" filter.
-     *
-     * @return array The modified response array.
-     *
-     * @since 1.0.0
-     */
-    public static function addPixelCodeToAddToCartFragment( $fragments ) {
-        $server_event = FacebookServerSideEvent::get_instance()
-        ->get_pending_pixel_event( 'addPixelCodeToAddToCartFragment' );
-        if ( ! is_null( $server_event ) ) {
-            $pixel_code = self::generatePixelCode( $server_event, true );
-            $fragments[ '#' . self::DIV_ID_FOR_AJAX_PIXEL_EVENTS ] =
-            self::getDivForAjaxPixelEvent( $pixel_code );
-        }
-        return $fragments;
-    }
-
-    /**
-     * Creates a Meta Pixel AddToCart event data.
-     *
-     * The AddToCart event is fired when a customer adds a product to their
-     * cart. It is typically sent when a customer adds a product to their
-     * cart.
-     *
-     * @param string $cart_item_key The cart item key.
-     * @param int    $product_id    The product ID.
-     * @param int    $quantity      The quantity.
-     *
-     * @return array The event data.
-     *
-     * @since 1.0.0
-     */
-    public static function createAddToCartEvent(
-        $cart_item_key,
-        $product_id,
-        $quantity
-    ) {
-        $event_data                 = self::getPIIFromSession();
+        $event_data                 = WordPressUtils::get_user_info();
+        $event_data['currency']     = WooCommerceIntegrationHelper::get_currency();
         $event_data['content_type'] = 'product';
-        $event_data['currency']     = \get_woocommerce_currency();
 
-        $cart_item = self::getCartItem( $cart_item_key );
         if ( ! empty( $cart_item_key ) ) {
+            $cart_item = WooCommerceIntegrationHelper::get_cart_item( $cart_item_key );
+            if ( ! empty( $cart_item ) ) {
             $event_data['content_ids'] = array(
-                self::getProductId(
-                    $cart_item['data']
-                ),
+                self::get_product_id( $cart_item['data'] ),
             );
-            $event_data['value']       = self::getAddToCartValue(
-                $cart_item,
-                $quantity
-            );
-        }
-
-        return $event_data;
-    }
-
-    /**
-     * Tracks a Meta Pixel InitiateCheckout event.
-     *
-     * This method is a wrapper of FacebookServerSideEvent::track() method.
-     * It creates a Meta Pixel InitiateCheckout event data with the data
-     * from the WooCommerce session, and then tracks the event.
-     *
-     * @since 1.0.0
-     */
-    public static function trackInitiateCheckout() {
-        if ( FacebookPluginUtils::is_internal_user() || null === WC()->cart || WC()->cart->get_cart_contents_count() === 0 ) {
-            return;
-        }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'InitiateCheckout',
-            array( __CLASS__, 'createInitiateCheckoutEvent' ),
-            array(),
-            self::TRACKING_NAME
-        );
-
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        self::enqueuePixelCode( $server_event );
-    }
-
-    /**
-     * Creates a Meta Pixel InitiateCheckout event data.
-     *
-     * The InitiateCheckout event is triggered when
-     * a customer initiates the checkout process.
-     * This method gathers personal identifiable
-     * information (PII) from the session and
-     * retrieves cart details such as the number
-     * of items, total value, content IDs,
-     * and contents of the cart. The event data
-     * is then returned for tracking purposes.
-     *
-     * @return array The event data including
-     * user PII, cart details, and currency information.
-     *
-     * @since 1.0.0
-     */
-    public static function createInitiateCheckoutEvent() {
-        $event_data                 = self::getPIIFromSession();
-        $event_data['content_type'] = 'product';
-        $event_data['currency']     = \get_woocommerce_currency();
-
-        if ( WC()->cart ) {
-            $cart = WC()->cart;
-
-            $event_data['num_items']   = $cart->get_cart_contents_count();
-            $event_data['value']       = $cart->total;
-            $event_data['content_ids'] = self::getContentIds( $cart );
-            $event_data['contents']    = self::getContents( $cart );
+                $event_data['value']   = $quantity * ( $cart_item['line_total'] / $cart_item['quantity'] );
+            }
         }
 
         return $event_data;
@@ -513,7 +360,7 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
      * and phone number. The PII is
      * returned as an associative array.
      *
-     * @param WC_Order $order The WooCommerce
+     * @param \WC_Order $order The WooCommerce
      * order object containing billing information.
      *
      * @return array An associative array containing the extracted PII.
@@ -536,95 +383,84 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     }
 
     /**
-     * Calculates the total value for adding a specified
-     * quantity of a cart item to the cart.
+     * Generates and sends an InitiateCheckout event through both the
+     * Conversions API and the Pixel when the cart is not empty.
      *
-     * This method computes the total cost based on the
-     * line total and quantity of the provided
-     * cart item, and multiplies it by the specified quantity.
-     *
-     * @param array $cart_item An associative array
-     *                          representing the cart item, containing
-     *                         'line_total' and 'quantity' keys among others.
-     * @param int   $quantity  The quantity of
-     *              the item to calculate the total value for.
-     *
-     * @return float|null The calculated total value for
-     *                    the specified quantity of the item,
-     *                    or null if the cart item is empty.
+     * @return void
      */
-    private static function getAddToCartValue( $cart_item, $quantity ) {
-        if ( ! empty( $cart_item ) ) {
-            $price = $cart_item['line_total'] / $cart_item['quantity'];
-            return $quantity * $price;
+    public function track_initiate_checkout_event() {
+        if ( null === WooCommerceIntegrationHelper::get_cart() || 0 === WooCommerceIntegrationHelper::get_cart()->get_cart_contents_count() ) {
+            return;
         }
 
-        return null;
+        // Page-render event: use the current (checkout page) URL, not the referrer.
+        $event = $this->generate_event( 'InitiateCheckout', $this->get_initiate_checkout_event_data(), false );
+        $this->deliver( $event, self::BROWSER_INLINE );
     }
 
     /**
-     * Retrieves a cart item from the WooCommerce cart by its key.
+     * Builds the event data array for an InitiateCheckout event, including user
+     * information, content type, currency and, when a cart is present, the item
+     * count, value, content IDs and contents.
      *
-     * This method accesses the current WooCommerce cart and returns the
-     * cart item associated with the provided cart item key. If the cart
-     * or the specified cart item is not found, the method returns null.
-     *
-     * @param string $cart_item_key The key for identifying the cart item.
-     *
-     * @return array|null An associative array representing the cart item,
-     *                    or null if the cart item is not found.
+     * @return array The InitiateCheckout event data.
      */
-    private static function getCartItem( $cart_item_key ) {
-        if ( WC()->cart ) {
-            $cart = WC()->cart->get_cart();
-            if ( ! empty( $cart ) && ! empty( $cart[ $cart_item_key ] ) ) {
-            return $cart[ $cart_item_key ];
-            }
+    private function get_initiate_checkout_event_data() {
+        $event_data                 = WordPressUtils::get_user_info();
+        $event_data['content_type'] = 'product';
+        $event_data['currency']     = WooCommerceIntegrationHelper::get_currency();
+
+        $cart = WooCommerceIntegrationHelper::get_cart();
+        if ( $cart ) {
+
+            $event_data['num_items']   = $cart->get_cart_contents_count();
+            $event_data['value']       = $cart->total;
+            $event_data['content_ids'] = self::get_content_ids( $cart );
+            $event_data['contents']    = self::get_contents( $cart );
         }
 
-        return null;
+        return $event_data;
     }
 
     /**
-     * Retrieves an array of product IDs from the given WooCommerce cart object.
+     * This integration should not track, if Meta for WooCommerce is also installed and active
      *
-     * @param WC_Cart $cart The WooCommerce cart object.
-     *
-     * @return array An array of product IDs.
+     * @return bool True if Facebook for WooCommerce is active, false otherwise.
      *
      * @since 1.0.0
      */
-    private static function getContentIds( $cart ) {
-        $product_ids = array();
-        foreach ( $cart->get_cart() as $item ) {
-            if ( ! empty( $item['data'] ) ) {
-            $product_ids[] = self::getProductId( $item['data'] );
-            }
-        }
+    private static function is_facebook_for_woocommerce_active() {
+        $is_active = in_array(
+            'facebook-for-woocommerce/facebook-for-woocommerce.php',
+            get_option( 'active_plugins' ),
+            true
+        );
 
-        return $product_ids;
+        return $is_active;
+        // TODO: What to do about ajax calls?
+        // TODO: Do we need to check if fb-for-woo is actually connected, or just check if active?
+        // if ( ! $is_active ) {
+        // return false;
+        // }
+        // if ( ! function_exists( 'facebook_for_woocommerce' ) ) {
+        // We'll need to activate it?
+        // } else {
+        // return facebook_for_woocommerce()->get_connection_handler()->is_connected();.
     }
 
     /**
-     * Retrieves an array of Content objects from
-     * the given WooCommerce cart object.
+     * Builds a list of Content objects from the items in the given cart, each
+     * with its product ID, quantity and per-item price.
      *
-     * Each Content object represents an item in the cart and includes
-     * the product ID, quantity, and item price.
-     *
-     * @param WC_Cart $cart The WooCommerce cart object.
-     *
-     * @return Content[] An array of Content
-     * objects representing the items in the cart.
-     *
-     * @since 1.0.0
+     * @param \WC_Cart $cart The WooCommerce cart object.
+     * @return Content[] The list of cart contents.
      */
-    private static function getContents( $cart ) {
+    private static function get_contents( $cart ) {
         $contents = array();
         foreach ( $cart->get_cart() as $item ) {
             if ( ! empty( $item['data'] ) && ! empty( $item['quantity'] ) ) {
             $content = new Content();
-            $content->setProductId( self::getProductId( $item['data'] ) );
+            $content->setProductId( self::get_product_id( $item['data'] ) );
             $content->setQuantity( $item['quantity'] );
             $content->setItemPrice( $item['line_total'] / $item['quantity'] );
 
@@ -636,153 +472,39 @@ class FacebookWordpressWooCommerce extends FacebookWordpressIntegrationBase {
     }
 
     /**
+     * Builds a list of unique product IDs from the items in the given cart.
+     *
+     * @param \WC_Cart $cart The WooCommerce cart object.
+     * @return array The list of product IDs.
+     */
+    private static function get_content_ids( $cart ) {
+        $product_ids = array();
+        foreach ( $cart->get_cart() as $item ) {
+            if ( ! empty( $item['data'] ) ) {
+            $product_ids[] = self::get_product_id( $item['data'] );
+            }
+        }
+
+        return $product_ids;
+    }
+
+    /**
      * Retrieves a unique product ID from the given WooCommerce product object.
      *
      * If the product has a SKU, the ID is in the format of "sku_woo_id".
      * Otherwise, the ID is in the format of
      * "fb_woo_id" where "fb_" is a prefix.
      *
-     * @param WC_Product $product The WooCommerce product object.
+     * @param \WC_Product $product The WooCommerce product object.
      *
      * @return string The unique product ID.
      *
      * @since 1.0.0
      */
-    private static function getProductId( $product ) {
+    private static function get_product_id( $product ) {
         $woo_id = $product->get_id();
 
         return $product->get_sku() ? $product->get_sku() . '_' .
         $woo_id : self::FB_ID_PREFIX . $woo_id;
-    }
-
-    /**
-     * Retrieves PII from the logged in user's session.
-     *
-     * @return array The user's PII data.
-     *
-     * @since 1.0.0
-     */
-    private static function getPIIFromSession() {
-        $event_data = FacebookPluginUtils::get_logged_in_user_info();
-        $user_id    = get_current_user_id();
-        if ( 0 !== $user_id ) {
-            $event_data['city']    = get_user_meta(
-                $user_id,
-                'billing_city',
-                true
-            );
-            $event_data['zip']     = get_user_meta(
-                $user_id,
-                'billing_postcode',
-                true
-            );
-            $event_data['country'] = get_user_meta(
-                $user_id,
-                'billing_country',
-                true
-            );
-            $event_data['state']   = get_user_meta(
-                $user_id,
-                'billing_state',
-                true
-            );
-            $event_data['phone']   = get_user_meta(
-                $user_id,
-                'billing_phone',
-                true
-            );
-        }
-        return array_filter( $event_data );
-    }
-
-    /**
-     * Checks if Facebook for WooCommerce plugin is active.
-     *
-     * @return bool True if Facebook for WooCommerce is active, false otherwise.
-     *
-     * @since 1.0.0
-     */
-    private static function isFacebookForWooCommerceActive() {
-        return in_array(
-            'facebook-for-woocommerce/facebook-for-woocommerce.php',
-            get_option( 'active_plugins' ),
-            true
-        );
-    }
-
-    /**
-     * Generates the pixel code for a given server event.
-     *
-     * @param FacebookServerSideEvent $server_event The server event
-     * to generate the pixel code for.
-     * @param bool                    $script_tag   Whether to wrap
-     * the pixel code in a script tag. Default to false.
-     *
-     * @return string The pixel code for the given server event.
-     *
-     * @since 1.0.0
-     */
-    public static function generatePixelCode(
-        $server_event,
-        $script_tag = false
-) {
-        $code = PixelRenderer::render(
-            array( $server_event ),
-            self::TRACKING_NAME,
-            $script_tag
-        );
-        $code = sprintf(
-            '
-    <!-- Meta Pixel Event Code -->
-    %s
-    <!-- End Meta Pixel Event Code -->
-          ',
-            $code
-        );
-        return $code;
-    }
-
-    /**
-     * Enqueues a Meta Pixel event code for a given server event.
-     *
-     * This method renders the Meta Pixel code for the given server event,
-     * and then enqueues it using the WooCommerce JavaScript enqueueing
-     * system.
-     *
-     * @param FacebookServerSideEvent $server_event The server
-     * event to enqueue the pixel code for.
-     *
-     * @return string The Meta Pixel code for the given server event.
-     *
-     * @since 1.0.0
-     */
-    public static function enqueuePixelCode( $server_event ) {
-        $code   = self::generatePixelCode( $server_event, false );
-        $handle = 'meta_pixel_inline';
-
-        if ( ! function_exists( 'wp_add_inline_script' ) ) {
-            global $wc_queued_js;
-            $wc_queued_js .= "\n" . $code;
-            return $code;
-        }
-
-        static $registered = false;
-        if ( ! $registered ) {
-            if ( ! wp_script_is( $handle, 'registered' ) ) {
-                wp_register_script(
-                    $handle,
-                    '',
-                    array(),
-                    \FacebookPixelPlugin\Core\FacebookPluginConfig::PLUGIN_VERSION,
-                    true
-                );
-            }
-            wp_enqueue_script( $handle );
-            $registered = true;
-        }
-
-        wp_add_inline_script( $handle, $code );
-
-        return $code;
     }
 }

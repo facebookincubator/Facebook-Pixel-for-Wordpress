@@ -10,7 +10,8 @@
     "symfony/finder": "~2.6",
     "mockery/mockery": "^1.6",
 	"phpunit/phpunit": "~9",
-    "dealerdirect/phpcodesniffer-composer-installer": "^1.0"
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "php-stubs/wordpress-stubs": "^7.0"
   },
   "prefer-stable" : true,
   "license": "GPL",
