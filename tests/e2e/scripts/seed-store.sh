@@ -118,7 +118,9 @@ if (function_exists('wc_get_product') && !get_page_by_path('testp', OBJECT, 'pro
 // (no SMTP in the test env; the Lead event only fires on a 'mail_sent' status).
 \$mu_dir = defined('WPMU_PLUGIN_DIR') ? WPMU_PLUGIN_DIR : WP_CONTENT_DIR . '/mu-plugins';
 if (!is_dir(\$mu_dir)) { wp_mkdir_p(\$mu_dir); }
-file_put_contents(\$mu_dir . '/e2e-mailer.php', "<?php add_filter('pre_wp_mail', '__return_true');\n");
+// wpcf7_skip_mail makes CF7 report 'mail_sent' without actually sending (the
+// canonical CI approach); pre_wp_mail is a belt-and-suspenders fallback.
+file_put_contents(\$mu_dir . '/e2e-mailer.php', "<?php add_filter('wpcf7_skip_mail', '__return_true'); add_filter('pre_wp_mail', '__return_true');\n");
 
 // --- Contact Form 7 form + page for Lead tests ---
 if (class_exists('WPCF7_ContactForm')) {

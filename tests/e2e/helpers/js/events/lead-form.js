@@ -47,10 +47,11 @@ async function submitLeadForm(page, url, lead = {}) {
 
   await form.locator('.wpcf7-submit').click();
 
-  // CF7 submits via AJAX and toggles a status class on the response output.
-  // `.wpcf7-mail-sent-ok` is the success state that triggers `wpcf7mailsent`.
-  await form
-    .locator('.wpcf7-response-output.wpcf7-mail-sent-ok, form.sent .wpcf7-response-output')
+  // CF7 signals success differently across versions: 5.x adds `.sent` to the
+  // <form>; 4.x sets `.wpcf7-mail-sent-ok` on the response output. Wait for
+  // either — this is the state that triggers `wpcf7mailsent` (and the Lead pixel).
+  await page
+    .locator('form.wpcf7-form.sent, .wpcf7-response-output.wpcf7-mail-sent-ok')
     .first()
     .waitFor({ state: 'visible', timeout: TIMEOUTS.LONG });
 

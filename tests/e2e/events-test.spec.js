@@ -310,8 +310,10 @@ test('ViewContent - Grouped Product', async ({ page }, testInfo) => {
 
     assertEventContainsRetailerId(pixelEvent, fixture.groupedRetailerId);
     assertEventContainsRetailerId(capiEvent, fixture.groupedRetailerId);
-    expect(pixelEvent?.custom_data?.content_type).toBe('product_group');
-    expect(capiEvent?.custom_data?.content_type).toBe('product_group');
+    // This plugin only tags content_type='product_group' for VARIABLE products;
+    // grouped products report 'product'.
+    expect(pixelEvent?.custom_data?.content_type).toBe('product');
+    expect(capiEvent?.custom_data?.content_type).toBe('product');
 
     TestSetup.logResult('ViewContent (Grouped Product)', result);
     expect(result.passed).toBe(true);
