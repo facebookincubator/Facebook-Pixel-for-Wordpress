@@ -30,12 +30,7 @@ namespace FacebookPixelPlugin\Integration;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\Signals;
-use FacebookPixelPlugin\Core\FacebookWordPressOptions;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\PixelRenderer;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
+use FacebookPixelPlugin\Core\EventFactory;
 
 /**
  * FacebookWordpressContactForm7 class.
@@ -45,22 +40,30 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
     const TRACKING_NAME = 'contact-form-7';
 
     /**
+     * The Lead event built on submit, stashed so injectLeadEvent can render its
+     * browser code into the AJAX feedback response on the same instance.
+     *
+     * @var \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event|null
+     */
+    private $lead_event = null;
+
+    /**
      * Add hooks to inject the Contact Form 7 tracking code.
      *
      * Adds the following hooks:
      *  - wpcf7_submit: Triggers a server-side event when the form is submitted.
      *  - wp_footer: Injects the mail sent listener.
      */
-    public static function inject_pixel_code() {
+    public function inject_pixel_code() {
         add_action(
             'wpcf7_submit',
-            array( __CLASS__, 'trackServerEvent' ),
+            array( $this, 'trackServerEvent' ),
             10,
             2
         );
         add_action(
             'wp_footer',
-            array( __CLASS__, 'injectMailSentListener' ),
+            array( $this, 'injectMailSentListener' ),
             10,
             2
         );
@@ -75,7 +78,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
      *
      * @return void
      */
-    public static function injectMailSentListener() {
+    public function injectMailSentListener() {
         ob_start();
     ?>
     <!-- Meta Pixel Event Code -->
@@ -103,26 +106,28 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
      *
      * @return array The submission result.
      */
-    public static function trackServerEvent( $form, $result ) {
+    public function trackServerEvent( $form, $result ) {
         $is_internal_user = FacebookPluginUtils::is_internal_user();
-        
-		$submit_failed    = 'mail_sent' !== $result['status'];
+        $submit_failed    = 'mail_sent' !== $result['status'];
         if ( $is_internal_user || $submit_failed ) {
             return $result;
         }
 
-        $server_event = ServerEventFactory::safe_create_event(
+        $this->lead_event = EventFactory::create(
             'Lead',
-            array( __CLASS__, 'readFormData' ),
-            array( $form ),
+            self::readFormData( $form ),
             self::TRACKING_NAME,
             true
         );
-        ( new Signals() )->track_event( $server_event );
+
+        // Contact Form 7 submits over AJAX/REST, where wp_footer never fires,
+        // so the buffered flush would never run. Send the CAPI event now,
+        // synchronously, in this request.
+        $this->signals->send( array( $this->lead_event ) );
 
         add_action(
             'wpcf7_feedback_response',
-            array( __CLASS__, 'injectLeadEvent' ),
+            array( $this, 'injectLeadEvent' ),
             20,
             2
         );
@@ -135,26 +140,25 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
      *
      * Hooks into the `wpcf7_feedback_response` action and checks if the form
      * is submitted successfully and if the user is not an internal user.
-     * If conditions are met, it renders the Pixel code using the `PixelRenderer` class
-     * and appends the code to the form response.
+     * If conditions are met, it renders the Pixel code for the event built on
+     * submit and appends the code to the form response.
      *
      * @param array $response The Contact Form 7 response.
      * @param array $result   The form data.
      *
      * @return array The modified Contact Form 7 response.
      */
-    public static function injectLeadEvent( $response, $result ) {
+    public function injectLeadEvent( $response, $result ) {
         if ( FacebookPluginUtils::is_internal_user() ) {
             return $response;
         }
 
-            $events = ( new Signals() )->get_tracked_events( 'Lead' );
-        if ( count( $events ) === 0 ) {
+        if ( null === $this->lead_event ) {
             return $response;
         }
-        $event_id  = $events[0]->getEventId();
-        $fbq_calls = PixelRenderer::render(
-            $events,
+        $event_id  = $this->lead_event->getEventId();
+        $fbq_calls = $this->signals->render(
+            $this->lead_event,
             self::TRACKING_NAME,
             false
         );
@@ -236,7 +240,7 @@ class FacebookWordpressContactForm7 extends FacebookWordpressIntegrationBase {
         foreach ( $form_tags as $tag ) {
             if ( 'text' === $tag->basetype
             && strpos( strtolower( $tag->name ), 'name' ) !== false ) {
-                return ServerEventFactory::split_name(
+                return FacebookPluginUtils::split_name(
                     sanitize_text_field(
                         wp_unslash( $_POST[ $tag->name ] ?? null ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
                     )

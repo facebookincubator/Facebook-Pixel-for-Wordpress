@@ -159,9 +159,9 @@ class FacebookPluginConfig {
             // ServerEvents / BrowserEvents consolidation lands. The rest are
             // re-enabled as they're converted to the new structure.
             'MAILCHIMP_FOR_WP' => 'FacebookWordpressMailchimpForWp',
+            'CONTACT_FORM_7'   => 'FacebookWordpressContactForm7',
             // phpcs:disable Squiz.PHP.CommentedOutCode.Found -- intentionally disabled pending conversion.
             // 'CALDERA_FORM'          => 'FacebookWordpressCalderaForm',
-            // 'CONTACT_FORM_7'        => 'FacebookWordpressContactForm7',
             // 'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
             // 'FORMIDABLE_FORM'       => 'FacebookWordpressFormidableForm',
             // 'NINJA_FORMS'           => 'FacebookWordpressNinjaForms',
