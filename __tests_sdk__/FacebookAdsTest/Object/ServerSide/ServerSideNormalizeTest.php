@@ -554,13 +554,26 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
     $this->assertNull(Normalizer::normalize('em', '   '));
   }
 
-  public function testNormalizeUsesFirstNormalizableArrayValue() {
+  public function testNormalizeUsesFirstValidArrayValue() {
     $this->assertSame(
       'pika.42@example.com',
       Normalizer::normalize(
         'em',
-        array(new \stdClass(), '', 'Pika.42@Example.com', 'ignored@example.com')
+        array(
+          new \stdClass(),
+          '',
+          '    ',
+          '$djubre',
+          'Pika.42@Example.com',
+          'ignored@example.com'
+        )
       )
+    );
+  }
+
+  public function testNormalizeReturnsNullWhenArrayHasNoValidValue() {
+    $this->assertNull(
+      Normalizer::normalize('em', array(new \stdClass(), '', '$djubre'))
     );
   }
 

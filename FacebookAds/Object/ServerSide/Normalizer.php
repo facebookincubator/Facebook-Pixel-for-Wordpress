@@ -40,11 +40,61 @@ class Normalizer {
    */
   public static function normalize($field, $data) {
     if (is_array($data)) {
-      $data = self::getFirstNormalizableArrayValue($data);
-    } else {
-      $data = self::coerceToString($data);
+      return self::normalizeArrayValue($field, $data);
     }
 
+    return self::normalizeStringValue($field, self::coerceToString($data));
+  }
+
+  /**
+   * @param mixed $data value to be converted to a string.
+   * @return string|null
+   */
+  private static function coerceToString($data) {
+    if (is_string($data)) {
+      return $data;
+    }
+
+    if (is_numeric($data)) {
+      return (string) $data;
+    }
+
+    if (is_object($data) && method_exists($data, '__toString')) {
+      return (string) $data;
+    }
+
+    return null;
+  }
+
+  /**
+   * @param array $data values to inspect.
+   * @return string|null
+   */
+  private static function normalizeArrayValue($field, $data) {
+    foreach ($data as $value) {
+      try {
+        $normalized_value = self::normalizeStringValue(
+          $field,
+          self::coerceToString($value)
+        );
+      } catch (InvalidArgumentException $e) {
+        continue;
+      }
+
+      if ($normalized_value !== null) {
+        return $normalized_value;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * @param string $field to be normalized.
+   * @param string|null $data value to be normalized.
+   * @return string|null
+   */
+  private static function normalizeStringValue($field, $data) {
     if ($data === null || strlen($data) === 0) {
       return null;
     }
@@ -126,41 +176,6 @@ class Normalizer {
     }
 
     return $normalized_data;
-  }
-
-  /**
-   * @param mixed $data value to be converted to a string.
-   * @return string|null
-   */
-  private static function coerceToString($data) {
-    if (is_string($data)) {
-      return $data;
-    }
-
-    if (is_numeric($data)) {
-      return (string) $data;
-    }
-
-    if (is_object($data) && method_exists($data, '__toString')) {
-      return (string) $data;
-    }
-
-    return null;
-  }
-
-  /**
-   * @param array $data values to inspect.
-   * @return string|null
-   */
-  private static function getFirstNormalizableArrayValue($data) {
-    foreach ($data as $value) {
-      $value = self::coerceToString($value);
-      if ($value !== null && strlen($value) > 0) {
-        return $value;
-      }
-    }
-
-    return null;
   }
 
   /**
