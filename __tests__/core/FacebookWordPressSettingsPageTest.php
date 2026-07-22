@@ -431,6 +431,128 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
   }
 
   /**
+   * Tests that the admin notice dismiss control renders as a standard
+   * anchor element rather than an inline event handler.
+   *
+   * @return void
+   */
+  public function testSetNoticeRendersDismissAsAnchorWithoutInlineHandler() {
+    $this->mockNoticeRenderingFunctions();
+    $settings_page = new FacebookWordpressSettingsPage(
+      'facebook_for_wordpress'
+    );
+
+    ob_start();
+    $settings_page->set_notice(
+      'Configure it <a href="%s">here</a>.',
+      FacebookPluginConfig::ADMIN_DISMISS_WPCOM_UPDATE_NOTICE,
+      'warning'
+    );
+    $html = ob_get_clean();
+
+    // Dismiss control is a plain anchor.
+    $this->assertStringContainsString( 'class="notice-dismiss"', $html );
+    $this->assertStringContainsString( '<a', $html );
+    $this->assertStringContainsString( 'href=', $html );
+
+    // No inline event handler / JS-string context to break out of.
+    $this->assertStringNotContainsStringIgnoringCase( 'onclick', $html );
+    $this->assertStringNotContainsString( 'location.href', $html );
+    $this->assertStringNotContainsString( '<button', $html );
+
+    // Notice type and body are still rendered.
+    $this->assertStringContainsString( 'notice-warning', $html );
+    $this->assertStringContainsString( 'Configure it', $html );
+  }
+
+  /**
+   * Tests that when the request URI carries a hostile value, the dismiss
+   * control has no inline handler, its href is built from the trusted
+   * admin_url() base, and the request URI is not reflected into the markup.
+   *
+   * @return void
+   */
+  public function testSetNoticeDoesNotReflectHostileRequestUri() {
+    // A hostile request URI that must never appear in the rendered notice.
+    $payload                = '/wp-admin/options.php/"><script>hostile_marker</script>';
+    $_SERVER['REQUEST_URI'] = $payload;
+
+    $this->mockNoticeRenderingFunctions();
+    $settings_page = new FacebookWordpressSettingsPage(
+      'facebook_for_wordpress'
+    );
+
+    ob_start();
+    $settings_page->set_notice(
+      'Configure it <a href="%s">here</a>.',
+      FacebookPluginConfig::ADMIN_DISMISS_WPCOM_UPDATE_NOTICE,
+      'warning'
+    );
+    $html = ob_get_clean();
+
+    // No inline event handler in the output.
+    $this->assertStringNotContainsStringIgnoringCase( 'onclick', $html );
+
+    // The dismiss href is built from the trusted admin_url() base.
+    $this->assertStringContainsString(
+      'href="https://trusted.example/wp-admin/?' .
+        FacebookPluginConfig::ADMIN_DISMISS_WPCOM_UPDATE_NOTICE . '=1"',
+      $html
+    );
+
+    // The hostile request URI is not reflected anywhere in the output.
+    $this->assertStringNotContainsString( 'hostile_marker', $html );
+    $this->assertStringNotContainsString( $payload, $html );
+  }
+
+  /**
+   * Mocks the WordPress functions used by set_notice() output rendering.
+   *
+   * Escaping/kses functions are identity mappings so assertions can inspect
+   * the raw values passed through; admin_url() returns a fixed trusted base,
+   * and add_query_arg() appends the key/value to the supplied base URL.
+   *
+   * @return void
+   */
+  private function mockNoticeRenderingFunctions() {
+    $this->mockTranslationFunctions();
+    \WP_Mock::userFunction(
+      'admin_url',
+      array(
+        'return' => function ( $path = '' ) {
+          return 'https://trusted.example/wp-admin/' . $path;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'esc_url',
+      array( 'return_arg' => 0 )
+    );
+    \WP_Mock::userFunction(
+      'esc_html',
+      array( 'return_arg' => 0 )
+    );
+    \WP_Mock::userFunction(
+      'wp_kses_post',
+      array( 'return_arg' => 0 )
+    );
+    // Faithfully mirror WordPress: without an explicit base URL,
+    // add_query_arg() falls back to $_SERVER['REQUEST_URI']. This is the
+    // fallback the fix must avoid for the dismiss URL.
+    \WP_Mock::userFunction(
+      'add_query_arg',
+      array(
+        'return' => function ( $key, $value, $url = null ) {
+          if ( null === $url ) {
+            $url = $_SERVER['REQUEST_URI'];
+          }
+          return $url . '?' . $key . '=' . $value;
+        },
+      )
+    );
+  }
+
+  /**
    * Mocks translation functions used by notice generation.
    *
    * @return void

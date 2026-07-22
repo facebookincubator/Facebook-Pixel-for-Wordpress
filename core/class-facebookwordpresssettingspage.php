@@ -1081,17 +1081,17 @@ class FacebookWordpressSettingsPage {
             '
 <div class="notice notice-%s is-dismissible">
   <p>%s</p>
-  <button
-    type="button"
+  <a
+    href="%s"
     class="notice-dismiss"
-    onClick="location.href=\'%s\'">
+    style="text-decoration: none;">
     <span class="screen-reader-text">%s</span>
-  </button>
+  </a>
 </div>
       ',
             esc_html( $notice_type ),
             wp_kses_post( $link ),
-            esc_url( add_query_arg( $dismiss_config, '' ) ),
+            esc_url( add_query_arg( $dismiss_config, '1', admin_url() ) ),
             esc_html__(
                 'Dismiss this notice.',
                 'official-facebook-pixel'
