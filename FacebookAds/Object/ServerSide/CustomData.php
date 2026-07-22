@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignoreFile — third-party Meta Business SDK (vendored); excluded from linting.
 /**
  * Copyright (c) 2015-present, Facebook, Inc. All rights reserved.
  *

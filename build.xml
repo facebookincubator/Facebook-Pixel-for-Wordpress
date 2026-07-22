@@ -17,6 +17,8 @@
         <exclude name="build.properties" />
         <exclude name="build.xml" />
         <exclude name="README.md" />
+        <exclude name="CODE_OF_CONDUCT.md" />
+        <exclude name="CONTRIBUTING.md" />
         <exclude name="vendor/**" />
         <exclude name="task/**" />
         <exclude name="__tests__/**" />
