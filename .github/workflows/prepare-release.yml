@@ -66,6 +66,47 @@ jobs:
               }
             }
 
+      - name: Ensure previous release PR is merged
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
+        run: |
+          set -euo pipefail
+
+          # Each release opens a PR ("Release X.Y.Z", head release/X.Y.Z -> main)
+          # that is merged once the release is published. Don't start a new
+          # release while a previous release PR is still open, otherwise releases
+          # overlap and the changelog/version bookkeeping drifts. Fail fast if any
+          # unmerged release PR (other than this version's) is still open.
+          if ! OPEN_RELEASE_PRS=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --base main \
+            --state open \
+            --json number,headRefName,title,url); then
+            echo "::error::Failed to query open PRs via the GitHub API; cannot verify previous release PRs are merged."
+            exit 1
+          fi
+
+          # An empty/non-JSON response would make the filter below silently pass
+          # and bypass the guard, so validate we got a JSON array back first.
+          if ! echo "$OPEN_RELEASE_PRS" | jq -e 'type == "array"' >/dev/null 2>&1; then
+            echo "::error::Unexpected response when listing open PRs; cannot verify previous release PRs are merged."
+            exit 1
+          fi
+
+          UNMERGED=$(echo "$OPEN_RELEASE_PRS" | jq -r --arg cur "release/$NEW_VERSION" '
+            [ .[]
+              | select(.headRefName | test("^release/[0-9]+[.][0-9]+[.][0-9]+$"))
+              | select(.headRefName != $cur) ]
+            | .[] | "  - #\(.number) \(.title) (\(.headRefName)) — \(.url)"')
+
+          if [ -n "$UNMERGED" ]; then
+            echo "::error::Cannot prepare release $NEW_VERSION — a previous release PR is still open and must be merged first:"
+            echo "$UNMERGED"
+            exit 1
+          fi
+          echo "✅ No unmerged previous release PRs found."
+
       - name: Get latest release tag
         id: get_release
         env:
