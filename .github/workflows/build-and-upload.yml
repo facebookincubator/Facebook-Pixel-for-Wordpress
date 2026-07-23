@@ -5,6 +5,12 @@ on:
     branches:
       - 'release/**'
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Git ref (branch/tag/sha) to build. Defaults to the triggering ref."
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -19,6 +25,8 @@ jobs:
     steps:
       - name: Checkout release branch
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
