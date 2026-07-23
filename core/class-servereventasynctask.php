@@ -15,25 +15,47 @@
 
 namespace FacebookPixelPlugin\Core;
 
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
+defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\UserData;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content;
-
-defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 /**
  * Class ServerEventAsyncTask
  */
 class ServerEventAsyncTask extends \WP_Async_Task {
     /**
+     * The WordPress action that triggers a background (out-of-band) CAPI send.
+     * Firing `do_action( self::ACTION, $events, count( $events ) )` hands the
+     * events to this task's non-blocking postback.
+     *
+     * @var string
+     */
+    const ACTION = 'send_server_events';
+
+    /**
      * The action to be performed by this task.
      *
      * @var string
      */
-    protected $action = 'send_server_events';
+    protected $action = self::ACTION;
+
+    /**
+     * The tracking facade used to dispatch the events in the background.
+     *
+     * @var FacebookTrackingFacade
+     */
+    private $tracking_facade;
+
+    /**
+     * Registers the async-task hooks and stores the tracking facade used to send
+     * the events in the background postback.
+     *
+     * @param FacebookTrackingFacade $tracking_facade The tracking facade.
+     */
+    public function __construct( FacebookTrackingFacade $tracking_facade ) {
+        parent::__construct();
+        $this->tracking_facade = $tracking_facade;
+    }
 
     /**
      * Converts the normalized user data to the keys used in UserData.
@@ -123,7 +145,7 @@ class ServerEventAsyncTask extends \WP_Async_Task {
      * This function decodes the JSON string sent in the $_POST['event_data']
      * and processes the events as an array of Event objects.
      *
-     * @see FacebookServerSideEvent::send()
+     * @see FacebookTrackingFacade::$capi
      *
      * @throws \Exception If there was an preprocessing error.
      */
@@ -150,6 +172,6 @@ class ServerEventAsyncTask extends \WP_Async_Task {
             $event    = $this->convert_array_to_event( $event_as_array );
             $events[] = $event;
         }
-        FacebookServerSideEvent::send( $events );
+        $this->tracking_facade->track( $events, FacebookTrackingFacade::BROWSER_NONE, FacebookTrackingFacade::SERVER_SYNC );
     }
 }

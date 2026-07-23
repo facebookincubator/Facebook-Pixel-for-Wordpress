@@ -110,29 +110,6 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
   }
 
   /**
-   * Test that the FacebookWordpressPixelInjection class injects the
-   * send_pending_events method into the wp_footer action when the
-   * send_server_events option is set to true.
-   *
-   * @return void
-   */
-  public function testServerEventSendingInjection() {
-    self::mockGetOption( '1234', 'abc' );
-    self::mockGetTransientAAMSettings(
-      '1234',
-      false,
-      AAMSettingsFields::get_all_fields()
-    );
-    $injection_obj = new FacebookWordpressPixelInjection();
-    \WP_Mock::expectActionAdded(
-      'wp_footer',
-      array( $injection_obj, 'send_pending_events' )
-    );
-    FacebookWordpressOptions::initialize();
-    $injection_obj->inject();
-  }
-
-  /**
    * Mocks the get_option function to return specified mock values.
    *
    * @param string $mock_pixel_id     The mock pixel ID to return.

@@ -53,16 +53,8 @@ class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
      * @return void
      */
     public function capture_submitted_form( $entry_id, $form_id ) {
-
-        $event = $this->signals->generate_event(
-            static::EVENT_NAME,
-            $this->extract_lead_data( $form_id, $entry_id ),
-            static::INTEGRATION_NAME
-        );
-
-        $this->signals->capi->send( array( $event ) );
-
-        $this->signals->pixel->enqueue( $event );
+        $event = $this->generate_event( static::EVENT_NAME, $this->extract_lead_data( $form_id, $entry_id ) );
+        $this->deliver( $event );
     }
 
     /**

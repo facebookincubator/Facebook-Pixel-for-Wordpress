@@ -72,6 +72,8 @@ class CapiSenderBase {
         return $this->api;
     }
 
+    abstract public function send( array $events );
+
     /**
      * Builds and sends the Conversions API request for the given events and
      * returns the API response. Throws on transport / API error.
@@ -80,9 +82,16 @@ class CapiSenderBase {
      * @param string                                                     $agent           Partner agent for the events.
      * @param string|null                                                $test_event_code Optional test event code.
      * @throws ConfigNotFoundException If the pixel id / access token is not configured.
-     * @return \FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventResponse
+     * @return \FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventResponse|null
+     *         The API response, or null when the before_conversions_api_event_sent
+     *         filter removed every event (nothing sent).
      */
     protected function send_request( $events, $agent, $test_event_code = null ) {
+        $events = apply_filters( 'before_conversions_api_event_sent', $events );
+        if ( empty( $events ) ) {
+            return null;
+        }
+
         $this->create_api();
 
         if ( ! $this->has_config() ) {

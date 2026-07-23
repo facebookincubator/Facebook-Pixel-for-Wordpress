@@ -24,8 +24,9 @@ namespace FacebookPixelPlugin\Integration;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\EventIdGenerator;
-use FacebookPixelPlugin\Integration\Helpers\EasyDigitalDownloadsIntegrationHelper;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Core\FacebookSignalState;
+use FacebookPixelPlugin\Integration\Helpers\EasyDigitalDownloadsIntegrationHelper;
 use FacebookPixelPlugin\Utils\WordPressUtils;
 
 /**
@@ -196,7 +197,7 @@ class FacebookWordpressEasyDigitalDownloads extends TrackableIntegrationBase {
                 'trackingName'     => self::INTEGRATION_NAME,
                 'agentString'      => $this->signals->agent_string,
                 'pixelId'          => $this->signals->pixel_id,
-                'held'             => $this->signals->is_held,
+                'held'             => FacebookSignalState::is_held(),
             )
         );
 

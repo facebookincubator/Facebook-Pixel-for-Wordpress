@@ -102,7 +102,7 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
             throw new \Exception( '$args cannot be empty.' );
         }
         $event        = $args[0];
-        $pixel_code   = $this->signals->pixel->generate_script_for_event( $event, false );
+        $pixel_code   = $this->generate_pixel_script( $event, false );
         $response_key = self::AJAX_PIXEL_CONTAINER;
         WordPressUtils::register_filter_hooks(
             array( 'wpcf7_feedback_response' ),

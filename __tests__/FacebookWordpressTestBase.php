@@ -32,7 +32,7 @@ use WP_Mock\Tools\Constraints\ExpectationsMet;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 use FacebookPixelPlugin\Core\FacebookSignalState;
-use FacebookPixelPlugin\Core\FacebookSignalsBase;
+use FacebookPixelPlugin\Core\FacebookTrackingFacade;
 use FacebookPixelPlugin\Core\Capi;
 use FacebookPixelPlugin\Core\Pixel;
 
@@ -87,14 +87,14 @@ abstract class FacebookWordpressTestBase extends TestCase {
      *  - pixel->enqueue()           -> $this->enqueued_events (footer-render path)
      *  - pixel->register_ajax_dom_element() -> $this->registered_ajax_dom (listener)
      *
-     * @return FacebookSignalsBase The signals double.
+     * @return FacebookTrackingFacade The tracking-facade double.
      */
     protected function make_signals() {
         $this->captured_events     = array();
         $this->enqueued_events     = array();
         $this->registered_ajax_dom = array();
 
-        $signals = \Mockery::mock( FacebookSignalsBase::class )->makePartial();
+        $signals = \Mockery::mock( FacebookTrackingFacade::class )->makePartial();
 
         $capi = \Mockery::mock( Capi::class );
         $capi->shouldReceive( 'send' )->andReturnUsing(

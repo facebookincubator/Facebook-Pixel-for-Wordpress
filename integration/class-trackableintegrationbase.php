@@ -23,7 +23,8 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookSignalsBase;
+use FacebookPixelPlugin\Core\FacebookTrackingFacade;
+use FacebookPixelPlugin\Core\Capi;
 use FacebookPixelPlugin\Utils\ThirdPartyIntegrationsUtil;
 
 /**
@@ -82,9 +83,9 @@ abstract class TrackableIntegrationBase {
     const AJAX_PIXEL_CONTAINER = '';
 
     /**
-     * The signals subsystem this integration tracks events through.
+     * The tracking facade this integration dispatches events through.
      *
-     * @var FacebookSignalsBase
+     * @var FacebookTrackingFacade
      */
     protected $signals;
 
@@ -94,9 +95,9 @@ abstract class TrackableIntegrationBase {
     /**
      * Constructor.
      *
-     * @param FacebookSignalsBase $signals The signals subsystem instance.
+     * @param FacebookTrackingFacade $signals The tracking facade instance.
      */
-    public function __construct( FacebookSignalsBase $signals ) {
+    public function __construct( FacebookTrackingFacade $signals ) {
         $this->signals = $signals;
     }
 
@@ -126,38 +127,19 @@ abstract class TrackableIntegrationBase {
      * @param string                                                   $browser BROWSER_INLINE, BROWSER_AJAX or BROWSER_NONE.
      * @param string                                                   $server  SERVER_SYNC, SERVER_ASYNC, SERVER_NONE.
      * @param array                                                    $args    Extra arguments forwarded to deliver_ajax_browser_event() for BROWSER_AJAX.
-     * @throws \Exception When $server is SERVER_ASYNC (not yet implemented).
      * @return void
      */
     protected function deliver( $event, $browser = self::BROWSER_INLINE, $server = self::SERVER_SYNC, $args = array() ) {
-        switch ( $server ) {
-            case self::SERVER_SYNC:
-                $this->signals->capi->send( array( $event ) );
-                break;
-            case self::SERVER_ASYNC:
-                // TODO: Implement the async model.
-                throw new \Exception( 'Not Implemented' );
-            case self::SERVER_NONE:
-            default:
-                break;
-        }
+        $this->signals->track( $event, $browser, $server );
 
-        switch ( $browser ) {
-            case self::BROWSER_AJAX:
-                $this->deliver_ajax_browser_event( $args );
-                break;
-            case self::BROWSER_INLINE:
-                $this->signals->pixel->enqueue( $event );
-                break;
-            case self::BROWSER_NONE:
-            default:
-                break;
+        if ( self::BROWSER_AJAX === $browser ) {
+            $this->deliver_ajax_browser_event( $args );
         }
     }
 
     /**
      * Delivers the browser-side event for an AJAX request. Base placeholder;
-     * integrations that support AJAX browser delivery override this.
+     * integrations that support AJAX browser delivery must override this.
      *
      * @param array $args Extra arguments forwarded from deliver() (e.g. the event).
      * @throws \Exception Always, until overridden.
@@ -185,6 +167,30 @@ abstract class TrackableIntegrationBase {
                 $listener_js
             )
         );
+    }
+
+    /**
+     * Registers raw markup (e.g. an empty container div for an AJAX-driven DOM
+     * swap) to be printed in the footer. Unlike register_ajax_container(), the
+     * markup is emitted verbatim, not wrapped in a <script> element.
+     *
+     * @param string $markup The markup to print on wp_footer.
+     * @return void
+     */
+    protected function register_ajax_dom_element( $markup ) {
+        $this->signals->pixel->register_ajax_dom_element( $markup );
+    }
+
+    /**
+     * Generates the browser Pixel script for an event, for embedding in an AJAX
+     * response so the footer listener can eval it.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event              The event.
+     * @param bool                                                     $include_script_tag Whether to wrap the code in a <script> element.
+     * @return string The generated Pixel script.
+     */
+    protected function generate_pixel_script( $event, $include_script_tag = true ) {
+        return $this->signals->pixel->generate_script_for_event( $event, $include_script_tag );
     }
 
     /**

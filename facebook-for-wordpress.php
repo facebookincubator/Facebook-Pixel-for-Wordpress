@@ -51,13 +51,15 @@ use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
 use FacebookPixelPlugin\Core\ReleaseSignalsAjax;
 use FacebookPixelPlugin\Core\FacebookParamBuilder;
+use FacebookPixelPlugin\Core\FacebookTrackingFacade;
 use FacebookPixelPlugin\Core\ServerEventAsyncTask;
 
 /**
  * FacebookForWordpress root class.
  */
 class FacebookForWordpress {
-    /**
+	private $tracking_facade;
+	/**
      * Plugin constructor. Initializes the plugin options, loads the translation files,
      * sets up the Facebook pixel, sets up the pixel injection, and sets up the settings
      * page. Also starts the server event async task.
@@ -72,31 +74,31 @@ class FacebookForWordpress {
     );
 
     $options = FacebookWordpressOptions::get_options();
-    FacebookPixel::initialize( FacebookWordpressOptions::get_active_pixel_id() );
-    new Signals();
-    new ReleaseSignalsAjax();
 
-    if ( Signals::should_hold_signals() ) {
-        FacebookSignalState::hold();
-    }
-
-    // Initialize ParamBuilder server-side before pixel injection.
-    FacebookParamBuilder::server_setup();
-
-    add_action( 'init', array( $this, 'register_pixel_injection' ), 0 );
+	$this->tracking_facade = new FacebookTrackingFacade(
+		FacebookWordpressOptions::get_agent_string(),
+        FacebookWordpressOptions::get_active_pixel_id()
+	);
+	
+	$this->tracking_facade->initialize();
+    $tracking_facade = $this->tracking_facade;
 
     // Initialize the third-party plugin integrations.
-    add_action( 'init', array( $this, 'initialize_integrations' ), 0 );
+    add_action( 'init', function(...$args) use($tracking_facade) {
+		$this->initialize_integrations( $tracking_facade );
+	}, 0 );
 
     add_action( 'parse_request', array( $this, 'handle_events_request' ), 0 );
 
     $this->register_settings_page();
     add_action( 'admin_init', array( $this, 'maybe_reset_upgrade_notice' ) );
 
-    new ServerEventAsyncTask();
-
     self::update_db_for_wpcom();
     }
+
+	public function get_tracking_facade() {
+		return $this->tracking_facade;
+	}
 
     /**
      * Resets the FBL4B upgrade notice dismiss flag when the plugin is updated,
@@ -131,34 +133,41 @@ class FacebookForWordpress {
         set_transient( 'facebook_wpcom_check', 1, WEEK_IN_SECONDS );
     }
 
+
     /**
-     * Registers the pixel injection. This method instantiates the
-     * FacebookWordpressPixelInjection and calls its inject method.
+     * The third-party plugin integrations to wire up. Each is a
+     * TrackableIntegrationBase whose initialize() self-gates on whether its
+     * target plugin is installed, so listing it here is safe regardless of which
+     * plugins are actually active.
      *
-     * The inject method is responsible for adding the necessary hooks to
-     * inject the Facebook pixel code into the footer of the WordPress page.
+     * @var string[]
      */
-    public function register_pixel_injection() {
-    $injection_obj = new FacebookWordpressPixelInjection();
-    $injection_obj->inject();
-    }
+    const INTEGRATIONS = array(
+        Integration\FacebookWordpressContactForm7::class,
+        Integration\FacebookWordpressEasyDigitalDownloads::class,
+        Integration\FacebookWordpressFormidableForm::class,
+        Integration\FacebookWordpressMailchimpForWp::class,
+        Integration\FacebookWordpressNinjaForms::class,
+        Integration\FacebookWordpressWooCommerce::class,
+        Integration\FacebookWordpressWPForms::class,
+    );
 
     /**
      * Initializes the third-party plugin integrations.
      *
      * Replaces the removed FacebookPluginConfig::integration_config() and the
-     * legacy integration loop in FacebookWordpressPixelInjection::inject(). This
-     * should instantiate the new *Integration classes (e.g.
-     * FacebookWordpressContactForm7, FacebookWordpressFormidableForm,
-     * FacebookWordpressWooCommerce, ...) with an injected FacebookSignalsBase
-     * and call each one's initialize() method.
+     * legacy integration loop in FacebookWordpressPixelInjection::inject().
+     * Instantiates each integration with the shared tracking facade and calls
+     * initialize(); each integration decides for itself whether its target
+     * plugin is present.
      *
-     * @throws \Exception Always, until this is implemented.
+     * @param FacebookTrackingFacade $tracking_facade The shared tracking facade.
      * @return void
      */
-    public function initialize_integrations() {
-        // TODO: Instantiate and initialize the new integration classes.
-        throw new \Exception( 'Not Implemented' );
+    public function initialize_integrations( FacebookTrackingFacade $tracking_facade ) {
+        foreach ( self::INTEGRATIONS as $integration_class ) {
+            ( new $integration_class( $tracking_facade ) )->initialize();
+        }
     }
 
 
@@ -221,17 +230,19 @@ class FacebookForWordpress {
      * @return void
      */
     public static function declare_hpos_compatibility() {
-    if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
-        'custom_order_tables',
-        plugin_basename( __FILE__ ),
-        true
-        );
-    }
+        if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+                'custom_order_tables',
+                plugin_basename( __FILE__ ),
+                true
+            );
+        }
     }
 }
 
-// HPOS compatibility declaration.
+// HPOS compatibility declaration. Registered at plugin-load time (before the
+// plugins_loaded phase, where WooCommerce fires before_woocommerce_init at
+// priority -1) so the declaration is not missed.
 add_action(
     'before_woocommerce_init',
     array( '\\FacebookPixelPlugin\\FacebookForWordpress', 'declare_hpos_compatibility' )

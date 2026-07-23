@@ -55,7 +55,7 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
             return;
         }
 
-        $this->signals->pixel->register_ajax_dom_element( sprintf( "<div id='%s'></div>", esc_attr( self::AJAX_PIXEL_CONTAINER ) ) );
+        $this->register_ajax_dom_element( sprintf( "<div id='%s'></div>", esc_attr( self::AJAX_PIXEL_CONTAINER ) ) );
 
         // InitiateCheckout events for classic checkout.
         add_action(
@@ -233,7 +233,7 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
             throw new \Exception( '$args cannot be empty.' );
         }
         $event        = $args[0];
-        $pixel_code   = $this->signals->pixel->generate_script_for_event( $event, true );
+        $pixel_code   = $this->generate_pixel_script( $event, true );
         $div_selector = self::AJAX_PIXEL_CONTAINER;
         add_filter(
             'woocommerce_add_to_cart_fragments',

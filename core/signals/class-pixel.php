@@ -214,7 +214,7 @@ class Pixel {
             return '';
         }
 
-        $agent_setup_code = $this->generate_agent_setup_code( FacebookWordpressOptions::get_agent_string(), FacebookWordpressOptions::get_active_pixel_id() );
+        $agent_setup_code = $this->generate_agent_setup_code( $this->agent_string, $this->pixel_id );
         $fbq_for_events   = $this->generate_fbq_code_for_events( $this->browser_events );
         $this->flush_browser_events();
 

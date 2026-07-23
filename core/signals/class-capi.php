@@ -24,51 +24,64 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 /**
  * Handles sending events through the Conversions API (CAPI).
  *
- * Wraps a ServerEventSender and exposes synchronous and deferred (action-hooked)
- * ways to dispatch server-side events.
+ * Owns two senders and exposes both an inline (synchronous) and an out-of-band
+ * (asynchronous, background) way to dispatch server-side events.
  */
 class Capi {
 
-    /**
-     * Is the actual class that handles sending the Rest Call
-     *
-     * @var \FacebookPixelPlugin\Core\ServerEventSender $sender
-     */
-    private $sender;
+    const CAPI_SYNC  = 'sync';
+    const CAPI_ASYNC = 'async';
 
     /**
-     * Initializes the CAPI with a ServerEventSender backed by a Logger.
+     * Sends the CAPI request inline, within the current request.
+     *
+     * @var \FacebookPixelPlugin\Core\CapiSenderBase $sync_sender
      */
-    public function __construct() {
-        $this->sender = new ServerEventSender( new Logger() );
+    private $sync_sender;
+
+    /**
+     * Dispatches the CAPI request to a background task (out-of-band).
+     *
+     * @var \FacebookPixelPlugin\Core\CapiSenderBase $async_sender
+     */
+    private $async_sender;
+
+    /**
+     * Initializes the CAPI with the sync and async senders.
+     *
+     * @param \FacebookPixelPlugin\Core\CapiSenderBase $sync_sender  Inline sender.
+     * @param \FacebookPixelPlugin\Core\CapiSenderBase $async_sender Background sender.
+     */
+    public function __construct( $sync_sender, $async_sender ) {
+        $this->sync_sender  = $sync_sender;
+        $this->async_sender = $async_sender;
     }
 
     /**
-     * Sends the given events to the Conversions API synchronously.
+     * Sends the given events to the Conversions API using the requested mode:
+     * CAPI_SYNC delivers inline within the current request; CAPI_ASYNC hands the
+     * events to a non-blocking background task so the current request is not
+     * blocked on the network round-trip.
+     *
+     * When signals are held on a front-end request, the events are queued for
+     * later release instead of being sent (see should_suppress_frontend_send()).
      *
      * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[] $events The events to send.
+     * @param string                                                     $mode   CAPI_SYNC or CAPI_ASYNC.
+     * @throws \Exception When $mode is not a supported value.
      * @return void
      */
-    public function send( $events ) {
+    public function send( $events, $mode ) {
 
-        $this->sender->send( $events );
-    }
-
-    /**
-     * Defers sending the given events until the specified WordPress action fires.
-     *
-     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[] $events   The events to send.
-     * @param string                                                     $hook     The WordPress action hook to send on.
-     * @param int                                                        $priority The action priority. Default 10.
-     * @return void
-     */
-    public function send_async( $events, $hook, $priority = 10 ) {
-        add_action(
-            $hook,
-            function () use ( $events ) {
-                $this->send( $events );
-            },
-            $priority
-        );
+        switch ( $mode ) {
+            case self::CAPI_SYNC:
+                $this->sync_sender->send( $events );
+                break;
+            case self::CAPI_ASYNC:
+                $this->async_sender->send( $events );
+                break;
+            default:
+                throw new \Exception( esc_html( $mode ) . ' is not a supported value for $mode argument' );
+        }
     }
 }

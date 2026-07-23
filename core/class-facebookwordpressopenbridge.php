@@ -29,7 +29,6 @@ namespace FacebookPixelPlugin\Core;
 
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -159,7 +158,7 @@ class FacebookWordpressOpenBridge {
             true
         );
         $event->setEventId( $data['event_id'] );
-        FacebookServerSideEvent::send( array( $event ) );
+        new CircuitBreakerAwareSyncCapiSender()->send( array( $event ) );
     }
 
     /**
