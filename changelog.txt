@@ -1,5 +1,8 @@
 *** Meta Pixel for WordPress Changelog ***
 = 5.2.2 - 2026-07-23 =
+* Fix - Fix WooCommerce/YITH subscription fatal on missing products/cart items and add regression tests by @ukilla in #150
+* Dev - Fix missing Copyright notice in local-config-sample.php by @vahidkay-meta in #173
+* Fix - Harden admin notice dismiss control and resolve Plugin Check findings by @vahidkay-meta in #174
 
 
 = 5.2.1 - 2026-06-23 =

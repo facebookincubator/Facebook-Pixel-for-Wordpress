@@ -53,6 +53,9 @@ Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can
 == Changelog ==
 
 = 5.2.2 - 2026-07-23 =
+* Fix - Fix WooCommerce/YITH subscription fatal on missing products/cart items and add regression tests by @ukilla in #150
+* Dev - Fix missing Copyright notice in local-config-sample.php by @vahidkay-meta in #173
+* Fix - Harden admin notice dismiss control and resolve Plugin Check findings by @vahidkay-meta in #174
 
 
 [See changelog for all versions](https://raw.githubusercontent.com/facebookincubator/Facebook-Pixel-for-Wordpress/refs/heads/main/changelog.txt).
