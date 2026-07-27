@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read # required for `gh pr list` in the changelog step
   actions: write # required to dispatch build-and-upload.yml for the new release branch
 
 concurrency:
@@ -164,6 +165,13 @@ jobs:
               | @tsv
             ' | sort
           )
+
+          # Fail loudly rather than cutting a release with an empty changelog
+          # (e.g. if PR labels are missing or the landed-PR detection regresses).
+          if [ -z "$CHANGELOG" ]; then
+            echo "::error::No changelog entries were generated for $NEW_VERSION. Ensure landed PRs since the last release carry a changelog:* label (other than none)."
+            exit 1
+          fi
 
           TODAY=$(date -u +%Y-%m-%d)
           OUTPUT="= ${NEW_VERSION} - ${TODAY} =\n${CHANGELOG}"
