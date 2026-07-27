@@ -4,9 +4,7 @@
 * Dev - Fix missing Copyright notice in local-config-sample.php by @vahidkay-meta in #173
 * Fix - Harden admin notice dismiss control and resolve Plugin Check findings by @vahidkay-meta in #174
 
-
 = 5.2.1 - 2026-06-23 =
-
 
 = 5.1.0 - 2026-05-05 =
 * Feature: Facebook Login for Business by @rahulmaddineni in #135
@@ -14,7 +12,6 @@
 * Harden test event code input against XSS by @vahidkay-meta in #138
 
 = 5.0.1 - 2026-04-07 =
-
 
 = 2026-01-15 version 5.0.0 =
 - Optimize detection of wordpress.com websites, by @ukilla, in #115
