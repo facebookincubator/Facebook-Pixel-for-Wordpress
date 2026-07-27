@@ -27,6 +27,11 @@
         <exclude name=".githooks/**" />
         <exclude name=".github/**" />
         <exclude name="report/**" />
+        <!-- The build output dir is created before this copy runs; exclude it
+             (and its contents) so it isn't packaged into itself, which would
+             ship a stray nested build/official-facebook-pixel/ directory. -->
+        <exclude name="build" />
+        <exclude name="build/**" />
     </fileset>
 
     <!-- ============================================  -->
