@@ -239,6 +239,11 @@ jobs:
             const fs = require('fs');
             let content = fs.readFileSync('changelog.txt').toString().split('\n');
             const newLines = process.env.CHANGELOG_TEXT.split(/\r?\n/);
+            // Normalize to exactly one blank line between this block and the next.
+            while (newLines.length && newLines[newLines.length - 1].trim() === '') {
+              newLines.pop();
+            }
+            newLines.push('');
             // Insert new entry after the header line
             content.splice(1, 0, ...newLines);
             fs.writeFileSync('changelog.txt', content.join('\n'));
@@ -281,9 +286,13 @@ jobs:
               }
             }
 
-            // Insert new changelog
+            // Insert new changelog with exactly one blank line on each side.
             const newLines = process.env.CHANGELOG_TEXT.split(/\r?\n/);
-            newLines.unshift("");
+            while (newLines.length && newLines[newLines.length - 1].trim() === '') {
+              newLines.pop();
+            }
+            newLines.unshift(""); // blank line after the "== Changelog ==" marker
+            newLines.push("");    // single blank line before the following content
             content.splice(i, 0, ...newLines);
             fs.writeFileSync('readme.txt', content.join('\n'));
 
