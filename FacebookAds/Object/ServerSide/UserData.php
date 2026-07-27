@@ -987,10 +987,19 @@ class UserData implements ArrayAccess {
     }
     $deduped = array();
     foreach($valueList as $val){
-      $hashedVal = Util::hash(Normalizer::normalize($fieldName, $val));
+      $normalizedVal = Normalizer::normalize($fieldName, $val);
+      if ($normalizedVal === null) {
+        continue;
+      }
+
+      $hashedVal = Util::hash($normalizedVal);
+      if ($hashedVal === null) {
+        continue;
+      }
+
       $deduped[$hashedVal] = true;
     }
-    return array_keys($deduped);
+    return empty($deduped) ? null : array_keys($deduped);
   }
 
   /**

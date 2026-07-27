@@ -379,6 +379,23 @@ class UserDataTest extends AbstractUnitTestCase {
     $this->assertEquals(array(), $normalized);
   }
 
+  public function testNormalizeSkipsNullArrayValues() {
+    $userData = (new UserData())->setEmails(array(array('   ')));
+
+    $this->assertEquals(array(), $userData->normalize());
+  }
+
+  public function testNormalizeKeepsValidValueAfterInvalidArrayValue() {
+    $userData = (new UserData())->setEmails(
+      array(array('$djubre', 'john@example.com'))
+    );
+
+    $this->assertEquals(
+      array('em' => array(Util::hash('john@example.com'))),
+      $userData->normalize()
+    );
+  }
+
   private function hashList($arr){
     return array_map(
       function($val){
