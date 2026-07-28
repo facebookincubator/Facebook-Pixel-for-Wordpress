@@ -55,7 +55,7 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
             return;
         }
 
-        $this->register_ajax_container( sprintf( "<div id='%s'></div>", esc_attr( self::AJAX_PIXEL_CONTAINER ) ) );
+        $this->register_ajax_dom_element( sprintf( "<div id='%s'></div>", esc_attr( self::AJAX_PIXEL_CONTAINER ) ) );
 
         // InitiateCheckout events for classic checkout.
         add_action(
