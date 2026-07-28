@@ -107,6 +107,12 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
             'wpformsAjaxSubmitSuccess',
             $this->registered_ajax_dom[0]
         );
+        // The listener must read the same container key the AJAX response is
+        // injected under (see testInjectPixelCodeIntoResponseAddsCode).
+        $this->assertStringContainsString(
+            FacebookWordpressWPForms::AJAX_PIXEL_CONTAINER,
+            $this->registered_ajax_dom[0]
+        );
     }
 
     /**
@@ -231,17 +237,15 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testInjectPixelCodeIntoResponseAddsCode() {
+        $key      = FacebookWordpressWPForms::AJAX_PIXEL_CONTAINER;
         $response = $this->make_integration()->add_tracking_code_to_ajax_response(
             array(),
             "fbq('track', 'Lead', {});",
-            'wp_form_pxl_container'
+            $key
         );
 
-        $this->assertArrayHasKey( 'wp_form_pxl_container', $response );
-        $this->assertStringContainsString(
-            "fbq('track'",
-            $response['wp_form_pxl_container']
-        );
+        $this->assertArrayHasKey( $key, $response );
+        $this->assertStringContainsString( "fbq('track'", $response[ $key ] );
     }
 
     /**
@@ -250,13 +254,14 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testInjectPixelCodeIntoResponseLeavesExistingUntouched() {
+        $key      = FacebookWordpressWPForms::AJAX_PIXEL_CONTAINER;
         $response = $this->make_integration()->add_tracking_code_to_ajax_response(
-            array( 'wp_form_pxl_container' => 'EXISTING' ),
+            array( $key => 'EXISTING' ),
             "fbq('track', 'Lead', {});",
-            'wp_form_pxl_container'
+            $key
         );
 
-        $this->assertEquals( 'EXISTING', $response['wp_form_pxl_container'] );
+        $this->assertEquals( 'EXISTING', $response[ $key ] );
     }
 
     /**

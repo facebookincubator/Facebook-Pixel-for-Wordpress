@@ -107,6 +107,12 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
             'submit:response',
             $this->registered_ajax_dom[0]
         );
+        // The listener must read the same container key the AJAX response is
+        // injected under (see testInjectPixelCodeIntoResponseAddsCode).
+        $this->assertStringContainsString(
+            FacebookWordpressNinjaForms::AJAX_PIXEL_CONTAINER,
+            $this->registered_ajax_dom[0]
+        );
     }
 
     /**
@@ -223,17 +229,15 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testInjectPixelCodeIntoResponseAddsCode() {
+        $key      = FacebookWordpressNinjaForms::AJAX_PIXEL_CONTAINER;
         $response = $this->make_integration()->add_tracking_code_to_ajax_response(
             array(),
             "fbq('track', 'Lead', {});",
-            'ninja_forms_pxl_container'
+            $key
         );
 
-        $this->assertArrayHasKey( 'ninja_forms_pxl_container', $response );
-        $this->assertStringContainsString(
-            "fbq('track'",
-            $response['ninja_forms_pxl_container']
-        );
+        $this->assertArrayHasKey( $key, $response );
+        $this->assertStringContainsString( "fbq('track'", $response[ $key ] );
     }
 
     /**
@@ -242,13 +246,14 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testInjectPixelCodeIntoResponseLeavesExistingUntouched() {
+        $key      = FacebookWordpressNinjaForms::AJAX_PIXEL_CONTAINER;
         $response = $this->make_integration()->add_tracking_code_to_ajax_response(
-            array( 'ninja_forms_pxl_container' => 'EXISTING' ),
+            array( $key => 'EXISTING' ),
             "fbq('track', 'Lead', {});",
-            'ninja_forms_pxl_container'
+            $key
         );
 
-        $this->assertEquals( 'EXISTING', $response['ninja_forms_pxl_container'] );
+        $this->assertEquals( 'EXISTING', $response[ $key ] );
     }
 
     /**

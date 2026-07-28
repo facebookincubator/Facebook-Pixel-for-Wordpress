@@ -216,8 +216,10 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
 
         $this->assertHooksAdded();
         $this->assertCount( 1, $this->registered_ajax_dom );
+        // The container div registered on page load must use the same id the
+        // cart-fragment update targets (see testAddPixelCodeToCartFragment).
         $this->assertStringContainsString(
-            'fb-pxl-ajax-code',
+            FacebookWordpressWooCommerce::AJAX_PIXEL_CONTAINER,
             $this->registered_ajax_dom[0]
         );
     }
@@ -463,16 +465,20 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
             return $v;
         } ) );
 
+        $container = FacebookWordpressWooCommerce::AJAX_PIXEL_CONTAINER;
         $fragments = $this->make_integration()->add_js_tracking_code_to_cart_fragment(
             array(),
             "fbq('track', 'AddToCart', {});",
-            'fb-pxl-ajax-code'
+            $container
         );
 
-        $this->assertArrayHasKey( '#fb-pxl-ajax-code', $fragments );
+        $this->assertArrayHasKey( '#' . $container, $fragments );
         $this->assertMatchesRegularExpression(
-            "/id='fb-pxl-ajax-code'[\s\S]+fbq\('track'/",
-            $fragments['#fb-pxl-ajax-code']
+            sprintf(
+                "/id='%s'[\s\S]+fbq\('track'/",
+                preg_quote( $container, '/' )
+            ),
+            $fragments[ '#' . $container ]
         );
     }
 }

@@ -108,6 +108,12 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
             'wpcf7mailsent',
             $this->registered_ajax_dom[0]
         );
+        // The listener must read the same container key the AJAX response is
+        // injected under (see testAddTrackingCodeToAjaxResponseAddsCode).
+        $this->assertStringContainsString(
+            FacebookWordpressContactForm7::AJAX_PIXEL_CONTAINER,
+            $this->registered_ajax_dom[0]
+        );
     }
 
     /**
@@ -264,17 +270,15 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
      * @return void
      */
     public function testAddTrackingCodeToAjaxResponseAddsCode() {
+        $key      = FacebookWordpressContactForm7::AJAX_PIXEL_CONTAINER;
         $response = $this->make_integration()->add_tracking_code_to_ajax_response(
             array(),
             "fbq('track', 'Lead', {});",
-            'contact_form_7_pxl_container'
+            $key
         );
 
-        $this->assertArrayHasKey( 'contact_form_7_pxl_container', $response );
-        $this->assertStringContainsString(
-            "fbq('track'",
-            $response['contact_form_7_pxl_container']
-        );
+        $this->assertArrayHasKey( $key, $response );
+        $this->assertStringContainsString( "fbq('track'", $response[ $key ] );
     }
 
     /**
@@ -283,13 +287,14 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
      * @return void
      */
     public function testInjectPixelCodeIntoResponseLeavesExistingUntouched() {
+        $key      = FacebookWordpressContactForm7::AJAX_PIXEL_CONTAINER;
         $response = $this->make_integration()->add_tracking_code_to_ajax_response(
-            array( 'contact_form_7_pxl_container' => 'EXISTING' ),
+            array( $key => 'EXISTING' ),
             "fbq('track', 'Lead', {});",
-            'contact_form_7_pxl_container'
+            $key
         );
 
-        $this->assertEquals( 'EXISTING', $response['contact_form_7_pxl_container'] );
+        $this->assertEquals( 'EXISTING', $response[ $key ] );
     }
 
     /**
