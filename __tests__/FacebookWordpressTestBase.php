@@ -78,14 +78,17 @@ abstract class FacebookWordpressTestBase extends TestCase {
     protected $registered_ajax_dom = array();
 
     /**
-     * Builds a signals double for driving instance-based integrations.
+     * Builds a tracking-facade double for driving instance-based integrations.
      *
      * generate_event() runs for real (so a real Event is built and normalized).
-     * The Pixel/CAPI collaborators are stubbed and record what the integration
-     * hands them so tests can assert the same behavior the legacy tests did:
-     *  - capi->send()               -> $this->captured_events (server event)
-     *  - pixel->enqueue()           -> $this->enqueued_events (footer-render path)
-     *  - pixel->register_ajax_dom_element() -> $this->registered_ajax_dom (listener)
+     * The facade's public delivery methods are stubbed and record what the
+     * integration hands them, so tests can assert the same behavior the legacy
+     * tests did (this keeps the double independent of the facade's private
+     * Pixel/CAPI collaborators):
+     *  - track_server_event()        -> $this->captured_events (server event)
+     *  - track_inline_browser_event() -> $this->enqueued_events (footer-render path)
+     *  - register_ajax_dom_container() -> $this->registered_ajax_dom (listener)
+     *  - generate_pixel_code()        -> a stub fbq() string (AJAX response code)
      *
      * @return FacebookTrackingFacade The tracking-facade double.
      */
@@ -96,31 +99,24 @@ abstract class FacebookWordpressTestBase extends TestCase {
 
         $signals = \Mockery::mock( FacebookTrackingFacade::class )->makePartial();
 
-        $capi = \Mockery::mock( Capi::class );
-        $capi->shouldReceive( 'send' )->andReturnUsing(
-            function ( $events ) {
-                foreach ( $events as $event ) {
-                    $this->captured_events[] = $event;
-                }
+        $signals->shouldReceive( 'track_server_event' )->andReturnUsing(
+            function ( $event, $server = null ) {
+                $this->captured_events[] = $event;
             }
         );
-        $signals->capi = $capi;
-
-        $pixel = \Mockery::mock( Pixel::class );
-        $pixel->shouldReceive( 'enqueue' )->andReturnUsing(
+        $signals->shouldReceive( 'track_inline_browser_event' )->andReturnUsing(
             function ( $event ) {
                 $this->enqueued_events[] = $event;
             }
         );
-        $pixel->shouldReceive( 'register_ajax_dom_element' )->andReturnUsing(
+        $signals->shouldReceive( 'register_ajax_dom_container' )->andReturnUsing(
             function ( $markup ) {
                 $this->registered_ajax_dom[] = $markup;
             }
         );
-        $pixel->shouldReceive( 'generate_script_for_event' )->andReturn(
+        $signals->shouldReceive( 'generate_pixel_code' )->andReturn(
             "fbq('track', 'Lead', {});"
         );
-        $signals->pixel = $pixel;
 
         return $signals;
     }

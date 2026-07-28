@@ -118,23 +118,34 @@ abstract class TrackableIntegrationBase {
     }
 
     /**
-     * Sends the event to CAPI, then delivers the browser-side event per the
-     * given mode. No runtime routing here: the caller picks the mode (e.g. a
-     * dual-mode integration passes BROWSER_AJAX when wp_doing_ajax(), else
-     * BROWSER_INLINE), so the decision stays visible at the call site.
+     * Delivers the browser-side event per the given browser mode, then sends the
+     * event to CAPI per the given server mode. No runtime routing here: the
+     * caller picks the mode (e.g. a dual-mode integration passes BROWSER_AJAX
+     * when wp_doing_ajax(), else BROWSER_INLINE), so the decision stays visible
+     * at the call site.
      *
      * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event   The event.
      * @param string                                                   $browser BROWSER_INLINE, BROWSER_AJAX or BROWSER_NONE.
      * @param string                                                   $server  SERVER_SYNC, SERVER_ASYNC, SERVER_NONE.
      * @param array                                                    $args    Extra arguments forwarded to deliver_ajax_browser_event() for BROWSER_AJAX.
+     * @throws \Exception When the browser delivery mode is not supported.
      * @return void
      */
     protected function deliver( $event, $browser = self::BROWSER_INLINE, $server = self::SERVER_SYNC, $args = array() ) {
-        $this->signals->track( $event, $browser, $server );
-
-        if ( self::BROWSER_AJAX === $browser ) {
-            $this->deliver_ajax_browser_event( $args );
+        switch ( $browser ) {
+            case self::BROWSER_AJAX:
+                $this->deliver_ajax_browser_event( $args );
+                break;
+            case self::BROWSER_INLINE:
+                $this->signals->track_inline_browser_event( $event );
+                break;
+            case self::BROWSER_NONE:
+                break;
+            default:
+                throw new \Exception( esc_html( $browser ) . ' is not implemented' );
         }
+
+        $this->signals->track_server_event( $event, $server );
     }
 
     /**
@@ -157,7 +168,7 @@ abstract class TrackableIntegrationBase {
      * @return void
      */
     protected function register_ajax_container( $listener_js ) {
-        $this->signals->pixel->register_ajax_dom_element(
+        $this->signals->register_ajax_dom_container(
             sprintf(
                 "<!-- Meta Pixel Event Code -->
 				<script type='text/javascript'>
@@ -178,7 +189,7 @@ abstract class TrackableIntegrationBase {
      * @return void
      */
     protected function register_ajax_dom_element( $markup ) {
-        $this->signals->pixel->register_ajax_dom_element( $markup );
+        $this->signals->register_ajax_dom_container( $markup );
     }
 
     /**
@@ -189,8 +200,8 @@ abstract class TrackableIntegrationBase {
      * @param bool                                                     $include_script_tag Whether to wrap the code in a <script> element.
      * @return string The generated Pixel script.
      */
-    protected function generate_pixel_script( $event, $include_script_tag = true ) {
-        return $this->signals->pixel->generate_script_for_event( $event, $include_script_tag );
+    protected function generate_pixel_script_for_ajax( $event, $include_script_tag ) {
+        return $this->signals->generate_pixel_code( $event, $include_script_tag );
     }
 
     /**

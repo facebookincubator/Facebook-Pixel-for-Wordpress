@@ -47,33 +47,28 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBase {
   /**
-   * List of supported integrations.
-   *
-   * @var array
-   */
-  private static $integrations = array(
-    'FacebookWordpressContactForm7',
-    'FacebookWordpressEasyDigitalDownloads',
-    'FacebookWordpressFormidableForm',
-    'FacebookWordpressMailchimpForWp',
-    'FacebookWordpressNinjaForms',
-  );
-
-  /**
    * Tests the inject method from the FacebookWordpressPixelInjection class.
    *
-   * Verifies that the correct WordPress actions are added for the
-   * inject_pixel_code and inject_pixel_noscript_code methods. Also verifies
-   * that the sendServerEvents method is not added as an action.
-   *
-   * Checks that each integration injects the correct Pixel code by verifying
-   * that the inject_pixel_code method is called on each integration class.
+   * Verifies that, when a pixel id is configured, inject() registers the
+   * WordPress actions for the signal script, pixel code and noscript code.
+   * Third-party integration setup now happens in
+   * FacebookForWordpress::initialize_integrations(), not here.
    *
    * @return void
    */
   public function testPixelInjection() {
     self::mockGetOption( '1234' );
+    self::mockGetTransientAAMSettings(
+      1234,
+      false,
+      AAMSettingsFields::get_all_fields()
+    );
+
     $injection_obj = new FacebookWordpressPixelInjection();
+    \WP_Mock::expectActionAdded(
+      'wp_enqueue_scripts',
+      array( $injection_obj, 'enqueue_signal_script' )
+    );
     \WP_Mock::expectActionAdded(
       'wp_head',
       array( $injection_obj, 'inject_pixel_code' )
@@ -83,30 +78,10 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
       array( $injection_obj, 'inject_pixel_noscript_code' )
     );
 
-    $spies = array();
-    foreach ( self::$integrations as $index => $integration ) {
-      $spies[] = \Mockery::spy(
-        'alias:FacebookPixelPlugin\\Integration\\' . $integration
-      );
-    }
-
-    \WP_Mock::expectActionNotAdded(
-      'shutdown',
-      array( $injection_obj, 'sendServerEvents' )
-    );
-
-    self::mockGetTransientAAMSettings(
-      1234,
-      false,
-      AAMSettingsFields::get_all_fields()
-    );
-
     FacebookWordpressOptions::initialize();
     $injection_obj->inject();
 
-    foreach ( $spies as $index => $spy ) {
-      $spy->shouldHaveReceived( 'inject_pixel_code' );
-    }
+    $this->assertHooksAdded();
   }
 
   /**

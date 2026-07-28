@@ -172,6 +172,6 @@ class ServerEventAsyncTask extends \WP_Async_Task {
             $event    = $this->convert_array_to_event( $event_as_array );
             $events[] = $event;
         }
-        $this->tracking_facade->track( $events, FacebookTrackingFacade::BROWSER_NONE, FacebookTrackingFacade::SERVER_SYNC );
+        $this->tracking_facade->track_server_event( $events, FacebookTrackingFacade::SERVER_SYNC );
     }
 }

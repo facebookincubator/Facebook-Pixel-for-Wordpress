@@ -31,7 +31,7 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * Handles lazy initialization of the Facebook Ads API client, configuration
  * checks (pixel id / access token), and construction of the EventRequest.
  */
-class CapiSenderBase {
+abstract class CapiSenderBase {
     /**
      * Lazily-initialized Conversions API client, reused across calls in the
      * same request (the access token is request-stable).
@@ -72,6 +72,12 @@ class CapiSenderBase {
         return $this->api;
     }
 
+    /**
+     * Sends the given events to the Conversions API.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[] $events The events to send.
+     * @return mixed The send result, when the implementation produces one.
+     */
     abstract public function send( array $events );
 
     /**

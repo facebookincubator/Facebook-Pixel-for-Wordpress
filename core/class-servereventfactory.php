@@ -506,10 +506,12 @@ class ServerEventFactory {
         }
 
         $custom_data = $event->getCustomData();
-        $custom_data->addCustomProperty(
-            'fb_integration_tracking',
-            $integration
-        );
+        if ( ! empty( $integration ) ) {
+            $custom_data->addCustomProperty(
+                'fb_integration_tracking',
+                $integration
+            );
+        }
 
         if ( ! empty( $data['currency'] ) ) {
             $custom_data->setCurrency( $custom_data_array['currency'] );

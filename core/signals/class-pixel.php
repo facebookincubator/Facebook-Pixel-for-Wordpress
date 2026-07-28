@@ -139,13 +139,13 @@ class Pixel {
      * @return void
      */
     public function print_out_ajax_dom_elements() {
-        $script = '';
+        $html = '';
         foreach ( $this->ajax_dom_elements as $ajax_dom_element ) {
-            $script .= $ajax_dom_element;
+            $html .= $ajax_dom_element;
         }
         printf(
             '%s',
-            $script // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Pixel DOM is plugin-generated script, not user input.
+            $html // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Pixel DOM is plugin-generated script, not user input.
         );
     }
 
@@ -184,12 +184,12 @@ class Pixel {
      * @param bool                                                     $include_script_tag Whether to wrap the output in a <script> tag. Default true.
      * @return string The generated script, or an empty string when the event is empty.
      */
-    public function generate_script_for_event( $event, $include_script_tag = true ) {
+    public function generate_script_for_event( $event, $include_script_tag ) {
         if ( empty( $event ) ) {
             return '';
         }
 
-        $agent_setup_code = $this->generate_agent_setup_code( $this->agent_string, $this->pixel_id );
+        $agent_setup_code = $this->generate_agent_setup_script();
         $fbq_for_events   = $this->generate_fbq_code_for_events( array( $event ) );
 
         $result = $agent_setup_code . $fbq_for_events;
@@ -209,16 +209,23 @@ class Pixel {
      * @param bool $include_script_tag Whether to wrap the output in a <script> tag. Default true.
      * @return string The generated script, or an empty string when no events are queued.
      */
-    public function generate_script_for_tracked_events( $include_script_tag = true ) {
+    public function generate_script_for_tracked_events( $include_script_tag ) {
         if ( empty( $this->browser_events ) ) {
             return '';
         }
 
-        $agent_setup_code = $this->generate_agent_setup_code( $this->agent_string, $this->pixel_id );
-        $fbq_for_events   = $this->generate_fbq_code_for_events( $this->browser_events );
+        $agent_setup_code = $this->generate_agent_setup_script();
+        $event_script     = '';
+        if ( FacebookSignalState::is_held() ) {
+            foreach ( $this->browser_events as $event ) {
+                $event_script .= $this->generate_queue_code_for_event( $event );
+            }
+        } else {
+            $event_script = $this->generate_fbq_code_for_events( $this->browser_events );
+        }
         $this->flush_browser_events();
 
-        $result = $agent_setup_code . $fbq_for_events;
+        $result = $agent_setup_code . $event_script;
 
         if ( $include_script_tag ) {
             $result = sprintf( self::SCRIPT_TAG, $result );
@@ -252,15 +259,13 @@ class Pixel {
     /**
      * Generates the fbq() agent setup code.
      *
-     * @param string $agent_string The partner agent string.
-     * @param string $pixel_id     The Meta Pixel id.
      * @return string The generated agent setup code.
      */
-    private function generate_agent_setup_code( $agent_string, $pixel_id ) {
+    private function generate_agent_setup_script() {
         return sprintf(
             self::FBQ_AGENT_CODE,
-            $agent_string,
-            $pixel_id
+            $this->agent_string,
+            $this->pixel_id
         );
     }
 
@@ -283,20 +288,96 @@ class Pixel {
      * @return string The generated fbq() code.
      */
     private function generate_fbq_for_event( $event ) {
-        // The fb_integration_tracking custom property is added to the event's
-        // custom_data at event-creation time (see ServerEventFactory), so it is
-        // already present in normalize() below — the Pixel layer no longer needs
-        // to know the integration name.
-        $normalized_custom_data = ( $event->getCustomData() !== null ?
-            $event->getCustomData() : new CustomData() )->normalize();
-
         return sprintf(
             self::FBQ_EVENT_CODE,
             in_array( $event->getEventName(), self::NORMAL_EVENTS, true ) ?
                 self::TRACK : self::TRACK_CUSTOM,
             $event->getEventName(),
-            wp_json_encode( $normalized_custom_data, JSON_PRETTY_PRINT ),
+            wp_json_encode( self::get_normalized_custom_data( $event ), JSON_PRETTY_PRINT ),
             wp_json_encode( array( self::EVENT_ID => $event->getEventId() ), JSON_PRETTY_PRINT )
         );
+    }
+
+    /**
+     * Render the pixel event
+     *
+     * @param mixed $event The array of events, each event is an
+     * array with the following keys:
+     *                      - event_name: the name of the event
+     *                      - event_id: the id of the event (optional)
+     *                      - custom_data: the custom data
+     * for the event (optional).
+     * @param bool  $include_script_tag Whether to wrap the
+     * generated code with a script tag.
+     *
+     * @return string The rendered pixel events
+     */
+    public function generate_queue_script_for_event(
+        $event,
+        $include_script_tag = true
+    ) {
+        if ( empty( $event ) ) {
+            return '';
+        }
+        $code   = $this->generate_agent_setup_script();
+        $result = $code . $this->generate_queue_code_for_event( $event );
+
+        if ( $include_script_tag ) {
+            $result = sprintf( self::SCRIPT_TAG, $result );
+        }
+        return $result;
+    }
+
+    /**
+     * Generates the FacebookSignal.queueEvent() JavaScript for a held event.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event.
+     * @return string The generated queue script.
+     */
+    private function generate_queue_code_for_event( $event ) {
+        // build_queue_payload() expects the custom data as an array; pass the
+        // normalized custom_data (which already carries fb_integration_tracking)
+        // and fold the event id in so it survives into the queued payload.
+        $normalized_custom_data = self::get_normalized_custom_data( $event );
+        if ( ! empty( $event->getEventId() ) ) {
+            $normalized_custom_data[ self::EVENT_ID ] = $event->getEventId();
+        }
+
+        $payload               = FacebookPixel::build_queue_payload(
+            $event->getEventName(),
+            $normalized_custom_data,
+            '',
+            null
+        );
+        $payload['event_time'] = $event->getEventTime();
+
+        return 'FacebookSignal.queueEvent(' .
+            wp_json_encode(
+                $payload,
+                JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP |
+                    JSON_HEX_APOS | JSON_HEX_QUOT
+            ) .
+            ');';
+    }
+
+    /**
+     * Returns the event's normalized custom data, falling back to an empty
+     * CustomData when the event has none.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event.
+     * @return array The normalized custom data.
+     */
+    private static function get_normalized_custom_data( $event ) {
+        // The fb_integration_tracking custom property is added to the event's
+        // custom_data at event-creation time (see ServerEventFactory), so it is
+        // already present in normalize() below — the Pixel layer no longer needs
+        // to know the integration name.
+        $normalized_custom_data = (
+            $event->getCustomData() !== null ?
+            $event->getCustomData() :
+            new CustomData()
+        )->normalize();
+
+        return $normalized_custom_data;
     }
 }

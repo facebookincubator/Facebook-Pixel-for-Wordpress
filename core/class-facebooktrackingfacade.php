@@ -196,44 +196,76 @@ class FacebookTrackingFacade {
     }
 
     /**
-     * Dispatches an event: sends it to CAPI per the server mode and to the
-     * browser Pixel per the browser mode. When signals are held on a front-end
-     * request the event is queued for later release instead of being delivered.
+     * Sends the event to CAPI for the given server mode. When signals are held
+     * on a front-end request the event is queued for later release instead.
      *
-     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event   The event.
-     * @param string                                                   $browser BROWSER_INLINE, BROWSER_AJAX or BROWSER_NONE.
-     * @param string                                                   $server  SERVER_SYNC, SERVER_ASYNC or SERVER_NONE.
-     * @throws \Exception When the browser delivery mode is not supported.
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event  The event.
+     * @param string                                                   $server SERVER_SYNC, SERVER_ASYNC or SERVER_NONE.
+     * @throws \Exception When the server delivery mode is not supported.
      * @return void
      */
-    public function track( $event, $browser = self::BROWSER_INLINE, $server = self::SERVER_SYNC ) {
-
-        if ( self::should_suppress_frontend_send() ) {
-            FacebookSignalState::queue_event( $event );
+    public function track_server_event( $event, $server = self::SERVER_SYNC ) {
+        if ( self::SERVER_NONE === $server ) {
             return;
         }
+        if ( self::should_suppress_frontend_send() ) {
+            FacebookSignalState::queue_event( $event );
+        } else {
+            switch ( $server ) {
+                case self::SERVER_SYNC:
+                    $this->capi->send( array( $event ), Capi::CAPI_SYNC );
+                    break;
+                case self::SERVER_ASYNC:
+                    $this->capi->send( array( $event ), Capi::CAPI_ASYNC );
+                    break;
+                default:
+                    throw new \Exception( esc_html( $server ) . ' is not implemented' );
 
-        switch ( $server ) {
-            case self::SERVER_SYNC:
-                $this->capi->send( array( $event ), Capi::CAPI_SYNC );
-                break;
-            case self::SERVER_ASYNC:
-                $this->capi->send( array( $event ), Capi::CAPI_ASYNC );
-                break;
-            case self::SERVER_NONE:
-            default:
-                break;
+            }
         }
+    }
 
-        switch ( $browser ) {
-            case self::BROWSER_AJAX:
-                throw new \Exception( 'Not Implemented' );
-            case self::BROWSER_INLINE:
-                $this->pixel->enqueue( $event );
-                break;
-            case self::BROWSER_NONE:
-            default:
-                break;
+    /**
+     * Enqueues the event with the browser Pixel for the footer flush.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event.
+     * @return void
+     */
+    public function track_inline_browser_event( $event ) {
+        $this->pixel->enqueue( $event );
+    }
+
+    /**
+     * Registers raw footer markup (e.g. an AJAX container element) with the
+     * browser Pixel to be printed on wp_footer.
+     *
+     * @param string $container The markup to print in the footer.
+     * @return void
+     */
+    public function register_ajax_dom_container( $container ) {
+        $this->pixel->register_ajax_dom_element( $container );
+    }
+
+    /**
+     * Generates the browser Pixel script for an event: the queue script when
+     * signals are held, otherwise the normal fbq() script.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event              The event.
+     * @param bool                                                     $include_script_tag Whether to wrap the code in a <script> element.
+     * @return string The generated Pixel script.
+     */
+    public function generate_pixel_code( $event, $include_script_tag ) {
+
+        if ( FacebookSignalState::is_held() ) {
+            return $this->pixel->generate_queue_script_for_event(
+                $event,
+                $include_script_tag
+            );
+        } else {
+            return $this->pixel->generate_script_for_event(
+                $event,
+                $include_script_tag
+            );
         }
     }
 
