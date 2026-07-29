@@ -10,6 +10,7 @@
  * Not covered (this plugin does not emit them): Search, ViewCategory, Subscribe.
  */
 
+const crypto = require('crypto');
 const { test, expect } = require('@playwright/test');
 const {
   TIMEOUTS,
@@ -28,6 +29,7 @@ const {
   asArray,
   assertEventContainsRetailerId,
   ignoreKnownPurchaseUserDataGap,
+  ignoreKnownLeadEmGap,
   getCartItemsViaStoreApi,
   clearCart,
   completeCheckoutFromCart,
@@ -655,20 +657,25 @@ test('Purchase - Grouped Product', async ({ page }, testInfo) => {
 test('Lead', async ({ page }, testInfo) => {
   const { testId, pixelCapture } = await TestSetup.init(page, 'Lead', testInfo);
 
-  // Submit with the logged-in customer's email so the em hash matches across
-  // channels: the Pixel Lead carries the session/advanced-matching email while
-  // CAPI carries the form-submitted email. (In guest mode there's no session
-  // email, so both channels use the form value — also consistent.)
+  const leadEmail = process.env.TEST_LEAD_EMAIL || 'e2e-lead@example.test';
+
   const eventPromise = pixelCapture.waitForEvent();
-  await submitLeadForm(page, TEST_LEAD_FORM_URL, {
-    email: process.env.WP_CUSTOMER_EMAIL || process.env.TEST_LEAD_EMAIL || 'e2e_customer@example.com',
-  });
+  await submitLeadForm(page, TEST_LEAD_FORM_URL, { email: leadEmail });
   await eventPromise;
   await page.waitForTimeout(TIMEOUTS.SHORT);
 
   const validator = new EventValidator(testId);
   await validator.checkDebugLog();
-  const result = await validator.validate('Lead', page);
+  // The Pixel Lead carries the session/advanced-matching email while CAPI carries
+  // the submitted form email, so the em hashes legitimately differ across channels.
+  const result = ignoreKnownLeadEmGap(await validator.validate('Lead', page));
+
+  // Assert the submitted form email actually reached CAPI (SHA-256 of the
+  // trimmed, lowercased address), so the Lead identity is verified end-to-end.
+  const expectedEm = crypto.createHash('sha256').update(leadEmail.trim().toLowerCase()).digest('hex');
+  const capiLead = getLatestEvent((await loadCapturedEvents(testId)).capi, 'Lead');
+  const capiEm = asArray(capiLead?.user_data?.em)[0] || capiLead?.user_data?.em;
+  expect(String(capiEm)).toBe(expectedEm);
 
   TestSetup.logResult('Lead', result);
   expect(result.passed).toBe(true);

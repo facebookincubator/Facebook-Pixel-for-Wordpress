@@ -75,6 +75,20 @@ function ignoreKnownPurchaseUserDataGap(result) {
   };
 }
 
+// For a logged-in submitter, the Lead pixel carries the session/advanced-matching
+// email while CAPI carries the form-submitted email, so the em hashes legitimately
+// differ across channels. Drop those cross-channel em-equality errors; the test
+// separately asserts the form email reached CAPI, and event_id dedup still holds.
+function ignoreKnownLeadEmGap(result) {
+  const emMismatch = /^(user_data\.em mismatch|Hashed em mismatch)/;
+  const filteredErrors = (result?.errors || []).filter(error => !emMismatch.test(error));
+  return {
+    ...result,
+    errors: filteredErrors,
+    passed: filteredErrors.length === 0
+  };
+}
+
 function ignoreKnownGuestCheckoutUserDataGap(result) {
   const allowMissingGuestFields = /^(pixel|capi) user_data\.(em|external_id|ct|zp|country|cn) missing$/;
   const filteredErrors = (result?.errors || []).filter(error => !allowMissingGuestFields.test(error));
@@ -357,6 +371,7 @@ module.exports = {
   asArray,
   assertEventContainsRetailerId,
   ignoreKnownPurchaseUserDataGap,
+  ignoreKnownLeadEmGap,
   ignoreKnownGuestCheckoutUserDataGap,
   createTempCustomerUser,
   deleteTempCustomerUser,
