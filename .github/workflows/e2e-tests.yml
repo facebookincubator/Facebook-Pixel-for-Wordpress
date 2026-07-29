@@ -245,7 +245,9 @@ jobs:
           # Run every project; don't abort on the first failure so we get a full
           # per-project signal. Aggregate exit status at the end.
           FAILED=""
-          run_project() { echo "::group::$*"; "$@"; local rc=$?; echo "::endgroup::"; [ $rc -eq 0 ] || FAILED="$FAILED"$'\n'"  - $*"; }
+          # Use `if "$@"` (not `"$@"; rc=$?`) so a failing project doesn't abort the
+          # step under GitHub's default `bash -e`; we aggregate failures instead.
+          run_project() { echo "::group::$*"; if "$@"; then echo "::endgroup::"; else echo "::endgroup::"; FAILED="$FAILED"$'\n'"  - $*"; fi; }
           # Headless-capable engines.
           run_project npx playwright test --project=chromium-wp-customer --workers=1
           run_project npx playwright test --project=chromium-wp-guest --workers=1

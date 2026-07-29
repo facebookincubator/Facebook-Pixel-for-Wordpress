@@ -655,9 +655,13 @@ test('Purchase - Grouped Product', async ({ page }, testInfo) => {
 test('Lead', async ({ page }, testInfo) => {
   const { testId, pixelCapture } = await TestSetup.init(page, 'Lead', testInfo);
 
+  // Submit with the logged-in customer's email so the em hash matches across
+  // channels: the Pixel Lead carries the session/advanced-matching email while
+  // CAPI carries the form-submitted email. (In guest mode there's no session
+  // email, so both channels use the form value — also consistent.)
   const eventPromise = pixelCapture.waitForEvent();
   await submitLeadForm(page, TEST_LEAD_FORM_URL, {
-    email: process.env.TEST_LEAD_EMAIL || `lead+${Date.now()}@example.test`,
+    email: process.env.WP_CUSTOMER_EMAIL || process.env.TEST_LEAD_EMAIL || 'e2e_customer@example.com',
   });
   await eventPromise;
   await page.waitForTimeout(TIMEOUTS.SHORT);
