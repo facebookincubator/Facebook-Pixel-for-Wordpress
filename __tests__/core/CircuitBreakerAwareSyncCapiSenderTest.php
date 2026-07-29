@@ -55,7 +55,6 @@ final class CircuitBreakerAwareSyncCapiSenderTest extends FacebookWordpressTestB
             ->reply( array() );
 
         $sender = new CircuitBreakerAwareSyncCapiSender(
-            '',
             \Mockery::mock( Logger::class )
         );
 

@@ -124,7 +124,7 @@ class FacebookTrackingFacade {
         $this->agent_string = $agent_string;
         $this->pixel_id     = $active_pixel_id;
 
-        $this->capi  = new Capi( new CircuitBreakerAwareSyncCapiSender(), new AsyncCapiSender() );
+        $this->capi  = new Capi( new CircuitBreakerAwareSyncCapiSender( new Logger() ), new AsyncCapiSender() );
         $this->pixel = new Pixel( $this->agent_string, $this->pixel_id );
     }
 

@@ -228,7 +228,7 @@ class FacebookCapiEvent {
             }
         }
 
-        $result = ( new CircuitBreakerAwareSyncCapiSender( $test_event_code, new Logger() ) )->send( $events );
+        $result = ( new CircuitBreakerAwareSyncCapiSender( new Logger(), $test_event_code ) )->send( $events );
 
         if ( $result && $result['success'] ) {
             wp_send_json_success(

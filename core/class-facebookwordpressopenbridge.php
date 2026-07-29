@@ -59,9 +59,17 @@ class FacebookWordpressOpenBridge {
     );
 
     /**
+     * The CAPI transport used to send OpenBridge events.
+     *
+     * @var CapiSenderBase
+     */
+    private $capi_sender;
+
+    /**
      * Class constructor.
      */
     public function __construct() {
+        $this->capi_sender = new CircuitBreakerAwareSyncCapiSender( new Logger() );
     }
 
     /**
@@ -158,7 +166,7 @@ class FacebookWordpressOpenBridge {
             true
         );
         $event->setEventId( $data['event_id'] );
-        new CircuitBreakerAwareSyncCapiSender()->send( array( $event ) );
+        $this->capi_sender->send( array( $event ) );
     }
 
     /**

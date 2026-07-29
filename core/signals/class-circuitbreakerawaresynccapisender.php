@@ -51,12 +51,12 @@ class CircuitBreakerAwareSyncCapiSender extends CapiSenderBase {
      * Stores the test event code and the injected logger used to report CAPI
      * send failures.
      *
-     * @param string $test_event_code Optional test event code.
      * @param Logger $logger          Logger for CAPI send failures.
+     * @param string $test_event_code Optional test event code.
      */
-    public function __construct( $test_event_code = '', Logger $logger = new Logger() ) {
-        $this->test_event_code = $test_event_code;
+    public function __construct( Logger $logger, $test_event_code = '' ) {
         $this->logger          = $logger;
+        $this->test_event_code = $test_event_code;
     }
 
     /**
