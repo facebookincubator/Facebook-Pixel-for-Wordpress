@@ -96,11 +96,10 @@ const EVENT_OVERLAYS = {
 
   Lead: {
     channels: ['pixel', 'capi'],
-    // Form-provided PII: present for both logged-in and guest submitters.
-    user_data: {
-      pixel: ['em', 'fbp'],
-      capi: ['em', 'fbp'],
-    },
+    // Inherit the mode-aware base user_data: the Pixel Lead only carries `em` via
+    // session advanced-matching (so customer → em+fbp, guest → fbp only). The
+    // form-submitted email is asserted to reach CAPI separately in the spec
+    // (keyed off the shared event_id), so it stays verified in both modes.
     custom_data: { pixel: [], capi: [] },
   },
 };

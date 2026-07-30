@@ -231,9 +231,11 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           npm ci
+          # global-setup.js launches chromium to seed the customer cookie, so every
+          # shard needs chromium in addition to its own engine.
           case "${{ matrix.project }}" in
-            firefox-*)         timeout 15m npx playwright install --with-deps firefox ;;
-            safari-ios-*)      timeout 15m npx playwright install --with-deps webkit ;;
+            firefox-*)         timeout 15m npx playwright install --with-deps chromium firefox ;;
+            safari-ios-*)      timeout 15m npx playwright install --with-deps chromium webkit ;;
             *privacy-sandbox*) timeout 15m npx playwright install --with-deps chromium chrome ;;
             edge-*)            timeout 15m npx playwright install --with-deps chromium msedge ;;
             *)                 timeout 15m npx playwright install --with-deps chromium ;;
