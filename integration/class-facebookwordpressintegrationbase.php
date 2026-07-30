@@ -116,13 +116,13 @@ abstract class FacebookWordpressIntegrationBase extends TrackableIntegrationBase
 
         if ( function_exists( '_deprecated_class' ) ) {
             _deprecated_class(
-                $class,
+                esc_html( $class ),
                 '6.0.0',
                 'FacebookPixelPlugin\\Integration\\TrackableIntegrationBase'
             );
         } elseif ( function_exists( '_deprecated_function' ) ) {
             _deprecated_function(
-                $class . '::inject_pixel_code',
+                esc_html( $class . '::inject_pixel_code' ),
                 '6.0.0',
                 'FacebookPixelPlugin\\Integration\\'
                 . 'TrackableIntegrationBase::set_up_tracking'
