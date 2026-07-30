@@ -257,11 +257,11 @@ jobs:
             echo "::group::${project}"
             # `cmd || FAILED=...` keeps GitHub's `bash -e` from aborting the step.
             if [ "$mode" = "xvfb" ]; then
-              PLAYWRIGHT_HTML_REPORT="$report" xvfb-run --auto-servernum \
+              PLAYWRIGHT_HTML_OUTPUT_DIR="$report" xvfb-run --auto-servernum \
                 npx playwright test --project="$project" --headed --workers=1 --output="$outdir" \
                 || FAILED="$FAILED"$'\n'"  - $project"
             else
-              PLAYWRIGHT_HTML_REPORT="$report" \
+              PLAYWRIGHT_HTML_OUTPUT_DIR="$report" \
                 npx playwright test --project="$project" --workers=1 --output="$outdir" \
                 || FAILED="$FAILED"$'\n'"  - $project"
             fi
