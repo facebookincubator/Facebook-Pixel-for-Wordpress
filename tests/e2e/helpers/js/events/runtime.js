@@ -219,12 +219,26 @@ async function clearCart(page, credentials = null) {
   await page.goto('/');
 
   const hardClearViaStoreApi = async () => {
+    // Store API cart *writes* require a Nonce header. Logged-in customers also get
+    // their persistent cart wiped above, but a guest's session cart can only be
+    // emptied here — without the nonce the DELETE is rejected and the guest cart
+    // is never cleared. Fetch the cart first to read the current Nonce header.
     await page.evaluate(async () => {
       try {
+        const getResp = await fetch('/wp-json/wc/store/v1/cart', {
+          credentials: 'include',
+          headers: { Accept: 'application/json' }
+        });
+        const nonce = getResp.headers.get('Nonce') || getResp.headers.get('X-WC-Store-API-Nonce');
+        const headers = { Accept: 'application/json' };
+        if (nonce) {
+          headers['Nonce'] = nonce;
+          headers['X-WC-Store-API-Nonce'] = nonce;
+        }
         await fetch('/wp-json/wc/store/v1/cart/items', {
           method: 'DELETE',
           credentials: 'include',
-          headers: { Accept: 'application/json' }
+          headers
         });
       } catch (_) {
         // ignore
