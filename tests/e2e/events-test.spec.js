@@ -229,9 +229,13 @@ test('PageView with fbclid', async ({ page }, testInfo) => {
   const { testId, pixelCapture } = await TestSetup.init(page, 'PageView', testInfo);
 
   const fbclid = process.env.TEST_FBCLID || `e2e${Date.now()}`;
-  const isBraveProject = testInfo?.project?.name?.includes('brave');
+  const projectName = testInfo?.project?.name || '';
+  // Brave strips fbclid; WebKit/Safari ITP blocks the JS-set _fbc cookie. In both
+  // cases fbevents can't reliably persist _fbc, so seed it deterministically —
+  // the fbc dedup assertion (pixel cookie == CAPI user_data.fbc) is what we verify.
+  const needsSeededFbc = projectName.includes('brave') || projectName.includes('safari-ios');
 
-  if (isBraveProject) {
+  if (needsSeededFbc) {
     const seededFbc = `fb.1.${Date.now()}.${fbclid}`;
     await page.context().addCookies([{ name: '_fbc', value: seededFbc, url: process.env.WORDPRESS_URL }]);
   }
@@ -241,7 +245,7 @@ test('PageView with fbclid', async ({ page }, testInfo) => {
   await TestSetup.waitForPageReady(page);
   await eventPromise;
 
-  const validator = new EventValidator(testId, true, false, { allowBraveFbcNormalization: isBraveProject });
+  const validator = new EventValidator(testId, true, false, { allowBraveFbcNormalization: needsSeededFbc });
   await validator.checkDebugLog();
   const result = await validator.validate('PageView', page);
 
