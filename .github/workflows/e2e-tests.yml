@@ -65,7 +65,25 @@ jobs:
     if: needs.check-secrets.outputs.has-secrets == 'true'
     runs-on: ubuntu-latest
     environment: QA
-    timeout-minutes: 90
+    timeout-minutes: 30
+    # One shard per Playwright project, run in parallel on separate runners. Keeps
+    # wall-clock low and isolates each project's artifacts; a flaky browser can't
+    # stall the others. fail-fast:false so every project reports.
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - chromium-wp-customer
+          - chromium-wp-guest
+          - chromium-wp-customer-classic-theme
+          - chromium-wp-customer-block-theme
+          - chromium-privacy-sandbox-wp-customer
+          - firefox-wp-customer
+          - edge-wp-customer
+          - brave-wp-customer
+          - opera-wp-customer
+          - android-pixel-wp-customer
+          - safari-ios-wp-customer
     env:
       FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
       FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
@@ -207,80 +225,56 @@ jobs:
             exit 1
           fi
 
-      - name: Install Playwright + browsers
+      - name: Install Playwright browser for this project
         working-directory: ${{ env.PLUGIN_PATH }}
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
           npm ci
-          timeout 15m npx playwright install --with-deps chromium chrome webkit firefox
+          case "${{ matrix.project }}" in
+            firefox-*)         timeout 15m npx playwright install --with-deps firefox ;;
+            safari-ios-*)      timeout 15m npx playwright install --with-deps webkit ;;
+            *privacy-sandbox*) timeout 15m npx playwright install --with-deps chromium chrome ;;
+            edge-*)            timeout 15m npx playwright install --with-deps chromium msedge ;;
+            *)                 timeout 15m npx playwright install --with-deps chromium ;;
+          esac
 
-      - name: Install Edge / Brave / Opera + Xvfb
+      # Only the real Chrome-family channels need a display (headed under Xvfb).
+      # Edge (msedge) and Chrome are provided by Playwright above; Brave/Opera are
+      # apt-installed here. Each shard sets only its OWN REQUIRE_REAL_* so the
+      # config's launch-guard doesn't trip on the other browsers.
+      - name: Install Xvfb + real browser (headed shards)
+        if: ${{ contains(matrix.project, 'privacy-sandbox') || startsWith(matrix.project, 'edge-') || startsWith(matrix.project, 'brave-') || startsWith(matrix.project, 'opera-') }}
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
           set -e
           sudo apt-get update
-          sudo apt-get install -y xvfb wget gnupg2
-          # Edge
-          wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /usr/share/keyrings/microsoft.gpg >/dev/null
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main" | sudo tee /etc/apt/sources.list.d/microsoft-edge.list
-          # Brave
-          sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
-          # Opera
-          wget -qO- https://deb.opera.com/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/opera.gpg
-          echo "deb [signed-by=/usr/share/keyrings/opera.gpg] https://deb.opera.com/opera-stable/ stable non-free" | sudo tee /etc/apt/sources.list.d/opera-stable.list
-          sudo apt-get update
-          sudo apt-get install -y microsoft-edge-stable brave-browser opera-stable gsettings-desktop-schemas dbus-x11 || true
-          {
-            echo "EDGE_EXECUTABLE_PATH=$(command -v microsoft-edge-stable || true)"
-            echo "BRAVE_EXECUTABLE_PATH=$(command -v brave-browser || true)"
-            echo "OPERA_EXECUTABLE_PATH=$(command -v opera-stable || command -v opera || true)"
-          } >> "$GITHUB_ENV"
+          sudo apt-get install -y xvfb
+          case "${{ matrix.project }}" in
+            brave-*)
+              sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+              echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+              sudo apt-get update && sudo apt-get install -y brave-browser
+              echo "BRAVE_EXECUTABLE_PATH=$(command -v brave-browser)" >> "$GITHUB_ENV"
+              echo "REQUIRE_REAL_BRAVE=1" >> "$GITHUB_ENV" ;;
+            opera-*)
+              wget -qO- https://deb.opera.com/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/opera.gpg
+              echo "deb [signed-by=/usr/share/keyrings/opera.gpg] https://deb.opera.com/opera-stable/ stable non-free" | sudo tee /etc/apt/sources.list.d/opera-stable.list
+              sudo apt-get update && sudo apt-get install -y opera-stable gsettings-desktop-schemas dbus-x11
+              echo "OPERA_EXECUTABLE_PATH=$(command -v opera-stable || command -v opera)" >> "$GITHUB_ENV"
+              echo "REQUIRE_REAL_OPERA=1" >> "$GITHUB_ENV" ;;
+          esac
 
-      - name: Run E2E (all projects)
+      - name: Run E2E (${{ matrix.project }})
         working-directory: ${{ env.PLUGIN_PATH }}
-        env:
-          REQUIRE_REAL_EDGE: '1'
-          REQUIRE_REAL_BRAVE: '1'
-          REQUIRE_REAL_OPERA: '1'
         run: |
-          # Run every project; don't abort on the first failure so we get a full
-          # per-project signal. Each project writes to its OWN report/output dir so
-          # a later project can't clobber an earlier failure's diagnostics.
-          FAILED=""
-          # $1 = project name; $2 = "xvfb" to run headed under Xvfb (real browsers).
-          run_project() {
-            local project="$1" mode="$2"
-            local report="playwright-report/${project}" outdir="test-results/${project}"
-            echo "::group::${project}"
-            # `cmd || FAILED=...` keeps GitHub's `bash -e` from aborting the step.
-            if [ "$mode" = "xvfb" ]; then
-              PLAYWRIGHT_HTML_OUTPUT_DIR="$report" xvfb-run --auto-servernum \
-                npx playwright test --project="$project" --headed --workers=1 --output="$outdir" \
-                || FAILED="$FAILED"$'\n'"  - $project"
-            else
-              PLAYWRIGHT_HTML_OUTPUT_DIR="$report" \
-                npx playwright test --project="$project" --workers=1 --output="$outdir" \
-                || FAILED="$FAILED"$'\n'"  - $project"
-            fi
-            echo "::endgroup::"
-          }
-          # Headless-capable engines.
-          run_project chromium-wp-customer
-          run_project chromium-wp-guest
-          run_project chromium-wp-customer-classic-theme
-          run_project chromium-wp-customer-block-theme
-          run_project firefox-wp-customer
-          run_project android-pixel-wp-customer
-          run_project safari-ios-wp-customer
-          # Real Chrome-family channels need a display (headed under Xvfb).
-          run_project chromium-privacy-sandbox-wp-customer xvfb
-          run_project edge-wp-customer xvfb
-          run_project brave-wp-customer xvfb
-          run_project opera-wp-customer xvfb
-          if [ -n "$FAILED" ]; then echo "::error::Projects with failures:$FAILED"; exit 1; fi
+          case "${{ matrix.project }}" in
+            *privacy-sandbox*|edge-*|brave-*|opera-*)
+              xvfb-run --auto-servernum npx playwright test --project="${{ matrix.project }}" --headed --workers=1 ;;
+            *)
+              npx playwright test --project="${{ matrix.project }}" --workers=1 ;;
+          esac
 
       - name: PHP error gate
         if: always()
@@ -295,7 +289,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-artifacts
+          name: e2e-artifacts-${{ matrix.project }}
           path: |
             ${{ env.PLUGIN_PATH }}/playwright-report/
             ${{ env.PLUGIN_PATH }}/test-results/
