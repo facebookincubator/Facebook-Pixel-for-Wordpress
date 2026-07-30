@@ -670,15 +670,21 @@ test('Lead', async ({ page }, testInfo) => {
   // the submitted form email, so the em hashes legitimately differ across channels.
   const result = ignoreKnownLeadEmGap(await validator.validate('Lead', page));
 
-  // Assert the submitted form email actually reached CAPI (SHA-256 of the
-  // trimmed, lowercased address), so the Lead identity is verified end-to-end.
-  // Match by the expected hash across ALL captured CAPI Lead events rather than
-  // picking "the last" one — deterministic even when duplicate records are logged.
+  // Assert the submitted form email actually reached CAPI, verified end-to-end.
+  // Select the CAPI record(s) deterministically by the Pixel Lead's event_id
+  // (the two channels share it via dedup) rather than picking "the last" one, then
+  // assert that event carries the expected email hash (SHA-256 of the trimmed,
+  // lowercased address). This also reconfirms Pixel<->CAPI dedup for Lead.
   const expectedEm = crypto.createHash('sha256').update(leadEmail.trim().toLowerCase()).digest('hex');
-  const capiLeadEms = (await loadCapturedEvents(testId)).capi
-    .filter(e => e.event_name === 'Lead')
-    .map(e => String(asArray(e?.user_data?.em)[0] ?? e?.user_data?.em ?? ''));
-  expect(capiLeadEms).toContain(expectedEm);
+  const captured = await loadCapturedEvents(testId);
+  const pixelLead = captured.pixel.find(e => e.event_name === 'Lead');
+  expect(pixelLead?.event_id).toBeTruthy();
+  const capiForEvent = captured.capi.filter(
+    e => e.event_name === 'Lead' && e.event_id === pixelLead.event_id
+  );
+  expect(capiForEvent.length).toBeGreaterThan(0);
+  const capiEms = capiForEvent.map(e => String(asArray(e?.user_data?.em)[0] ?? e?.user_data?.em ?? ''));
+  expect(capiEms).toContain(expectedEm);
 
   TestSetup.logResult('Lead', result);
   expect(result.passed).toBe(true);
