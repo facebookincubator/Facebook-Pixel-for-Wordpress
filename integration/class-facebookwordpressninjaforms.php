@@ -199,30 +199,30 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
         foreach ( $form_param_iterator as $form_data ) {
             $name  = $form_data['name'];
             $value = $form_data['value'];
-            if ( str_starts_with( $name, 'email' ) ) {
+            if ( StringUtils::starts_with( $name, 'email' ) ) {
                 $result['email'] = $value;
-            } elseif ( str_starts_with( $name, 'name' ) ) {
+            } elseif ( StringUtils::starts_with( $name, 'name' ) ) {
                 $val = StringUtils::split_name( $value );
                 if ( empty( $val ) ) {
                     continue;
                 }
                 $result['first_name'] = $val[0];
                 $result['last_name']  = $val[1];
-            } elseif ( str_starts_with( $name, 'firstname' ) ) {
+            } elseif ( StringUtils::starts_with( $name, 'firstname' ) ) {
                 $result['first_name'] = $value;
-            } elseif ( str_starts_with( $name, 'lastname' ) ) {
+            } elseif ( StringUtils::starts_with( $name, 'lastname' ) ) {
                 $result['last_name'] = $value;
-            } elseif ( str_starts_with( $name, 'phone' ) ) {
+            } elseif ( StringUtils::starts_with( $name, 'phone' ) ) {
                 $result['phone'] = $value;
-            } elseif ( str_starts_with( $name, 'city' ) ) {
+            } elseif ( StringUtils::starts_with( $name, 'city' ) ) {
                 $result['city'] = $value;
-            } elseif ( str_starts_with( $name, 'zip' ) ) {
+            } elseif ( StringUtils::starts_with( $name, 'zip' ) ) {
                 $result['zip'] = $value;
-            } elseif ( str_starts_with( $name, 'liststate' ) ) {
+            } elseif ( StringUtils::starts_with( $name, 'liststate' ) ) {
                 $result['state'] = $value;
-            } elseif ( str_starts_with( $name, 'listcountry' ) ) {
+            } elseif ( StringUtils::starts_with( $name, 'listcountry' ) ) {
                 $result['country'] = $value;
-            } elseif ( str_starts_with( $name, 'gender' ) ) {
+            } elseif ( StringUtils::starts_with( $name, 'gender' ) ) {
                 $result['gender'] = $value;
             }
         }

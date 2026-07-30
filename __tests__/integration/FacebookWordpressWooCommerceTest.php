@@ -447,6 +447,18 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
         $this->assertEquals( 'product', $event->getCustomData()->getContentType() );
         $this->assertEquals( 'USD', $event->getCustomData()->getCurrency() );
         $this->assertEquals( 'Dinosaurs', $event->getCustomData()->getContentCategory() );
+
+        // contents must be a Content[] (not a JSON string) so the SDK can
+        // normalize it for both the Pixel and CAPI transports.
+        $contents = $event->getCustomData()->getContents();
+        $this->assertCount( 1, $contents );
+        $this->assertInstanceOf(
+            \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content::class,
+            $contents[0]
+        );
+        $this->assertEquals( 'wc_post_id_1', $contents[0]->getProductId() );
+        $this->assertEquals( 1, $contents[0]->getQuantity() );
+
         $this->assertEquals(
             'woocommerce',
             $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )

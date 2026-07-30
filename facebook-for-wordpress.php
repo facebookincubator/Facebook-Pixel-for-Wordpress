@@ -165,7 +165,21 @@ class FacebookForWordpress {
      * @return void
      */
     public function initialize_integrations( FacebookTrackingFacade $tracking_facade ) {
-        foreach ( self::INTEGRATIONS as $integration_class ) {
+        /**
+         * Filters the list of third-party integration classes to initialize.
+         *
+         * Allows add-ons to register additional integrations. Each class must be
+         * constructible with the shared tracking facade and expose an
+         * initialize() method -- i.e. a TrackableIntegrationBase, or the
+         * deprecated FacebookWordpressIntegrationBase shim.
+         *
+         * @param string[] $integrations Fully-qualified integration class names.
+         */
+        $integrations = apply_filters(
+            'facebook_for_wordpress_integrations',
+            self::INTEGRATIONS
+        );
+        foreach ( $integrations as $integration_class ) {
             ( new $integration_class( $tracking_facade ) )->initialize();
         }
     }

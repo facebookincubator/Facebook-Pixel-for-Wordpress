@@ -266,7 +266,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
     $this->assertEquals( $access_token, '' );
     $this->assertEquals( $is_fbe_installed, '0' );
     $this->assertTrue(
-      str_contains(
+      false !== strpos(
         $external_business_id,
         'fbe_wordpress_'
       )

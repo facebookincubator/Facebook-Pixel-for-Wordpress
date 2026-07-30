@@ -145,22 +145,19 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
         $content_type = $product->is_type( 'variable' ) ?
         'product_group' : 'product';
 
+        $content = new Content();
+        $content->setProductId( $product_id );
+        $content->setQuantity( 1 );
+        $content->setItemPrice( $product->get_price() );
+        $content->setTitle( $product->get_title() );
+
         $event_data['content_type']     = $content_type;
         $event_data['currency']         = WooCommerceIntegrationHelper::get_currency();
         $event_data['value']            = $product->get_price();
-        $event_data['content_ids']      = array( $product_id );
         $event_data['content_name']     = $product->get_title();
-        $event_data['contents']         = wp_json_encode(
-            array(
-                            array(
-                                'id'       => $product_id,
-                                'quantity' => 1,
-                            ),
-                        )
-        );
-        $event_data['content_category'] = self::getProductCategory(
-            $product->get_id()
-        );
+        $event_data['content_ids']      = array( $product_id );
+        $event_data['contents']         = array( $content );
+        $event_data['content_category'] = self::getProductCategory( $product_id );
 
         return array_filter( $event_data );
     }
@@ -339,10 +336,10 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
         if ( ! empty( $cart_item_key ) ) {
             $cart_item = WooCommerceIntegrationHelper::get_cart_item( $cart_item_key );
             if ( ! empty( $cart_item ) ) {
-            $event_data['content_ids'] = array(
-                self::get_product_id( $cart_item['data'] ),
-            );
-                $event_data['value']   = $quantity * ( $cart_item['line_total'] / $cart_item['quantity'] );
+                $event_data['content_ids'] = array(
+                    self::get_product_id( $cart_item['data'] ),
+                );
+                $event_data['value']       = $quantity * ( $cart_item['line_total'] / $cart_item['quantity'] );
             }
         }
 

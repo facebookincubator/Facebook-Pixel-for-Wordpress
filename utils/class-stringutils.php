@@ -52,4 +52,19 @@ class StringUtils {
 
         return array( $first_name, $last_name );
     }
+
+    /**
+     * Determine whether a string begins with a given prefix.
+     *
+     * PHP 7.4-safe replacement for str_starts_with() (added in PHP 8.0). The
+     * plugin supports WordPress from 5.7, but WordPress only polyfills
+     * str_starts_with() from 5.9, so the native function cannot be relied upon.
+     *
+     * @param string $haystack The string to search within.
+     * @param string $prefix   The prefix to look for.
+     * @return bool True when $haystack begins with $prefix.
+     */
+    public static function starts_with( $haystack, $prefix ) {
+        return 0 === strpos( (string) $haystack, (string) $prefix );
+    }
 }

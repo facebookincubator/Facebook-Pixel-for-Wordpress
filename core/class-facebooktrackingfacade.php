@@ -205,6 +205,10 @@ class FacebookTrackingFacade {
      * @return void
      */
     public function track_server_event( $event, $server = self::SERVER_SYNC ) {
+        if ( ! $this->is_enabled() ) {
+            return;
+        }
+
         if ( self::SERVER_NONE === $server ) {
             return;
         }
@@ -232,6 +236,11 @@ class FacebookTrackingFacade {
      * @return void
      */
     public function track_inline_browser_event( $event ) {
+
+        if ( ! $this->is_enabled() ) {
+            return;
+        }
+
         $this->pixel->enqueue( $event );
     }
 
@@ -294,7 +303,8 @@ class FacebookTrackingFacade {
      * @return bool True when signals tracking is active.
      */
     public function is_enabled() {
-        return true;
+        return ! empty( FacebookWordpressOptions::get_active_pixel_id() )
+            && ! empty( FacebookWordpressOptions::get_active_access_token() );
     }
 
     /**

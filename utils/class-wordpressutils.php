@@ -107,7 +107,9 @@ class WordPressUtils {
         );
         $user_id    = get_current_user_id();
         if ( 0 === $user_id ) {
-            return $event_data;
+            // Guest: drop the empty email/name and id=0 so we don't emit bogus
+            // PII (e.g. an external_id of "0" shared across all logged-out users).
+            return array_filter( $event_data );
         }
         $event_data['city']    = get_user_meta(
             $user_id,
