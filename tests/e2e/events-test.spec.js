@@ -672,10 +672,13 @@ test('Lead', async ({ page }, testInfo) => {
 
   // Assert the submitted form email actually reached CAPI (SHA-256 of the
   // trimmed, lowercased address), so the Lead identity is verified end-to-end.
+  // Match by the expected hash across ALL captured CAPI Lead events rather than
+  // picking "the last" one — deterministic even when duplicate records are logged.
   const expectedEm = crypto.createHash('sha256').update(leadEmail.trim().toLowerCase()).digest('hex');
-  const capiLead = getLatestEvent((await loadCapturedEvents(testId)).capi, 'Lead');
-  const capiEm = asArray(capiLead?.user_data?.em)[0] || capiLead?.user_data?.em;
-  expect(String(capiEm)).toBe(expectedEm);
+  const capiLeadEms = (await loadCapturedEvents(testId)).capi
+    .filter(e => e.event_name === 'Lead')
+    .map(e => String(asArray(e?.user_data?.em)[0] ?? e?.user_data?.em ?? ''));
+  expect(capiLeadEms).toContain(expectedEm);
 
   TestSetup.logResult('Lead', result);
   expect(result.passed).toBe(true);

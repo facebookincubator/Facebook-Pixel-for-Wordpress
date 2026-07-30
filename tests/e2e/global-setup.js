@@ -61,8 +61,10 @@ async function globalSetup() {
   const customerAuthPath = './tests/e2e/.auth/customer.json';
   fs.mkdirSync(path.dirname(customerAuthPath), { recursive: true });
 
-  // Ensure the captured-events directory exists and is writable by the container.
-  const capturedDir = path.join(__dirname, 'captured-events');
+  // Ensure the captured-events directory exists and is writable. Both loggers
+  // write to tests/e2e/helpers/captured-events (PHP: dirname(__DIR__)/captured-events;
+  // JS: ../../captured-events), so pre-create that exact path.
+  const capturedDir = path.join(__dirname, 'helpers', 'captured-events');
   fs.mkdirSync(capturedDir, { recursive: true });
 
   // Bump auto-increment to random high numbers so each run creates products and

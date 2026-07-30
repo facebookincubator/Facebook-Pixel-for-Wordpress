@@ -27,6 +27,10 @@ env:
   # E2E CAPI logging hook config (read by core/class-facebookserversideevent.php).
   FB_E2E_TEST_COOKIE_NAME: facebook_test_id
   FB_E2E_LOGGER_PATH: /tests/e2e/helpers/php/event-logger.php
+  # Where both loggers write pixel-*/capi-* JSON (plugin-relative). The PHP logger
+  # (dirname(__DIR__)/captured-events) and JS capture (../../captured-events) both
+  # resolve to tests/e2e/helpers/captured-events.
+  FB_E2E_CAPTURED_EVENTS_DIR: /tests/e2e/helpers/captured-events
   # Deterministic test customer (created during setup, used by global-setup login).
   WP_CUSTOMER_USERNAME: e2e_customer
   WP_CUSTOMER_PASSWORD: e2e_password
@@ -243,24 +247,39 @@ jobs:
           REQUIRE_REAL_OPERA: '1'
         run: |
           # Run every project; don't abort on the first failure so we get a full
-          # per-project signal. Aggregate exit status at the end.
+          # per-project signal. Each project writes to its OWN report/output dir so
+          # a later project can't clobber an earlier failure's diagnostics.
           FAILED=""
-          # Use `if "$@"` (not `"$@"; rc=$?`) so a failing project doesn't abort the
-          # step under GitHub's default `bash -e`; we aggregate failures instead.
-          run_project() { echo "::group::$*"; if "$@"; then echo "::endgroup::"; else echo "::endgroup::"; FAILED="$FAILED"$'\n'"  - $*"; fi; }
+          # $1 = project name; $2 = "xvfb" to run headed under Xvfb (real browsers).
+          run_project() {
+            local project="$1" mode="$2"
+            local report="playwright-report/${project}" outdir="test-results/${project}"
+            echo "::group::${project}"
+            # `cmd || FAILED=...` keeps GitHub's `bash -e` from aborting the step.
+            if [ "$mode" = "xvfb" ]; then
+              PLAYWRIGHT_HTML_REPORT="$report" xvfb-run --auto-servernum \
+                npx playwright test --project="$project" --headed --workers=1 --output="$outdir" \
+                || FAILED="$FAILED"$'\n'"  - $project"
+            else
+              PLAYWRIGHT_HTML_REPORT="$report" \
+                npx playwright test --project="$project" --workers=1 --output="$outdir" \
+                || FAILED="$FAILED"$'\n'"  - $project"
+            fi
+            echo "::endgroup::"
+          }
           # Headless-capable engines.
-          run_project npx playwright test --project=chromium-wp-customer --workers=1
-          run_project npx playwright test --project=chromium-wp-guest --workers=1
-          run_project npx playwright test --project=chromium-wp-customer-classic-theme --workers=1
-          run_project npx playwright test --project=chromium-wp-customer-block-theme --workers=1
-          run_project npx playwright test --project=firefox-wp-customer --workers=1
-          run_project npx playwright test --project=android-pixel-wp-customer --workers=1
-          run_project npx playwright test --project=safari-ios-wp-customer --workers=1
+          run_project chromium-wp-customer
+          run_project chromium-wp-guest
+          run_project chromium-wp-customer-classic-theme
+          run_project chromium-wp-customer-block-theme
+          run_project firefox-wp-customer
+          run_project android-pixel-wp-customer
+          run_project safari-ios-wp-customer
           # Real Chrome-family channels need a display (headed under Xvfb).
-          run_project xvfb-run --auto-servernum npx playwright test --project=chromium-privacy-sandbox-wp-customer --headed --workers=1
-          run_project xvfb-run --auto-servernum npx playwright test --project=edge-wp-customer --headed --workers=1
-          run_project xvfb-run --auto-servernum npx playwright test --project=brave-wp-customer --headed --workers=1
-          run_project xvfb-run --auto-servernum npx playwright test --project=opera-wp-customer --headed --workers=1
+          run_project chromium-privacy-sandbox-wp-customer xvfb
+          run_project edge-wp-customer xvfb
+          run_project brave-wp-customer xvfb
+          run_project opera-wp-customer xvfb
           if [ -n "$FAILED" ]; then echo "::error::Projects with failures:$FAILED"; exit 1; fi
 
       - name: PHP error gate
@@ -280,7 +299,7 @@ jobs:
           path: |
             ${{ env.PLUGIN_PATH }}/playwright-report/
             ${{ env.PLUGIN_PATH }}/test-results/
-            ${{ env.PLUGIN_PATH }}/tests/e2e/captured-events/
+            ${{ env.PLUGIN_PATH }}${{ env.FB_E2E_CAPTURED_EVENTS_DIR }}/
             ${{ env.WP_DEBUG_LOG }}
           retention-days: 7
           if-no-files-found: ignore
