@@ -90,6 +90,28 @@ class WordPressUtils {
     }
 
     /**
+     * Whether the current request is a background request that returns a
+     * payload to an already-rendered page, rather than a request that renders
+     * a page of its own.
+     *
+     * Covers both transports form plugins use for their submit endpoint:
+     *  - legacy admin-ajax.php (wp_doing_ajax()), and
+     *  - the REST API (REST_REQUEST), which modern Contact Form 7 (>= 5.2) uses
+     *    for its feedback endpoint.
+     *
+     * Integrations must use this — not wp_doing_ajax() alone — to decide
+     * between AJAX browser delivery (the pixel code rides the response) and
+     * inline delivery (the pixel code is flushed on wp_footer). wp_footer never
+     * runs on a REST request, so treating a REST submit as non-AJAX silently
+     * drops the browser event.
+     *
+     * @return bool True for an admin-ajax or REST request.
+     */
+    public static function is_ajax_or_rest_request() {
+        return wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST );
+    }
+
+    /**
      * Returns the current user's personally identifiable information.
      *
      * @return array The user info extracted from the session.

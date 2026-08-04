@@ -76,9 +76,13 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
 
         $event = $this->generate_event( static::EVENT_NAME, $lead_data );
 
-        // Contact Form 7 submits over AJAX, so the browser event rides the response.
-        $is_ajax = wp_doing_ajax();
-        if ( $is_ajax ) {
+        // Contact Form 7 submits in the background, so the browser event rides
+        // the feedback response. Modern CF7 (>= 5.2) posts to its REST endpoint
+        // rather than admin-ajax, hence the REST-aware check: wp_doing_ajax()
+        // alone would send us down the inline path, whose wp_footer flush never
+        // runs on a REST request, and the browser Lead would be lost.
+        $is_background_submit = WordPressUtils::is_ajax_or_rest_request();
+        if ( $is_background_submit ) {
             $this->deliver( $event, self::BROWSER_AJAX, self::SERVER_SYNC, array( $event ) );
         } else {
             $this->deliver( $event );
@@ -90,13 +94,13 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
      * so the footer listener can eval it.
      *
      * @param array $args Arguments from deliver(); $args[0] is the Lead event.
-     * @throws \Exception When the request is not AJAX or no event is provided.
+     * @throws \Exception When the request is neither AJAX nor REST, or no event is provided.
      * @return void
      */
     #[Override]
     protected function deliver_ajax_browser_event( $args ) {
-        if ( ! wp_doing_ajax() ) {
-            throw new \Exception( 'This request is not AJAX.' );
+        if ( ! WordPressUtils::is_ajax_or_rest_request() ) {
+            throw new \Exception( 'This request is not an AJAX or REST request.' );
         }
         if ( empty( $args ) ) {
             throw new \Exception( '$args cannot be empty.' );

@@ -110,4 +110,39 @@ final class WordPressUtilsTest extends FacebookWordpressTestBase {
       WordPressUtils::get_user_info()
     );
   }
+
+  /**
+   * A legacy admin-ajax.php submit is a background request.
+   *
+   * @return void
+   */
+  public function testIsAjaxOrRestRequestForAdminAjax() {
+    \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => true ) );
+
+    $this->assertTrue( WordPressUtils::is_ajax_or_rest_request() );
+  }
+
+  /**
+   * A REST request is a background request too, even though wp_doing_ajax() is
+   * false for it — this is the path modern Contact Form 7 submits over.
+   *
+   * @return void
+   */
+  public function testIsAjaxOrRestRequestForRestRequest() {
+    \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+    define( 'REST_REQUEST', true );
+
+    $this->assertTrue( WordPressUtils::is_ajax_or_rest_request() );
+  }
+
+  /**
+   * A plain front-end page render is neither.
+   *
+   * @return void
+   */
+  public function testIsAjaxOrRestRequestForPageRender() {
+    \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+
+    $this->assertFalse( WordPressUtils::is_ajax_or_rest_request() );
+  }
 }

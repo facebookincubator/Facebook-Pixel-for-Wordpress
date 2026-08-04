@@ -61,6 +61,10 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
      * Captures a submitted form on success and delivers the Lead event, then
      * returns the form actions unchanged.
      *
+     * A single Ninja Forms form can be configured with more than one
+     * successmessage action; they all belong to the same submission, so only
+     * the first one delivers an event.
+     *
      * @param mixed ...$args The Ninja Forms submit-hook arguments
      *                       (actions, form cache, form data).
      * @return array The form actions, passed through unchanged.
@@ -85,6 +89,10 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
             // Ninja Forms submits over AJAX, so the browser event rides the response.
             $event = $this->generate_event( static::EVENT_NAME, $this->extract_lead_data( ...$args ) );
             $this->deliver( $event, self::BROWSER_AJAX, self::SERVER_SYNC, array( $event ) );
+
+            // One Lead per submission, however many successmessage actions the
+            // form is configured with.
+            break;
         }
 
         return $actions;

@@ -180,6 +180,68 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
     }
 
     /**
+     * Modern Contact Form 7 (>= 5.2) posts its feedback to the REST endpoint,
+     * where wp_doing_ajax() is false. The browser Lead must still ride the
+     * feedback response: wp_footer never runs on a REST request, so falling
+     * back to inline delivery would send the CAPI event but drop the browser
+     * one.
+     *
+     * @return void
+     */
+    public function testTrackBrowserEventOnRestSubmission() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_wp_functions();
+        \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+        define( 'REST_REQUEST', true );
+
+        \WP_Mock::expectFilterAdded(
+            'wpcf7_feedback_response',
+            \WP_Mock\Functions::type( 'callable' ),
+            20
+        );
+
+        $this->make_integration()->capture_submitted_form(
+            $this->create_mock_form(),
+            array(
+                'status'  => 'mail_sent',
+                'message' => 'ok',
+            )
+        );
+
+        $this->assertHooksAdded();
+        // The browser event rides the response, not the footer flush.
+        $this->assertCount( 0, $this->enqueued_events );
+        $this->assertCount( 1, $this->captured_events );
+        $this->assertEquals( 'Lead', $this->captured_events[0]->getEventName() );
+    }
+
+    /**
+     * A no-JS submission is a real page render, so the browser event goes down
+     * the inline path and no feedback-response filter is registered.
+     *
+     * @return void
+     */
+    public function testTrackBrowserEventInlineOnNonBackgroundSubmission() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_wp_functions();
+        \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+
+        $this->make_integration()->capture_submitted_form(
+            $this->create_mock_form(),
+            array(
+                'status'  => 'mail_sent',
+                'message' => 'ok',
+            )
+        );
+
+        $this->assertCount( 1, $this->enqueued_events );
+        $this->assertEquals( 'Lead', $this->enqueued_events[0]->getEventName() );
+        $this->assertCount( 1, $this->captured_events );
+    }
+
+    /**
      * Tests that a submission with no form fields still tracks a Lead (legacy
      * "without form data" behavior).
      *

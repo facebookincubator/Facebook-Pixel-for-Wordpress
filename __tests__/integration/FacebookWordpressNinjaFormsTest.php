@@ -196,6 +196,47 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
     }
 
     /**
+     * A Ninja Forms form can be configured with several successmessage actions.
+     * They all belong to one submission, so exactly one Lead must be delivered
+     * — not one per action.
+     *
+     * @return void
+     */
+    public function testMultipleSuccessMessageActionsTrackOneLead() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_wp_functions();
+        \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => true ) );
+
+        $actions = array(
+            array(
+                'id'       => 1,
+                'settings' => array(
+                    'type'        => 'successmessage',
+                    'success_msg' => 'first',
+                ),
+            ),
+            array(
+                'id'       => 2,
+                'settings' => array(
+                    'type'        => 'successmessage',
+                    'success_msg' => 'second',
+                ),
+            ),
+        );
+
+        $result = $this->make_integration()->capture_submitted_form(
+            $actions,
+            null,
+            $this->get_mock_form_data()
+        );
+
+        $this->assertSame( $actions, $result );
+        $this->assertCount( 1, $this->captured_events );
+        $this->assertEquals( 'Lead', $this->captured_events[0]->getEventName() );
+    }
+
+    /**
      * Tests that submissions without a successmessage action do not track.
      *
      * @return void
