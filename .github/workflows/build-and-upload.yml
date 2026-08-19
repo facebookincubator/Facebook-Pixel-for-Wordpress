@@ -4,10 +4,19 @@ on:
   push:
     branches:
       - 'release/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Git ref (branch/tag/sha) to build. Defaults to the triggering ref."
+        required: false
+        type: string
 
 permissions:
   contents: read
+  pull-requests: write # to post the build download link on PRs
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,6 +28,8 @@ jobs:
     steps:
       - name: Checkout release branch
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -45,3 +56,35 @@ jobs:
         with:
           name: official-facebook-pixel
           path: artifact-contents
+          # Dependencies ship dotfiles (e.g. .babelrc / .eslintrc.json).
+          # upload-artifact excludes hidden files by default, which makes the
+          # artifact diverge from the deployed plugin and trips the Set Stable
+          # Tag comparison. Keep them so the artifact is faithful.
+          include-hidden-files: true
+
+      - name: Post build download link on PR
+        if: github.event_name == 'pull_request'
+        continue-on-error: true # fork PRs get a read-only token; skip quietly
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          MARKER="<!-- plugin-build-artifact -->"
+          BODY="$MARKER
+          ## 📦 Latest plugin build
+
+          **Commit:** ${COMMIT_SHA:0:7}
+          **Download:** [\`official-facebook-pixel\` artifact](${RUN_URL}) — open the run and scroll to the bottom.
+
+          _To install: download → unzip → upload via Plugins › Add New Plugin › Upload Plugin._"
+
+          # Update the existing build comment in place (idempotent via the marker).
+          EXISTING_ID=$(gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            --paginate --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" | head -1)
+          if [ -n "$EXISTING_ID" ]; then
+            gh api "repos/${{ github.repository }}/issues/comments/${EXISTING_ID}" -X PATCH -f body="$BODY"
+          else
+            gh pr comment "$PR_NUMBER" --body "$BODY"
+          fi

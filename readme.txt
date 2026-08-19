@@ -2,9 +2,9 @@
 Contributors: facebook
 Tags: Facebook, Meta, Conversions API, Pixel, Meta Ads
 Requires at least: 5.7
-Tested up to: 7.0
+Tested up to: 7.0.2
 Requires PHP: 7.4
-Stable tag: 5.2.1
+Stable tag: 5.2.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,8 +52,10 @@ Of course! This plugin is open sourced on the Facebook Incubator GitHub. You can
 
 == Changelog ==
 
-= 5.2.1 - 2026-06-23 =
-
+= 5.2.2 - 2026-07-23 =
+* Fix - Fix WooCommerce/YITH subscription fatal on missing products/cart items and add regression tests by @ukilla in #150
+* Dev - Fix missing Copyright notice in local-config-sample.php by @vahidkay-meta in #173
+* Fix - Harden admin notice dismiss control and resolve Plugin Check findings by @vahidkay-meta in #174
 
 [See changelog for all versions](https://raw.githubusercontent.com/facebookincubator/Facebook-Pixel-for-Wordpress/refs/heads/main/changelog.txt).
 

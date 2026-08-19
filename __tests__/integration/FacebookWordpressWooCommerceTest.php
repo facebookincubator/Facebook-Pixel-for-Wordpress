@@ -119,32 +119,42 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
      * Mocks the WooCommerce store functions (currency, cart, order, product,
      * category) used across the tracking methods.
      *
+     * WP_Mock keeps the first registration for a given function, so tests that
+     * need their own wc_get_order()/wc_get_product() doubles opt out here and
+     * register them before calling the integration.
+     *
+     * @param bool $mock_order   Whether to register the default wc_get_order() double.
+     * @param bool $mock_product Whether to register the default wc_get_product() double.
      * @return void
      */
-    private function mock_woocommerce_store() {
+    private function mock_woocommerce_store( $mock_order = true, $mock_product = true ) {
         \WP_Mock::userFunction( 'get_woocommerce_currency', array( 'return' => 'USD' ) );
 
         $cart = new MockWCCart();
         $cart->add_item( 1, 1, 3, 300 );
         \WP_Mock::userFunction( 'WC', array( 'return' => new MockWC( $cart ) ) );
 
-        $order = new MockWCOrder(
-            'Pika',
-            'Chu',
-            'pika.chu@s2s.com',
-            '2062062006',
-            'Springfield',
-            '12345',
-            'Ohio',
-            'US'
-        );
-        $order->add_item( 1, 3, 900 );
-        \WP_Mock::userFunction( 'wc_get_order', array( 'return' => $order ) );
+        if ( $mock_order ) {
+            $order = new MockWCOrder(
+                'Pika',
+                'Chu',
+                'pika.chu@s2s.com',
+                '2062062006',
+                'Springfield',
+                '12345',
+                'Ohio',
+                'US'
+            );
+            $order->add_item( 1, 3, 900 );
+            \WP_Mock::userFunction( 'wc_get_order', array( 'return' => $order ) );
+        }
 
-        \WP_Mock::userFunction(
-            'wc_get_product',
-            array( 'return' => new MockWCProduct( 1, 'single_product', 'Stegosaurus', 10 ) )
-        );
+        if ( $mock_product ) {
+            \WP_Mock::userFunction(
+                'wc_get_product',
+                array( 'return' => new MockWCProduct( 1, 'single_product', 'Stegosaurus', 10 ) )
+            );
+        }
 
         $term       = new \stdClass();
         $term->name = 'Dinosaurs';
@@ -304,6 +314,153 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
             'woocommerce',
             $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
         );
+    }
+
+    /**
+     * Tests that track_purchase_event() skips order items whose product cannot be
+     * resolved (wc_get_product() returns false) instead of failing.
+     *
+     * @return void
+     */
+    public function testPurchaseEventSkipsMissingProduct() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_woocommerce_store( false, false );
+        $this->mock_wp_functions();
+
+        $order = new MockWCOrder(
+            'Pika',
+            'Chu',
+            'pika.chu@s2s.com',
+            '2062062006',
+            'Springfield',
+            '12345',
+            'Ohio',
+            'US'
+        );
+        $order->add_item( 404, 1, 100 );
+        $order->add_item( 1, 3, 900 );
+        \WP_Mock::userFunction( 'wc_get_order', array( 'return' => $order ) );
+
+        \WP_Mock::userFunction(
+            'wc_get_product',
+            array(
+                'return' => function ( $product_id ) {
+                    if ( 404 === $product_id ) {
+                        return false;
+                    }
+
+                    return new MockWCProduct( $product_id, 'single_product' );
+                },
+            )
+        );
+
+        $this->make_integration()->track_purchase_event( 1 );
+
+        $this->assertCount( 1, $this->captured_events );
+        $custom_data = $this->captured_events[0]->getCustomData();
+
+        $this->assertEquals( array( 'wc_post_id_1' ), $custom_data->getContentIds() );
+        $this->assertCount( 1, $custom_data->getContents() );
+        $this->assertEquals(
+            'wc_post_id_1',
+            $custom_data->getContents()[0]->getProductId()
+        );
+    }
+
+    /**
+     * Tests that track_purchase_event() produces empty content arrays when none
+     * of the order's products can be resolved.
+     *
+     * @return void
+     */
+    public function testPurchaseEventWithAllMissingProducts() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_woocommerce_store( false, false );
+        $this->mock_wp_functions();
+
+        $order = new MockWCOrder(
+            'Pika',
+            'Chu',
+            'pika.chu@s2s.com',
+            '2062062006',
+            'Springfield',
+            '12345',
+            'Ohio',
+            'US'
+        );
+        $order->add_item( 404, 1, 100 );
+        \WP_Mock::userFunction( 'wc_get_order', array( 'return' => $order ) );
+        \WP_Mock::userFunction( 'wc_get_product', array( 'return' => false ) );
+
+        $this->make_integration()->track_purchase_event( 1 );
+
+        $this->assertCount( 1, $this->captured_events );
+        $custom_data = $this->captured_events[0]->getCustomData();
+
+        $this->assertEmpty( $custom_data->getContentIds() );
+        $this->assertEmpty( $custom_data->getContents() );
+    }
+
+    /**
+     * Tests that track_add_to_cart_event() falls back to a direct product lookup
+     * when the cart item key is not in WC()->cart (e.g. a private cart key from
+     * another plugin such as a subscription cloning flow).
+     *
+     * @return void
+     */
+    public function testAddToCartEventWithMissingCartItemKey() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_user_info();
+        $this->mock_woocommerce_store();
+        $this->mock_wp_functions();
+        \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+
+        $this->make_integration()->track_add_to_cart_event(
+            'missing-cart-key',
+            1,
+            3,
+            null
+        );
+
+        $this->assertCount( 1, $this->captured_events );
+        $custom_data = $this->captured_events[0]->getCustomData();
+
+        $this->assertEquals( 'USD', $custom_data->getCurrency() );
+        $this->assertEquals( array( 'wc_post_id_1' ), $custom_data->getContentIds() );
+        $this->assertEquals( 30.0, $custom_data->getValue() );
+    }
+
+    /**
+     * Tests that track_add_to_cart_event() still emits partial event data when
+     * both the cart item and the product lookup fail.
+     *
+     * @return void
+     */
+    public function testAddToCartEventWithMissingCartItemAndProduct() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_user_info();
+        $this->mock_woocommerce_store( true, false );
+        $this->mock_wp_functions();
+        \WP_Mock::userFunction( 'wc_get_product', array( 'return' => false ) );
+        \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+
+        $this->make_integration()->track_add_to_cart_event(
+            'missing-cart-key',
+            404,
+            3,
+            null
+        );
+
+        $this->assertCount( 1, $this->captured_events );
+        $custom_data = $this->captured_events[0]->getCustomData();
+
+        $this->assertEquals( 'USD', $custom_data->getCurrency() );
+        $this->assertEmpty( $custom_data->getContentIds() );
+        $this->assertEmpty( $custom_data->getValue() );
     }
 
     /**

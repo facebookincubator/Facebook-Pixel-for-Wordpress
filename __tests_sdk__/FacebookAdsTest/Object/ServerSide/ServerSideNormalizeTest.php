@@ -36,7 +36,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
   public function emailNormalizeData() {
     return array(
       array(
-        "foo(.bar)@baz.com/",
+        'foo(.bar)@baz.com/',
         'foo.bar@baz.com',
       ),
       array(
@@ -54,9 +54,10 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider emailNormalizeData
    */
   public function testEmailNormalize($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
-      Normalizer::normalize('em', $input));
+      Normalizer::normalize('em', $input)
+    );
   }
 
   /**
@@ -79,7 +80,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
       array(
         '44-12390821300A',
         '4412390821300',
-      )
+      ),
     );
   }
 
@@ -87,9 +88,10 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider phoneNormalizeData
    */
   public function testPhoneNormalize($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
-      Normalizer::normalize('ph', $input));
+      Normalizer::normalize('ph', $input)
+    );
   }
 
   /**
@@ -120,9 +122,10 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider postalCodeNormalizeData
    */
   public function testPostalCodeNormalize($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
-      Normalizer::normalize('zp', $input));
+      Normalizer::normalize('zp', $input)
+    );
   }
 
   /**
@@ -149,9 +152,10 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider cityNormalizeData
    */
   public function testCityNormalize($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
-      Normalizer::normalize('ct', $input));
+      Normalizer::normalize('ct', $input)
+    );
   }
 
   /**
@@ -174,9 +178,10 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider countryNormalizeData
    */
   public function testCountryNormalize($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
-      Normalizer::normalize('country', $input));
+      Normalizer::normalize('country', $input)
+    );
   }
 
   /**
@@ -199,9 +204,10 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider currencyNormalizeData
    */
   public function testCurrencyNormalize($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
-      Normalizer::normalize('currency', $input));
+      Normalizer::normalize('currency', $input)
+    );
   }
 
   /**
@@ -255,7 +261,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
       ),
       array(
         '',
-        '',
+        null,
       ),
       array(
         null,
@@ -268,7 +274,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider f5firstData
    */
   public function testF5first($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
       Normalizer::normalize('f5first', $input)
     );
@@ -286,7 +292,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
       ),
       array(
         '',
-        '',
+        null,
       ),
       array(
         null,
@@ -299,7 +305,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider f5lastData
    */
   public function testF5last($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
       Normalizer::normalize('f5last', $input)
     );
@@ -317,7 +323,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
       ),
       array(
         '',
-        '',
+        null,
       ),
       array(
         null,
@@ -330,7 +336,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider fiData
    */
   public function testFi($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
       Normalizer::normalize('fi', $input)
     );
@@ -352,11 +358,15 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
       ),
       array(
         '',
-        '',
+        null,
       ),
       array(
         null,
         null,
+      ),
+      array(
+        7,
+        '07',
       ),
     );
   }
@@ -365,7 +375,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider dobdData
    */
   public function testDobd($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
       Normalizer::normalize('dobd', $input)
     );
@@ -380,7 +390,6 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
       'ab',
     );
     $exceptions_counter = 0;
-    $has_throw_exception = false;
     foreach ($failure_cases as $case) {
       try {
         Normalizer::normalize('dobd', $case);
@@ -388,7 +397,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
         $exceptions_counter += 1;
       }
     }
-    $this->assertEquals(count($failure_cases), $exceptions_counter);
+    $this->assertSame(count($failure_cases), $exceptions_counter);
   }
 
   public function dobmData() {
@@ -407,11 +416,15 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
       ),
       array(
         '',
-        '',
+        null,
       ),
       array(
         null,
         null,
+      ),
+      array(
+        9,
+        '09',
       ),
     );
   }
@@ -420,7 +433,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider dobmData
    */
   public function testDobm($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
       Normalizer::normalize('dobm', $input)
     );
@@ -436,7 +449,6 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
       'oc',
     );
     $exceptions_counter = 0;
-    $has_throw_exception = false;
     foreach ($failure_cases as $case) {
       try {
         Normalizer::normalize('dobm', $case);
@@ -444,7 +456,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
         $exceptions_counter += 1;
       }
     }
-    $this->assertEquals(count($failure_cases), $exceptions_counter);
+    $this->assertSame(count($failure_cases), $exceptions_counter);
   }
 
   public function dobyData() {
@@ -463,11 +475,15 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
       ),
       array(
         '',
-        '',
+        null,
       ),
       array(
         null,
         null,
+      ),
+      array(
+        1980,
+        '1980',
       ),
     );
   }
@@ -476,7 +492,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider dobyData
    */
   public function testDoby($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
       Normalizer::normalize('doby', $input)
     );
@@ -491,7 +507,6 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
       'nineteen-eighty',
     );
     $exceptions_counter = 0;
-    $has_throw_exception = false;
     foreach ($failure_cases as $case) {
       try {
         Normalizer::normalize('doby', $case);
@@ -499,7 +514,7 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
         $exceptions_counter += 1;
       }
     }
-    $this->assertEquals(count($failure_cases), $exceptions_counter);
+    $this->assertSame(count($failure_cases), $exceptions_counter);
   }
 
   /**
@@ -526,8 +541,49 @@ class ServerSideNormalizeTest extends AbstractUnitTestCase {
    * @dataProvider deliveryCategoryNormalizeData
    */
   public function testDeliveryCategoryNormalize($input, $expected) {
-    $this->assertEquals(
+    $this->assertSame(
       $expected,
-      Normalizer::normalize('delivery_category', $input));
+      Normalizer::normalize('delivery_category', $input)
+    );
+  }
+
+  public function testNormalizeReturnsNullForUnsupportedInputTypes() {
+    $this->assertNull(Normalizer::normalize('em', new \stdClass()));
+    $this->assertNull(Normalizer::normalize('em', false));
+    $this->assertNull(Normalizer::normalize('em', array(new \stdClass())));
+    $this->assertNull(Normalizer::normalize('em', '   '));
+  }
+
+  public function testNormalizeUsesFirstValidArrayValue() {
+    $this->assertSame(
+      'pika.42@example.com',
+      Normalizer::normalize(
+        'em',
+        array(
+          new \stdClass(),
+          '',
+          '    ',
+          '$djubre',
+          'Pika.42@Example.com',
+          'ignored@example.com'
+        )
+      )
+    );
+  }
+
+  public function testNormalizeReturnsNullWhenArrayHasNoValidValue() {
+    $this->assertNull(
+      Normalizer::normalize('em', array(new \stdClass(), '', '$djubre'))
+    );
+  }
+
+  public function testNormalizeAcceptsStringableObjects() {
+    $stringable = new class() {
+      public function __toString() {
+        return '  Seattle-98121  ';
+      }
+    };
+
+    $this->assertSame('seattle', Normalizer::normalize('ct', $stringable));
   }
 }

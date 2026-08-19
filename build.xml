@@ -17,6 +17,8 @@
         <exclude name="build.properties" />
         <exclude name="build.xml" />
         <exclude name="README.md" />
+        <exclude name="CODE_OF_CONDUCT.md" />
+        <exclude name="CONTRIBUTING.md" />
         <exclude name="vendor/**" />
         <exclude name="task/**" />
         <exclude name="__tests__/**" />
@@ -25,6 +27,11 @@
         <exclude name=".githooks/**" />
         <exclude name=".github/**" />
         <exclude name="report/**" />
+        <!-- The build output dir is created before this copy runs; exclude it
+             (and its contents) so it isn't packaged into itself, which would
+             ship a stray nested build/official-facebook-pixel/ directory. -->
+        <exclude name="build" />
+        <exclude name="build/**" />
     </fileset>
 
     <!-- ============================================  -->

@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read # required for `gh pr list` in the changelog step
+  actions: write # required to dispatch build-and-upload.yml for the new release branch
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.inputs.version }}
@@ -19,6 +21,8 @@ jobs:
   prepare-release:
     name: Prepare Release
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.set_version.outputs.new_version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -63,86 +67,122 @@ jobs:
               }
             }
 
+      - name: Ensure previous release PR is merged
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
+        run: |
+          set -euo pipefail
+
+          # Each release opens a PR ("Release X.Y.Z", head release/X.Y.Z -> main)
+          # that is merged once the release is published. Don't start a new
+          # release while a previous release PR is still open, otherwise releases
+          # overlap and the changelog/version bookkeeping drifts. Fail fast if any
+          # unmerged release PR (other than this version's) is still open.
+          if ! OPEN_RELEASE_PRS=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --base main \
+            --state open \
+            --json number,headRefName,title,url); then
+            echo "::error::Failed to query open PRs via the GitHub API; cannot verify previous release PRs are merged."
+            exit 1
+          fi
+
+          # An empty/non-JSON response would make the filter below silently pass
+          # and bypass the guard, so validate we got a JSON array back first.
+          if ! echo "$OPEN_RELEASE_PRS" | jq -e 'type == "array"' >/dev/null 2>&1; then
+            echo "::error::Unexpected response when listing open PRs; cannot verify previous release PRs are merged."
+            exit 1
+          fi
+
+          UNMERGED=$(echo "$OPEN_RELEASE_PRS" | jq -r --arg cur "release/$NEW_VERSION" '
+            [ .[]
+              | select(.headRefName | test("^release/[0-9]+[.][0-9]+[.][0-9]+$"))
+              | select(.headRefName != $cur) ]
+            | .[] | "  - #\(.number) \(.title) (\(.headRefName)) — \(.url)"')
+
+          if [ -n "$UNMERGED" ]; then
+            echo "::error::Cannot prepare release $NEW_VERSION — a previous release PR is still open and must be merged first:"
+            echo "$UNMERGED"
+            exit 1
+          fi
+          echo "✅ No unmerged previous release PRs found."
+
       - name: Get latest release tag
         id: get_release
-        uses: actions/github-script@v8
-        with:
-          script: |
-            try {
-              const latestRelease = await github.rest.repos.getLatestRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-              });
-              core.setOutput("latest_tag", latestRelease.data.tag_name);
-              core.setOutput("has_release", "true");
-              console.log("Latest release tag:", latestRelease.data.tag_name);
-            } catch (error) {
-              if (error.status === 404) {
-                console.log("No previous release found. Will include all commits.");
-                core.setOutput("has_release", "false");
-              } else {
-                throw error;
-              }
-            }
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Cutoff for the changelog is the COMMIT timestamp of the latest
+          # release tag (not the release publish time), so PRs are compared
+          # against when the release was actually cut.
+          if TAG=$(gh release view --json tagName --jq '.tagName' 2>/dev/null); then
+            git fetch origin tag "$TAG" --quiet || true
+            CUTOFF=$(git log -1 --format=%ct "$TAG")
+            echo "Latest release tag: $TAG (commit timestamp $CUTOFF)"
+            echo "has_release=true" >> "$GITHUB_OUTPUT"
+            echo "cutoff_timestamp=$CUTOFF" >> "$GITHUB_OUTPUT"
+          else
+            echo "No previous release found. Including all PRs."
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
+            echo "cutoff_timestamp=0" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build changelog from PRs
         id: changelog
-        uses: actions/github-script@v8
         env:
-          HAS_RELEASE: ${{ steps.get_release.outputs.has_release }}
-          LATEST_TAG: ${{ steps.get_release.outputs.latest_tag }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_CUTOFF_TIMESTAMP: ${{ steps.get_release.outputs.cutoff_timestamp }}
           NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
-        with:
-          script: |
-            const newVersion = process.env.NEW_VERSION.trim();
-            const hasRelease = process.env.HAS_RELEASE === 'true';
-            const latestTag = process.env.LATEST_TAG;
+        run: |
+          # This repo receives commits via fbshipit, which CLOSES PRs instead of
+          # merging them: mergedAt is null and a "Merged" label is applied by
+          # tooling. Treat a PR as landed if it was merged OR carries the "Merged"
+          # label, and use closedAt as the date fallback. Include every changelog:*
+          # label except changelog:none; skip "Release X.Y.Z" bookkeeping PRs.
+          CHANGELOG=""
+          while IFS=$'\t' read -r DATE LABEL PR_TITLE PR_AUTHOR PR_NUM; do
+            [ -z "$PR_NUM" ] && continue
+            # Capitalize the changelog label for display.
+            LABEL="$(echo "${LABEL:0:1}" | tr '[:lower:]' '[:upper:]')${LABEL:1}"
+            CHANGELOG="${CHANGELOG}* ${LABEL} - ${PR_TITLE} by @${PR_AUTHOR} in #${PR_NUM}\n"
+          done < <(
+            gh pr list --state closed --base main --limit 1000 \
+              --json number,title,author,labels,mergedAt,closedAt --jq '
+              .[]
+              | . as $pr
+              | ($pr.mergedAt // $pr.closedAt) as $date
+              | ([.labels[].name | ascii_downcase] | index("merged")) as $hasMergedLabel
+              | (any(.labels[].name; ascii_downcase | test("^changelog:[[:space:]]*none$"))) as $hasChangelogNone
+              | select(($pr.mergedAt != null) or $hasMergedLabel)
+              | select($hasChangelogNone | not)
+              | select($date != null)
+              | select(($date | fromdateiso8601) > (env.RELEASE_CUTOFF_TIMESTAMP | tonumber))
+              | ([.labels[].name | ascii_downcase | select(startswith("changelog:")) | sub("^changelog:[[:space:]]*"; "")][0] // "") as $label
+              | select($label != "")
+              | select((.title | test("^release\\s+[0-9]+\\.[0-9]+\\.[0-9]+"; "i")) | not)
+              | [$date, $label, .title, .author.login, (.number | tostring)]
+              | @tsv
+            ' | sort
+          )
 
-            // Determine the cutoff date for merged PRs
-            let since = null;
-            if (hasRelease) {
-              const release = await github.rest.repos.getReleaseByTag({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag: latestTag,
-              });
-              since = new Date(release.data.published_at);
-              console.log(`Including PRs merged after ${since.toISOString()}`);
-            } else {
-              console.log("No previous release. Including all merged PRs.");
-            }
+          # Fail loudly rather than cutting a release with an empty changelog
+          # (e.g. if PR labels are missing or the landed-PR detection regresses).
+          if [ -z "$CHANGELOG" ]; then
+            echo "::error::No changelog entries were generated for $NEW_VERSION. Ensure landed PRs since the last release carry a changelog:* label (other than none)."
+            exit 1
+          fi
 
-            // Query merged PRs directly — only returns PRs on this repo
-            const prs = await github.paginate(github.rest.pulls.list, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'closed',
-              sort: 'updated',
-              direction: 'desc',
-              base: 'main',
-              per_page: 100,
-            });
+          TODAY=$(date -u +%Y-%m-%d)
+          OUTPUT="= ${NEW_VERSION} - ${TODAY} =\n${CHANGELOG}"
+          echo -e "$OUTPUT"
 
-            const changelog = [];
-            for (const pr of prs) {
-              if (!pr.merged_at) continue;
-              if (since && new Date(pr.merged_at) < since) continue;
-
-              const labelPrefix = "changelog:";
-              const labels = pr.labels
-                .map(l => l.name)
-                .filter(l => l.startsWith(labelPrefix))
-                .map(l => l.replace(labelPrefix, "").trim());
-              if (labels.length === 0 || labels[0].toLowerCase() === 'none') continue;
-
-              const category = labels[0];
-              changelog.push(`* ${category.charAt(0).toUpperCase()}${category.slice(1)} - ${pr.title} by @${pr.user.login} in #${pr.number}`);
-            }
-
-            const date = new Date().toISOString().slice(0, 10);
-            const output = `= ${newVersion} - ${date} =\n${changelog.join('\n')}\n`;
-            core.setOutput('changelog', output);
-            console.log(output);
+          # Write multiline output for downstream steps.
+          {
+            echo "changelog<<EOF"
+            echo -e "$OUTPUT"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Configure Git
         run: |
@@ -199,6 +239,11 @@ jobs:
             const fs = require('fs');
             let content = fs.readFileSync('changelog.txt').toString().split('\n');
             const newLines = process.env.CHANGELOG_TEXT.split(/\r?\n/);
+            // Normalize to exactly one blank line between this block and the next.
+            while (newLines.length && newLines[newLines.length - 1].trim() === '') {
+              newLines.pop();
+            }
+            newLines.push('');
             // Insert new entry after the header line
             content.splice(1, 0, ...newLines);
             fs.writeFileSync('changelog.txt', content.join('\n'));
@@ -241,9 +286,13 @@ jobs:
               }
             }
 
-            // Insert new changelog
+            // Insert new changelog with exactly one blank line on each side.
             const newLines = process.env.CHANGELOG_TEXT.split(/\r?\n/);
-            newLines.unshift("");
+            while (newLines.length && newLines[newLines.length - 1].trim() === '') {
+              newLines.pop();
+            }
+            newLines.unshift(""); // blank line after the "== Changelog ==" marker
+            newLines.push("");    // single blank line before the following content
             content.splice(i, 0, ...newLines);
             fs.writeFileSync('readme.txt', content.join('\n'));
 
@@ -254,3 +303,24 @@ jobs:
           git add .
           git commit -m "Prepare release $NEW_VERSION"
           git push origin HEAD
+
+      - name: Trigger build for the new release branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEW_VERSION: ${{ steps.set_version.outputs.new_version }}
+        run: |
+          # The branch-creation push above uses GITHUB_TOKEN, which by design does
+          # NOT trigger build-and-upload.yml's push event. Dispatch it explicitly
+          # (workflow_dispatch is the exception to that rule) so a standalone
+          # build-and-upload run attributed to release/$NEW_VERSION exists for
+          # Set Stable Tag to compare the marketplace against later.
+          gh workflow run build-and-upload.yml \
+            --repo "${{ github.repository }}" \
+            --ref "release/$NEW_VERSION"
+
+  # Also build inline as part of this run for immediate artifact availability.
+  build-and-upload:
+    needs: prepare-release
+    uses: ./.github/workflows/build-and-upload.yml
+    with:
+      ref: refs/heads/release/${{ needs.prepare-release.outputs.version }}

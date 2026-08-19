@@ -280,7 +280,7 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
 
             $product = WooCommerceIntegrationHelper::get_product( $item->get_product_id() );
 
-            if ( empty( $product ) ) {
+            if ( ! is_object( $product ) || ! method_exists( $product, 'get_id' ) ) {
                 continue;
             }
 
@@ -333,13 +333,29 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
         $event_data['currency']     = WooCommerceIntegrationHelper::get_currency();
         $event_data['content_type'] = 'product';
 
-        if ( ! empty( $cart_item_key ) ) {
-            $cart_item = WooCommerceIntegrationHelper::get_cart_item( $cart_item_key );
-            if ( ! empty( $cart_item ) ) {
-                $event_data['content_ids'] = array(
-                    self::get_product_id( $cart_item['data'] ),
-                );
-                $event_data['value']       = $quantity * ( $cart_item['line_total'] / $cart_item['quantity'] );
+        $cart_item = empty( $cart_item_key ) ? null :
+        WooCommerceIntegrationHelper::get_cart_item( $cart_item_key );
+
+        if ( ! empty( $cart_item ) && ! empty( $cart_item['data'] ) ) {
+            $event_data['content_ids'] = array(
+                self::get_product_id( $cart_item['data'] ),
+            );
+            $event_data['value']       = $quantity * ( $cart_item['line_total'] / $cart_item['quantity'] );
+
+            return $event_data;
+        }
+
+        // Fallback for integrations that call Woo add_to_cart() on a
+        // temporary/private cart (e.g. subscription cloning flows).
+        $product_lookup_id = ! empty( $variation_id ) ? $variation_id : $product_id;
+        $product           = WooCommerceIntegrationHelper::get_product( $product_lookup_id );
+        $product_fb_id     = self::get_product_id( $product );
+
+        if ( ! empty( $product_fb_id ) ) {
+            $event_data['content_ids'] = array( $product_fb_id );
+
+            if ( method_exists( $product, 'get_price' ) ) {
+                $event_data['value'] = (float) $quantity * (float) $product->get_price();
             }
         }
 
@@ -494,11 +510,15 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
      *
      * @param \WC_Product $product The WooCommerce product object.
      *
-     * @return string The unique product ID.
+     * @return string|null The unique product ID, or null if the product is invalid.
      *
      * @since 1.0.0
      */
     private static function get_product_id( $product ) {
+        if ( ! is_object( $product ) || ! method_exists( $product, 'get_id' ) ) {
+            return null;
+        }
+
         $woo_id = $product->get_id();
 
         return $product->get_sku() ? $product->get_sku() . '_' .
