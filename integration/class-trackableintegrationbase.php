@@ -171,10 +171,10 @@ abstract class TrackableIntegrationBase {
         $this->signals->register_ajax_dom_container(
             sprintf(
                 "<!-- Meta Pixel Event Code -->
-				<script type='text/javascript'>
-				%s
-				</script>
-				<!-- End Meta Pixel Event Code -->",
+                <script type='text/javascript'>
+                %s
+                </script>
+                <!-- End Meta Pixel Event Code -->",
                 $listener_js
             )
         );

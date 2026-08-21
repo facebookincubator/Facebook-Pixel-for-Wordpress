@@ -60,8 +60,9 @@ use FacebookPixelPlugin\Core\ServerEventAsyncTask;
  * FacebookForWordpress root class.
  */
 class FacebookForWordpress {
-	private $tracking_facade;
-	/**
+    private $tracking_facade;
+
+    /**
      * Plugin constructor. Initializes the plugin options, loads the translation files,
      * sets up the Facebook pixel, sets up the pixel injection, and sets up the settings
      * page. Also starts the server event async task.
@@ -77,18 +78,18 @@ class FacebookForWordpress {
 
     $options = FacebookWordpressOptions::get_options();
 
-	$this->tracking_facade = new FacebookTrackingFacade(
-		FacebookWordpressOptions::get_agent_string(),
+    $this->tracking_facade = new FacebookTrackingFacade(
+        FacebookWordpressOptions::get_agent_string(),
         FacebookWordpressOptions::get_active_pixel_id()
-	);
-	
-	$this->tracking_facade->initialize();
+    );
+
+    $this->tracking_facade->initialize();
     $tracking_facade = $this->tracking_facade;
 
     // Initialize the third-party plugin integrations.
     add_action( 'init', function(...$args) use($tracking_facade) {
-		$this->initialize_integrations( $tracking_facade );
-	}, 0 );
+        $this->initialize_integrations( $tracking_facade );
+    }, 0 );
 
     add_action( 'parse_request', array( $this, 'handle_events_request' ), 0 );
 
@@ -98,9 +99,9 @@ class FacebookForWordpress {
     self::update_db_for_wpcom();
     }
 
-	public function get_tracking_facade() {
-		return $this->tracking_facade;
-	}
+    public function get_tracking_facade() {
+        return $this->tracking_facade;
+    }
 
     /**
      * Resets the FBL4B upgrade notice dismiss flag when the plugin is updated,

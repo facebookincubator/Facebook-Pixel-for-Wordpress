@@ -160,9 +160,9 @@ class Pixel {
         $pixel_dom = $this->generate_script_for_tracked_events( true );
         printf(
             '
-			<!-- Meta Pixel Event Code -->
-			%s
-			<!-- End Meta Pixel Event Code -->',
+            <!-- Meta Pixel Event Code -->
+            %s
+            <!-- End Meta Pixel Event Code -->',
             $pixel_dom // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Pixel DOM is plugin-generated script, not user input.
         );
     }

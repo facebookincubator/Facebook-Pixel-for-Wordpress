@@ -24,27 +24,27 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  */
 final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
 
-	/**
-	 * When a form field is mapped to a composite Lead parameter (e.g. an
-	 * address), apply_field_mapping() should expand it into its sub-parameters
-	 * (city/state/zip/country) rather than assigning the raw composite value.
-	 *
-	 * This is not implemented yet: apply_field_mapping() currently does a flat
-	 * assignment, and composite targets aren't in VALID_LEAD_PARAMETERS. It is
-	 * blocked on the mapping UI, which will define how composite fields declare
-	 * their sub-field targets. See the TODO(mapping-UI) note in
-	 * TrackableLeadFormIntegrationBase::apply_field_mapping().
-	 *
-	 * Intended assertions once implemented: mapping an 'address' form field
-	 * should yield lead data with 'city', 'state', 'zip', and 'country' keys.
-	 *
-	 * @return void
-	 */
-	public function testCompositeAddressMappingIsExpanded() {
-		$this->markTestIncomplete(
-			'Composite (address) field mapping breakdown is pending the mapping '
-			. 'UI. See TrackableLeadFormIntegrationBase::apply_field_mapping '
-			. 'TODO(mapping-UI).'
-		);
-	}
+    /**
+     * When a form field is mapped to a composite Lead parameter (e.g. an
+     * address), apply_field_mapping() should expand it into its sub-parameters
+     * (city/state/zip/country) rather than assigning the raw composite value.
+     *
+     * This is not implemented yet: apply_field_mapping() currently does a flat
+     * assignment, and composite targets aren't in VALID_LEAD_PARAMETERS. It is
+     * blocked on the mapping UI, which will define how composite fields declare
+     * their sub-field targets. See the TODO(mapping-UI) note in
+     * TrackableLeadFormIntegrationBase::apply_field_mapping().
+     *
+     * Intended assertions once implemented: mapping an 'address' form field
+     * should yield lead data with 'city', 'state', 'zip', and 'country' keys.
+     *
+     * @return void
+     */
+    public function testCompositeAddressMappingIsExpanded() {
+        $this->markTestIncomplete(
+            'Composite (address) field mapping breakdown is pending the mapping '
+            . 'UI. See TrackableLeadFormIntegrationBase::apply_field_mapping '
+            . 'TODO(mapping-UI).'
+        );
+    }
 }
