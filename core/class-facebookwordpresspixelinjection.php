@@ -71,40 +71,6 @@ class FacebookWordpressPixelInjection {
                 'wp_body_open',
                 array( $this, 'inject_pixel_noscript_code' )
             );
-            foreach (
-                FacebookPluginConfig::integration_config() as $key => $value
-                ) {
-            $class_name = 'FacebookPixelPlugin\\Integration\\' . $value;
-            $class_name::inject_pixel_code();
-            }
-            add_action(
-                'wp_footer',
-                array( $this, 'send_pending_events' )
-            );
-        }
-    }
-
-    /**
-     * Sends any pending Facebook server-side events.
-     *
-     * This method checks if there are any pending Facebook server-side events,
-     * and if so, it sends them by triggering the `send_server_events` action.
-     *
-     * @return void
-     */
-    public function send_pending_events() {
-        if ( FacebookSignalState::is_held() ) {
-            return;
-        }
-
-        $pending_events =
-        FacebookServerSideEvent::get_instance()->get_pending_events();
-        if ( count( $pending_events ) > 0 ) {
-            do_action(
-                'send_server_events',
-                $pending_events,
-                count( $pending_events )
-            );
         }
     }
 

@@ -32,6 +32,9 @@ use WP_Mock\Tools\Constraints\ExpectationsMet;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 use FacebookPixelPlugin\Core\FacebookSignalState;
+use FacebookPixelPlugin\Core\FacebookTrackingFacade;
+use FacebookPixelPlugin\Core\Capi;
+use FacebookPixelPlugin\Core\Pixel;
 
 /**
  * FacebookWordpressTestBase class.
@@ -50,6 +53,73 @@ abstract class FacebookWordpressTestBase extends TestCase {
      * @var mixed
      */
     protected $mocked_options;
+
+    /**
+     * Events sent to CAPI (via capi->send) during a test.
+     *
+     * @var \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[]
+     */
+    protected $captured_events = array();
+
+    /**
+     * Events enqueued to the browser Pixel (via pixel->enqueue) during a test —
+     * the non-AJAX footer-render path.
+     *
+     * @var \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[]
+     */
+    protected $enqueued_events = array();
+
+    /**
+     * Footer markup registered with the Pixel (via register_ajax_dom_element) —
+     * the AJAX listener / cart-fragment container.
+     *
+     * @var string[]
+     */
+    protected $registered_ajax_dom = array();
+
+    /**
+     * Builds a tracking-facade double for driving instance-based integrations.
+     *
+     * generate_event() runs for real (so a real Event is built and normalized).
+     * The facade's public delivery methods are stubbed and record what the
+     * integration hands them, so tests can assert the same behavior the legacy
+     * tests did (this keeps the double independent of the facade's private
+     * Pixel/CAPI collaborators):
+     *  - track_server_event()        -> $this->captured_events (server event)
+     *  - track_inline_browser_event() -> $this->enqueued_events (footer-render path)
+     *  - register_ajax_dom_container() -> $this->registered_ajax_dom (listener)
+     *  - generate_pixel_code()        -> a stub fbq() string (AJAX response code)
+     *
+     * @return FacebookTrackingFacade The tracking-facade double.
+     */
+    protected function make_signals() {
+        $this->captured_events     = array();
+        $this->enqueued_events     = array();
+        $this->registered_ajax_dom = array();
+
+        $signals = \Mockery::mock( FacebookTrackingFacade::class )->makePartial();
+
+        $signals->shouldReceive( 'track_server_event' )->andReturnUsing(
+            function ( $event, $server = null ) {
+                $this->captured_events[] = $event;
+            }
+        );
+        $signals->shouldReceive( 'track_inline_browser_event' )->andReturnUsing(
+            function ( $event ) {
+                $this->enqueued_events[] = $event;
+            }
+        );
+        $signals->shouldReceive( 'register_ajax_dom_container' )->andReturnUsing(
+            function ( $markup ) {
+                $this->registered_ajax_dom[] = $markup;
+            }
+        );
+        $signals->shouldReceive( 'generate_pixel_code' )->andReturn(
+            "fbq('track', 'Lead', {});"
+        );
+
+        return $signals;
+    }
 
     /**
      * Sets up the environment for each test.

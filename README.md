@@ -30,16 +30,17 @@ https://www.facebook.com/business/help/881403525362441
 
 # How to integrate your plugins
 
-1. Add your integration class under `integration/` folder
-2. Extend the class from `FacebookWordpressIntegrationBase`
-3. Define class variable `PLUGIN_FILE` to be your plugin PHP file
-4. Define class variable `TRACKING_NAME` for tracking purpose, put this value under 'fb_wp_tracking' as a parameter in the pixel event
-5. Define a public static function `inject_pixel_code()` to inject pixel at your page
-6. Add your unit test class under `tests/` folder
-7. Extend the test class from `FacebookWordpressTestBase`
-8. After the classes development, run tests by `$ vendor/bin/phing`
+1. Add your integration class under the `integration/` folder
+2. Extend `TrackableIntegrationBase` (or `TrackableLeadFormIntegrationBase` for lead / form-submission integrations)
+3. Define the class constant `PLUGIN_FILE` as your plugin's main PHP file (e.g. `contact-form-7/wp-contact-form-7.php`)
+4. Define the class constant `INTEGRATION_NAME`; this value is sent as `fb_integration_tracking` on the pixel and CAPI event
+5. Implement `protected function set_up_tracking()` to register the host-plugin hooks that capture events, dispatching them via `$this->generate_event()` and `$this->deliver()`
+6. Register your class in the `FacebookForWordpress::INTEGRATIONS` list in `facebook-for-wordpress.php`
+7. Add your unit test class under the `__tests__/integration/` folder
+8. Extend the test class from `FacebookWordpressTestBase`
+9. After the classes development, run tests by `$ vendor/bin/phing`
 
-You can reference to integration/FacebookWordpressContactForm7.php and tests/FacebookWordpressContactForm7Test.php as an example
+You can reference integration/class-facebookwordpresscontactform7.php and __tests__/integration/FacebookWordpressContactForm7Test.php as an example
 
 # Contributing
 

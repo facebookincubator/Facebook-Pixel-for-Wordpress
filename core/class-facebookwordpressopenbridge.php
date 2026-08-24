@@ -29,7 +29,6 @@ namespace FacebookPixelPlugin\Core;
 
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
@@ -60,9 +59,17 @@ class FacebookWordpressOpenBridge {
     );
 
     /**
+     * The CAPI transport used to send OpenBridge events.
+     *
+     * @var CapiSenderBase
+     */
+    private $capi_sender;
+
+    /**
      * Class constructor.
      */
     public function __construct() {
+        $this->capi_sender = new CircuitBreakerAwareSyncCapiSender( new Logger() );
     }
 
     /**
@@ -159,7 +166,7 @@ class FacebookWordpressOpenBridge {
             true
         );
         $event->setEventId( $data['event_id'] );
-        FacebookServerSideEvent::send( array( $event ) );
+        $this->capi_sender->send( array( $event ) );
     }
 
     /**

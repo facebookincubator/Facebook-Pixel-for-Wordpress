@@ -65,11 +65,12 @@ final class FacebookForWordpressHposTest extends FacebookWordpressTestBase {
         $mocked_options->shouldReceive( 'get_options' )->andReturn( array() );
         $mocked_options->shouldReceive( 'get_pixel_id' )->andReturn( '1234' );
         $mocked_options->shouldReceive( 'get_active_pixel_id' )->andReturn( '1234' );
+        $mocked_options->shouldReceive( 'get_agent_string' )->andReturn( 'WordPress' );
         $mocked_options->shouldReceive( 'is_wordpress_com_hosted' )->andReturn( false );
 
-        $mocked_pixel = \Mockery::mock( 'alias:FacebookPixelPlugin\\Core\\FacebookPixel' );
-        $mocked_pixel->shouldReceive( 'initialize' )->once();
-
+        // FacebookPixel is intentionally NOT aliased: the tracking facade
+        // constructs the real Pixel, whose NORMAL_EVENTS constant references
+        // real FacebookPixel::* constants that an alias mock would not provide.
         \Mockery::mock( 'overload:FacebookPixelPlugin\\Core\\ServerEventAsyncTask' );
 
         require_once dirname( __DIR__, 2 ) . '/facebook-for-wordpress.php';

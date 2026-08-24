@@ -83,9 +83,19 @@ class ReleaseSignalsAjax {
     );
 
     /**
-     * Register AJAX handlers.
+     * The CAPI transport used to send released events.
+     *
+     * @var Capi
      */
-    public function __construct() {
+    private $capi;
+
+    /**
+     * Register AJAX handlers.
+     *
+     * @param Capi $capi The CAPI transport used to send released events.
+     */
+    public function __construct( Capi $capi ) {
+        $this->capi = $capi;
         add_action( 'wp_ajax_' . self::ACTION, array( $this, 'handle' ) );
         add_action( 'wp_ajax_nopriv_' . self::ACTION, array( $this, 'handle' ) );
     }
@@ -162,7 +172,7 @@ class ReleaseSignalsAjax {
 
         if ( ! empty( $events_to_send ) ) {
             $this->record_rate_limit_usage( count( $events_to_send ) );
-            FacebookServerSideEvent::send( $events_to_send );
+            $this->capi->send( $events_to_send, Capi::CAPI_SYNC );
         }
 
         // Return fresh user_info so JS can initialise fbq with correct AAM data

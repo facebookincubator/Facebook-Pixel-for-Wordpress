@@ -147,23 +147,4 @@ class FacebookPluginConfig {
     'dismiss_connection_invalid_notice';
     const ADMIN_IGNORE_CONNECTION_INVALID_NOTICE  =
     'ignore_connection_invalid_notice';
-
-    /**
-     * Integration config: INTEGRATION_KEY => PLUGIN_CLASS.
-     *
-     * @return array
-     */
-    public static function integration_config() {
-        return array(
-            'CALDERA_FORM'          => 'FacebookWordpressCalderaForm',
-            'CONTACT_FORM_7'        => 'FacebookWordpressContactForm7',
-            'EASY_DIGITAL_DOWNLOAD' => 'FacebookWordpressEasyDigitalDownloads',
-            'FORMIDABLE_FORM'       => 'FacebookWordpressFormidableForm',
-            'MAILCHIMP_FOR_WP'      => 'FacebookWordpressMailchimpForWp',
-            'NINJA_FORMS'           => 'FacebookWordpressNinjaForms',
-            'WP_FORMS'              => 'FacebookWordpressWPForms',
-            'WP_E_COMMERCE'         => 'FacebookWordpressWPECommerce',
-            'WOOCOMMERCE'           => 'FacebookWordpressWooCommerce',
-        );
-    }
 }

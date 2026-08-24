@@ -27,10 +27,6 @@
 
 namespace FacebookPixelPlugin\Core;
 
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventRequest;
-use FacebookPixelPlugin\FacebookAds\ApiConfig;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 /**
@@ -232,7 +228,7 @@ class FacebookCapiEvent {
             }
         }
 
-        $result = FacebookServerSideEvent::send( $events, $test_event_code );
+        $result = ( new CircuitBreakerAwareSyncCapiSender( new Logger(), $test_event_code ) )->send( $events );
 
         if ( $result && $result['success'] ) {
             wp_send_json_success(

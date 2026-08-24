@@ -341,68 +341,6 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
         );
     }
 
-    /**
-     * Gets FB pixel AddToCart code
-     *
-     * @param array  $param The parameters for the pixel event.
-     * @param string $tracking_name The tracking name for the pixel event.
-     * @param bool   $with_script_tag Whether to include the script
-     * tag in the pixel track code.
-     */
-    public static function get_pixel_add_to_cart_code(
-        $param = array(),
-        $tracking_name = '',
-        $with_script_tag = true
-    ) {
-        return self::get_pixel_track_code(
-            self::ADDTOCART,
-            $param,
-            $tracking_name,
-            $with_script_tag
-        );
-    }
-
-    /**
-     * Gets FB pixel InitiateCheckout code
-     *
-     * @param array  $param The parameters for the pixel event.
-     * @param string $tracking_name The tracking name for the pixel event.
-     * @param bool   $with_script_tag Whether to include the
-     * script tag in the pixel track code.
-     */
-    public static function get_pixel_initiate_checkout_code(
-        $param = array(),
-        $tracking_name = '',
-        $with_script_tag = true
-    ) {
-        return self::get_pixel_track_code(
-            self::INITIATECHECKOUT,
-            $param,
-            $tracking_name,
-            $with_script_tag
-        );
-    }
-
-    /**
-     * Gets FB pixel Lead code
-     *
-     * @param array  $param The parameters for the pixel event.
-     * @param string $tracking_name The tracking name for the pixel event.
-     * @param bool   $with_script_tag Whether to include the
-     * script tag in the pixel track code.
-     */
-    public static function get_pixel_lead_code(
-        $param = array(),
-        $tracking_name = '',
-        $with_script_tag = true
-    ) {
-        return self::get_pixel_track_code(
-            self::LEAD,
-            $param,
-            $tracking_name,
-            $with_script_tag
-        );
-    }
 
     /**
      * Gets FB pixel PageView code
@@ -419,48 +357,6 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
     ) {
         return self::get_pixel_track_code(
             self::PAGEVIEW,
-            $param,
-            $tracking_name,
-            $with_script_tag
-        );
-    }
-
-    /**
-     * Gets FB pixel Purchase code
-     *
-     * @param array  $param The parameters for the pixel event.
-     * @param string $tracking_name The tracking name for the pixel event.
-     * @param bool   $with_script_tag Whether to include the script
-     *  tag in the pixel track code.
-     */
-    public static function get_pixel_purchase_code(
-        $param = array(),
-        $tracking_name = '',
-        $with_script_tag = true
-    ) {
-        return self::get_pixel_track_code(
-            self::PURCHASE,
-            $param,
-            $tracking_name,
-            $with_script_tag
-        );
-    }
-
-    /**
-     * Gets FB pixel ViewContent code
-     *
-     * @param array  $param The parameters for the pixel event.
-     * @param string $tracking_name The tracking name for the pixel event.
-     * @param bool   $with_script_tag Whether to include the script tag in
-     * the pixel track code.
-     */
-    public static function get_pixel_view_content_code(
-        $param = array(),
-        $tracking_name = '',
-        $with_script_tag = true
-    ) {
-        return self::get_pixel_track_code(
-            self::VIEWCONTENT,
             $param,
             $tracking_name,
             $with_script_tag

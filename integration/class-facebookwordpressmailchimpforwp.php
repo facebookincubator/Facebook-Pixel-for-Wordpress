@@ -2,15 +2,9 @@
 /**
  * Facebook Pixel Plugin FacebookWordpressMailchimpForWp class.
  *
- * This file contains the main logic for FacebookWordpressMailchimpForWp.
+ * This file contains the tracking integration for Mailchimp for WordPress.
  *
  * @package FacebookPixelPlugin
- */
-
-/**
- * Define FacebookWordpressMailchimpForWp class.
- *
- * @return void
  */
 
 /*
@@ -29,134 +23,129 @@ namespace FacebookPixelPlugin\Integration;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
-use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Core\ServerEventFactory;
-use FacebookPixelPlugin\Core\FacebookServerSideEvent;
-use FacebookPixelPlugin\Core\PixelRenderer;
 
 /**
- * FacebookWordpressMailchimpForWp class.
+ * Tracking integration for the Mailchimp for WordPress plugin.
  */
-class FacebookWordpressMailchimpForWp extends FacebookWordpressIntegrationBase {
-    const PLUGIN_FILE   = 'mailchimp-for-wp/mailchimp-for-wp.php';
-    const TRACKING_NAME = 'mailchimp-for-wp';
+class FacebookWordpressMailchimpForWp extends TrackableLeadFormIntegrationBase {
+
+    const PLUGIN_FILE      = 'mailchimp-for-wp/mailchimp-for-wp.php';
+    const INTEGRATION_NAME = 'mailchimp-for-wp';
 
     /**
-     * Injects Facebook Pixel events for the MailChimp for WP plugin.
-     *
-     * This method sets up WordPress actions to inject Facebook Pixel events
-     * for different stages of the MailChimp for WP plugin process.
+     * Initialize the integration.
      *
      * @return void
      */
-    public static function inject_pixel_code() {
-    self::add_pixel_fire_for_hook(
-        array(
-            'hook_name'       => 'mc4wp_form_subscribed',
-            'classname'       => __CLASS__,
-            'inject_function' => 'injectLeadEvent',
-        )
-    );
-    }
-
-    /**
-     * Injects Facebook Pixel events for the MailChimp for WP plugin.
-     *
-     * This method sets up WordPress actions to inject Facebook Pixel events
-     * for different stages of the MailChimp for WP plugin process.
-     *
-     * @return void
-     */
-    public static function injectLeadEvent() {
+    protected function set_up_tracking() {
         if ( FacebookPluginUtils::is_internal_user() ) {
             return;
         }
-
-        $server_event = ServerEventFactory::safe_create_event(
-            'Lead',
-            array( __CLASS__, 'readFormData' ),
-            array(),
-            self::TRACKING_NAME,
-            true
-        );
-        FacebookServerSideEvent::get_instance()->track( $server_event );
-
-        $code = PixelRenderer::render(
-            array( $server_event ),
-            self::TRACKING_NAME
-        );
-        printf(
-            '
-    <!-- Meta Pixel Event Code -->
-      %s
-    <!-- End Meta Pixel Event Code -->
-        ',
-            $code // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-        );
+        add_action( 'mc4wp_form_subscribed', array( $this, 'capture_submitted_form' ), 11, 1 );
     }
 
     /**
-     * Reads form data from the $_POST global array.
+     * Captures a submitted form and sends the Lead event via CAPI and Pixel.
      *
-     * This function extracts user-related data
-     * such as email, first name, last name,
-     * phone number, and address details from the
-     * $_POST array, commonly used in form
-     * submissions. The extracted data includes:
-     * - 'email': The user's email address.
-     * - 'first_name': The user's first name.
-     * - 'last_name': The user's last name.
-     * - 'phone': The user's phone number.
-     * - 'city', 'state', 'zip', 'country': Address details,
-     * where the country must
-     *   be specified using a 2-letter code.
-     *
-     * The function returns an associative array containing the extracted data.
-     *
-     * @return array An associative array of form data.
+     * @param mixed ...$args The Mailchimp for WP submit-hook arguments.
+     * @return void
      */
-    public static function readFormData() {
-        $event_data = array();
-        if ( ! empty( $_POST['EMAIL'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            $event_data['email'] = sanitize_email( wp_unslash( $_POST['EMAIL'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        }
+    public function capture_submitted_form( ...$args ) {
+        $event = $this->generate_event( self::EVENT_NAME, $this->extract_lead_data( ...$args ) );
+        $this->deliver( $event );
+    }
 
-        if ( ! empty( $_POST['FNAME'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            $event_data['first_name'] = sanitize_text_field( wp_unslash( $_POST['FNAME'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        }
+    /**
+     * Reads the form id from the plugin submit-hook arguments.
+     *
+     * @param mixed ...$args The Mailchimp for WP submit-hook arguments.
+     * @return mixed The form identifier.
+     */
+    protected function get_form_id( ...$args ) {
+        return $args[0];
+    }
 
-        if ( ! empty( $_POST['LNAME'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            $event_data['last_name'] = sanitize_text_field( wp_unslash( $_POST['LNAME'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        }
-
-        if ( ! empty( $_POST['PHONE'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            $event_data['phone'] = sanitize_text_field( wp_unslash( $_POST['PHONE'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        }
-
-        if ( ! empty( $_POST['ADDRESS'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            $address_data = sanitize_text_field( wp_unslash( $_POST['ADDRESS'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-
-            if ( ! empty( $address_data['city'] ) ) {
-                $event_data['city'] = sanitize_text_field( $address_data['city'] );
+    /**
+     * Yields the submitted form parameters as normalized rows.
+     *
+     * @param mixed ...$args The Mailchimp for WP submit-hook arguments.
+     * @return \Generator Rows of ['name'=>, 'value'=>].
+     */
+    protected function get_form_param_iterator( ...$args ) {
+        $form = $args[0];
+        foreach ( $form->data as $field_name => $field_value ) {
+            if ( empty( $field_name ) || empty( $field_value ) ) {
+                continue;
             }
-
-            if ( ! empty( $address_data['state'] ) ) {
-                $event_data['state'] =
-                sanitize_text_field( $address_data['state'] );
-            }
-
-            if ( ! empty( $address_data['zip'] ) ) {
-                $event_data['zip'] = sanitize_text_field( $address_data['zip'] );
-            }
-
-            if (
-            ! empty( $address_data['country'] )
-            && strlen( $address_data['country'] ) === 2
-            ) {
-                $event_data['country'] = $address_data['country'];
-            }
+            yield self::get_iterator_yield_output( $field_name, null, $field_value );
         }
-        return $event_data;
+    }
+
+    /**
+     * Hard-coded extraction used when no mapping is configured for the form.
+     *
+     * @param iterable $form_param_iterator Rows of ['name'=>, 'value'=>].
+     * @return array Normalized lead data keyed by Lead parameter name.
+     */
+    protected function extract_lead_data_fallback( $form_param_iterator ) {
+        $result = array();
+        foreach ( $form_param_iterator as $item ) {
+            $name  = $item['name'];
+            $value = $item['value'];
+            $key   = '';
+            switch ( $name ) {
+                case 'EMAIL':
+                    $key = 'email';
+                    break;
+                case 'FNAME':
+                    $key = 'first_name';
+                    break;
+                case 'LNAME':
+                    $key = 'last_name';
+                    break;
+                case 'PHONE':
+                    $key = 'phone';
+                    break;
+                case 'ADDRESS':
+                    $result = array_merge( $result, $this->get_address_param_breakdown( $value ) );
+                    break;
+                default:
+                    break;
+            }
+            if ( empty( $key ) ) {
+                continue;
+            }
+            $result[ $key ] = $value;
+        }
+        return $result;
+    }
+
+    /**
+     * Breaks an address field value into individual city/state/zip/country
+     * lead parameters.
+     *
+     * @param array $address_field_value The address field value, keyed by
+     *                                   address component.
+     * @return array Normalized address lead data keyed by Lead parameter name.
+     */
+    private function get_address_param_breakdown( $address_field_value ) {
+        $result = array();
+        $fn     = function ( $param_name ) use ( $address_field_value, &$result ) {
+            if ( isset( $address_field_value[ $param_name ] ) ) {
+                $result[ $param_name ] = sanitize_text_field( $address_field_value[ $param_name ] );
+            }
+        };
+        $fn( 'city' );
+        $fn( 'state' );
+        $fn( 'zip' );
+        if (
+            ! empty( $address_field_value['country'] )
+            && strlen( $address_field_value['country'] ) === 2
+        ) {
+            $result['country'] = $address_field_value['country'];
+        }
+
+        return $result;
     }
 }
