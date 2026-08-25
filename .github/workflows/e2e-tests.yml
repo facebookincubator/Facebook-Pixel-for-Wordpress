@@ -74,15 +74,38 @@ jobs:
             echo "::warning::FB_PIXEL_ID / FB_ACCESS_TOKEN not available (fork PR) — skipping E2E."
           fi
 
-  e2e:
+  # Resolve the WordPress version the plugin declares support for ("Tested up to"
+  # in readme.txt) so the matrix can exercise it alongside the latest release —
+  # mirrors Meta for WooCommerce, which tests both its declared and latest stacks.
+  resolve-versions:
     needs: check-secrets
+    if: needs.check-secrets.outputs.has-secrets == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      wp-supported: ${{ steps.versions.outputs.wp-supported }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Read declared WP version from readme.txt
+        id: versions
+        run: |
+          WP_VERSION=$(grep -oP '^\s*Tested up to:\s*\K\S+' readme.txt)
+          if [ -z "$WP_VERSION" ]; then
+            echo "::error::Could not read 'Tested up to' from readme.txt"; exit 1
+          fi
+          echo "wp-supported=$WP_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Declared (Tested up to) WordPress version: $WP_VERSION"
+
+  e2e:
+    name: E2E ${{ matrix.version-label }} - ${{ matrix.project }}
+    needs: [check-secrets, resolve-versions]
     if: needs.check-secrets.outputs.has-secrets == 'true'
     runs-on: ubuntu-latest
     environment: QA
     timeout-minutes: 30
-    # One shard per Playwright project, run in parallel on separate runners. Keeps
-    # wall-clock low and isolates each project's artifacts; a flaky browser can't
-    # stall the others. fail-fast:false so every project reports.
+    # One shard per Playwright project x WordPress version-set, run in parallel on
+    # separate runners. Keeps wall-clock low and isolates each shard's artifacts; a
+    # flaky browser can't stall the others. fail-fast:false so every shard reports.
     strategy:
       fail-fast: false
       matrix:
@@ -98,6 +121,18 @@ jobs:
           - opera-wp-customer
           - android-pixel-wp-customer
           - safari-ios-wp-customer
+        # Test both the plugin's declared WP ("Tested up to") and the latest
+        # release. WooCommerce latest requires WP >= 6.9, so it runs on both.
+        version-set:
+          - supported
+          - latest
+        include:
+          - version-set: supported
+            wp-version: ${{ needs.resolve-versions.outputs.wp-supported }}
+            version-label: Declared
+          - version-set: latest
+            wp-version: latest
+            version-label: Latest
     env:
       FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
       FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
@@ -146,8 +181,17 @@ jobs:
         run: |
           mkdir -p "$WORDPRESS_PATH"
           cd "$WORDPRESS_PATH"
-          curl -sO https://wordpress.org/latest.tar.gz
-          tar -xzf latest.tar.gz --strip-components=1
+          # Download the WordPress version for this shard: 'latest' -> latest.tar.gz,
+          # otherwise the pinned declared release (readme.txt "Tested up to").
+          if [ "${{ matrix.wp-version }}" = "latest" ]; then
+            echo "Installing WordPress: latest"
+            curl -sfSO https://wordpress.org/latest.tar.gz
+            tar -xzf latest.tar.gz --strip-components=1
+          else
+            echo "Installing WordPress: ${{ matrix.wp-version }} (declared)"
+            curl -sfSO "https://wordpress.org/wordpress-${{ matrix.wp-version }}.tar.gz"
+            tar -xzf "wordpress-${{ matrix.wp-version }}.tar.gz" --strip-components=1
+          fi
           cp wp-config-sample.php wp-config.php
           sed -i "s/database_name_here/wordpress/" wp-config.php
           sed -i "s/username_here/wordpress/" wp-config.php
@@ -305,7 +349,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-artifacts-${{ matrix.project }}
+          name: e2e-artifacts-${{ matrix.version-set }}-${{ matrix.project }}
           path: |
             ${{ env.PLUGIN_PATH }}/playwright-report/
             ${{ env.PLUGIN_PATH }}/test-results/
