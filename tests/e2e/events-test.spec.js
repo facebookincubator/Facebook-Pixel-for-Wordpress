@@ -80,10 +80,35 @@ function isBlockThemeProject(testInfo) {
 function createPixelEventRequestRecorder(page, eventName) {
   const captured = [];
 
-  const readBodyParam = (request, key) => {
+  // Parse a /tr request body into a params map. Handles BOTH
+  // application/x-www-form-urlencoded and multipart/form-data: Firefox
+  // serializes the navigator.sendBeacon /tr payload as multipart/form-data,
+  // which URLSearchParams cannot read, so a urlencoded-only parser silently
+  // returns 0 events on Firefox.
+  const parseBodyParams = (request) => {
+    const params = {};
     const body = request.postData() || '';
-    if (!body || !body.includes('=')) return null;
-    return new URLSearchParams(body).get(key);
+    if (!body) return params;
+
+    if (body.includes('name="')) {
+      // multipart/form-data: split on the boundary (the first line) and pull
+      // each `name="key"\r\n\r\nvalue` block.
+      const boundary = (body.split(/\r?\n/, 1)[0] || '').trim();
+      const parts = boundary.startsWith('--') ? body.split(boundary) : [body];
+      for (const part of parts) {
+        const nameMatch = part.match(/name="([^"]+)"/);
+        if (!nameMatch) continue;
+        const valueBlock = part.split(/\r?\n\r?\n/)[1];
+        if (valueBlock === undefined) continue;
+        const value = valueBlock.trim();
+        if (value) params[nameMatch[1]] = value;
+      }
+    } else if (body.includes('=')) {
+      const form = new URLSearchParams(body);
+      for (const key of form.keys()) params[key] = form.get(key);
+    }
+
+    return params;
   };
 
   const onRequest = (request) => {
@@ -100,23 +125,28 @@ function createPixelEventRequestRecorder(page, eventName) {
     if (!isFacebookHost || !isPixelPath) return;
 
     try {
-      const detectedEventName = parsed.searchParams.get('ev') || readBodyParam(request, 'ev');
+      const bodyParams = parseBodyParams(request);
+      const detectedEventName = parsed.searchParams.get('ev') || bodyParams.ev || null;
       if (detectedEventName !== eventName) return;
 
       captured.push({
         url: request.url(),
         eventName: detectedEventName,
-        eventId: parsed.searchParams.get('eid') || readBodyParam(request, 'eid') || null,
+        eventId: parsed.searchParams.get('eid') || bodyParams.eid || null,
       });
     } catch (_) {
       // Ignore non-URL-safe payloads.
     }
   };
 
-  page.on('request', onRequest);
+  // Listen at the browser-CONTEXT level, not just this page: after the signals
+  // re-init on release the replayed beacons can fire from a different
+  // page/frame/popup in the same context, which a page-scoped listener misses.
+  const context = page.context();
+  context.on('request', onRequest);
   return {
     getEvents: () => captured.slice(),
-    stop: () => page.off('request', onRequest),
+    stop: () => context.off('request', onRequest),
   };
 }
 

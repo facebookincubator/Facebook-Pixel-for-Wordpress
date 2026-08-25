@@ -16,5 +16,5 @@ local-config.php
 /blob-report
 /playwright/.cache
 /tests/e2e/.auth
-/tests/e2e/captured-events
+/tests/e2e/helpers/captured-events
 .env

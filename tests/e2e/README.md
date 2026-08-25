@@ -7,12 +7,13 @@ Ported from the Meta for WooCommerce E2E suite.
 ## How it works
 
 - **Pixel channel** — Playwright intercepts browser requests to `facebook.com/tr`
-  and writes them to `tests/e2e/captured-events/pixel-<testId>.json`
+  and writes them to `tests/e2e/helpers/captured-events/pixel-<testId>.json`
   (`helpers/js/events/capture.js`).
 - **CAPI channel** — the plugin logs each transformed server event to
-  `tests/e2e/captured-events/capi-<testId>.json` when a per-test cookie is present.
-  The hook lives in `core/class-facebookserversideevent.php::send()`
-  (`maybe_log_events_for_tests()`) and is gated on a non-production environment +
+  `tests/e2e/helpers/captured-events/capi-<testId>.json` when a per-test cookie is present.
+  The hook lives in `core/class-facebookserversideevent.php::maybe_log_events_for_tests()`,
+  invoked from `core/signals/class-capisenderbase.php::send_request()` (the CAPI
+  send choke point), and is gated on a non-production environment +
   the `FB_E2E_TEST_COOKIE_NAME` / `FB_E2E_LOGGER_PATH` env values. It is a strict
   no-op in production.
 - A per-test cookie (`facebook_test_id`) ties both files together; the validator

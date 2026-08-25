@@ -51,13 +51,27 @@ jobs:
         env:
           FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
           FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+          # Runs where the QA secrets are EXPECTED to exist: scheduled runs,
+          # manual dispatch, and same-repo PRs all have access to the QA
+          # environment. Fork PRs do not, so a missing secret there is normal
+          # (skip) rather than a misconfiguration (fail).
+          SECRETS_REQUIRED: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
           if [ -n "$FB_PIXEL_ID" ] && [ -n "$FB_ACCESS_TOKEN" ]; then
             echo "has-secrets=true" >> "$GITHUB_OUTPUT"
             echo "✅ QA secrets present"
-          else
+          elif [ "$SECRETS_REQUIRED" = "true" ]; then
+            # Do not silently skip: on the canonical repo (schedule / dispatch /
+            # same-repo PR) missing secrets mean E2E coverage is broken, so fail
+            # loudly instead of reporting a green-but-skipped run.
             echo "has-secrets=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::FB_PIXEL_ID / FB_ACCESS_TOKEN not set in the QA environment — skipping E2E."
+            echo "::error::FB_PIXEL_ID / FB_ACCESS_TOKEN are missing from the QA environment on a '${{ github.event_name }}' run where they are required. Failing so the misconfiguration is visible instead of silently skipping E2E."
+            exit 1
+          else
+            # Fork PR without access to QA secrets — skip gracefully so external
+            # contributors aren't blocked by secrets they can't set.
+            echo "has-secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::FB_PIXEL_ID / FB_ACCESS_TOKEN not available (fork PR) — skipping E2E."
           fi
 
   e2e:
