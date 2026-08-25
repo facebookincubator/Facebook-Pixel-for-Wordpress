@@ -354,10 +354,13 @@ class FacebookServerSideEvent {
      * arbitrary file inclusion, and the whole method is wrapped so it can never
      * throw into the live CAPI send path.
      *
+     * Public so the CAPI senders in core/signals (the choke point that actually
+     * calls EventRequest::execute()) can reuse the same gated logger.
+     *
      * @param array $events The transformed ServerSide\Event objects that were sent.
      * @return void
      */
-    private static function maybe_log_events_for_tests( $events ) {
+    public static function maybe_log_events_for_tests( $events ) {
         try {
             // 1. Non-production only.
             $is_debug = defined( 'WP_DEBUG' ) && WP_DEBUG;

@@ -114,6 +114,13 @@ abstract class CapiSenderBase {
             $request->setTestEventCode( $test_event_code );
         }
 
-        return $request->execute();
+        $response = $request->execute();
+
+        // E2E instrumentation only: record the transformed events that were
+        // actually sent so the Playwright suite can assert Pixel<->CAPI
+        // deduplication. Gated + no-op in production (see the method's docblock).
+        FacebookServerSideEvent::maybe_log_events_for_tests( $events );
+
+        return $response;
     }
 }
