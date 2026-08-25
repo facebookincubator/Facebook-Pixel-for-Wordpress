@@ -465,15 +465,34 @@ class EventValidator {
   async checkDebugLog() {
     const debugLogPath = process.env.WP_DEBUG_LOG;
     if (!debugLogPath) return;
+
+    // Transport-level CAPI failures (request timeouts, DNS/connection errors)
+    // are transient conditions of the CI runner's outbound network, not plugin
+    // defects or PHP fatals. debug.log is cumulative across the whole shard, so
+    // treating them as critical makes late-running tests flaky against a single
+    // network blip. Ignore ONLY these; genuine CAPI/API errors (invalid params,
+    // auth, malformed requests) and PHP fatals still fail the gate.
+    const isTransientCapiTransport = (line) =>
+      /CAPI error:/i.test(line) &&
+      /(operation timed out|timed out after|connection timed out|could not resolve host|failed to connect|couldn'?t connect to|connection reset|timeout was reached|resolving timed out|ssl connection timeout|0 bytes received|empty reply from server|network is unreachable|temporary failure in name resolution)/i.test(line);
+
     try {
       const data = await fs.readFile(debugLogPath, 'utf8');
       const lines = data.split('\n');
-      const criticalErrors = lines.filter(line => {
+      const errorLines = lines.filter(line => {
         if (!/fatal|error/i.test(line)) return false;
         if (/warning/i.test(line)) return false;
         if (/Cron reschedule event error/i.test(line)) return false;
         return true;
       });
+
+      const ignoredTransient = errorLines.filter(isTransientCapiTransport);
+      const criticalErrors = errorLines.filter(line => !isTransientCapiTransport(line));
+
+      if (ignoredTransient.length > 0) {
+        console.log(`⚠️ Ignoring ${ignoredTransient.length} transient CAPI transport error(s) in debug.log (network timeouts/connectivity, not plugin defects):`);
+        ignoredTransient.forEach(err => console.log('  ', err));
+      }
 
       if (criticalErrors.length > 0) {
         console.log('❌ Critical errors in debug.log:');
