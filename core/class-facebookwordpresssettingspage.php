@@ -61,7 +61,7 @@ class FacebookWordpressSettingsPage {
             array( $this, 'register_plugin_scripts' )
         );
         add_action( 'current_screen', array( $this, 'register_notices' ) );
-        $capi_event = new FacebookCapiEvent();
+        $capi_event = new FacebookCapiEvent( new AdminEventSender() );
     }
 
     /**
