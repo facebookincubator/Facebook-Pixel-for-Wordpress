@@ -30,18 +30,20 @@
 // -----------------------------------------------------------------------------
 // Generic parameter categories
 // -----------------------------------------------------------------------------
-// Calibrated to what this plugin actually emits:
-// - Pixel advanced matching emits em + fbp (not ct/zp/cn/external_id).
-// - CAPI emits em + fbp; external_id / client_ip_address are not guaranteed
-//   (client_ip_address is absent for localhost/CI), so they aren't required.
-// The em hash is still asserted to MATCH across channels (validator), so this
-// remains a meaningful check.
+// Calibrated to what this plugin actually emits (verified against captured
+// events), kept as close to the WooCommerce contract as the payloads allow:
+// - Pixel advanced matching emits only em + fbp (not ct/zp/cn/external_id), so
+//   the pixel set stays minimal.
+// - CAPI (logged-in customer) carries em + address matching keys; this mirrors
+//   Woo's CAPI set MINUS external_id and client_ip_address, which this plugin /
+//   localhost don't emit. Lead is the exception (no address) and overrides below.
+// - Guests carry no session PII, so only the browser id is guaranteed.
+// The em hash is still asserted to MATCH across channels (validator).
 const USER_DATA = {
   customer: {
     pixel: ['em', 'fbp'],
-    capi: ['em', 'fbp'],
+    capi: ['em', 'ct', 'zp', 'country', 'fbp', 'client_user_agent'],
   },
-  // Guests carry no session PII; only the browser id is guaranteed.
   guest: {
     pixel: ['fbp'],
     capi: ['fbp'],
@@ -66,8 +68,8 @@ const EVENT_OVERLAYS = {
   ViewContent: {
     channels: ['pixel', 'capi'],
     custom_data: {
-      pixel: ['content_ids', 'content_type', 'content_name', 'value', 'currency'],
-      capi: ['content_ids', 'content_type', 'content_name', 'value', 'currency'],
+      pixel: ['content_ids', 'content_type', 'content_name', 'value', 'currency', 'contents'],
+      capi: ['content_ids', 'content_type', 'content_name', 'value', 'currency', 'contents'],
     },
   },
 
@@ -96,6 +98,12 @@ const EVENT_OVERLAYS = {
 
   Lead: {
     channels: ['pixel', 'capi'],
+    // Lead carries form-provided identity only (no billing address), so its CAPI
+    // user_data is em + fbp — override the enriched customer base. Pixel inherits
+    // the base (customer em+fbp / guest fbp; the guest Pixel Lead has no em).
+    user_data: {
+      capi: ['em', 'fbp'],
+    },
     // Inherit the mode-aware base user_data: the Pixel Lead only carries `em` via
     // session advanced-matching (so customer → em+fbp, guest → fbp only). The
     // form-submitted email is asserted to reach CAPI separately in the spec
