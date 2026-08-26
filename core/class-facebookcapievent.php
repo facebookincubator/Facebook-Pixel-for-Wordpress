@@ -33,6 +33,14 @@ defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
  * Class FacebookCapiEvent
  */
 class FacebookCapiEvent {
+    /**
+     * Sender for admin test events. It intentionally bypasses the production
+     * circuit breaker so rejected test payloads cannot block live traffic.
+     *
+     * @var AdminEventSender
+     */
+    private $sender;
+
     const REQUIRED_EVENT_DATA = array(
         'event_name',
         'event_time',
@@ -79,8 +87,11 @@ class FacebookCapiEvent {
 
     /**
      * Hook into WordPress's AJAX actions to handle sending a CAPI event.
+     *
+     * @param AdminEventSender $sender Sender for admin test events.
      */
-    public function __construct() {
+    public function __construct( AdminEventSender $sender ) {
+        $this->sender = $sender;
         add_action(
             'wp_ajax_send_capi_event',
             array( $this, 'send_capi_event' )
@@ -228,7 +239,7 @@ class FacebookCapiEvent {
             }
         }
 
-        $result = ( new CircuitBreakerAwareSyncCapiSender( new Logger(), $test_event_code ) )->send( $events );
+        $result = $this->sender->send( $events, $test_event_code );
 
         if ( $result && $result['success'] ) {
             wp_send_json_success(
