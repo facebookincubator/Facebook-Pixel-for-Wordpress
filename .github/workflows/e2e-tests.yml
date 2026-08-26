@@ -1,0 +1,359 @@
+name: E2E Tests (Pixel/CAPI)
+
+# Barebones WordPress setup (WordPress tarball + `php -S` + WP-CLI against a MySQL
+# service) — modeled on the Meta for WooCommerce plugin's product-creation-tests.yml.
+# No Docker / wp-env. Requires FB_PIXEL_ID and FB_ACCESS_TOKEN in the "QA"
+# environment (a real Meta pixel id + Conversions API token).
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  WORDPRESS_PATH: /tmp/wordpress
+  PLUGIN_PATH: /tmp/wordpress/wp-content/plugins/facebook-for-wordpress
+  WP_DEBUG_LOG: /tmp/wordpress/wp-content/debug.log
+  WORDPRESS_URL: http://localhost:8080
+  WP_USERNAME: admin
+  WP_PASSWORD: admin
+  # E2E CAPI logging hook config (read by core/class-facebookserversideevent.php).
+  FB_E2E_TEST_COOKIE_NAME: facebook_test_id
+  FB_E2E_LOGGER_PATH: /tests/e2e/helpers/php/event-logger.php
+  # Where both loggers write pixel-*/capi-* JSON (plugin-relative). The PHP logger
+  # (dirname(__DIR__)/captured-events) and JS capture (../../captured-events) both
+  # resolve to tests/e2e/helpers/captured-events.
+  FB_E2E_CAPTURED_EVENTS_DIR: /tests/e2e/helpers/captured-events
+  # Deterministic test customer (created during setup, used by global-setup login).
+  WP_CUSTOMER_USERNAME: e2e_customer
+  WP_CUSTOMER_PASSWORD: e2e_password
+  WP_CUSTOMER_EMAIL: e2e_customer@example.com
+  # Storefront URLs seeded by seed-store.sh.
+  TEST_PRODUCT_URL: /product/testp/
+  TEST_LEAD_FORM_URL: /e2e-lead/
+  TEST_FBCLID: ${{ secrets.TEST_FBCLID }}
+
+jobs:
+  check-secrets:
+    runs-on: ubuntu-latest
+    environment: QA
+    outputs:
+      has-secrets: ${{ steps.check.outputs.has-secrets }}
+    steps:
+      - id: check
+        env:
+          FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
+          FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+          # Runs where the QA secrets are EXPECTED to exist: scheduled runs,
+          # manual dispatch, and same-repo PRs all have access to the QA
+          # environment. Fork PRs do not, so a missing secret there is normal
+          # (skip) rather than a misconfiguration (fail).
+          SECRETS_REQUIRED: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+        run: |
+          if [ -n "$FB_PIXEL_ID" ] && [ -n "$FB_ACCESS_TOKEN" ]; then
+            echo "has-secrets=true" >> "$GITHUB_OUTPUT"
+            echo "✅ QA secrets present"
+          elif [ "$SECRETS_REQUIRED" = "true" ]; then
+            # Do not silently skip: on the canonical repo (schedule / dispatch /
+            # same-repo PR) missing secrets mean E2E coverage is broken, so fail
+            # loudly instead of reporting a green-but-skipped run.
+            echo "has-secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::error::FB_PIXEL_ID / FB_ACCESS_TOKEN are missing from the QA environment on a '${{ github.event_name }}' run where they are required. Failing so the misconfiguration is visible instead of silently skipping E2E."
+            exit 1
+          else
+            # Fork PR without access to QA secrets — skip gracefully so external
+            # contributors aren't blocked by secrets they can't set.
+            echo "has-secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::FB_PIXEL_ID / FB_ACCESS_TOKEN not available (fork PR) — skipping E2E."
+          fi
+
+  # Resolve the WordPress version the plugin declares support for ("Tested up to"
+  # in readme.txt) so the matrix can exercise it alongside the latest release —
+  # mirrors Meta for WooCommerce, which tests both its declared and latest stacks.
+  resolve-versions:
+    needs: check-secrets
+    if: needs.check-secrets.outputs.has-secrets == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      wp-supported: ${{ steps.versions.outputs.wp-supported }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Read declared WP version from readme.txt
+        id: versions
+        run: |
+          WP_VERSION=$(grep -oP '^\s*Tested up to:\s*\K\S+' readme.txt)
+          if [ -z "$WP_VERSION" ]; then
+            echo "::error::Could not read 'Tested up to' from readme.txt"; exit 1
+          fi
+          echo "wp-supported=$WP_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Declared (Tested up to) WordPress version: $WP_VERSION"
+
+  e2e:
+    name: E2E ${{ matrix.version-label }} - ${{ matrix.project }}
+    needs: [check-secrets, resolve-versions]
+    if: needs.check-secrets.outputs.has-secrets == 'true'
+    runs-on: ubuntu-latest
+    environment: QA
+    timeout-minutes: 30
+    # One shard per Playwright project x WordPress version-set, run in parallel on
+    # separate runners. Keeps wall-clock low and isolates each shard's artifacts; a
+    # flaky browser can't stall the others. fail-fast:false so every shard reports.
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - chromium-wp-customer
+          - chromium-wp-guest
+          - chromium-wp-customer-classic-theme
+          - chromium-wp-customer-block-theme
+          - chromium-privacy-sandbox-wp-customer
+          - firefox-wp-customer
+          - edge-wp-customer
+          - brave-wp-customer
+          - opera-wp-customer
+          - android-pixel-wp-customer
+          - safari-ios-wp-customer
+        # Test both the plugin's declared WP ("Tested up to") and the latest
+        # release. WooCommerce latest requires WP >= 6.9, so it runs on both.
+        version-set:
+          - supported
+          - latest
+        include:
+          - version-set: supported
+            wp-version: ${{ needs.resolve-versions.outputs.wp-supported }}
+            version-label: Declared
+          - version-set: latest
+            wp-version: latest
+            version-label: Latest
+    env:
+      FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
+      FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+      # Force the plugin's non-production gate so the CAPI test logger is active.
+      WP_ENVIRONMENT_TYPE: local
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: wordpress
+          MYSQL_DATABASE: wordpress
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mysqli, zip, gd, curl, dom, fileinfo, mbstring
+          ini-values: |
+            date.timezone=UTC
+            memory_limit=1024M
+            max_execution_time=300
+
+      - name: Install WP-CLI
+        run: |
+          curl -sL -o wp-cli.phar https://github.com/wp-cli/wp-cli/releases/download/v2.10.0/wp-cli-2.10.0.phar
+          chmod +x wp-cli.phar
+          sudo mv wp-cli.phar /usr/local/bin/wp
+          wp --version
+
+      - name: Create WordPress test environment
+        run: |
+          mkdir -p "$WORDPRESS_PATH"
+          cd "$WORDPRESS_PATH"
+          # Download the WordPress version for this shard: 'latest' -> latest.tar.gz,
+          # otherwise the pinned declared release (readme.txt "Tested up to").
+          if [ "${{ matrix.wp-version }}" = "latest" ]; then
+            echo "Installing WordPress: latest"
+            curl -sfSO https://wordpress.org/latest.tar.gz
+            tar -xzf latest.tar.gz --strip-components=1
+          else
+            echo "Installing WordPress: ${{ matrix.wp-version }} (declared)"
+            curl -sfSO "https://wordpress.org/wordpress-${{ matrix.wp-version }}.tar.gz"
+            tar -xzf "wordpress-${{ matrix.wp-version }}.tar.gz" --strip-components=1
+          fi
+          cp wp-config-sample.php wp-config.php
+          sed -i "s/database_name_here/wordpress/" wp-config.php
+          sed -i "s/username_here/wordpress/" wp-config.php
+          sed -i "s/password_here/wordpress/" wp-config.php
+          sed -i "s/localhost/127.0.0.1/" wp-config.php
+          # Use `wp config set` (not appended defines) so we UPDATE the sample's
+          # existing `define('WP_DEBUG', false)` in place — a second define() would
+          # be ignored (first one wins) and only emit a "already defined" warning.
+          # WP_DEBUG_LOG=true logs to wp-content/debug.log, which is exactly $WP_DEBUG_LOG.
+          wp config set WP_DEBUG true --raw --type=constant --path="$WORDPRESS_PATH" --allow-root
+          wp config set WP_DEBUG_LOG true --raw --type=constant --path="$WORDPRESS_PATH" --allow-root
+          wp config set WP_DEBUG_DISPLAY false --raw --type=constant --path="$WORDPRESS_PATH" --allow-root
+          wp config set WP_ENVIRONMENT_TYPE local --type=constant --path="$WORDPRESS_PATH" --allow-root
+          touch "$WP_DEBUG_LOG"; chmod 777 "$WP_DEBUG_LOG"
+
+      - name: Start PHP server
+        run: |
+          cd "$WORDPRESS_PATH"
+          php -S 127.0.0.1:8080 -t . >/tmp/php-server.log 2>&1 &
+          echo $! > /tmp/php-server.pid
+          sleep 3
+          echo "✅ PHP server started on :8080"
+
+      - name: Install WordPress core
+        run: |
+          wp core install --path="$WORDPRESS_PATH" --url="$WORDPRESS_URL" \
+            --title="E2E Test Site" --admin_user="$WP_USERNAME" --admin_password="$WP_PASSWORD" \
+            --admin_email=test@example.com --skip-email --allow-root
+
+      - name: Install themes, WooCommerce and Contact Form 7
+        run: |
+          P="--path=$WORDPRESS_PATH --allow-root"
+          wp theme install storefront --activate $P
+          wp theme install twentytwentyone $P
+          wp theme install twentytwentyfive $P
+          wp plugin install woocommerce --activate $P
+          wp plugin install contact-form-7 --activate $P
+          # Make the store live so shop/checkout render.
+          wp option update woocommerce_coming_soon "no" $P || true
+          wp option update woocommerce_store_pages_only "no" $P || true
+
+      - name: Install this plugin (from checkout)
+        run: |
+          cp -r "$GITHUB_WORKSPACE" "$PLUGIN_PATH"
+          cd "$PLUGIN_PATH"
+          composer install --no-dev --optimize-autoloader --no-interaction
+          wp plugin activate facebook-for-wordpress --path="$WORDPRESS_PATH" --allow-root
+
+      - name: Seed store, pixel config, customer, product, CF7 form
+        run: bash "$PLUGIN_PATH/tests/e2e/scripts/seed-store.sh"
+
+      - name: Sanity checks
+        run: |
+          P="--path=$WORDPRESS_PATH --allow-root"
+          echo "Active plugins:"; wp plugin list --status=active --field=name $P
+          # The standalone WooCommerce Facebook plugin must NOT be present, or this
+          # plugin's commerce events no-op.
+          if wp plugin is-active facebook-for-woocommerce $P 2>/dev/null; then
+            echo "::error::facebook-for-woocommerce must NOT be active."; exit 1
+          fi
+          # The base pixel only injects when the id is a positive integer
+          # (ctype_digit). Assert that explicitly so a malformed secret fails here
+          # with a clear message instead of silently emitting no pixel.
+          POSINT=$(wp eval "echo \FacebookPixelPlugin\Core\FacebookPluginUtils::is_positive_integer(\FacebookPixelPlugin\Core\FacebookWordpressOptions::get_active_pixel_id()) ? 'yes' : 'no';" $P)
+          echo "pixel id is positive integer: $POSINT"
+          if [ "$POSINT" != "yes" ]; then
+            echo "::error::FB_PIXEL_ID is not a positive integer — the pixel will not inject. Check the QA secret for stray whitespace/characters."; exit 1
+          fi
+          curl -sf "$WORDPRESS_URL/product/testp/" >/dev/null && echo "✅ product page reachable"
+          # Confirm the Contact Form 7 Lead form actually renders (not "form not found").
+          if curl -s "$WORDPRESS_URL/e2e-lead/" | grep -q "wpcf7-form"; then
+            echo "✅ CF7 Lead form renders on /e2e-lead/"
+          else
+            echo "::warning::CF7 Lead form did NOT render on /e2e-lead/ — Lead test will fail."
+            curl -s "$WORDPRESS_URL/e2e-lead/" | grep -iE "contact form|wpcf7|not found" | head -5 || true
+          fi
+
+          # Diagnostic: confirm the base pixel code actually renders on the homepage.
+          echo "=== homepage pixel diagnostic ==="
+          HOME_HTML=$(curl -s "$WORDPRESS_URL/")
+          echo "includeCapiIntegration present: $(echo "$HOME_HTML" | grep -c 'includeCapiIntegration')"
+          echo "openbridge/capig config: $(echo "$HOME_HTML" | grep -oE '\"capig\":\"?[01]\"?' | head -1)"
+          if echo "$HOME_HTML" | grep -q "connect.facebook.net/en_US/fbevents.js"; then
+            echo "✅ Meta Pixel base code present on homepage"
+          else
+            echo "::error::Meta Pixel base code NOT found on homepage (<head>)."
+            echo "$HOME_HTML" | sed -n '/<head/,/<\/head>/p' | head -80
+            echo "--- recent debug.log ---"; tail -60 "$WP_DEBUG_LOG" 2>/dev/null || true
+            exit 1
+          fi
+
+      - name: Install Playwright browser for this project
+        working-directory: ${{ env.PLUGIN_PATH }}
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          npm ci
+          # global-setup.js launches chromium to seed the customer cookie, so every
+          # shard needs chromium in addition to its own engine.
+          case "${{ matrix.project }}" in
+            firefox-*)         timeout 15m npx playwright install --with-deps chromium firefox ;;
+            safari-ios-*)      timeout 15m npx playwright install --with-deps chromium webkit ;;
+            *privacy-sandbox*) timeout 15m npx playwright install --with-deps chromium chrome ;;
+            edge-*)            timeout 15m npx playwright install --with-deps chromium msedge ;;
+            *)                 timeout 15m npx playwright install --with-deps chromium ;;
+          esac
+
+      # Only the real Chrome-family channels need a display (headed under Xvfb).
+      # Edge (msedge) and Chrome are provided by Playwright above; Brave/Opera are
+      # apt-installed here. Each shard sets only its OWN REQUIRE_REAL_* so the
+      # config's launch-guard doesn't trip on the other browsers.
+      - name: Install Xvfb + real browser (headed shards)
+        if: ${{ contains(matrix.project, 'privacy-sandbox') || startsWith(matrix.project, 'edge-') || startsWith(matrix.project, 'brave-') || startsWith(matrix.project, 'opera-') }}
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          case "${{ matrix.project }}" in
+            brave-*)
+              sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+              echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+              sudo apt-get update && sudo apt-get install -y brave-browser
+              echo "BRAVE_EXECUTABLE_PATH=$(command -v brave-browser)" >> "$GITHUB_ENV"
+              echo "REQUIRE_REAL_BRAVE=1" >> "$GITHUB_ENV" ;;
+            opera-*)
+              wget -qO- https://deb.opera.com/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/opera.gpg
+              echo "deb [signed-by=/usr/share/keyrings/opera.gpg] https://deb.opera.com/opera-stable/ stable non-free" | sudo tee /etc/apt/sources.list.d/opera-stable.list
+              sudo apt-get update && sudo apt-get install -y opera-stable gsettings-desktop-schemas dbus-x11
+              echo "OPERA_EXECUTABLE_PATH=$(command -v opera-stable || command -v opera)" >> "$GITHUB_ENV"
+              echo "REQUIRE_REAL_OPERA=1" >> "$GITHUB_ENV" ;;
+          esac
+
+      - name: Run E2E (${{ matrix.project }})
+        working-directory: ${{ env.PLUGIN_PATH }}
+        run: |
+          case "${{ matrix.project }}" in
+            *privacy-sandbox*|edge-*|brave-*|opera-*)
+              xvfb-run --auto-servernum npx playwright test --project="${{ matrix.project }}" --headed --workers=1 ;;
+            *)
+              npx playwright test --project="${{ matrix.project }}" --workers=1 ;;
+          esac
+
+      - name: PHP error gate
+        if: always()
+        run: |
+          if [ -f "$WP_DEBUG_LOG" ]; then
+            ERRORS=$(grep -iE "PHP (Fatal|Parse) error" "$WP_DEBUG_LOG" || true)
+            if [ -n "$ERRORS" ]; then echo "❌ PHP errors:"; echo "$ERRORS"; exit 1; fi
+          fi
+          echo "✅ No fatal PHP errors"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts-${{ matrix.version-set }}-${{ matrix.project }}
+          path: |
+            ${{ env.PLUGIN_PATH }}/playwright-report/
+            ${{ env.PLUGIN_PATH }}/test-results/
+            ${{ env.PLUGIN_PATH }}${{ env.FB_E2E_CAPTURED_EVENTS_DIR }}/
+            ${{ env.WP_DEBUG_LOG }}
+          retention-days: 7
+          if-no-files-found: ignore

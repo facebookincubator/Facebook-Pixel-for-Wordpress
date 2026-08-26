@@ -222,6 +222,11 @@ class FacebookServerSideEvent {
 
             FacebookCapiCircuitBreaker::record_success();
 
+            // E2E instrumentation only: when running under the Playwright suite,
+            // record the transformed events that were actually sent so the tests
+            // can assert Pixel<->CAPI deduplication. No-op in production.
+            self::maybe_log_events_for_tests( $events );
+
             return array(
                 'success'         => true,
                 'events_received' => $response->getEventsReceived(),
@@ -328,5 +333,86 @@ class FacebookServerSideEvent {
         return FacebookSignalState::is_held() &&
             ! $is_admin_request &&
             ! $is_cron_request;
+    }
+
+    /**
+     * Records successfully-sent CAPI events to disk for E2E tests.
+     *
+     * This is instrumentation for the Playwright E2E suite (see
+     * tests/e2e/helpers/php/event-logger.php) and is a strict no-op outside of it.
+     * It is gated three ways so it can never run in production:
+     *
+     *  1. A non-production environment is required (WP_DEBUG on, and
+     *     wp_get_environment_type() is not 'production').
+     *  2. Both the FB_E2E_TEST_COOKIE_NAME and FB_E2E_LOGGER_PATH values must be
+     *     configured (as wp-config constants — set via .wp-env.json — or process
+     *     environment variables).
+     *  3. The per-test cookie named by FB_E2E_TEST_COOKIE_NAME must be present on
+     *     the current request; its value is the test id used to name the log file.
+     *
+     * The logger path is confined to within this plugin's directory to avoid any
+     * arbitrary file inclusion, and the whole method is wrapped so it can never
+     * throw into the live CAPI send path.
+     *
+     * Public so the CAPI senders in core/signals (the choke point that actually
+     * calls EventRequest::execute()) can reuse the same gated logger.
+     *
+     * @param array $events The transformed ServerSide\Event objects that were sent.
+     * @return void
+     */
+    public static function maybe_log_events_for_tests( $events ) {
+        try {
+            // 1. Non-production only.
+            $is_debug = defined( 'WP_DEBUG' ) && WP_DEBUG;
+            $env_type = function_exists( 'wp_get_environment_type' )
+                ? wp_get_environment_type()
+                : 'production';
+            if ( ! $is_debug || 'production' === $env_type ) {
+                return;
+            }
+
+            // 2. E2E configuration (wp-config constants preferred, env fallback).
+            $cookie_name = defined( 'FB_E2E_TEST_COOKIE_NAME' )
+                ? FB_E2E_TEST_COOKIE_NAME
+                : getenv( 'FB_E2E_TEST_COOKIE_NAME' );
+            $logger_rel  = defined( 'FB_E2E_LOGGER_PATH' )
+                ? FB_E2E_LOGGER_PATH
+                : getenv( 'FB_E2E_LOGGER_PATH' );
+            if ( empty( $cookie_name ) || empty( $logger_rel ) ) {
+                return;
+            }
+
+            // 3. Per-test cookie carries the test id.
+            if ( empty( $_COOKIE[ $cookie_name ] ) ) {
+                return;
+            }
+            $test_id = sanitize_text_field( wp_unslash( $_COOKIE[ $cookie_name ] ) );
+            if ( '' === $test_id ) {
+                return;
+            }
+
+            // Resolve and confine the logger path within the plugin directory.
+            // This class lives in <plugin>/core, so the plugin root is dirname(__DIR__).
+            $plugin_root = dirname( __DIR__ );
+            $logger_file = realpath( $plugin_root . '/' . ltrim( $logger_rel, '/' ) );
+            if ( false === $logger_file
+                || 0 !== strpos( $logger_file, $plugin_root ) ) {
+                return;
+            }
+
+            require_once $logger_file;
+            if ( ! class_exists( '\E2E_Event_Logger' ) ) {
+                return;
+            }
+
+            foreach ( $events as $event ) {
+                if ( is_object( $event ) && method_exists( $event, 'normalize' ) ) {
+                    \E2E_Event_Logger::log_event( $test_id, 'capi', $event->normalize() );
+                }
+            }
+        } catch ( \Throwable $t ) {
+            // Never let test instrumentation affect the live send path.
+            return;
+        }
     }
 }
