@@ -6,6 +6,7 @@
 /__test_sdk__/report
 .DS_Store
 .vscode
+.claude/
 composer.phar
 .phpunit.result.cache
 local-config.php
