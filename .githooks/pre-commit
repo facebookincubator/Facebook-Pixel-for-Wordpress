@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright (C) 2017-present, Meta, Inc.
+#
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
 
 # Get staged PHP files for PHP CodeSniffer
 php_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.php$')

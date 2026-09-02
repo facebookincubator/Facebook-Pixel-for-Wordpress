@@ -1,3 +1,10 @@
+/**
+ * Copyright (C) 2017-present, Meta, Inc.
+ *
+ * This source code is licensed under the license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 jQuery(document).ready(function ($) {
   $('.edd-add-to-cart').click(function (e) {
     e.preventDefault();
