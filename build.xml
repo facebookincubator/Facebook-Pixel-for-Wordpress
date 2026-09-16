@@ -32,6 +32,13 @@
              ship a stray nested build/official-facebook-pixel/ directory. -->
         <exclude name="build" />
         <exclude name="build/**" />
+        <!-- E2E (Playwright) tooling must not ship in the plugin package. -->
+        <exclude name="tests/**" />
+        <exclude name="node_modules/**" />
+        <exclude name="playwright-report/**" />
+        <exclude name="test-results/**" />
+        <exclude name="playwright.config.js" />
+        <exclude name=".wp-env.json" />
     </fileset>
 
     <!-- ============================================  -->
