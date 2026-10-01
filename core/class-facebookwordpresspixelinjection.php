@@ -166,6 +166,8 @@ class FacebookWordpressPixelInjection {
             'pixelId'       => $pixel_id,
             'attribution'   => (object) array(),
             'capig'         => FacebookWordpressOptions::get_capig(),
+            'generatedAt'   => time(),
+            'staleAfter'    => FacebookPluginConfig::CACHE_STALE_THRESHOLD,
         );
 
         if ( FacebookSignalState::is_held() ) {

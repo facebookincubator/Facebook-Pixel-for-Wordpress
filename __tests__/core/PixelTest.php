@@ -105,7 +105,7 @@ final class PixelTest extends FacebookWordpressTestBase {
         $code = $pixel->generate_script_for_event( $event, true );
 
         $expected = sprintf(
-            "<script type='text/javascript'>fbq('set', 'agent', '%s', '%s');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
+            "<script type='text/javascript'>fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
             $agent_string,
             $pixel_id
         );
@@ -130,7 +130,7 @@ final class PixelTest extends FacebookWordpressTestBase {
         $code = $pixel->generate_script_for_event( $event, true );
 
         $expected = sprintf(
-            "<script type='text/javascript'>fbq('set', 'agent', '%s', '%s');fbq('trackCustom', 'Custom', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
+            "<script type='text/javascript'>fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');fbq('trackCustom', 'Custom', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
             $agent_string,
             $pixel_id
         );
@@ -158,7 +158,7 @@ final class PixelTest extends FacebookWordpressTestBase {
         $code = $pixel->generate_script_for_event( $event, true );
 
         $expected = sprintf(
-            "<script type='text/javascript'>fbq('set', 'agent', '%s', '%s');fbq('track', 'Purchase', {\"value\":\"30.00\",\"currency\":\"usd\",\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
+            "<script type='text/javascript'>fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');fbq('track', 'Purchase', {\"value\":\"30.00\",\"currency\":\"usd\",\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
             $agent_string,
             $pixel_id
         );
@@ -185,7 +185,7 @@ final class PixelTest extends FacebookWordpressTestBase {
         $code = $pixel->generate_script_for_tracked_events( true );
 
         $expected = sprintf(
-            "<script type='text/javascript'>fbq('set', 'agent', '%s', '%s');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId1\"});fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId2\"});</script>",
+            "<script type='text/javascript'>fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId1\"});fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId2\"});</script>",
             $agent_string,
             $pixel_id
         );
@@ -261,7 +261,7 @@ final class PixelTest extends FacebookWordpressTestBase {
 
         // Agent line rendered once from the injected config.
         $this->assertStringContainsString(
-            sprintf( "fbq('set', 'agent', '%s', '%s');", $agent_string, $pixel_id ),
+            sprintf( "fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');", $agent_string, $pixel_id ),
             $code
         );
         // One queueEvent per event, and no direct fbq() firing.
