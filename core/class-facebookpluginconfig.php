@@ -106,6 +106,10 @@ class FacebookPluginConfig {
     const IS_PIXEL_RENDERED    = 'is_pixel_rendered';
     const IS_NOSCRIPT_RENDERED = 'is_noscript_rendered';
 
+    // Seconds after page generation beyond which the page is treated as
+    // served from a cache and pixel events are tagged as stale.
+    const CACHE_STALE_THRESHOLD = 3600;
+
     const OPEN_BRIDGE_PATH         = 'open-bridge/events';
     const CAPI_INTEGRATION_DIV_TOP = 500;
     const CAPI_INTEGRATION_STATUS  = 'facebook_capi_integration_status';

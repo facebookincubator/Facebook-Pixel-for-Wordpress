@@ -60,13 +60,42 @@ window.FacebookSignal = window.FacebookSignal || {
     }
   },
 
+  // True when the page HTML is older than the configured threshold, which
+  // means it was served from a page cache rather than freshly generated.
+  isStalePage: function () {
+    var generatedAt = this._config.generatedAt;
+    var staleAfter = this._config.staleAfter;
+    if (!generatedAt || !staleAfter) {
+      return false;
+    }
+    return Math.floor(Date.now() / 1000) - generatedAt > staleAfter;
+  },
+
+  // Inserts "_c" after the hosting flag in the agent string when the page
+  // is stale, e.g. "wordpress_0-6.8-5.2.2" -> "wordpress_0_c-6.8-5.2.2".
+  tagAgent: function (agent) {
+    if (agent && this.isStalePage()) {
+      agent = agent.replace(/(wordpress_[0-7])/, '$1_c');
+    }
+    return agent;
+  },
+
   initPixel: function (pixelId, userInfo, options) {
+    var stale = this.isStalePage();
     this._pixelId = pixelId;
+    // Drop embedded user info on cached pages, since it may belong to the
+    // visitor the page was originally generated for.
     this._pixelUserInfo =
-      userInfo && typeof userInfo === 'object' && !Array.isArray(userInfo)
+      !stale &&
+      userInfo &&
+      typeof userInfo === 'object' &&
+      !Array.isArray(userInfo)
         ? userInfo
         : {};
     this._pixelOptions = options || {};
+    if (this._pixelOptions.agent) {
+      this._pixelOptions.agent = this.tagAgent(this._pixelOptions.agent);
+    }
     if (!this._held) {
       this._runPixelInit();
     }

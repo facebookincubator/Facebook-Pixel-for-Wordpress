@@ -56,6 +56,9 @@ jQuery(document).ready(function ($) {
       return;
     }
 
+    if (window.FacebookSignal && window.FacebookSignal.tagAgent) {
+      agentString = window.FacebookSignal.tagAgent(agentString);
+    }
     fbq('set', 'agent', agentString, pixelId);
     if (event_id) {
       fbq('track', 'AddToCart', param, { eventID: event_id });

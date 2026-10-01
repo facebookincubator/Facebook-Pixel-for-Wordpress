@@ -45,7 +45,8 @@ class Pixel {
     const SCRIPT_TAG     =
     "<script type='text/javascript'>%s</script>";
     const FBQ_EVENT_CODE = "fbq('%s', '%s', %s, %s);";
-    const FBQ_AGENT_CODE = "fbq('set', 'agent', '%s', '%s');";
+    const FBQ_AGENT_CODE =
+    "fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');";
 
     /**
      * The list of standard (normal) Meta Pixel events.
