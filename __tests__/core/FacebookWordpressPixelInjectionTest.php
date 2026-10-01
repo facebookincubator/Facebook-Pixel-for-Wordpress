@@ -432,6 +432,69 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
   }
 
   /**
+   * The page generation time and stale threshold are threaded into the
+   * FacebookSignal.init config so the JS can detect cached pages and tag
+   * the agent string with "_c".
+   */
+  public function testInitConfigIncludesCacheDetectionFields() {
+    FacebookWordpressPixelInjection::$render_cache = array();
+    FacebookPixel::set_pixel_id( '1234' );
+
+    $mocked_options = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
+    );
+    $mocked_options->shouldReceive( 'get_capi_integration_status' )
+      ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_capig' )
+      ->andReturn( '0' );
+    $mocked_options->shouldReceive( 'get_agent_string' )
+      ->andReturn( 'WordPress' );
+    $mocked_options->shouldReceive( 'get_user_info' )
+      ->andReturn( array() );
+
+    $mocked_utils = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookPluginUtils'
+    );
+    $mocked_utils->shouldReceive( 'is_internal_user' )
+      ->andReturn( false );
+
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'return' => function ( $data ) {
+          return json_encode( $data );
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'admin_url',
+      array(
+        'return' => 'https://www.pikachu.com/wp-admin/admin-ajax.php',
+      )
+    );
+
+    $injection_obj = new FacebookWordpressPixelInjection();
+
+    $before = time();
+    ob_start();
+    $injection_obj->inject_pixel_code();
+    $output = ob_get_clean();
+    $after = time();
+
+    $this->assertMatchesRegularExpression(
+      '/"generatedAt":(\d+)/',
+      $output
+    );
+    preg_match( '/"generatedAt":(\d+)/', $output, $matches );
+    $this->assertGreaterThanOrEqual( $before, (int) $matches[1] );
+    $this->assertLessThanOrEqual( $after, (int) $matches[1] );
+    $this->assertStringContainsString(
+      '"staleAfter":' . FacebookPluginConfig::CACHE_STALE_THRESHOLD,
+      $output
+    );
+  }
+
+  /**
    * Tests that OpenBridge setup is configured before pixel init.
    *
    * @return void
