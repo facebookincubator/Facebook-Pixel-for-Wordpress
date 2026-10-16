@@ -212,7 +212,7 @@ class FacebookTrackingFacade {
         if ( self::SERVER_NONE === $server ) {
             return;
         }
-        if ( self::should_suppress_frontend_send() ) {
+        if ( FacebookSignalState::should_suppress_frontend_send() ) {
             FacebookSignalState::queue_event( $event );
         } else {
             switch ( $server ) {
@@ -276,25 +276,6 @@ class FacebookTrackingFacade {
                 $include_script_tag
             );
         }
-    }
-
-    /**
-     * Whether the current request should suppress sending (queue events for
-     * later release instead). True only for a held front-end request; admin and
-     * cron requests always send, so backend and scheduled events are not gated
-     * by the visitor's consent hold.
-     *
-     * @return bool
-     */
-    private static function should_suppress_frontend_send() {
-        $is_admin_request = function_exists( 'is_admin' ) ? is_admin() : false;
-        $is_cron_request  = function_exists( 'wp_doing_cron' ) ?
-            wp_doing_cron() :
-            false;
-
-        return FacebookSignalState::is_held() &&
-            ! $is_admin_request &&
-            ! $is_cron_request;
     }
 
     /**

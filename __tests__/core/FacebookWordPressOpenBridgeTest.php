@@ -27,6 +27,7 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
+use FacebookPixelPlugin\Core\CapiSenderBase;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Core\FacebookServerSideEvent;
 use FacebookPixelPlugin\Core\FacebookWordpressOpenBridge;
@@ -285,5 +286,38 @@ final class FacebookWordPressOpenBridgeTest extends FacebookWordpressTestBase {
       array( 'testAM', 'testObeid' ),
       $ev['external_id']
     );
+  }
+
+  /**
+   * Test that OpenBridge does not send CAPI events while signals are held.
+   *
+   * @covers FacebookWordpressOpenBridge::handle_open_bridge_req
+   */
+  public function testOpenBridgeRequestReturnsWhenSignalsAreHeld() {
+    \WP_Mock::onFilter( 'facebook_signals_held' )
+      ->with( false )
+      ->reply( true );
+
+    $capi_sender = \Mockery::mock( CapiSenderBase::class );
+    $capi_sender->shouldNotReceive( 'send' );
+
+    $open_bridge_instance = new FacebookWordpressOpenBridge();
+    $sender_property      = new \ReflectionProperty(
+      FacebookWordpressOpenBridge::class,
+      'capi_sender'
+    );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $sender_property->setAccessible( true );
+    }
+    $sender_property->setValue( $open_bridge_instance, $capi_sender );
+
+    $open_bridge_instance->handle_open_bridge_req(
+      array(
+        'event_name' => 'Lead',
+        'event_id'   => 'held-event',
+      )
+    );
+
+    $this->addToAssertionCount( 1 );
   }
 }

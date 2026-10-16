@@ -105,4 +105,61 @@ final class FacebookSignalStateTest extends FacebookWordpressTestBase {
 
         $this->assertSame( 'active', $_COOKIE[ FacebookSignalState::COOKIE_NAME ] );
     }
+
+    public function testHeldFrontendRequestIsSuppressed() {
+        $this->mockRequestContext( false, false, false );
+        FacebookSignalState::hold();
+
+        $this->assertTrue(
+            FacebookSignalState::should_suppress_frontend_send()
+        );
+    }
+
+    public function testHeldAdminAjaxRequestIsSuppressed() {
+        $this->mockRequestContext( true, true, false );
+        FacebookSignalState::hold();
+
+        $this->assertTrue(
+            FacebookSignalState::should_suppress_frontend_send()
+        );
+    }
+
+    public function testHeldAdminScreenIsNotSuppressed() {
+        $this->mockRequestContext( true, false, false );
+        FacebookSignalState::hold();
+
+        $this->assertFalse(
+            FacebookSignalState::should_suppress_frontend_send()
+        );
+    }
+
+    public function testHeldCronRequestIsNotSuppressed() {
+        $this->mockRequestContext( false, false, true );
+        FacebookSignalState::hold();
+
+        $this->assertFalse(
+            FacebookSignalState::should_suppress_frontend_send()
+        );
+    }
+
+    /**
+     * Mocks the WordPress request context used by the suppression helper.
+     *
+     * @param bool $is_admin Whether WordPress considers this an admin request.
+     * @param bool $is_ajax  Whether WordPress considers this an AJAX request.
+     * @param bool $is_cron  Whether WordPress considers this a cron request.
+     * @return void
+     */
+    private function mockRequestContext( $is_admin, $is_ajax, $is_cron ) {
+        \WP_Mock::userFunction( 'is_ssl', array( 'return' => false ) );
+        \WP_Mock::userFunction( 'is_admin', array( 'return' => $is_admin ) );
+        \WP_Mock::userFunction(
+            'wp_doing_ajax',
+            array( 'return' => $is_ajax )
+        );
+        \WP_Mock::userFunction(
+            'wp_doing_cron',
+            array( 'return' => $is_cron )
+        );
+    }
 }
