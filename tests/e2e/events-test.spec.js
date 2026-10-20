@@ -40,6 +40,7 @@ const {
   getSignalState,
   getQueuedSignalEvents,
   submitLeadForm,
+  LEAD_FORMS,
   getActiveThemeStatus,
   switchThemeBySlug,
   acquireThemeLock,
@@ -48,7 +49,6 @@ const {
 
 // Storefront URLs seeded by tests/e2e/scripts/seed-store.sh.
 const TEST_PRODUCT_URL = process.env.TEST_PRODUCT_URL || '/product/testp/';
-const TEST_LEAD_FORM_URL = process.env.TEST_LEAD_FORM_URL || '/e2e-lead/';
 
 const STOREFRONT_THEME_SLUG = 'storefront';
 const THEME_PROJECT_TO_SLUG = {
@@ -688,43 +688,46 @@ test('Purchase - Grouped Product', async ({ page }, testInfo) => {
 });
 
 // -----------------------------------------------------------------------------
-// Lead (Contact Form 7) — dual-channel (Pixel + CAPI) sharing one event_id.
+// Lead — dual-channel (Pixel + CAPI) sharing one event_id, once per supported
+// form integration (fixtures in helpers/js/events/lead-form.js).
 // -----------------------------------------------------------------------------
-test('Lead', async ({ page }, testInfo) => {
-  const { testId, pixelCapture } = await TestSetup.init(page, 'Lead', testInfo);
+for (const [formKey, { label, tag }] of Object.entries(LEAD_FORMS)) {
+  test(`Lead - ${label}`, { tag: ['@lead', tag] }, async ({ page }, testInfo) => {
+    const { testId, pixelCapture } = await TestSetup.init(page, 'Lead', testInfo);
 
-  const leadEmail = process.env.TEST_LEAD_EMAIL || 'e2e-lead@example.test';
+    const leadEmail = process.env.TEST_LEAD_EMAIL || 'e2e-lead@example.test';
 
-  const eventPromise = pixelCapture.waitForEvent();
-  await submitLeadForm(page, TEST_LEAD_FORM_URL, { email: leadEmail });
-  await eventPromise;
-  await page.waitForTimeout(TIMEOUTS.SHORT);
+    const eventPromise = pixelCapture.waitForEvent();
+    await submitLeadForm(page, formKey, { email: leadEmail });
+    await eventPromise;
+    await page.waitForTimeout(TIMEOUTS.SHORT);
 
-  const validator = new EventValidator(testId);
-  await validator.checkDebugLog();
-  // The Pixel Lead carries the session/advanced-matching email while CAPI carries
-  // the submitted form email, so the em hashes legitimately differ across channels.
-  const result = ignoreKnownLeadEmGap(await validator.validate('Lead', page));
+    const validator = new EventValidator(testId);
+    await validator.checkDebugLog();
+    // The Pixel Lead carries the session/advanced-matching email while CAPI carries
+    // the submitted form email, so the em hashes legitimately differ across channels.
+    const result = ignoreKnownLeadEmGap(await validator.validate('Lead', page));
 
-  // Assert the submitted form email actually reached CAPI, verified end-to-end.
-  // Select the CAPI record(s) deterministically by the Pixel Lead's event_id
-  // (the two channels share it via dedup) rather than picking "the last" one, then
-  // assert that event carries the expected email hash (SHA-256 of the trimmed,
-  // lowercased address). This also reconfirms Pixel<->CAPI dedup for Lead.
-  const expectedEm = crypto.createHash('sha256').update(leadEmail.trim().toLowerCase()).digest('hex');
-  const captured = await loadCapturedEvents(testId);
-  const pixelLead = captured.pixel.find(e => e.event_name === 'Lead');
-  expect(pixelLead?.event_id).toBeTruthy();
-  const capiForEvent = captured.capi.filter(
-    e => e.event_name === 'Lead' && e.event_id === pixelLead.event_id
-  );
-  expect(capiForEvent.length).toBeGreaterThan(0);
-  const capiEms = capiForEvent.map(e => String(asArray(e?.user_data?.em)[0] ?? e?.user_data?.em ?? ''));
-  expect(capiEms).toContain(expectedEm);
+    // Assert the submitted form email actually reached CAPI, verified end-to-end.
+    // Select the CAPI record(s) deterministically by the Pixel Lead's event_id
+    // (the two channels share it via dedup) rather than picking "the last" one, then
+    // assert that event carries the expected email hash (SHA-256 of the trimmed,
+    // lowercased address). This also reconfirms Pixel<->CAPI dedup for Lead.
+    const expectedEm = crypto.createHash('sha256').update(leadEmail.trim().toLowerCase()).digest('hex');
+    const captured = await loadCapturedEvents(testId);
+    const pixelLead = captured.pixel.find(e => e.event_name === 'Lead');
+    expect(pixelLead?.event_id).toBeTruthy();
+    const capiForEvent = captured.capi.filter(
+      e => e.event_name === 'Lead' && e.event_id === pixelLead.event_id
+    );
+    expect(capiForEvent.length).toBeGreaterThan(0);
+    const capiEms = capiForEvent.map(e => String(asArray(e?.user_data?.em)[0] ?? e?.user_data?.em ?? ''));
+    expect(capiEms).toContain(expectedEm);
 
-  TestSetup.logResult('Lead', result);
-  expect(result.passed).toBe(true);
-});
+    TestSetup.logResult(`Lead (${label})`, result);
+    expect(result.passed).toBe(true);
+  });
+}
 
 // -----------------------------------------------------------------------------
 // Signals consent hold / release
