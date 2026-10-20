@@ -131,7 +131,13 @@ async function submitLeadForm(page, formKey, lead = {}) {
     await page.waitForTimeout(remainingAgeMs);
   }
 
-  await form.locator(fixture.submit).first().click();
+  // Focus first so the last field's blur handlers run before the click. WPForms'
+  // mailcheck inserts a "Did you mean ...?" hint on blur, which pushes the button
+  // down between mousedown and mouseup and swallows the click; click() then waits
+  // for the button to be stable in its new position.
+  const submit = form.locator(fixture.submit).first();
+  await submit.focus();
+  await submit.click();
 
   await page
     .locator(fixture.success)
