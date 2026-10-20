@@ -40,6 +40,7 @@ const {
   getSignalState,
   getQueuedSignalEvents,
   submitLeadForm,
+  LEAD_FORMS,
   getActiveThemeStatus,
   switchThemeBySlug,
   acquireThemeLock,
@@ -48,7 +49,6 @@ const {
 
 // Storefront URLs seeded by tests/e2e/scripts/seed-store.sh.
 const TEST_PRODUCT_URL = process.env.TEST_PRODUCT_URL || '/product/testp/';
-const TEST_LEAD_FORM_URL = process.env.TEST_LEAD_FORM_URL || '/e2e-lead/';
 
 const STOREFRONT_THEME_SLUG = 'storefront';
 const THEME_PROJECT_TO_SLUG = {
@@ -688,43 +688,48 @@ test('Purchase - Grouped Product', async ({ page }, testInfo) => {
 });
 
 // -----------------------------------------------------------------------------
-// Lead (Contact Form 7) — dual-channel (Pixel + CAPI) sharing one event_id.
+// Lead — dual-channel (Pixel + CAPI) sharing one event_id, once per supported
+// form integration (fixtures in helpers/js/events/lead-form.js).
 // -----------------------------------------------------------------------------
-test('Lead', async ({ page }, testInfo) => {
-  const { testId, pixelCapture } = await TestSetup.init(page, 'Lead', testInfo);
+for (const [formKey, { label, tag }] of Object.entries(LEAD_FORMS)) {
+  test(`Lead - ${label}`, { tag: ['@lead', tag] }, async ({ page }, testInfo) => {
+    const { testId, pixelCapture } = await TestSetup.init(page, 'Lead', testInfo);
 
-  const leadEmail = process.env.TEST_LEAD_EMAIL || 'e2e-lead@example.test';
+    // Unique per attempt: Formidable rejects a repeat of an identical entry
+    // ("already submitted that"), which would fail every retry after the first.
+    const leadEmail = process.env.TEST_LEAD_EMAIL || `e2e-${testId.toLowerCase()}@example.test`;
 
-  const eventPromise = pixelCapture.waitForEvent();
-  await submitLeadForm(page, TEST_LEAD_FORM_URL, { email: leadEmail });
-  await eventPromise;
-  await page.waitForTimeout(TIMEOUTS.SHORT);
+    const eventPromise = pixelCapture.waitForEvent();
+    await submitLeadForm(page, formKey, { email: leadEmail });
+    await eventPromise;
+    await page.waitForTimeout(TIMEOUTS.SHORT);
 
-  const validator = new EventValidator(testId);
-  await validator.checkDebugLog();
-  // The Pixel Lead carries the session/advanced-matching email while CAPI carries
-  // the submitted form email, so the em hashes legitimately differ across channels.
-  const result = ignoreKnownLeadEmGap(await validator.validate('Lead', page));
+    const validator = new EventValidator(testId);
+    await validator.checkDebugLog();
+    // The Pixel Lead carries the session/advanced-matching email while CAPI carries
+    // the submitted form email, so the em hashes legitimately differ across channels.
+    const result = ignoreKnownLeadEmGap(await validator.validate('Lead', page));
 
-  // Assert the submitted form email actually reached CAPI, verified end-to-end.
-  // Select the CAPI record(s) deterministically by the Pixel Lead's event_id
-  // (the two channels share it via dedup) rather than picking "the last" one, then
-  // assert that event carries the expected email hash (SHA-256 of the trimmed,
-  // lowercased address). This also reconfirms Pixel<->CAPI dedup for Lead.
-  const expectedEm = crypto.createHash('sha256').update(leadEmail.trim().toLowerCase()).digest('hex');
-  const captured = await loadCapturedEvents(testId);
-  const pixelLead = captured.pixel.find(e => e.event_name === 'Lead');
-  expect(pixelLead?.event_id).toBeTruthy();
-  const capiForEvent = captured.capi.filter(
-    e => e.event_name === 'Lead' && e.event_id === pixelLead.event_id
-  );
-  expect(capiForEvent.length).toBeGreaterThan(0);
-  const capiEms = capiForEvent.map(e => String(asArray(e?.user_data?.em)[0] ?? e?.user_data?.em ?? ''));
-  expect(capiEms).toContain(expectedEm);
+    // Assert the submitted form email actually reached CAPI, verified end-to-end.
+    // Select the CAPI record(s) deterministically by the Pixel Lead's event_id
+    // (the two channels share it via dedup) rather than picking "the last" one, then
+    // assert that event carries the expected email hash (SHA-256 of the trimmed,
+    // lowercased address). This also reconfirms Pixel<->CAPI dedup for Lead.
+    const expectedEm = crypto.createHash('sha256').update(leadEmail.trim().toLowerCase()).digest('hex');
+    const captured = await loadCapturedEvents(testId);
+    const pixelLead = captured.pixel.find(e => e.event_name === 'Lead');
+    expect(pixelLead?.event_id).toBeTruthy();
+    const capiForEvent = captured.capi.filter(
+      e => e.event_name === 'Lead' && e.event_id === pixelLead.event_id
+    );
+    expect(capiForEvent.length).toBeGreaterThan(0);
+    const capiEms = capiForEvent.map(e => String(asArray(e?.user_data?.em)[0] ?? e?.user_data?.em ?? ''));
+    expect(capiEms).toContain(expectedEm);
 
-  TestSetup.logResult('Lead', result);
-  expect(result.passed).toBe(true);
-});
+    TestSetup.logResult(`Lead (${label})`, result);
+    expect(result.passed).toBe(true);
+  });
+}
 
 // -----------------------------------------------------------------------------
 // Signals consent hold / release
@@ -941,29 +946,38 @@ function getMajorBrowserVersion(versionString) {
   return match ? parseInt(match[1], 10) : NaN;
 }
 
-test('Privacy Sandbox - Topics API available in Chromium', async ({ page, browser }) => {
-  test.skip(!test.info().project.name.includes('privacy-sandbox'), 'Privacy Sandbox test only runs on privacy-sandbox project');
-  const chromiumMajor = getMajorBrowserVersion(browser.version());
-  test.skip(Number.isNaN(chromiumMajor) || chromiumMajor < 115, `Privacy Sandbox requires Chrome/Chromium >= 115 (detected ${browser.version()})`);
+// Topics has been retired in current Chrome. Test the plugin's event delivery
+// without that API instead of asserting that the browser still implements it.
+for (const topicsState of ['unavailable', 'removed']) {
+  test(`Privacy Sandbox - PageView with Topics API ${topicsState}`, async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.name.includes('privacy-sandbox'), 'Privacy Sandbox test only runs on privacy-sandbox project');
 
-  await page.goto('/');
-  await TestSetup.waitForPageReady(page);
+    await page.addInitScript((state) => {
+      Object.defineProperty(Document.prototype, 'browsingTopics', {
+        configurable: true,
+        value: state === 'unavailable'
+          ? undefined
+          : () => Promise.reject(new DOMException(
+            'document.browsingTopics() is deprecated and has been removed.',
+            'NotSupportedError'
+          )),
+      });
+    }, topicsState);
 
-  const topicsResult = await page.evaluate(async () => {
-    const hasTopicsApi = typeof document !== 'undefined' && typeof document.browsingTopics === 'function';
-    if (!hasTopicsApi) return { hasTopicsApi, topicsCount: null, error: null };
-    try {
-      const topics = await document.browsingTopics();
-      return { hasTopicsApi, topicsCount: Array.isArray(topics) ? topics.length : 0, error: null };
-    } catch (error) {
-      return { hasTopicsApi, topicsCount: null, error: String(error?.message || error) };
-    }
+    const { testId, pixelCapture } = await TestSetup.init(page, 'PageView', testInfo);
+    const eventPromise = pixelCapture.waitForEvent();
+    await page.goto('/');
+    await TestSetup.waitForPageReady(page);
+    await eventPromise;
+
+    const validator = new EventValidator(testId);
+    await validator.checkDebugLog();
+    const result = await validator.validate('PageView', page);
+
+    TestSetup.logResult(`PageView (Topics API ${topicsState})`, result);
+    expect(result.passed).toBe(true);
   });
-
-  expect(topicsResult.hasTopicsApi).toBe(true);
-  expect(topicsResult.error).toBeNull();
-  expect(typeof topicsResult.topicsCount).toBe('number');
-});
+}
 
 test('Privacy Sandbox - Protected Audience API shape in Chromium', async ({ page, browser }) => {
   test.skip(!test.info().project.name.includes('privacy-sandbox'), 'Privacy Sandbox test only runs on privacy-sandbox project');

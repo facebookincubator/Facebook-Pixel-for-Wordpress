@@ -1,16 +1,18 @@
 /**
- * Contact Form 7 Lead helpers.
+ * Lead form helpers, one entry per supported form integration.
  *
- * The Meta Pixel for WordPress "Lead" event is dual-channel: on `wpcf7_submit`
- * the CF7 integration (integration/class-facebookwordpresscontactform7.php) tracks
- * a server-side (CAPI) Lead via FacebookServerSideEvent::track(), and returns the
- * matching Pixel code in the AJAX response under `fb_pxl_code`. The plugin's
- * injected `wpcf7mailsent` listener `eval`s that code, firing `fbq('track','Lead',
- * ..., {eventID})` with the SAME event_id — so PixelCapture sees the /tr hit and
- * the two channels deduplicate.
+ * The Meta Pixel for WordPress "Lead" event is dual-channel: when a form plugin
+ * reports a successful submit, its integration (integration/class-facebookwordpress*.php)
+ * tracks a server-side (CAPI) Lead and emits the matching Pixel code with the
+ * SAME event_id, so PixelCapture sees the /tr hit and the two channels deduplicate.
+ * How the Pixel code reaches the browser depends on how the plugin submits:
  *
- * The seeded form (see tests/e2e/scripts/seed-store.sh) exposes:
- *   [text* your-name] [email* your-email] [tel your-phone]
+ * - AJAX (Contact Form 7, WPForms, Ninja Forms): the code rides the AJAX response
+ *   and the plugin's injected footer listener evals it.
+ * - Full-page POST (Formidable Forms, Mailchimp for WP): the code is printed
+ *   inline on the re-rendered page.
+ *
+ * Each form and page is seeded by tests/e2e/scripts/seed-store.sh.
  */
 
 const { TIMEOUTS } = require('../constants/timeouts');
@@ -19,53 +21,130 @@ const DEFAULT_LEAD = {
   name: 'Jane E2E Doe',
   email: 'jane.e2e@example.com',
   phone: '+15555550123',
+  message: 'E2E lead message',
 };
 
 /**
- * Fill and submit the seeded Contact Form 7 form, waiting for the successful
- * `wpcf7mailsent` outcome (which is when the plugin fires the Lead pixel).
+ * Per-integration fixture: Playwright tag (each integration's CI workflow runs
+ * only its tag), page path, form/field selectors, and the success state that
+ * marks the point where the plugin delivers the Lead. Optional fields are filled
+ * only when present on the form.
+ */
+const LEAD_FORMS = {
+  'contact-form-7': {
+    label: 'Contact Form 7',
+    tag: '@lead-contact-form-7',
+    path: process.env.TEST_LEAD_FORM_URL || '/e2e-lead/',
+    form: 'form.wpcf7-form',
+    fields: {
+      name: 'input[name="your-name"]',
+      email: 'input[name="your-email"]',
+      phone: 'input[name="your-phone"]',
+    },
+    submit: '.wpcf7-submit',
+    // CF7 5.x adds `.sent` to the <form>; 4.x sets `.wpcf7-mail-sent-ok` on the
+    // response output. Either is the state that triggers `wpcf7mailsent`.
+    success: 'form.wpcf7-form.sent, .wpcf7-response-output.wpcf7-mail-sent-ok',
+  },
+  wpforms: {
+    label: 'WPForms Lite',
+    tag: '@lead-wpforms',
+    path: '/e2e-lead-wpforms/',
+    form: 'form.wpforms-form',
+    fields: {
+      name: 'input[name="wpforms[fields][1]"]',
+      email: 'input[name="wpforms[fields][2]"]',
+    },
+    submit: 'button.wpforms-submit',
+    success: '.wpforms-confirmation-container-full',
+  },
+  'ninja-forms': {
+    label: 'Ninja Forms',
+    tag: '@lead-ninja-forms',
+    path: '/e2e-lead-ninja-forms/',
+    // Rendered client-side (Backbone) after page load.
+    form: '.nf-form-cont form',
+    fields: {
+      name: 'input[name$="-textbox"]',
+      email: 'input[type="email"]',
+      message: 'textarea',
+    },
+    submit: 'input[type="submit"]',
+    success: '.nf-response-msg:not(:empty)',
+  },
+  formidable: {
+    label: 'Formidable Forms',
+    tag: '@lead-formidable',
+    path: '/e2e-lead-formidable/',
+    form: 'form.frm-show-form',
+    fields: {
+      name: '#field_e2e_lead_name',
+      email: '#field_e2e_lead_email',
+    },
+    submit: 'button.frm_button_submit',
+    success: '.frm_message',
+  },
+  'mailchimp-for-wp': {
+    label: 'Mailchimp for WP',
+    tag: '@lead-mailchimp-for-wp',
+    path: '/e2e-lead-mailchimp/',
+    form: 'form.mc4wp-form',
+    fields: {
+      name: 'input[name="FNAME"]',
+      email: 'input[name="EMAIL"]',
+    },
+    submit: 'input[type="submit"]',
+    success: 'form.mc4wp-form-success',
+    // MC4WP's anti-spam rejects submits less than 2s after the form rendered.
+    minFormAgeMs: 3000,
+  },
+};
+
+/**
+ * Fill and submit a seeded lead form, waiting for the plugin's success state
+ * (which is when the integration fires the Lead).
  *
  * @param {import('@playwright/test').Page} page
- * @param {string} url  Absolute URL of the page embedding the CF7 shortcode.
- * @param {{name?: string, email?: string, phone?: string}} [lead]
+ * @param {keyof typeof LEAD_FORMS} formKey  Which integration's form to submit.
+ * @param {{name?: string, email?: string, phone?: string, message?: string}} [lead]
  */
-async function submitLeadForm(page, url, lead = {}) {
+async function submitLeadForm(page, formKey, lead = {}) {
+  const fixture = LEAD_FORMS[formKey];
+  if (!fixture) throw new Error(`Unknown lead form: ${formKey}`);
   const data = { ...DEFAULT_LEAD, ...lead };
 
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: TIMEOUTS.MAX });
+  await page.goto(fixture.path, { waitUntil: 'domcontentloaded', timeout: TIMEOUTS.MAX });
 
-  const form = page.locator('form.wpcf7-form');
+  const form = page.locator(fixture.form).first();
   await form.waitFor({ state: 'visible', timeout: TIMEOUTS.LONG });
+  const renderedAt = Date.now();
 
-  await form.locator('input[name="your-name"]').fill(data.name);
-  await form.locator('input[name="your-email"]').fill(data.email);
-
-  const phoneInput = form.locator('input[name="your-phone"]');
-  if ((await phoneInput.count()) > 0) {
-    await phoneInput.fill(data.phone);
+  for (const [field, selector] of Object.entries(fixture.fields)) {
+    const input = form.locator(selector).first();
+    if ((await input.count()) > 0) {
+      await input.fill(data[field]);
+    }
   }
 
-  await form.locator('.wpcf7-submit').click();
+  const remainingAgeMs = (fixture.minFormAgeMs || 0) - (Date.now() - renderedAt);
+  if (remainingAgeMs > 0) {
+    await page.waitForTimeout(remainingAgeMs);
+  }
 
-  // CF7 signals success differently across versions: 5.x adds `.sent` to the
-  // <form>; 4.x sets `.wpcf7-mail-sent-ok` on the response output. Wait for
-  // either — this is the state that triggers `wpcf7mailsent` (and the Lead pixel).
+  // Focus first so the last field's blur handlers run before the click. WPForms'
+  // mailcheck inserts a "Did you mean ...?" hint on blur, which pushes the button
+  // down between mousedown and mouseup and swallows the click; click() then waits
+  // for the button to be stable in its new position.
+  const submit = form.locator(fixture.submit).first();
+  await submit.focus();
+  await submit.click();
+
   await page
-    .locator('form.wpcf7-form.sent, .wpcf7-response-output.wpcf7-mail-sent-ok')
+    .locator(fixture.success)
     .first()
     .waitFor({ state: 'visible', timeout: TIMEOUTS.LONG });
 
   return data;
 }
 
-/**
- * @param {import('@playwright/test').Page} page
- * @param {string} url
- * @returns {Promise<boolean>} Whether a CF7 form is present on the page.
- */
-async function isLeadFormAvailable(page, url) {
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: TIMEOUTS.MAX });
-  return (await page.locator('form.wpcf7-form').count()) > 0;
-}
-
-module.exports = { submitLeadForm, isLeadFormAvailable, DEFAULT_LEAD };
+module.exports = { submitLeadForm, LEAD_FORMS, DEFAULT_LEAD };
