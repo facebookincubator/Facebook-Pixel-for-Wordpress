@@ -294,20 +294,11 @@ jobs:
       - name: Seed store, pixel config, customer, product, lead forms
         run: bash "$PLUGIN_PATH/tests/e2e/scripts/seed-store.sh"
 
-      # TEMP diagnostic: is WooCommerce's order-received endpoint routed after setup?
-      - name: Diagnose order-received route (before flush)
-        run: |
-          wp rewrite list --match="/checkout/order-received/1/" --path="$WORDPRESS_PATH" --allow-root || true
-          echo "HTTP $(curl -s -o /dev/null -w '%{http_code}' "$WORDPRESS_URL/checkout/order-received/1/")"
-
+      # Installing and seeding the plugins leaves WooCommerce's endpoint rewrite
+      # rules out (/checkout/order-received/ 404s, so every Purchase test fails).
+      # One flush after everything is installed and seeded restores them.
       - name: Flush rewrite rules
         run: wp rewrite flush --path="$WORDPRESS_PATH" --allow-root
-
-      # TEMP diagnostic: same check after the flush.
-      - name: Diagnose order-received route (after flush)
-        run: |
-          wp rewrite list --match="/checkout/order-received/1/" --path="$WORDPRESS_PATH" --allow-root || true
-          echo "HTTP $(curl -s -o /dev/null -w '%{http_code}' "$WORDPRESS_URL/checkout/order-received/1/")"
 
       - name: Sanity checks
         run: |
@@ -491,13 +482,6 @@ jobs:
             *)
               npx playwright test "${ARGS[@]}" ;;
           esac
-
-      # TEMP diagnostic: did anything drop the route while the tests ran?
-      - name: Diagnose order-received route (after tests)
-        if: always()
-        run: |
-          wp rewrite list --match="/checkout/order-received/1/" --path="$WORDPRESS_PATH" --allow-root || true
-          echo "HTTP $(curl -s -o /dev/null -w '%{http_code}' "$WORDPRESS_URL/checkout/order-received/1/")"
 
       - name: PHP error gate
         if: always()
