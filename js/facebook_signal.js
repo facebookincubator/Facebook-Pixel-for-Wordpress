@@ -101,6 +101,9 @@ window.FacebookSignal = window.FacebookSignal || {
   },
 
   _fireOrQueuePixelEvent: function (name, params, method, eventId) {
+    // fbq can appear after initPixel() or a release when a consent tool
+    // delays the Pixel base code; initializing here flushes pending events.
+    this._runPixelInit();
     if (!this._pixelInitialized) {
       this._pendingPixelEvents.push({
         name: name,
@@ -110,7 +113,12 @@ window.FacebookSignal = window.FacebookSignal || {
       });
       return;
     }
-    this._firePixelEvent(name, params || {}, method || 'track', eventId || null);
+    this._firePixelEvent(
+      name,
+      params || {},
+      method || 'track',
+      eventId || null,
+    );
   },
 
   _firePixelEvent: function (name, params, method, eventId) {
@@ -186,7 +194,9 @@ window.FacebookSignal = window.FacebookSignal || {
 
   hold: function () {
     this._held = true;
-    fbq('consent', 'revoke');
+    if (typeof fbq === 'function') {
+      fbq('consent', 'revoke');
+    }
   },
 
   release: function () {
@@ -248,7 +258,9 @@ window.FacebookSignal = window.FacebookSignal || {
 
     if (fbpValue) {
       var fbpCookie =
-        '_fbp=' + encodeURIComponent(fbpValue) + ';path=/;max-age=7776000;SameSite=Lax';
+        '_fbp=' +
+        encodeURIComponent(fbpValue) +
+        ';path=/;max-age=7776000;SameSite=Lax';
       if (attr.fbpDomain) {
         fbpCookie += ';domain=' + attr.fbpDomain;
       }
@@ -257,7 +269,9 @@ window.FacebookSignal = window.FacebookSignal || {
 
     if (fbcValue) {
       var fbcCookie =
-        '_fbc=' + encodeURIComponent(fbcValue) + ';path=/;max-age=7776000;SameSite=Lax';
+        '_fbc=' +
+        encodeURIComponent(fbcValue) +
+        ';path=/;max-age=7776000;SameSite=Lax';
       if (attr.fbcDomain) {
         fbcCookie += ';domain=' + attr.fbcDomain;
       }
@@ -276,19 +290,22 @@ window.FacebookSignal = window.FacebookSignal || {
     this._pixelInitialized = false;
     this._runPixelInit();
 
-    fbq('consent', 'grant');
+    if (typeof fbq === 'function') {
+      fbq('consent', 'grant');
+    }
 
+    // Without fbq these events wait in the pending queue; the next event
+    // after fbq loads initializes the Pixel and flushes them.
     for (var i = 0; i < this._queue.length; i++) {
       var queuedEvent = this._queue[i];
-      var customData = queuedEvent.custom_data || {};
-      var trackMethod = queuedEvent.method || (queuedEvent.is_custom ? 'trackCustom' : 'track');
-      if (queuedEvent.event_id) {
-        fbq(trackMethod, queuedEvent.event_name, customData, {
-          eventID: queuedEvent.event_id,
-        });
-      } else {
-        fbq(trackMethod, queuedEvent.event_name, customData);
-      }
+      var trackMethod =
+        queuedEvent.method || (queuedEvent.is_custom ? 'trackCustom' : 'track');
+      this._fireOrQueuePixelEvent(
+        queuedEvent.event_name,
+        queuedEvent.custom_data || {},
+        trackMethod,
+        queuedEvent.event_id,
+      );
     }
 
     this._queue = [];
