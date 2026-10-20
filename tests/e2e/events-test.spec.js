@@ -695,7 +695,9 @@ for (const [formKey, { label, tag }] of Object.entries(LEAD_FORMS)) {
   test(`Lead - ${label}`, { tag: ['@lead', tag] }, async ({ page }, testInfo) => {
     const { testId, pixelCapture } = await TestSetup.init(page, 'Lead', testInfo);
 
-    const leadEmail = process.env.TEST_LEAD_EMAIL || 'e2e-lead@example.test';
+    // Unique per attempt: Formidable rejects a repeat of an identical entry
+    // ("already submitted that"), which would fail every retry after the first.
+    const leadEmail = process.env.TEST_LEAD_EMAIL || `e2e-${testId.toLowerCase()}@example.test`;
 
     const eventPromise = pixelCapture.waitForEvent();
     await submitLeadForm(page, formKey, { email: leadEmail });
