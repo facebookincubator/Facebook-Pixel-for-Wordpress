@@ -66,7 +66,12 @@ npm run test:e2e:report
 
 `.github/workflows/e2e-tests.yml` stands up a barebones WordPress (WordPress
 tarball + `php -S` + WP-CLI against a MySQL service — no Docker) and runs every
-browser/theme project. It reads `FB_PIXEL_ID` and `FB_ACCESS_TOKEN` from the
+browser/theme project against the declared and latest WordPress releases. The
+current declared stack pins Contact Form 7 to 6.1.7 (requires WordPress >= 6.7);
+CF7 6.2 requires WordPress >= 7.1 and is exercised on the latest stack instead.
+The E2E PHP runtime is 8.3 to support the latest CF7 fixture; this does not change
+the plugin's PHP minimum or its separate PHP 7.4 unit-test coverage. It reads
+`FB_PIXEL_ID` and `FB_ACCESS_TOKEN` from the
 **QA** environment (optionally `TEST_FBCLID`); without them the job is skipped.
 
 ## Events covered
@@ -74,5 +79,7 @@ browser/theme project. It reads `FB_PIXEL_ID` and `FB_ACCESS_TOKEN` from the
 PageView (+ fbclid), ViewContent (+ variable/grouped), AddToCart (+ AJAX,
 + variable), InitiateCheckout, Purchase (+ dedup, + variable/grouped), Lead (CF7,
 dual-channel), signals hold/release, isolated execution, Privacy Sandbox.
+The Privacy Sandbox project verifies Pixel/CAPI PageView delivery when Topics
+is absent or rejects as removed, rather than requiring a retired browser API.
 
 Not covered — this plugin does not emit them: Search, ViewCategory, Subscribe.
