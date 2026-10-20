@@ -94,7 +94,7 @@ class FacebookServerSideEvent {
     public function track( $event, $send_now = true ) {
         $this->tracked_events[] = $event;
         if ( $send_now ) {
-            if ( self::should_suppress_frontend_send() ) {
+            if ( FacebookSignalState::should_suppress_frontend_send() ) {
                 FacebookSignalState::queue_event( $event );
             } else {
                 do_action(
@@ -178,7 +178,7 @@ class FacebookServerSideEvent {
             return null;
         }
 
-        if ( self::should_suppress_frontend_send() ) {
+        if ( FacebookSignalState::should_suppress_frontend_send() ) {
             foreach ( $events as $queued_event ) {
                 FacebookSignalState::queue_event( $queued_event );
             }
@@ -317,22 +317,6 @@ class FacebookServerSideEvent {
 
         return 'wp-cloudbridge-plugin' ===
         $custom_properties['fb_integration_tracking'];
-    }
-
-    /**
-     * Whether the current request should suppress frontend sends.
-     *
-     * @return bool
-     */
-    private static function should_suppress_frontend_send() {
-        $is_admin_request = function_exists( 'is_admin' ) ? is_admin() : false;
-        $is_cron_request  = function_exists( 'wp_doing_cron' ) ?
-            wp_doing_cron() :
-            false;
-
-        return FacebookSignalState::is_held() &&
-            ! $is_admin_request &&
-            ! $is_cron_request;
     }
 
     /**

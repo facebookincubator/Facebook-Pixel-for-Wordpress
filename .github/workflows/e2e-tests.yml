@@ -129,9 +129,13 @@ jobs:
         include:
           - version-set: supported
             wp-version: ${{ needs.resolve-versions.outputs.wp-supported }}
+            # CF7 6.1.7 supports WP >= 6.7; CF7 6.2 requires WP >= 7.1.
+            # Keep the declared WP stack instead of silently upgrading it.
+            cf7-version: '6.1.7'
             version-label: Declared
           - version-set: latest
             wp-version: latest
+            cf7-version: latest
             version-label: Latest
     env:
       FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
@@ -163,7 +167,9 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          # The latest Contact Form 7 installed below requires PHP 8.3.
+          # Minimum plugin PHP compatibility is covered by the unit-test matrix.
+          php-version: '8.3'
           extensions: mysqli, zip, gd, curl, dom, fileinfo, mbstring
           ini-values: |
             date.timezone=UTC
@@ -228,7 +234,13 @@ jobs:
           wp theme install twentytwentyone $P
           wp theme install twentytwentyfive $P
           wp plugin install woocommerce --activate $P
-          wp plugin install contact-form-7 --activate $P
+          # WP-CLI has no "latest" alias for --version; omit it to get the newest release.
+          CF7_VERSION="${{ matrix.cf7-version }}"
+          if [ "$CF7_VERSION" = "latest" ]; then
+            wp plugin install contact-form-7 --activate $P
+          else
+            wp plugin install contact-form-7 --version="$CF7_VERSION" --activate $P
+          fi
           # Make the store live so shop/checkout render.
           wp option update woocommerce_coming_soon "no" $P || true
           wp option update woocommerce_store_pages_only "no" $P || true
