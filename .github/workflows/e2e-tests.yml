@@ -163,7 +163,9 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          # The latest Contact Form 7 installed below requires PHP 8.3.
+          # Minimum plugin PHP compatibility is covered by the unit-test matrix.
+          php-version: '8.3'
           extensions: mysqli, zip, gd, curl, dom, fileinfo, mbstring
           ini-values: |
             date.timezone=UTC
