@@ -32,6 +32,9 @@ Barebones WordPress (no Docker) — the same model CI uses: WordPress + WooComme
 - A WordPress install (e.g. Local by Flywheel, or the CI's WordPress-tarball +
   `php -S` + WP-CLI + MySQL). Point `WORDPRESS_PATH` at it and `WORDPRESS_URL` at
   its URL.
+- PHP 8.3 or newer for the E2E environment when installing the latest Contact
+  Form 7. The plugin's PHP 7.4 minimum remains covered by the separate unit-test
+  matrix.
 - WooCommerce + Contact Form 7 active; the standalone **facebook-for-woocommerce**
   plugin must NOT be active (it suppresses this plugin's commerce events).
 - Node 18–22 (Playwright can hang extracting browsers on Node 24).
