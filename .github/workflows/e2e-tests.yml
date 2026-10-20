@@ -234,7 +234,13 @@ jobs:
           wp theme install twentytwentyone $P
           wp theme install twentytwentyfive $P
           wp plugin install woocommerce --activate $P
-          wp plugin install contact-form-7 --version="${{ matrix.cf7-version }}" --activate $P
+          # WP-CLI has no "latest" alias for --version; omit it to get the newest release.
+          CF7_VERSION="${{ matrix.cf7-version }}"
+          if [ "$CF7_VERSION" = "latest" ]; then
+            wp plugin install contact-form-7 --activate $P
+          else
+            wp plugin install contact-form-7 --version="$CF7_VERSION" --activate $P
+          fi
           # Make the store live so shop/checkout render.
           wp option update woocommerce_coming_soon "no" $P || true
           wp option update woocommerce_store_pages_only "no" $P || true
