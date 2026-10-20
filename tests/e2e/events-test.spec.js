@@ -941,29 +941,38 @@ function getMajorBrowserVersion(versionString) {
   return match ? parseInt(match[1], 10) : NaN;
 }
 
-test('Privacy Sandbox - Topics API available in Chromium', async ({ page, browser }) => {
-  test.skip(!test.info().project.name.includes('privacy-sandbox'), 'Privacy Sandbox test only runs on privacy-sandbox project');
-  const chromiumMajor = getMajorBrowserVersion(browser.version());
-  test.skip(Number.isNaN(chromiumMajor) || chromiumMajor < 115, `Privacy Sandbox requires Chrome/Chromium >= 115 (detected ${browser.version()})`);
+// Topics has been retired in current Chrome. Test the plugin's event delivery
+// without that API instead of asserting that the browser still implements it.
+for (const topicsState of ['unavailable', 'removed']) {
+  test(`Privacy Sandbox - PageView with Topics API ${topicsState}`, async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.name.includes('privacy-sandbox'), 'Privacy Sandbox test only runs on privacy-sandbox project');
 
-  await page.goto('/');
-  await TestSetup.waitForPageReady(page);
+    await page.addInitScript((state) => {
+      Object.defineProperty(Document.prototype, 'browsingTopics', {
+        configurable: true,
+        value: state === 'unavailable'
+          ? undefined
+          : () => Promise.reject(new DOMException(
+            'document.browsingTopics() is deprecated and has been removed.',
+            'NotSupportedError'
+          )),
+      });
+    }, topicsState);
 
-  const topicsResult = await page.evaluate(async () => {
-    const hasTopicsApi = typeof document !== 'undefined' && typeof document.browsingTopics === 'function';
-    if (!hasTopicsApi) return { hasTopicsApi, topicsCount: null, error: null };
-    try {
-      const topics = await document.browsingTopics();
-      return { hasTopicsApi, topicsCount: Array.isArray(topics) ? topics.length : 0, error: null };
-    } catch (error) {
-      return { hasTopicsApi, topicsCount: null, error: String(error?.message || error) };
-    }
+    const { testId, pixelCapture } = await TestSetup.init(page, 'PageView', testInfo);
+    const eventPromise = pixelCapture.waitForEvent();
+    await page.goto('/');
+    await TestSetup.waitForPageReady(page);
+    await eventPromise;
+
+    const validator = new EventValidator(testId);
+    await validator.checkDebugLog();
+    const result = await validator.validate('PageView', page);
+
+    TestSetup.logResult(`PageView (Topics API ${topicsState})`, result);
+    expect(result.passed).toBe(true);
   });
-
-  expect(topicsResult.hasTopicsApi).toBe(true);
-  expect(topicsResult.error).toBeNull();
-  expect(typeof topicsResult.topicsCount).toBe('number');
-});
+}
 
 test('Privacy Sandbox - Protected Audience API shape in Chromium', async ({ page, browser }) => {
   test.skip(!test.info().project.name.includes('privacy-sandbox'), 'Privacy Sandbox test only runs on privacy-sandbox project');
