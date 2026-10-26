@@ -150,217 +150,217 @@ unset( $_COOKIE['wc_facebook_signals_state'] );
  * @return bool
  */
 function meta_pixel_for_wordpress_complianz_allows_marketing() {
-	if ( did_action( 'init' ) ) {
-		return function_exists( 'cmplz_has_consent' )
-			&& (bool) cmplz_has_consent( 'marketing' );
-	}
+    if ( did_action( 'init' ) ) {
+        return function_exists( 'cmplz_has_consent' )
+            && (bool) cmplz_has_consent( 'marketing' );
+    }
 
-	// Before init, use the stored category value and fail closed by default.
-	// Complianz has not loaded its settings yet, so a custom cookie prefix
-	// (for example on multisite) cannot be detected here.
-	$cookie_name = 'cmplz_marketing';
-	$value       = isset( $_COOKIE[ $cookie_name ] )
-		&& is_string( $_COOKIE[ $cookie_name ] )
-			? sanitize_text_field( wp_unslash( $_COOKIE[ $cookie_name ] ) )
-			: '';
+    // Before init, use the stored category value and fail closed by default.
+    // Complianz has not loaded its settings yet, so a custom cookie prefix
+    // (for example on multisite) cannot be detected here.
+    $cookie_name = 'cmplz_marketing';
+    $value       = isset( $_COOKIE[ $cookie_name ] )
+        && is_string( $_COOKIE[ $cookie_name ] )
+            ? sanitize_text_field( wp_unslash( $_COOKIE[ $cookie_name ] ) )
+            : '';
 
-	return 'allow' === $value;
+    return 'allow' === $value;
 }
 
 /**
  * Start the current page in the state that matches the Complianz choice.
  */
 function meta_pixel_for_wordpress_complianz_set_initial_state() {
-	$state = meta_pixel_for_wordpress_complianz_allows_marketing()
-		? 'active'
-		: 'held';
+    $state = meta_pixel_for_wordpress_complianz_allows_marketing()
+        ? 'active'
+        : 'held';
 
-	// Make the state available during the current PHP request.
-	$_COOKIE['wc_facebook_signals_state'] = $state;
+    // Make the state available during the current PHP request.
+    $_COOKIE['wc_facebook_signals_state'] = $state;
 
-	// Make the state available to JavaScript and later page requests.
-	if ( ! headers_sent() ) {
-		setcookie(
-			'wc_facebook_signals_state',
-			$state,
-			array(
-				'expires'  => time() + YEAR_IN_SECONDS,
-				'path'     => defined( 'COOKIEPATH' ) ? COOKIEPATH : '/',
-				'domain'   => defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '',
-				'secure'   => is_ssl(),
-				'httponly' => false,
-				'samesite' => 'Lax',
-			)
-		);
-	}
+    // Make the state available to JavaScript and later page requests.
+    if ( ! headers_sent() ) {
+        setcookie(
+            'wc_facebook_signals_state',
+            $state,
+            array(
+                'expires'  => time() + YEAR_IN_SECONDS,
+                'path'     => defined( 'COOKIEPATH' ) ? COOKIEPATH : '/',
+                'domain'   => defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '',
+                'secure'   => is_ssl(),
+                'httponly' => false,
+                'samesite' => 'Lax',
+            )
+        );
+    }
 }
 
 // Wait until Complianz and WordPress translations are ready for the full check.
 add_action(
-	'init',
-	'meta_pixel_for_wordpress_complianz_set_initial_state',
-	1
+    'init',
+    'meta_pixel_for_wordpress_complianz_set_initial_state',
+    1
 );
 
 /**
  * Keep public-page signal delivery held unless Complianz allows Marketing.
  */
 add_filter(
-	'facebook_signals_held',
-	function ( $held ) {
-		return $held
-			|| ! meta_pixel_for_wordpress_complianz_allows_marketing();
-	}
+    'facebook_signals_held',
+    function ( $held ) {
+        return $held
+            || ! meta_pixel_for_wordpress_complianz_allows_marketing();
+    }
 );
 
 /**
  * React when the visitor changes their Complianz Marketing choice.
  */
 add_action(
-	'wp_enqueue_scripts',
-	function () {
-		if ( ! wp_script_is( 'facebook-signal', 'enqueued' ) ) {
-			return;
-		}
+    'wp_enqueue_scripts',
+    function () {
+        if ( ! wp_script_is( 'facebook-signal', 'enqueued' ) ) {
+            return;
+        }
 
-		$script = <<<'JS'
+        $script = <<<'JS'
 ( function () {
-	'use strict';
+    'use strict';
 
-	function reportError( action, error ) {
-		if (
-			window.console &&
-			typeof window.console.error === 'function'
-		) {
-			window.console.error(
-				'Meta pixel for WordPress could not ' +
-					action +
-					' signals.',
-				error
-			);
-		}
-	}
+    function reportError( action, error ) {
+        if (
+            window.console &&
+            typeof window.console.error === 'function'
+        ) {
+            window.console.error(
+                'Meta pixel for WordPress could not ' +
+                    action +
+                    ' signals.',
+                error
+            );
+        }
+    }
 
-	function reloadPage() {
-		window.location.reload();
-	}
+    function reloadPage() {
+        window.location.reload();
+    }
 
-	var releasePending = false;
-	var releaseFailed = false;
-	var reloading = false;
+    var releasePending = false;
+    var releaseFailed = false;
+    var reloading = false;
 
-	function updateMetaTracking( allowed ) {
-		if ( ! allowed ) {
-			releaseFailed = false;
-		}
+    function updateMetaTracking( allowed ) {
+        if ( ! allowed ) {
+            releaseFailed = false;
+        }
 
-		if ( reloading ) {
-			return;
-		}
+        if ( reloading ) {
+            return;
+        }
 
-		var api = window.fbwcsignal;
-		var signal = window.FacebookSignal;
+        var api = window.fbwcsignal;
+        var signal = window.FacebookSignal;
 
-		if (
-			! api || ! signal ||
-			typeof api.getState !== 'function' ||
-			typeof api.hold !== 'function' ||
-			typeof api.release !== 'function' ||
-			typeof signal.hold !== 'function' ||
-			typeof signal._held !== 'boolean' ||
-			! signal._config || ! signal._config.ajaxUrl ||
-			typeof window.fbq !== 'function'
-		) {
-			reportError( 'update', new Error( 'Signal runtime or fbq is not ready.' ) );
-			// Avoid a reload loop if script blocking persists on a held page.
-			if (
-				! allowed && api && typeof api.getState === 'function' &&
-				api.getState() !== 'held'
-			) {
-				reloading = true;
-				reloadPage();
-			}
-			return;
-		}
+        if (
+            ! api || ! signal ||
+            typeof api.getState !== 'function' ||
+            typeof api.hold !== 'function' ||
+            typeof api.release !== 'function' ||
+            typeof signal.hold !== 'function' ||
+            typeof signal._held !== 'boolean' ||
+            ! signal._config || ! signal._config.ajaxUrl ||
+            typeof window.fbq !== 'function'
+        ) {
+            reportError( 'update', new Error( 'Signal runtime or fbq is not ready.' ) );
+            // Avoid a reload loop if script blocking persists on a held page.
+            if (
+                ! allowed && api && typeof api.getState === 'function' &&
+                api.getState() !== 'held'
+            ) {
+                reloading = true;
+                reloadPage();
+            }
+            return;
+        }
 
-		if ( allowed ) {
-			// The cookie can say active even after a failed AJAX release.
-			if ( releasePending || ( ! signal._held && api.getState() === 'active' ) ) {
-				return;
-			}
+        if ( allowed ) {
+            // The cookie can say active even after a failed AJAX release.
+            if ( releasePending || ( ! signal._held && api.getState() === 'active' ) ) {
+                return;
+            }
 
-			releasePending = true;
-			releaseFailed = false;
-			api.release().then(
-				function () {
-					releasePending = false;
-				},
-				function ( error ) {
-					releasePending = false;
-					releaseFailed = ! reloading;
-					reportError( 'release', error );
-				}
-			);
-			return;
-		}
+            releasePending = true;
+            releaseFailed = false;
+            api.release().then(
+                function () {
+                    releasePending = false;
+                },
+                function ( error ) {
+                    releasePending = false;
+                    releaseFailed = ! reloading;
+                    reportError( 'release', error );
+                }
+            );
+            return;
+        }
 
-		if ( signal._held && api.getState() === 'held' && ! releasePending ) {
-			return;
-		}
+        if ( signal._held && api.getState() === 'held' && ! releasePending ) {
+            return;
+        }
 
-		reloading = true;
-		// Revoke now, rather than waiting for the state AJAX response.
-		// This does NOT cancel an already-running release in the plugin.
-		signal.hold();
-		api.hold().then(
-			reloadPage,
-			function ( error ) {
-				reportError( 'hold', error );
-				reloadPage();
-			}
-		);
-	}
+        reloading = true;
+        // Revoke now, rather than waiting for the state AJAX response.
+        // This does NOT cancel an already-running release in the plugin.
+        signal.hold();
+        api.hold().then(
+            reloadPage,
+            function ( error ) {
+                reportError( 'hold', error );
+                reloadPage();
+            }
+        );
+    }
 
-	document.addEventListener(
-		'cmplz_status_change',
-		function ( event ) {
-			if (
-				! event.detail ||
-				event.detail.category !== 'marketing'
-			) {
-				return;
-			}
+    document.addEventListener(
+        'cmplz_status_change',
+        function ( event ) {
+            if (
+                ! event.detail ||
+                event.detail.category !== 'marketing'
+            ) {
+                return;
+            }
 
-			updateMetaTracking( event.detail.value === 'allow' );
-		}
-	);
+            updateMetaTracking( event.detail.value === 'allow' );
+        }
+    );
 
-	// Accept / Save preferences emits this even when Marketing is unchanged.
-	// Retry only our failed release, and check the current consent again.
-	document.addEventListener(
-		'cmplz_fire_categories',
-		function () {
-			if (
-				! releaseFailed || releasePending || reloading ||
-				typeof window.cmplz_has_consent !== 'function' ||
-				! window.cmplz_has_consent( 'marketing' )
-			) {
-				return;
-			}
+    // Accept / Save preferences emits this even when Marketing is unchanged.
+    // Retry only our failed release, and check the current consent again.
+    document.addEventListener(
+        'cmplz_fire_categories',
+        function () {
+            if (
+                ! releaseFailed || releasePending || reloading ||
+                typeof window.cmplz_has_consent !== 'function' ||
+                ! window.cmplz_has_consent( 'marketing' )
+            ) {
+                return;
+            }
 
-			updateMetaTracking( true );
-		}
-	);
+            updateMetaTracking( true );
+        }
+    );
 } )();
 JS;
 
-		wp_add_inline_script(
-			'facebook-signal',
-			$script,
-			'after'
-		);
-	},
-	20
+        wp_add_inline_script(
+            'facebook-signal',
+            $script,
+            'after'
+        );
+    },
+    20
 );
 ```
 
@@ -420,7 +420,7 @@ Meta pixel for WordPress exposes `facebook_signals_held` so integrations can con
 
 ```php
 return $held
-	|| ! meta_pixel_for_wordpress_complianz_allows_marketing();
+    || ! meta_pixel_for_wordpress_complianz_allows_marketing();
 ```
 
 This callback preserves `$held` **only at this PHP filter**. It does not coordinate other holds with JavaScript: browser initialization trusts the state cookie, and the release endpoint does not enforce this filter. The cookie is client-writable, not proof of consent. Do not combine this example with another consent bridge or assume another filter will veto a browser release.
@@ -431,9 +431,9 @@ The Complianz bridge is attached after Meta pixel for WordPress's signal helper:
 
 ```php
 wp_add_inline_script(
-	'facebook-signal',
-	$script,
-	'after'
+    'facebook-signal',
+    $script,
+    'after'
 );
 ```
 

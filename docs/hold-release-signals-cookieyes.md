@@ -120,26 +120,26 @@ defined( 'ABSPATH' ) || exit;
  * @return array<string, string>
  */
 function meta_pixel_for_wordpress_cookieyes_get_consent_values() {
-	$encoded = isset( $_COOKIE['cookieyes-consent'] )
-		&& is_string( $_COOKIE['cookieyes-consent'] )
-			// Sanitization must happen after URL decoding.
-			? wp_unslash( $_COOKIE['cookieyes-consent'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			: '';
+    $encoded = isset( $_COOKIE['cookieyes-consent'] )
+        && is_string( $_COOKIE['cookieyes-consent'] )
+            // Sanitization must happen after URL decoding.
+            ? wp_unslash( $_COOKIE['cookieyes-consent'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            : '';
 
-	$raw    = sanitize_text_field( rawurldecode( $encoded ) );
-	$values = array();
+    $raw    = sanitize_text_field( rawurldecode( $encoded ) );
+    $values = array();
 
-	foreach ( explode( ',', $raw ) as $entry ) {
-		$parts = array_map( 'trim', explode( ':', $entry, 2 ) );
+    foreach ( explode( ',', $raw ) as $entry ) {
+        $parts = array_map( 'trim', explode( ':', $entry, 2 ) );
 
-		if ( 2 !== count( $parts ) || '' === $parts[0] ) {
-			continue;
-		}
+        if ( 2 !== count( $parts ) || '' === $parts[0] ) {
+            continue;
+        }
 
-		$values[ $parts[0] ] = $parts[1];
-	}
+        $values[ $parts[0] ] = $parts[1];
+    }
 
-	return $values;
+    return $values;
 }
 
 /**
@@ -148,39 +148,39 @@ function meta_pixel_for_wordpress_cookieyes_get_consent_values() {
  * @return bool
  */
 function meta_pixel_for_wordpress_cookieyes_allows_advertising() {
-	$consent = meta_pixel_for_wordpress_cookieyes_get_consent_values();
+    $consent = meta_pixel_for_wordpress_cookieyes_get_consent_values();
 
-	return isset( $consent['action'], $consent['advertisement'] )
-		&& 'yes' === $consent['action']
-		&& 'yes' === $consent['advertisement'];
+    return isset( $consent['action'], $consent['advertisement'] )
+        && 'yes' === $consent['action']
+        && 'yes' === $consent['advertisement'];
 }
 
 /**
  * Start the current page in the state that matches the CookieYes choice.
  */
 function meta_pixel_for_wordpress_cookieyes_set_initial_state() {
-	$state = meta_pixel_for_wordpress_cookieyes_allows_advertising()
-		? 'active'
-		: 'held';
+    $state = meta_pixel_for_wordpress_cookieyes_allows_advertising()
+        ? 'active'
+        : 'held';
 
-	// Make the state available during the current PHP request.
-	$_COOKIE['wc_facebook_signals_state'] = $state;
+    // Make the state available during the current PHP request.
+    $_COOKIE['wc_facebook_signals_state'] = $state;
 
-	// Make the state available to JavaScript and later page requests.
-	if ( ! headers_sent() ) {
-		setcookie(
-			'wc_facebook_signals_state',
-			$state,
-			array(
-				'expires'  => time() + YEAR_IN_SECONDS,
-				'path'     => defined( 'COOKIEPATH' ) ? COOKIEPATH : '/',
-				'domain'   => defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '',
-				'secure'   => is_ssl(),
-				'httponly' => false,
-				'samesite' => 'Lax',
-			)
-		);
-	}
+    // Make the state available to JavaScript and later page requests.
+    if ( ! headers_sent() ) {
+        setcookie(
+            'wc_facebook_signals_state',
+            $state,
+            array(
+                'expires'  => time() + YEAR_IN_SECONDS,
+                'path'     => defined( 'COOKIEPATH' ) ? COOKIEPATH : '/',
+                'domain'   => defined( 'COOKIE_DOMAIN' ) ? COOKIE_DOMAIN : '',
+                'secure'   => is_ssl(),
+                'httponly' => false,
+                'samesite' => 'Lax',
+            )
+        );
+    }
 }
 meta_pixel_for_wordpress_cookieyes_set_initial_state();
 
@@ -188,144 +188,144 @@ meta_pixel_for_wordpress_cookieyes_set_initial_state();
  * Keep public-page signal delivery held unless CookieYes allows advertising.
  */
 add_filter(
-	'facebook_signals_held',
-	function ( $held ) {
-		return $held
-			|| ! meta_pixel_for_wordpress_cookieyes_allows_advertising();
-	}
+    'facebook_signals_held',
+    function ( $held ) {
+        return $held
+            || ! meta_pixel_for_wordpress_cookieyes_allows_advertising();
+    }
 );
 
 /**
  * React when the visitor saves or changes their CookieYes choice.
  */
 add_action(
-	'wp_enqueue_scripts',
-	function () {
-		if ( ! wp_script_is( 'facebook-signal', 'enqueued' ) ) {
-			return;
-		}
+    'wp_enqueue_scripts',
+    function () {
+        if ( ! wp_script_is( 'facebook-signal', 'enqueued' ) ) {
+            return;
+        }
 
-		$script = <<<'JS'
+        $script = <<<'JS'
 ( function () {
-	'use strict';
+    'use strict';
 
-	function cookieYesAllowsAdvertising() {
-		if ( typeof window.getCkyConsent !== 'function' ) {
-			return false;
-		}
+    function cookieYesAllowsAdvertising() {
+        if ( typeof window.getCkyConsent !== 'function' ) {
+            return false;
+        }
 
-		var consent = window.getCkyConsent();
+        var consent = window.getCkyConsent();
 
-		return !! (
-			consent &&
-			consent.isUserActionCompleted &&
-			consent.categories &&
-			consent.categories.advertisement
-		);
-	}
+        return !! (
+            consent &&
+            consent.isUserActionCompleted &&
+            consent.categories &&
+            consent.categories.advertisement
+        );
+    }
 
-	function reportError( action, error ) {
-		if (
-			window.console &&
-			typeof window.console.error === 'function'
-		) {
-			window.console.error(
-				'Meta pixel for WordPress could not ' +
-					action +
-					' signals.',
-				error
-			);
-		}
-	}
+    function reportError( action, error ) {
+        if (
+            window.console &&
+            typeof window.console.error === 'function'
+        ) {
+            window.console.error(
+                'Meta pixel for WordPress could not ' +
+                    action +
+                    ' signals.',
+                error
+            );
+        }
+    }
 
-	function reloadPage() {
-		window.location.reload();
-	}
+    function reloadPage() {
+        window.location.reload();
+    }
 
-	var releasePending = false;
-	var reloading = false;
+    var releasePending = false;
+    var reloading = false;
 
-	function updateMetaTracking() {
-		if ( reloading ) {
-			return;
-		}
+    function updateMetaTracking() {
+        if ( reloading ) {
+            return;
+        }
 
-		var allowed = cookieYesAllowsAdvertising();
-		var api = window.fbwcsignal;
-		var signal = window.FacebookSignal;
+        var allowed = cookieYesAllowsAdvertising();
+        var api = window.fbwcsignal;
+        var signal = window.FacebookSignal;
 
-		if (
-			! api || ! signal ||
-			typeof api.getState !== 'function' ||
-			typeof api.hold !== 'function' ||
-			typeof api.release !== 'function' ||
-			typeof signal.hold !== 'function' ||
-			typeof signal._held !== 'boolean' ||
-			! signal._config || ! signal._config.ajaxUrl ||
-			typeof window.fbq !== 'function'
-		) {
-			reportError( 'update', new Error( 'Signal runtime or fbq is not ready.' ) );
-			// Avoid a reload loop if script blocking persists on a held page.
-			if (
-				! allowed && api && typeof api.getState === 'function' &&
-				api.getState() !== 'held'
-			) {
-				reloading = true;
-				reloadPage();
-			}
-			return;
-		}
+        if (
+            ! api || ! signal ||
+            typeof api.getState !== 'function' ||
+            typeof api.hold !== 'function' ||
+            typeof api.release !== 'function' ||
+            typeof signal.hold !== 'function' ||
+            typeof signal._held !== 'boolean' ||
+            ! signal._config || ! signal._config.ajaxUrl ||
+            typeof window.fbq !== 'function'
+        ) {
+            reportError( 'update', new Error( 'Signal runtime or fbq is not ready.' ) );
+            // Avoid a reload loop if script blocking persists on a held page.
+            if (
+                ! allowed && api && typeof api.getState === 'function' &&
+                api.getState() !== 'held'
+            ) {
+                reloading = true;
+                reloadPage();
+            }
+            return;
+        }
 
-		if ( allowed ) {
-			// The cookie can say active even after a failed AJAX release.
-			if ( releasePending || ( ! signal._held && api.getState() === 'active' ) ) {
-				return;
-			}
+        if ( allowed ) {
+            // The cookie can say active even after a failed AJAX release.
+            if ( releasePending || ( ! signal._held && api.getState() === 'active' ) ) {
+                return;
+            }
 
-			releasePending = true;
-			api.release().then(
-				function () {
-					releasePending = false;
-				},
-				function ( error ) {
-					releasePending = false;
-					reportError( 'release', error );
-				}
-			);
-			return;
-		}
+            releasePending = true;
+            api.release().then(
+                function () {
+                    releasePending = false;
+                },
+                function ( error ) {
+                    releasePending = false;
+                    reportError( 'release', error );
+                }
+            );
+            return;
+        }
 
-		if ( signal._held && api.getState() === 'held' && ! releasePending ) {
-			return;
-		}
+        if ( signal._held && api.getState() === 'held' && ! releasePending ) {
+            return;
+        }
 
-		reloading = true;
-		// Revoke now, rather than waiting for the state AJAX response.
-		// This does NOT cancel an already-running release in the plugin.
-		signal.hold();
-		api.hold().then(
-			reloadPage,
-			function ( error ) {
-				reportError( 'hold', error );
-				reloadPage();
-			}
-		);
-	}
+        reloading = true;
+        // Revoke now, rather than waiting for the state AJAX response.
+        // This does NOT cancel an already-running release in the plugin.
+        signal.hold();
+        api.hold().then(
+            reloadPage,
+            function ( error ) {
+                reportError( 'hold', error );
+                reloadPage();
+            }
+        );
+    }
 
-	document.addEventListener(
-		'cookieyes_consent_update',
-		updateMetaTracking
-	);
+    document.addEventListener(
+        'cookieyes_consent_update',
+        updateMetaTracking
+    );
 } )();
 JS;
 
-		wp_add_inline_script(
-			'facebook-signal',
-			$script,
-			'after'
-		);
-	},
-	20
+        wp_add_inline_script(
+            'facebook-signal',
+            $script,
+            'after'
+        );
+    },
+    20
 );
 ```
 
@@ -386,7 +386,7 @@ Meta pixel for WordPress exposes `facebook_signals_held` so integrations can con
 
 ```php
 return $held
-	|| ! meta_pixel_for_wordpress_cookieyes_allows_advertising();
+    || ! meta_pixel_for_wordpress_cookieyes_allows_advertising();
 ```
 
 This callback preserves `$held` **only at this PHP filter**. It does not coordinate other holds with JavaScript: browser initialization trusts the state cookie, and the release endpoint does not enforce this filter. The cookie is client-writable, not proof of consent. Do not combine this example with another consent bridge or assume another filter will veto a browser release.
@@ -397,9 +397,9 @@ The CookieYes bridge is attached after Meta pixel for WordPress's signal helper:
 
 ```php
 wp_add_inline_script(
-	'facebook-signal',
-	$script,
-	'after'
+    'facebook-signal',
+    $script,
+    'after'
 );
 ```
 
