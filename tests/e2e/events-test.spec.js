@@ -691,7 +691,7 @@ test('Purchase - Grouped Product', async ({ page }, testInfo) => {
 // Lead — dual-channel (Pixel + CAPI) sharing one event_id, once per supported
 // form integration (fixtures in helpers/js/events/lead-form.js).
 // -----------------------------------------------------------------------------
-for (const [formKey, { label, tag }] of Object.entries(LEAD_FORMS)) {
+for (const [formKey, { label, tag, nameKeys }] of Object.entries(LEAD_FORMS)) {
   test(`Lead - ${label}`, { tag: ['@lead', tag] }, async ({ page }, testInfo) => {
     const { testId, pixelCapture } = await TestSetup.init(page, 'Lead', testInfo);
 
@@ -700,7 +700,7 @@ for (const [formKey, { label, tag }] of Object.entries(LEAD_FORMS)) {
     const leadEmail = process.env.TEST_LEAD_EMAIL || `e2e-${testId.toLowerCase()}@example.test`;
 
     const eventPromise = pixelCapture.waitForEvent();
-    await submitLeadForm(page, formKey, { email: leadEmail });
+    const lead = await submitLeadForm(page, formKey, { email: leadEmail });
     await eventPromise;
     await page.waitForTimeout(TIMEOUTS.SHORT);
 
@@ -715,7 +715,8 @@ for (const [formKey, { label, tag }] of Object.entries(LEAD_FORMS)) {
     // (the two channels share it via dedup) rather than picking "the last" one, then
     // assert that event carries the expected email hash (SHA-256 of the trimmed,
     // lowercased address). This also reconfirms Pixel<->CAPI dedup for Lead.
-    const expectedEm = crypto.createHash('sha256').update(leadEmail.trim().toLowerCase()).digest('hex');
+    const sha256 = value => crypto.createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
+    const expectedEm = sha256(leadEmail);
     const captured = await loadCapturedEvents(testId);
     const pixelLead = captured.pixel.find(e => e.event_name === 'Lead');
     expect(pixelLead?.event_id).toBeTruthy();
@@ -725,6 +726,14 @@ for (const [formKey, { label, tag }] of Object.entries(LEAD_FORMS)) {
     expect(capiForEvent.length).toBeGreaterThan(0);
     const capiEms = capiForEvent.map(e => String(asArray(e?.user_data?.em)[0] ?? e?.user_data?.em ?? ''));
     expect(capiEms).toContain(expectedEm);
+
+    // Assert the submitted name reached CAPI under the integration's mapping: forms
+    // that split a full name send fn + ln, first-name-only fields send fn alone.
+    const expectedName = { fn: lead.firstName, ln: lead.lastName };
+    for (const key of nameKeys) {
+      const capiValues = capiForEvent.map(e => String(asArray(e?.user_data?.[key])[0] ?? e?.user_data?.[key] ?? ''));
+      expect(capiValues, `CAPI user_data.${key}`).toContain(sha256(expectedName[key]));
+    }
 
     TestSetup.logResult(`Lead (${label})`, result);
     expect(result.passed).toBe(true);

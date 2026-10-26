@@ -19,6 +19,10 @@ const { TIMEOUTS } = require('../constants/timeouts');
 
 const DEFAULT_LEAD = {
   name: 'Jane E2E Doe',
+  // How integrations that split a full name report it (first token / rest), and
+  // what first-name-only fields are filled with.
+  firstName: 'Jane',
+  lastName: 'E2E Doe',
   email: 'jane.e2e@example.com',
   phone: '+15555550123',
   message: 'E2E lead message',
@@ -26,9 +30,10 @@ const DEFAULT_LEAD = {
 
 /**
  * Per-integration fixture: Playwright tag (each integration's CI workflow runs
- * only its tag), page path, form/field selectors, and the success state that
- * marks the point where the plugin delivers the Lead. Optional fields are filled
- * only when present on the form.
+ * only its tag), page path, form/field selectors, the success state that marks
+ * the point where the plugin delivers the Lead, and the CAPI name keys the
+ * integration derives from the submitted name (`nameKeys`). Every field must be
+ * on the form unless listed in `optionalFields`.
  */
 const LEAD_FORMS = {
   'contact-form-7': {
@@ -41,6 +46,9 @@ const LEAD_FORMS = {
       email: 'input[name="your-email"]',
       phone: 'input[name="your-phone"]',
     },
+    optionalFields: ['phone'],
+    // A text field whose name contains "name" is split into fn/ln.
+    nameKeys: ['fn', 'ln'],
     submit: '.wpcf7-submit',
     // CF7 5.x adds `.sent` to the <form>; 4.x sets `.wpcf7-mail-sent-ok` on the
     // response output. Either is the state that triggers `wpcf7mailsent`.
@@ -55,6 +63,8 @@ const LEAD_FORMS = {
       name: 'input[name="wpforms[fields][1]"]',
       email: 'input[name="wpforms[fields][2]"]',
     },
+    // A "simple" format Name field is split into fn/ln.
+    nameKeys: ['fn', 'ln'],
     submit: 'button.wpforms-submit',
     success: '.wpforms-confirmation-container-full',
   },
@@ -69,6 +79,8 @@ const LEAD_FORMS = {
       email: 'input[type="email"]',
       message: 'textarea',
     },
+    // A field keyed name* is split into fn/ln.
+    nameKeys: ['fn', 'ln'],
     submit: 'input[type="submit"]',
     success: '.nf-response-msg:not(:empty)',
   },
@@ -78,9 +90,11 @@ const LEAD_FORMS = {
     path: '/e2e-lead-formidable/',
     form: 'form.frm-show-form',
     fields: {
-      name: '#field_e2e_lead_name',
+      firstName: '#field_e2e_lead_name',
       email: '#field_e2e_lead_email',
     },
+    // The seeded Name field has description "First", so its whole value is fn.
+    nameKeys: ['fn'],
     submit: 'button.frm_button_submit',
     success: '.frm_message',
   },
@@ -90,9 +104,11 @@ const LEAD_FORMS = {
     path: '/e2e-lead-mailchimp/',
     form: 'form.mc4wp-form',
     fields: {
-      name: 'input[name="FNAME"]',
+      firstName: 'input[name="FNAME"]',
       email: 'input[name="EMAIL"]',
     },
+    // FNAME maps to fn as-is; the fixture has no LNAME field.
+    nameKeys: ['fn'],
     submit: 'input[type="submit"]',
     success: 'form.mc4wp-form-success',
     // MC4WP's anti-spam rejects submits less than 2s after the form rendered.
@@ -106,7 +122,7 @@ const LEAD_FORMS = {
  *
  * @param {import('@playwright/test').Page} page
  * @param {keyof typeof LEAD_FORMS} formKey  Which integration's form to submit.
- * @param {{name?: string, email?: string, phone?: string, message?: string}} [lead]
+ * @param {{name?: string, firstName?: string, lastName?: string, email?: string, phone?: string, message?: string}} [lead]
  */
 async function submitLeadForm(page, formKey, lead = {}) {
   const fixture = LEAD_FORMS[formKey];
@@ -123,6 +139,10 @@ async function submitLeadForm(page, formKey, lead = {}) {
     const input = form.locator(selector).first();
     if ((await input.count()) > 0) {
       await input.fill(data[field]);
+    } else if (!(fixture.optionalFields || []).includes(field)) {
+      // A missing required field would otherwise surface as an unclear
+      // success-state timeout (or a Lead without the data under test).
+      throw new Error(`${fixture.label} form at ${fixture.path} has no "${field}" field (${selector})`);
     }
   }
 
