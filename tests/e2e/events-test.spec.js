@@ -40,6 +40,7 @@ const {
   getSignalState,
   getQueuedSignalEvents,
   submitLeadForm,
+  assertLeadMatchingSettings,
   LEAD_FORMS,
   getActiveThemeStatus,
   switchThemeBySlug,
@@ -693,6 +694,7 @@ test('Purchase - Grouped Product', async ({ page }, testInfo) => {
 // -----------------------------------------------------------------------------
 for (const [formKey, { label, tag, nameKeys }] of Object.entries(LEAD_FORMS)) {
   test(`Lead - ${label}`, { tag: ['@lead', tag] }, async ({ page }, testInfo) => {
+    await assertLeadMatchingSettings(formKey);
     const { testId, pixelCapture } = await TestSetup.init(page, 'Lead', testInfo);
 
     // Unique per attempt: Formidable rejects a repeat of an identical entry

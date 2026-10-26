@@ -43,6 +43,9 @@ available.
 - Node 18–22 (Playwright can hang extracting browsers on Node 24).
 - A real Meta **pixel id** and **CAPI access token** — CAPI only logs on a
   successful send, so fake credentials produce no CAPI events.
+- Enable automatic matching for email (`em`) and first name (`fn`) on the test
+  pixel in Meta Events Manager. CF7, WPForms, and Ninja Forms also require last
+  name (`ln`). Allow the plugin's settings cache to refresh after changes.
 
 ## Running locally
 
@@ -64,6 +67,12 @@ npm run test:e2e:report
 
 `WP_CUSTOMER_USERNAME`/`WP_CUSTOMER_PASSWORD` default to `customer`/`customerpass`
 (the customer is created by `env:seed`). See `.env.example` for all variables.
+
+Run the matching-prerequisite helper tests without WordPress or a browser:
+
+```bash
+node --test tests/e2e/unit/lead-matching.test.cjs
+```
 
 ## CI
 

@@ -16,6 +16,7 @@
  */
 
 const { TIMEOUTS } = require('../constants/timeouts');
+const { execWP } = require('../wordpress/exec');
 
 const DEFAULT_LEAD = {
   name: 'Jane E2E Doe',
@@ -117,6 +118,33 @@ const LEAD_FORMS = {
 };
 
 /**
+ * Check the pixel's cached matching settings before submitting a Lead. Name
+ * fields disabled in Events Manager are filtered out even when extraction works.
+ */
+async function assertLeadMatchingSettings(formKey) {
+  const fixture = LEAD_FORMS[formKey];
+  if (!fixture) throw new Error(`Unknown lead form: ${formKey}`);
+
+  const { stdout } = await execWP(`
+    $settings = \\FacebookPixelPlugin\\Core\\FacebookWordpressOptions::get_aam_settings();
+    echo json_encode(array(
+      'enabled' => $settings ? (bool) $settings->getEnableAutomaticMatching() : false,
+      'fields' => $settings ? array_values((array) $settings->getEnabledAutomaticMatchingFields()) : array(),
+    ));
+  `);
+  const settings = JSON.parse(stdout.trim());
+  const required = ['em', ...fixture.nameKeys];
+  const missing = required.filter(key => !settings.enabled || !settings.fields.includes(key));
+  if (missing.length > 0) {
+    throw new Error(
+      `${fixture.label} Lead prerequisite failed. Enable automatic matching for ${required.join(', ')} `
+      + `on the test pixel in Meta Events Manager and refresh the plugin's cached matching settings. `
+      + `Missing: ${missing.join(', ')}`
+    );
+  }
+}
+
+/**
  * Fill and submit a seeded lead form, waiting for the plugin's success state
  * (which is when the integration fires the Lead).
  *
@@ -167,4 +195,4 @@ async function submitLeadForm(page, formKey, lead = {}) {
   return data;
 }
 
-module.exports = { submitLeadForm, LEAD_FORMS, DEFAULT_LEAD };
+module.exports = { assertLeadMatchingSettings, submitLeadForm, LEAD_FORMS, DEFAULT_LEAD };
