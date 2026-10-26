@@ -3,8 +3,9 @@ name: E2E Tests (reusable)
 # Common Pixel/CAPI E2E workflow, called by one workflow per integration
 # (e2e-woocommerce.yml, e2e-contact-form-7.yml, e2e-wpforms.yml,
 # e2e-ninja-forms.yml, e2e-formidable.yml, e2e-mailchimp-for-wp.yml). Every
-# caller gets the same environment, with ALL integrations' plugins installed, and
-# runs only the Playwright tests selected by its tag filter.
+# caller gets WordPress + WooCommerce plus at most ONE lead-form plugin (its
+# `form-plugin` input), so a broken or noisy form plugin only affects its own
+# workflow. Each caller runs only the Playwright tests selected by its tag filter.
 #
 # Barebones WordPress setup (WordPress tarball + `php -S` + WP-CLI against a MySQL
 # service) — modeled on the Meta for WooCommerce plugin's product-creation-tests.yml.
@@ -19,6 +20,13 @@ on:
         default: ''
       grep-invert:
         description: Skip Playwright tests matching this pattern.
+        type: string
+        default: ''
+      form-plugin:
+        description: >-
+          WordPress.org slug of the one lead-form plugin to install and seed
+          (contact-form-7, wpforms-lite, ninja-forms, formidable or
+          mailchimp-for-wp). Empty installs no form plugin.
         type: string
         default: ''
 
@@ -155,10 +163,21 @@ jobs:
             # CF7 6.1.7 supports WP >= 6.7; CF7 6.2 requires WP >= 7.1.
             # Keep the declared WP stack instead of silently upgrading it.
             cf7-version: '6.1.7'
+            # Form plugins pinned to the releases verified on the declared stack,
+            # so a new release requiring a newer WP can't break this lane. The
+            # latest lane below still tracks new releases.
+            wpforms-lite-version: '2.0.3'
+            ninja-forms-version: '3.15.6'
+            formidable-version: '7.0'
+            mailchimp-for-wp-version: '4.14.1'
             version-label: Declared
           - version-set: latest
             wp-version: latest
             cf7-version: latest
+            wpforms-lite-version: latest
+            ninja-forms-version: latest
+            formidable-version: latest
+            mailchimp-for-wp-version: latest
             version-label: Latest
     env:
       FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
@@ -263,26 +282,30 @@ jobs:
           wp option update woocommerce_coming_soon "no" --path="$WORDPRESS_PATH" --allow-root || true
           wp option update woocommerce_store_pages_only "no" --path="$WORDPRESS_PATH" --allow-root || true
 
-      - name: Install Contact Form 7
+      - name: Install lead-form plugin (${{ inputs.form-plugin }})
+        if: inputs.form-plugin != ''
+        env:
+          FORM_PLUGIN: ${{ inputs.form-plugin }}
+          CF7_VERSION: ${{ matrix.cf7-version }}
+          WPFORMS_LITE_VERSION: ${{ matrix.wpforms-lite-version }}
+          NINJA_FORMS_VERSION: ${{ matrix.ninja-forms-version }}
+          FORMIDABLE_VERSION: ${{ matrix.formidable-version }}
+          MAILCHIMP_FOR_WP_VERSION: ${{ matrix.mailchimp-for-wp-version }}
         run: |
+          case "$FORM_PLUGIN" in
+            contact-form-7)   VERSION="$CF7_VERSION" ;;
+            wpforms-lite)     VERSION="$WPFORMS_LITE_VERSION" ;;
+            ninja-forms)      VERSION="$NINJA_FORMS_VERSION" ;;
+            formidable)       VERSION="$FORMIDABLE_VERSION" ;;
+            mailchimp-for-wp) VERSION="$MAILCHIMP_FOR_WP_VERSION" ;;
+            *) echo "::error::Unknown form-plugin '$FORM_PLUGIN'"; exit 1 ;;
+          esac
           # WP-CLI has no "latest" alias for --version; omit it to get the newest release.
-          if [ "${{ matrix.cf7-version }}" = "latest" ]; then
-            wp plugin install contact-form-7 --activate --path="$WORDPRESS_PATH" --allow-root
+          if [ "$VERSION" = "latest" ]; then
+            wp plugin install "$FORM_PLUGIN" --activate --path="$WORDPRESS_PATH" --allow-root
           else
-            wp plugin install contact-form-7 --version="${{ matrix.cf7-version }}" --activate --path="$WORDPRESS_PATH" --allow-root
+            wp plugin install "$FORM_PLUGIN" --version="$VERSION" --activate --path="$WORDPRESS_PATH" --allow-root
           fi
-
-      - name: Install WPForms Lite
-        run: wp plugin install wpforms-lite --activate --path="$WORDPRESS_PATH" --allow-root
-
-      - name: Install Ninja Forms
-        run: wp plugin install ninja-forms --activate --path="$WORDPRESS_PATH" --allow-root
-
-      - name: Install Formidable Forms
-        run: wp plugin install formidable --activate --path="$WORDPRESS_PATH" --allow-root
-
-      - name: Install Mailchimp for WP
-        run: wp plugin install mailchimp-for-wp --activate --path="$WORDPRESS_PATH" --allow-root
 
       - name: Install this plugin (from checkout)
         run: |
@@ -333,39 +356,25 @@ jobs:
             exit 1
           fi
 
-      # Confirm each Lead form page renders its plugin's form markup (not "form not
-      # found"). A missing form only fails that integration's Lead test, so warn here.
-      - name: Check Lead form pages render
+      # Confirm the installed form plugin's Lead page renders its form markup (not
+      # "form not found"). The Lead test itself is the gate, so only warn here.
+      - name: Check Lead form page renders
+        if: inputs.form-plugin != ''
+        env:
+          FORM_PLUGIN: ${{ inputs.form-plugin }}
         run: |
-          if curl -s "$WORDPRESS_URL/e2e-lead/" | grep -q "wpcf7-form"; then
-            echo "✅ Contact Form 7 Lead form renders on /e2e-lead/"
+          case "$FORM_PLUGIN" in
+            contact-form-7)   LEAD_PATH=/e2e-lead/;             MARKER=wpcf7-form ;;
+            wpforms-lite)     LEAD_PATH=/e2e-lead-wpforms/;     MARKER=wpforms-form ;;
+            # Ninja Forms renders its form client-side; check for its container.
+            ninja-forms)      LEAD_PATH=/e2e-lead-ninja-forms/; MARKER=nf-form-cont ;;
+            formidable)       LEAD_PATH=/e2e-lead-formidable/;  MARKER=frm-show-form ;;
+            mailchimp-for-wp) LEAD_PATH=/e2e-lead-mailchimp/;   MARKER=mc4wp-form ;;
+          esac
+          if curl -s "$WORDPRESS_URL$LEAD_PATH" | grep -q "$MARKER"; then
+            echo "✅ $FORM_PLUGIN Lead form renders on $LEAD_PATH"
           else
-            echo "::warning::Contact Form 7 Lead form did NOT render on /e2e-lead/"
-          fi
-
-          if curl -s "$WORDPRESS_URL/e2e-lead-wpforms/" | grep -q "wpforms-form"; then
-            echo "✅ WPForms Lead form renders on /e2e-lead-wpforms/"
-          else
-            echo "::warning::WPForms Lead form did NOT render on /e2e-lead-wpforms/"
-          fi
-
-          # Ninja Forms renders its form client-side; check for its container.
-          if curl -s "$WORDPRESS_URL/e2e-lead-ninja-forms/" | grep -q "nf-form-cont"; then
-            echo "✅ Ninja Forms Lead form renders on /e2e-lead-ninja-forms/"
-          else
-            echo "::warning::Ninja Forms Lead form did NOT render on /e2e-lead-ninja-forms/"
-          fi
-
-          if curl -s "$WORDPRESS_URL/e2e-lead-formidable/" | grep -q "frm-show-form"; then
-            echo "✅ Formidable Lead form renders on /e2e-lead-formidable/"
-          else
-            echo "::warning::Formidable Lead form did NOT render on /e2e-lead-formidable/"
-          fi
-
-          if curl -s "$WORDPRESS_URL/e2e-lead-mailchimp/" | grep -q "mc4wp-form"; then
-            echo "✅ Mailchimp for WP Lead form renders on /e2e-lead-mailchimp/"
-          else
-            echo "::warning::Mailchimp for WP Lead form did NOT render on /e2e-lead-mailchimp/"
+            echo "::warning::$FORM_PLUGIN Lead form did NOT render on $LEAD_PATH"
           fi
 
       - name: Select Playwright browsers for this project

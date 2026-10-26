@@ -81,11 +81,14 @@ by Playwright tag:
 
 They all call `.github/workflows/e2e-reusable.yml`, which stands up a barebones
 WordPress (WordPress tarball + `php -S` + WP-CLI against a MySQL service — no
-Docker) with every integration's plugin installed, and runs each browser/theme
-project as its own job. Chrome (`chromium-*` projects) runs against both the
-declared and latest WordPress releases; every other browser runs latest only. The
-current declared stack pins Contact Form 7 to 6.1.7 (requires WordPress >= 6.7);
-CF7 6.2 requires WordPress >= 7.1 and is exercised on the latest stack instead.
+Docker) with WooCommerce plus only the caller's own lead-form plugin (its
+`form-plugin` input; the WooCommerce caller installs none), and runs each
+browser/theme project as its own job. Chrome (`chromium-*` projects) runs against
+both the declared and latest WordPress releases; every other browser runs latest
+only. The declared stack pins each form plugin to a release verified on it
+(Contact Form 7 6.1.7, WPForms Lite 2.0.3, Ninja Forms 3.15.6, Formidable 7.0,
+Mailchimp for WP 4.14.1); the latest stack installs their newest releases. CF7 6.2
+requires WordPress >= 7.1 and is exercised on the latest stack only.
 The E2E PHP runtime is 8.3 to support the latest CF7 fixture; this does not change
 the plugin's PHP minimum or its separate PHP 7.4 unit-test coverage. It reads
 `FB_PIXEL_ID` and `FB_ACCESS_TOKEN` from the
