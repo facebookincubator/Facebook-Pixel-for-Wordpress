@@ -85,7 +85,10 @@ Docker) with WooCommerce plus only the caller's own lead-form plugin (its
 `form-plugin` input; the WooCommerce caller installs none), and runs each
 browser/theme project as its own job. Chrome (`chromium-*` projects) runs against
 both the declared and latest WordPress releases; every other browser runs latest
-only. The declared stack pins each form plugin to a release verified on it
+only. WooCommerce runs every project (16 shards); each lead-form caller passes
+`project-set: lead` and runs only `chromium-wp-customer`, `chromium-wp-guest`,
+`firefox-wp-customer` and `safari-ios-wp-customer` (6 shards), since it covers a
+single test. The declared stack pins each form plugin to a release verified on it
 (Contact Form 7 6.1.7, WPForms Lite 2.0.3, Ninja Forms 3.15.6, Formidable 7.0,
 Mailchimp for WP 4.14.1); the latest stack installs their newest releases. CF7 6.2
 requires WordPress >= 7.1 and is exercised on the latest stack only.

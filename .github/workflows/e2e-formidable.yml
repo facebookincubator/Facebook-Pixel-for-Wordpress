@@ -21,4 +21,5 @@ jobs:
     with:
       grep: '@lead-formidable'
       form-plugin: formidable
+      project-set: lead
     secrets: inherit

@@ -21,4 +21,5 @@ jobs:
     with:
       grep: '@lead-ninja-forms'
       form-plugin: ninja-forms
+      project-set: lead
     secrets: inherit

@@ -21,4 +21,5 @@ jobs:
     with:
       grep: '@lead-contact-form-7'
       form-plugin: contact-form-7
+      project-set: lead
     secrets: inherit

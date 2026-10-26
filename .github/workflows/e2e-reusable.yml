@@ -29,6 +29,13 @@ on:
           mailchimp-for-wp). Empty installs no form plugin.
         type: string
         default: ''
+      project-set:
+        description: >-
+          Which Playwright projects to shard over: `full` (every browser/theme
+          project) or `lead` (customer + guest Chrome, Firefox and iOS Safari,
+          enough for a single Lead-form test).
+        type: string
+        default: full
 
 permissions:
   contents: read
@@ -123,22 +130,30 @@ jobs:
     # separate runners. Keeps wall-clock low and isolates each shard's artifacts; a
     # flaky browser can't stall the others. fail-fast:false so every shard reports.
     # Chrome (chromium-*) runs both the declared and latest WordPress; every other
-    # browser runs latest only.
+    # browser runs latest only. Lead-form callers pass project-set: lead, which
+    # keeps one engine per family (6 shards) instead of all 16, since each of
+    # them runs a single test; excludes naming a project not in the set are no-ops.
     strategy:
       fail-fast: false
       matrix:
-        project:
-          - chromium-wp-customer
-          - chromium-wp-guest
-          - chromium-wp-customer-classic-theme
-          - chromium-wp-customer-block-theme
-          - chromium-privacy-sandbox-wp-customer
-          - firefox-wp-customer
-          - edge-wp-customer
-          - brave-wp-customer
-          - opera-wp-customer
-          - android-pixel-wp-customer
-          - safari-ios-wp-customer
+        project: ${{ fromJSON(inputs.project-set == 'lead' && '[
+          "chromium-wp-customer",
+          "chromium-wp-guest",
+          "firefox-wp-customer",
+          "safari-ios-wp-customer"
+          ]' || '[
+          "chromium-wp-customer",
+          "chromium-wp-guest",
+          "chromium-wp-customer-classic-theme",
+          "chromium-wp-customer-block-theme",
+          "chromium-privacy-sandbox-wp-customer",
+          "firefox-wp-customer",
+          "edge-wp-customer",
+          "brave-wp-customer",
+          "opera-wp-customer",
+          "android-pixel-wp-customer",
+          "safari-ios-wp-customer"
+          ]') }}
         # Test both the plugin's declared WP ("Tested up to") and the latest
         # release. WooCommerce latest requires WP >= 6.9, so it runs on both.
         version-set:

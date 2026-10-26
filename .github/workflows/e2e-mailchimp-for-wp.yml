@@ -22,4 +22,5 @@ jobs:
     with:
       grep: '@lead-mailchimp-for-wp'
       form-plugin: mailchimp-for-wp
+      project-set: lead
     secrets: inherit

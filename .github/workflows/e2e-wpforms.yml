@@ -21,4 +21,5 @@ jobs:
     with:
       grep: '@lead-wpforms'
       form-plugin: wpforms-lite
+      project-set: lead
     secrets: inherit
