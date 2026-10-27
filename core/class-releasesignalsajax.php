@@ -223,11 +223,14 @@ class ReleaseSignalsAjax {
     }
 
     /**
-     * Lists the IDs the browser may drop from its queue: the given events, but
-     * only when the transport confirmed delivery. A failed request, an open
-     * circuit breaker, or a transport that reports nothing acknowledges none,
-     * because the browser cannot recover an event it has forgotten while a
-     * resend is deduplicated by event_id.
+     * Lists the IDs the browser may drop from its queue: those of the given
+     * events that the transport reports as sent. The before_conversions_api_
+     * event_sent filter can remove some or all events on the way out, so the
+     * input batch is not the delivered batch. A failed request, an open circuit
+     * breaker, a transport that reports no list, or an API that accepted fewer
+     * events than were sent acknowledges none, because the browser cannot
+     * recover an event it has forgotten while a resend is deduplicated by
+     * event_id.
      *
      * @param Event[]    $events Events handed to the transport.
      * @param array|null $result The transport's result, as returned by Capi::send().
@@ -235,10 +238,23 @@ class ReleaseSignalsAjax {
      * @return string[]
      */
     public static function acknowledged_event_ids( array $events, $result ) {
-        if ( ! is_array( $result ) || empty( $result['success'] ) ) {
+        if ( ! is_array( $result ) || empty( $result['success'] )
+            || ! isset( $result['sent_event_ids'] ) || ! is_array( $result['sent_event_ids'] ) ) {
             return array();
         }
-        return self::get_event_ids( $events );
+
+        $sent = array_values( array_filter( $result['sent_event_ids'], 'is_string' ) );
+        if ( empty( $sent ) ) {
+            return array();
+        }
+
+        if ( isset( $result['events_received'] ) && is_numeric( $result['events_received'] )
+            && (int) $result['events_received'] < count( $sent ) ) {
+            // The API accepted fewer events than went out; which ones is unknown.
+            return array();
+        }
+
+        return array_values( array_intersect( self::get_event_ids( $events ), $sent ) );
     }
 
     /**

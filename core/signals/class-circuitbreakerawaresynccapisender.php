@@ -62,7 +62,9 @@ class CircuitBreakerAwareSyncCapiSender extends CapiSenderBase {
     /**
      * Sends events to the Conversions API inline. Gated by the circuit breaker,
      * records the outcome with it, and returns a result array in the shape
-     * FacebookCapiEvent consumes ('success', 'events_received' or 'error').
+     * FacebookCapiEvent consumes ('success', 'events_received' or 'error'),
+     * plus 'sent_event_ids' on success: the ids that went out after the
+     * before_conversions_api_event_sent filter ran.
      *
      * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[] $events The events to send.
      * @return array The send result: 'success' bool, plus 'events_received' on
@@ -88,12 +90,16 @@ class CircuitBreakerAwareSyncCapiSender extends CapiSenderBase {
                 return array(
                     'success'         => true,
                     'events_received' => 0,
+                    'sent_event_ids'  => array(),
                 );
             }
             FacebookCapiCircuitBreaker::record_success();
             return array(
                 'success'         => true,
                 'events_received' => $response->getEventsReceived(),
+                // The ids that went out after the filter ran; callers that
+                // acknowledge delivery must use this list, not their input.
+                'sent_event_ids'  => $this->last_sent_event_ids(),
             );
         } catch ( \Exception $e ) {
             FacebookCapiCircuitBreaker::record_exception( $e );

@@ -189,10 +189,52 @@ final class ReleaseSignalsAjaxTest extends FacebookWordpressTestBase {
       ( new Event() )->setEventId( 'id-two' ),
     );
 
+    // Everything went out and was accepted.
     $this->assertSame(
       array( 'id-one', 'id-two' ),
+      ReleaseSignalsAjax::acknowledged_event_ids(
+        $events,
+        array( 'success' => true, 'events_received' => 2, 'sent_event_ids' => array( 'id-one', 'id-two' ) )
+      )
+    );
+    // The filter removed one event on the way out: only the other is acknowledged.
+    $this->assertSame(
+      array( 'id-two' ),
+      ReleaseSignalsAjax::acknowledged_event_ids(
+        $events,
+        array( 'success' => true, 'events_received' => 1, 'sent_event_ids' => array( 'id-two' ) )
+      )
+    );
+    // The filter removed everything: success with nothing sent acknowledges nothing.
+    $this->assertSame(
+      array(),
+      ReleaseSignalsAjax::acknowledged_event_ids(
+        $events,
+        array( 'success' => true, 'events_received' => 0, 'sent_event_ids' => array() )
+      )
+    );
+    // A transport that reports success but no list cannot establish delivery.
+    $this->assertSame(
+      array(),
       ReleaseSignalsAjax::acknowledged_event_ids( $events, array( 'success' => true, 'events_received' => 2 ) )
     );
+    // The API accepted fewer events than went out; which ones is unknown.
+    $this->assertSame(
+      array(),
+      ReleaseSignalsAjax::acknowledged_event_ids(
+        $events,
+        array( 'success' => true, 'events_received' => 1, 'sent_event_ids' => array( 'id-one', 'id-two' ) )
+      )
+    );
+    // Ids the transport reports but that were not in this batch are ignored.
+    $this->assertSame(
+      array( 'id-one' ),
+      ReleaseSignalsAjax::acknowledged_event_ids(
+        $events,
+        array( 'success' => true, 'events_received' => 2, 'sent_event_ids' => array( 'id-one', 'other' ) )
+      )
+    );
+    // Failure, no result, empty result.
     $this->assertSame(
       array(),
       ReleaseSignalsAjax::acknowledged_event_ids(

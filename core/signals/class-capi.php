@@ -70,9 +70,10 @@ class Capi {
      * @param string                                                     $mode   CAPI_SYNC or CAPI_ASYNC.
      * @throws \Exception When $mode is not a supported value.
      * @return array|null The sender's result: for CAPI_SYNC an array with a
-     *                    'success' flag and either 'events_received' or an
-     *                    'error' payload; for CAPI_ASYNC nothing, because the
-     *                    outcome is only known in the background task.
+     *                    'success' flag and either 'events_received' plus
+     *                    'sent_event_ids' or an 'error' payload; for CAPI_ASYNC
+     *                    nothing, because the outcome is only known in the
+     *                    background task.
      */
     public function send( $events, $mode ) {
 
