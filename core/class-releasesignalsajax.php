@@ -177,9 +177,11 @@ class ReleaseSignalsAjax {
         $this->restore_superglobal_value( '_COOKIE', '_fbp', $restore_cookie_fbp );
         $this->restore_superglobal_value( '_COOKIE', '_fbc', $restore_cookie_fbc );
 
+        $sent_event_ids = array();
         if ( ! empty( $events_to_send ) ) {
             $this->record_rate_limit_usage( count( $events_to_send ) );
-            $this->capi->send( $events_to_send, Capi::CAPI_SYNC );
+            $result         = $this->capi->send( $events_to_send, Capi::CAPI_SYNC );
+            $sent_event_ids = self::acknowledged_event_ids( $events_to_send, $result );
         }
 
         // Return fresh user_info so JS can initialise fbq with correct AAM data
@@ -198,11 +200,12 @@ class ReleaseSignalsAjax {
             array(
                 'fbp'            => ServerEventFactory::get_fbp_value(),
                 'fbc'            => ServerEventFactory::get_fbc_value(),
-                'sent_count'     => count( $events_to_send ),
+                'sent_count'     => count( $sent_event_ids ),
                 // The browser drops exactly these from its queue. Events over the
-                // MAX_EVENTS cap or rejected by validate_event() are not listed, so
-                // a later release can still deliver them.
-                'sent_event_ids' => self::get_event_ids( $events_to_send ),
+                // MAX_EVENTS cap, rejected by validate_event(), or whose delivery
+                // the transport did not confirm are not listed, so a later
+                // release can still deliver them.
+                'sent_event_ids' => $sent_event_ids,
                 'user_info'      => $user_info,
             )
         );
@@ -217,6 +220,25 @@ class ReleaseSignalsAjax {
      */
     public static function is_releasable_state( $signal_state ) {
         return '' !== $signal_state && Signals::STATE_HELD !== $signal_state;
+    }
+
+    /**
+     * Lists the IDs the browser may drop from its queue: the given events, but
+     * only when the transport confirmed delivery. A failed request, an open
+     * circuit breaker, or a transport that reports nothing acknowledges none,
+     * because the browser cannot recover an event it has forgotten while a
+     * resend is deduplicated by event_id.
+     *
+     * @param Event[]    $events Events handed to the transport.
+     * @param array|null $result The transport's result, as returned by Capi::send().
+     *
+     * @return string[]
+     */
+    public static function acknowledged_event_ids( array $events, $result ) {
+        if ( ! is_array( $result ) || empty( $result['success'] ) ) {
+            return array();
+        }
+        return self::get_event_ids( $events );
     }
 
     /**

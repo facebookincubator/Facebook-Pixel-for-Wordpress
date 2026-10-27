@@ -179,6 +179,32 @@ final class ReleaseSignalsAjaxTest extends FacebookWordpressTestBase {
   }
 
   /**
+   * Test that ids are acknowledged only when the transport confirmed delivery.
+   *
+   * @return void
+   */
+  public function testAcknowledgedEventIdsRequireConfirmedDelivery() {
+    $events = array(
+      ( new Event() )->setEventId( 'id-one' ),
+      ( new Event() )->setEventId( 'id-two' ),
+    );
+
+    $this->assertSame(
+      array( 'id-one', 'id-two' ),
+      ReleaseSignalsAjax::acknowledged_event_ids( $events, array( 'success' => true, 'events_received' => 2 ) )
+    );
+    $this->assertSame(
+      array(),
+      ReleaseSignalsAjax::acknowledged_event_ids(
+        $events,
+        array( 'success' => false, 'error' => array( 'message' => 'Connection invalid (circuit open)', 'code' => 0 ) )
+      )
+    );
+    $this->assertSame( array(), ReleaseSignalsAjax::acknowledged_event_ids( $events, null ) );
+    $this->assertSame( array(), ReleaseSignalsAjax::acknowledged_event_ids( $events, array() ) );
+  }
+
+  /**
    * Test that sent_event_ids lists the ids handed to the transport.
    *
    * @return void
