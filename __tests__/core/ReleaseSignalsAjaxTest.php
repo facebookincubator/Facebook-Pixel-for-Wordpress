@@ -19,6 +19,7 @@ namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\ReleaseSignalsAjax;
 use FacebookPixelPlugin\Core\Capi;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
@@ -160,6 +161,36 @@ final class ReleaseSignalsAjaxTest extends FacebookWordpressTestBase {
     $this->assertEquals(
       'usd',
       $event->getCustomData()->normalize()['currency']
+    );
+  }
+
+  /**
+   * Test the state rule applied before queued events are sent.
+   *
+   * The browser writes `active` before it posts the queue; a `held` cookie
+   * means the visitor withdrew after asking for the release.
+   *
+   * @return void
+   */
+  public function testIsReleasableStateRejectsHeldAndMissingState() {
+    $this->assertTrue( ReleaseSignalsAjax::is_releasable_state( 'active' ) );
+    $this->assertFalse( ReleaseSignalsAjax::is_releasable_state( 'held' ) );
+    $this->assertFalse( ReleaseSignalsAjax::is_releasable_state( '' ) );
+  }
+
+  /**
+   * Test that sent_event_ids lists the ids handed to the transport.
+   *
+   * @return void
+   */
+  public function testGetEventIdsListsIdsAndSkipsBlanks() {
+    $one   = ( new Event() )->setEventId( 'id-one' );
+    $two   = ( new Event() )->setEventId( 'id-two' );
+    $blank = new Event();
+
+    $this->assertSame(
+      array( 'id-one', 'id-two' ),
+      ReleaseSignalsAjax::get_event_ids( array( $one, $two, $blank, 'not-an-event' ) )
     );
   }
 }

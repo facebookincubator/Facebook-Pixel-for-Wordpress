@@ -123,6 +123,13 @@ class ReleaseSignalsAjax {
             wp_send_json_error( array( 'message' => 'Missing signal state.' ), 403 );
         }
 
+        // The browser writes `active` before it posts the queue. A `held` cookie
+        // here means the visitor withdrew after asking for the release, so the
+        // queued events must not be sent.
+        if ( ! self::is_releasable_state( $signal_state ) ) {
+            wp_send_json_error( array( 'message' => 'Signals are held.' ), 403 );
+        }
+
         if ( $this->is_rate_limited() ) {
             wp_send_json_error( array( 'message' => 'Rate limit exceeded.' ), 429 );
         }
@@ -189,12 +196,48 @@ class ReleaseSignalsAjax {
 
         wp_send_json_success(
             array(
-                'fbp'        => ServerEventFactory::get_fbp_value(),
-                'fbc'        => ServerEventFactory::get_fbc_value(),
-                'sent_count' => count( $events_to_send ),
-                'user_info'  => $user_info,
+                'fbp'            => ServerEventFactory::get_fbp_value(),
+                'fbc'            => ServerEventFactory::get_fbc_value(),
+                'sent_count'     => count( $events_to_send ),
+                // The browser drops exactly these from its queue. Events over the
+                // MAX_EVENTS cap or rejected by validate_event() are not listed, so
+                // a later release can still deliver them.
+                'sent_event_ids' => self::get_event_ids( $events_to_send ),
+                'user_info'      => $user_info,
             )
         );
+    }
+
+    /**
+     * Whether a signal-state cookie value allows queued events to be released.
+     *
+     * @param string $signal_state Cookie value.
+     *
+     * @return bool
+     */
+    public static function is_releasable_state( $signal_state ) {
+        return '' !== $signal_state && Signals::STATE_HELD !== $signal_state;
+    }
+
+    /**
+     * Lists the event IDs of the given events, skipping any without one.
+     *
+     * @param Event[] $events Events that were handed to the transport.
+     *
+     * @return string[]
+     */
+    public static function get_event_ids( array $events ) {
+        $ids = array();
+        foreach ( $events as $event ) {
+            if ( ! $event instanceof Event ) {
+                continue;
+            }
+            $id = $event->getEventId();
+            if ( is_string( $id ) && '' !== $id ) {
+                $ids[] = $id;
+            }
+        }
+        return $ids;
     }
 
     /**
