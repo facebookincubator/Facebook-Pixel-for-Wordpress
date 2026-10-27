@@ -295,21 +295,73 @@ jobs:
             exit 1
           fi
 
+      - name: Select Playwright browsers for this project
+        id: pw-browsers
+        run: |
+          # global-setup.js launches chromium to seed the customer cookie, so every
+          # shard needs chromium in addition to its own engine.
+          case "${{ matrix.project }}" in
+            firefox-*)         BROWSERS="chromium firefox" ;;
+            safari-ios-*)      BROWSERS="chromium webkit" ;;
+            *privacy-sandbox*) BROWSERS="chromium chrome" ;;
+            edge-*)            BROWSERS="chromium msedge" ;;
+            *)                 BROWSERS="chromium" ;;
+          esac
+          {
+            echo "list=$BROWSERS"
+            echo "slug=${BROWSERS// /-}"
+            echo "image=$ImageOS"
+          } >> "$GITHUB_OUTPUT"
+
+      # `--with-deps` apt-installs the browsers' system packages (~170 for webkit,
+      # ~110 MB). The runner's Azure apt mirror is sometimes slow enough that this
+      # alone blows the 15m timeout, so keep the downloaded .debs in a runner-owned
+      # directory and cache them per runner image + browser set + Playwright version.
+      # apt still runs `update` and installs normally; it just skips downloading
+      # any .deb already in the cache, and fetches newer versions as needed.
+      - name: Point apt's package cache at a cacheable directory
+        run: |
+          APT_ARCHIVES="$RUNNER_TEMP/apt-archives"
+          mkdir -p "$APT_ARCHIVES/partial"
+          printf '%s\n' \
+            "Dir::Cache::Archives \"$APT_ARCHIVES/\";" \
+            'APT::Keep-Downloaded-Packages "true";' \
+            'Binary::apt::APT::Keep-Downloaded-Packages "true";' \
+            | sudo tee /etc/apt/apt.conf.d/99-e2e-archive-cache >/dev/null
+
+      - name: Restore apt package cache
+        id: apt-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/apt-archives
+          key: apt-debs-${{ steps.pw-browsers.outputs.image }}-${{ steps.pw-browsers.outputs.slug }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            apt-debs-${{ steps.pw-browsers.outputs.image }}-${{ steps.pw-browsers.outputs.slug }}-
+
       - name: Install Playwright browser for this project
         working-directory: ${{ env.PLUGIN_PATH }}
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
           npm ci
-          # global-setup.js launches chromium to seed the customer cookie, so every
-          # shard needs chromium in addition to its own engine.
-          case "${{ matrix.project }}" in
-            firefox-*)         timeout 15m npx playwright install --with-deps chromium firefox ;;
-            safari-ios-*)      timeout 15m npx playwright install --with-deps chromium webkit ;;
-            *privacy-sandbox*) timeout 15m npx playwright install --with-deps chromium chrome ;;
-            edge-*)            timeout 15m npx playwright install --with-deps chromium msedge ;;
-            *)                 timeout 15m npx playwright install --with-deps chromium ;;
-          esac
+          timeout 15m npx playwright install --with-deps ${{ steps.pw-browsers.outputs.list }}
+
+      # Saved right after the install (not in a post step) so the cache is kept even
+      # when the tests later fail. apt leaves root-owned lock/partial entries that
+      # the runner user can't archive, so drop them and take ownership first.
+      - name: Prepare apt package cache for upload
+        if: steps.apt-cache.outputs.cache-hit != 'true'
+        run: |
+          APT_ARCHIVES="$RUNNER_TEMP/apt-archives"
+          sudo rm -rf "$APT_ARCHIVES/partial" "$APT_ARCHIVES/lock"
+          sudo chown -R "$(id -u):$(id -g)" "$APT_ARCHIVES"
+
+      - name: Save apt package cache
+        if: steps.apt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/apt-archives
+          key: ${{ steps.apt-cache.outputs.cache-primary-key }}
 
       # Only the real Chrome-family channels need a display (headed under Xvfb).
       # Edge (msedge) and Chrome are provided by Playwright above; Brave/Opera are
