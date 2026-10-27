@@ -527,6 +527,10 @@ window.fbwcsignal = window.fbwcsignal || {};
       ) {
         return response;
       }
+      // No hold was requested since this release, so a `held` cookie can only
+      // be an older hold response whose headers landed after ours. Put
+      // `active` back so the runtime's own guard sees the real state.
+      setCookie('active');
       return window.FacebookSignal.release().then(function () {
         return response;
       });

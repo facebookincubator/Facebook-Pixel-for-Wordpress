@@ -46,6 +46,13 @@ class FakeXHR {
     this.body = body || '';
   }
   /**
+   * Applies a response cookie without completing the request, the way the
+   * browser does when a response's headers arrive before its body.
+   */
+  applyCookie(cookie) {
+    document.cookie = cookie;
+  }
+  /**
    * Answers the request. `setCookie` mimics a Set-Cookie header: the browser
    * applies it before the load event reaches page code.
    */
@@ -467,6 +474,49 @@ describe('Signal hold/release browser runtime', () => {
       expect(signals._held).toBe(true);
       expect(releaseRequests()).toHaveLength(0);
       expect(signals._queue).toHaveLength(1);
+    });
+
+    it('still releases when an older hold response applies its cookie before the release body completes', async () => {
+      const signals = bootPage('active');
+      signals.hold();
+      signals.trackEvent('AddToCart', { content_ids: ['2'] });
+
+      const holding = window.fbwcsignal.hold();
+      const releasing = window.fbwcsignal.release();
+      expect(stateRequests()).toHaveLength(2);
+      expect(readStateCookie()).toBe('active');
+
+      // Headers of the newer release response, then headers of the older hold
+      // response, then the release body completes.
+      stateRequests()[1].applyCookie(`${STATE_COOKIE}=active;path=/`);
+      stateRequests()[0].applyCookie(`${STATE_COOKIE}=held;path=/`);
+      expect(readStateCookie()).toBe('held');
+      stateRequests()[1].respond(200, {
+        success: true,
+        data: { state: 'active' },
+      });
+      await flushPromises();
+
+      // The runtime must have posted the queue, not refused on the stale cookie.
+      expect(releaseRequests()).toHaveLength(1);
+      const queuedId = postedEvents(releaseRequests()[0])[0].event_id;
+      releaseRequests()[0].respond(200, {
+        success: true,
+        data: { sent_count: 1, sent_event_ids: [queuedId] },
+      });
+      await releasing;
+
+      // The older hold body completes last; its cookie must not win either.
+      stateRequests()[0].respond(200, {
+        success: true,
+        data: { state: 'held' },
+      });
+      await holding;
+
+      expect(signals._held).toBe(false);
+      expect(signals._queue).toHaveLength(0);
+      expect(readStateCookie()).toBe('active');
+      expect(window.fbwcsignal.getState()).toBe('active');
     });
 
     it('does not re-hold the page when the hold state response arrives after a new release', async () => {
