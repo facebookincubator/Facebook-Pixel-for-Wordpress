@@ -78,7 +78,7 @@ The result is region-aware. For an opt-in configuration, Marketing normally rema
 | :--------------------------------------------------- | :---------------------- | :----------------------------------------------------------------------------------------------- |
 | Marketing is not allowed                             | `held`                  | Signals stay held.                                                                               |
 | Marketing is allowed                                 | `active`                | Signals are released and begin sending normally.                                                 |
-| The visitor changes Marketing from allowed to denied | Transitioning to `held` | The integration requests a hold and reload; an in-flight release can still race with withdrawal. |
+| The visitor changes Marketing from allowed to denied | Transitioning to `held` | Consent is revoked now, any release still in flight is discarded, then a hold and a page reload. |
 | The visitor changes Marketing from denied to allowed | `active`                | Signals are released again and eligible current-page events can be sent.                         |
 
 The integration uses two first-party cookies for different purposes:
@@ -99,7 +99,7 @@ The integration has two parts:
 1. Backend code asks Complianz whether Marketing is allowed and establishes the signal state before public-page events are processed.
 2. Browser code responds when Complianz changes the Marketing choice.
 
-Both parts are required. The backend controls the plugin's held rendering and server-side hold on visitor requests, including `admin-ajax.php`. Admin screens and cron jobs are exempt. The browser code requests release after permission and a hold/reload after withdrawal, subject to the in-flight release race above.
+Both parts are required. The backend controls the plugin's held rendering and server-side hold on visitor requests, including `admin-ajax.php`. Admin screens and cron jobs are exempt. The browser code requests release after permission and a hold/reload after withdrawal.
 
 ## Add the integration as a must-use plugin
 
@@ -310,7 +310,7 @@ add_action(
 
         reloading = true;
         // Revoke now, rather than waiting for the state AJAX response.
-        // This does NOT cancel an already-running release in the plugin.
+        // A release still in flight is discarded when its response arrives.
         signal.hold();
         api.hold().then(
             reloadPage,
@@ -476,9 +476,7 @@ The helper writes `active` first, posts `fbpix_set_pixel_signals`, then posts qu
 
 When an active runtime is denied permission, the bridge calls `window.FacebookSignal.hold()` synchronously to revoke browser consent, then `window.fbwcsignal.hold()` to persist the state. It reloads after that request succeeds or rejects so PHP can recalculate consent. Complianz may also reload after withdrawal. Complianz can reload before the hold request finishes. The reloaded page still starts held because PHP recalculates the state from Complianz.
 
-This reduces the delay in the normal hold path but **does not cancel an in-flight release**. That response can still grant browser consent and replay queued events. A stalled hold request can also delay the reload. Do not treat this example as an atomic withdrawal mechanism.
-
-If the release response arrives after withdrawal but before the hold request finishes, it replays the queued events, sets `_held` back to `false` and can reset the state cookie to `active` until the page reloads. If the Complianz reload comes first, the browser replay is cancelled, but the server has already sent the released events.
+`window.fbwcsignal.hold()` also revokes browser consent before its state request completes, so nothing fires while that request is in flight. If a release was still in progress when the hold happened, its response is discarded when it arrives: consent stays revoked, nothing is replayed, the state cookie stays `held`, and events the server had already accepted are dropped from the browser queue so they are not posted twice. A release request sent after the hold carries the `held` cookie and is rejected with `403`. Events the server accepted before the hold were sent and cannot be retracted. A stalled hold request can still delay the reload.
 
 ## What happens during each visitor flow
 
@@ -525,7 +523,7 @@ When a visitor changes Marketing from allowed to denied:
 3. The integration reloads the page after the hold request finishes.
 4. The reloaded page asks Complianz for the current Marketing result and begins with signals held.
 
-The reload starts a fresh, uncached page under the new choice. It cannot retract earlier events or guarantee that an in-flight release did not replay events before navigation.
+The reload starts a fresh, uncached page under the new choice. It cannot retract events that were sent before withdrawal.
 
 ### The visitor grants permission again
 
@@ -562,7 +560,7 @@ Also confirm that `window.FacebookSignal` exists and `typeof window.fbq` is `fun
 Test real banner choices (grant, deny, withdraw and re-grant), not just manually dispatched events. Also test:
 
 - Block one `fbpix_set_pixel_signals` or `fbpix_release_signals` request. The cookie may read `active` while `_held` remains `true`. After fixing the error, reopen the banner and click **Accept** again, or **Save preferences** with Marketing still enabled. Confirm that a new `fbpix_set_pixel_signals` / `fbpix_release_signals` sequence drains the existing queue without a reload. Also retry while the request is pending and after it succeeds; neither should send another release. Denying Marketing after a failed release must hold/reload instead of retrying. Expired nonces require a fresh uncached page, and refreshing loses the old queue.
-- Delay release and withdraw before its response. The runtime should be held immediately by the bridge, but the old response can still undo it. This is an unresolved plugin bug.
+- Delay release and withdraw before its response. The runtime must stay held when the old response arrives: no replay, no consent grant, and `wc_facebook_signals_state` still reads `held`. Any events that response lists as sent are dropped from the queue so they are not posted twice.
 - Submit each supported form/cart AJAX action while denied and check its **server** send path separately to confirm that no Conversions API event is sent.
 - Load with mismatched cookies: Complianz allowing plus Meta `held`, and Complianz denying plus Meta `active`. On uncached requests, PHP and the browser should follow the current Complianz result. Also test missing/inactive Complianz with an old `allow` cookie; after `init` the helper must deny.
 
