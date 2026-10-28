@@ -60,10 +60,11 @@ class FacebookWordpressMailchimpForWp extends TrackableLeadFormIntegrationBase {
      * Reads the form id from the plugin submit-hook arguments.
      *
      * @param mixed ...$args The Mailchimp for WP submit-hook arguments.
-     * @return mixed The form identifier.
+     * @return mixed The id of the submitted MC4WP_Form, or null.
      */
     protected function get_form_id( ...$args ) {
-        return $args[0];
+        $form = $args[0];
+        return is_object( $form ) && isset( $form->ID ) ? $form->ID : null;
     }
 
     /**
@@ -147,5 +148,87 @@ class FacebookWordpressMailchimpForWp extends TrackableLeadFormIntegrationBase {
         }
 
         return $result;
+    }
+
+    /**
+     * Whether Mailchimp for WP is loaded.
+     *
+     * @return bool
+     */
+    public function is_field_mapping_available() {
+        return function_exists( 'mc4wp_get_forms' ) && function_exists( 'mc4wp_get_form' );
+    }
+
+    /**
+     * Human-readable integration name for the field mapping screen.
+     *
+     * @return string
+     */
+    public function get_integration_label() {
+        return 'Mailchimp for WP';
+    }
+
+    /**
+     * Returns all Mailchimp for WP forms.
+     *
+     * @return iterable
+     */
+    protected function fetch_forms() {
+        $forms = mc4wp_get_forms();
+        return is_array( $forms ) ? $forms : array();
+    }
+
+    /**
+     * Maps a Mailchimp for WP form to id + title.
+     *
+     * @param mixed $raw_form An MC4WP_Form.
+     * @return array
+     */
+    protected function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->ID,
+            'title' => $raw_form->name,
+        );
+    }
+
+    /**
+     * Returns the input names in a Mailchimp for WP form's markup. Fields are
+     * hand-written HTML, so the markup is the only definition of them.
+     *
+     * @param string $form_id The form id.
+     * @return iterable
+     */
+    protected function fetch_form_fields( $form_id ) {
+        try {
+            $form = mc4wp_get_form( $form_id );
+        } catch ( \Exception $e ) {
+            return array();
+        }
+        if ( empty( $form->content ) || ! is_string( $form->content ) ) {
+            return array();
+        }
+        preg_match_all( '/\bname\s*=\s*["\']([^"\']+)["\']/i', $form->content, $matches );
+        return $matches[1];
+    }
+
+    /**
+     * Maps an input name to a field. The id is the upper-cased name, matching
+     * the keys of the submitted form data get_form_param_iterator() yields.
+     * Internal inputs (leading underscore) and grouped inputs such as
+     * ADDRESS[city], whose value is not a single string, are skipped.
+     *
+     * @param mixed $raw_field An input name.
+     * @return array|null
+     */
+    protected function map_field( $raw_field ) {
+        $name = trim( (string) $raw_field );
+        if ( '' === $name || '_' === $name[0] || false !== strpos( $name, '[' ) ) {
+            return null;
+        }
+        return array(
+            'id'    => strtoupper( $name ),
+            'label' => strtoupper( $name ),
+            'type'  => '',
+        );
     }
 }
