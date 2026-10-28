@@ -262,19 +262,35 @@ window.FacebookSignal = window.FacebookSignal || {
     if (shared) {
       eventData.event_id = this.generateEventId();
     }
-    // A cached copy carries the generating request's event_time. The release
-    // endpoint rejects events older than 30 minutes, and the visitor's own
-    // view time is the right one anyway, so it comes from the browser clock.
+    // A cached copy carries the generating request's event_time, which the
+    // release endpoint would refuse as too old, so a stale copy's events take
+    // the browser clock instead. The release also reports how long ago each
+    // event was queued, measured on the browser clock alone, and the server
+    // places the event on its own clock from that, so a browser clock that
+    // runs ahead of or behind the server never gets an event refused.
     eventData.event_time =
       (!stale && eventData.event_time) || Math.floor(Date.now() / 1000);
     eventData.event_source_url =
       eventData.event_source_url || window.location.href;
+    eventData.queued_at = Date.now();
     this._queue.push(eventData);
 
     var idToMark = originalId || eventData.event_id;
     if (idToMark) {
       this._rememberEventId(idToMark, !shared && !!originalId);
     }
+  },
+
+  // Copies a queued event for the release request, with the number of
+  // seconds since it was queued in place of the browser's own notion of when
+  // that was. Only differences of the browser clock are used, so the server
+  // can place the event on its own clock whatever the browser's clock says.
+  _withEventAge: function (eventData) {
+    var copy = this._cloneEventData(eventData);
+    var queuedAt = eventData.queued_at || Date.now();
+    copy.event_age = Math.max(0, Math.floor((Date.now() - queuedAt) / 1000));
+    delete copy.queued_at;
+    return copy;
   },
 
   _cloneEventData: function (eventData) {
@@ -407,7 +423,7 @@ window.FacebookSignal = window.FacebookSignal || {
       var attribution = self._config.attribution || {};
       xhr.send(
         JSON.stringify({
-          events: self._queue,
+          events: self._queue.map(self._withEventAge, self),
           fbclid: self._fbclid,
           fbp: self._readCookie('_fbp') || attribution.fbp || null,
           fbc: self._readCookie('_fbc') || attribution.fbc || null,

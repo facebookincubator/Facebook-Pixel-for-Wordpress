@@ -494,6 +494,11 @@ describe('queueEvent while signals are held', () => {
       xhrRequests[0].body.events.map((event) => event.event_time),
       [NOW, NOW],
     );
+    assert.deepEqual(
+      xhrRequests[0].body.events.map((event) => event.event_age),
+      [0, 0],
+    );
+    assert.equal(xhrRequests[0].body.events[0].queued_at, undefined);
     assert.deepEqual(trackCalls(), [
       ['track', 'PageView', {}, { eventID: queuedIds[0] }],
       [
@@ -504,6 +509,45 @@ describe('queueEvent while signals are held', () => {
       ],
     ]);
     assert.equal(signal._held, false);
+    assert.equal(signal._queue.length, 0);
+  });
+
+  test('reports how long ago each event was queued, on the browser clock alone', async () => {
+    // The browser clock runs two hours ahead of the server. Only the time that
+    // passes between queueing and release reaches the server, so the server
+    // can place the events on its own clock.
+    const SKEW = 7200;
+    Date.now = () => (NOW + SKEW) * 1000;
+    const signal = loadPage({ generatedAt: NOW - 3600, cookie: HELD });
+    signal.queueEvent({
+      event_name: 'PageView',
+      custom_data: {},
+      event_id: null,
+      event_time: NOW - 3600,
+      cacheable: true,
+    });
+    Date.now = () => (NOW + SKEW + 125) * 1000;
+    signal.queueEvent({
+      event_name: 'ViewContent',
+      custom_data: {},
+      event_id: 'baked-id',
+      event_time: NOW - 3600,
+      cacheable: true,
+    });
+    Date.now = () => (NOW + SKEW + 130) * 1000;
+
+    await signal.release();
+
+    const events = xhrRequests[0].body.events;
+    assert.deepEqual(
+      events.map((event) => event.event_age),
+      [130, 5],
+    );
+    assert.deepEqual(
+      events.map((event) => event.event_time),
+      [NOW + SKEW, NOW + SKEW + 125],
+    );
+    assert.equal(events[0].queued_at, undefined);
     assert.equal(signal._queue.length, 0);
   });
 });
