@@ -57,11 +57,23 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
      * @return void
      */
     private function set_up_tracking( $obj ) {
-        $method = new \ReflectionMethod( $obj, 'set_up_tracking' );
+        $this->invoke_private( $obj, 'set_up_tracking' );
+    }
+
+    /**
+     * Invokes a private event-data builder for focused validation tests.
+     *
+     * @param object $obj    Integration instance.
+     * @param string $method Method name.
+     * @param array  $args   Method arguments.
+     * @return mixed The method result.
+     */
+    private function invoke_private( $obj, $method, $args = array() ) {
+        $reflection = new \ReflectionMethod( $obj, $method );
         if ( PHP_VERSION_ID < 80100 ) {
-            $method->setAccessible( true );
+            $reflection->setAccessible( true );
         }
-        $method->invoke( $obj );
+        return $reflection->invokeArgs( $obj, $args );
     }
 
     /**
@@ -404,6 +416,91 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     }
 
     /**
+     * Tests that a missing order does not produce a Purchase event.
+     *
+     * @return void
+     */
+    public function testPurchaseEventSkipsMissingOrder() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_woocommerce_store( false );
+        \WP_Mock::userFunction( 'wc_get_order', array( 'return' => false ) );
+
+        $this->make_integration()->track_purchase_event( 404 );
+
+        $this->assertEmpty( $this->captured_events );
+    }
+
+    /**
+     * Tests that purchase items with a zero quantity are skipped safely.
+     *
+     * @return void
+     */
+    public function testPurchaseEventSkipsZeroQuantityItem() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_woocommerce_store( false );
+        $this->mock_wp_functions();
+
+        $order = new MockWCOrder(
+            'Pika',
+            'Chu',
+            'pika.chu@s2s.com',
+            '2062062006',
+            'Springfield',
+            '12345',
+            'Ohio',
+            'US'
+        );
+        $order->add_item( 1, 0, 100 );
+        \WP_Mock::userFunction( 'wc_get_order', array( 'return' => $order ) );
+
+        $event_data = $this->invoke_private(
+            $this->make_integration(),
+            'get_purchase_event_data',
+            array( 1 )
+        );
+
+        $this->assertEmpty( $event_data['contents'] );
+    }
+
+    /**
+     * Tests that decimal purchase quantities (e.g. 0.5 kg via the
+     * woocommerce_stock_amount filter) are kept and priced correctly.
+     *
+     * @return void
+     */
+    public function testPurchaseEventWithDecimalQuantity() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_woocommerce_store( false );
+        $this->mock_wp_functions();
+
+        $order = new MockWCOrder(
+            'Pika',
+            'Chu',
+            'pika.chu@s2s.com',
+            '2062062006',
+            'Springfield',
+            '12345',
+            'Ohio',
+            'US'
+        );
+        $order->add_item( 1, 0.5, 10 );
+        \WP_Mock::userFunction( 'wc_get_order', array( 'return' => $order ) );
+
+        $event_data = $this->invoke_private(
+            $this->make_integration(),
+            'get_purchase_event_data',
+            array( 1 )
+        );
+
+        $this->assertCount( 1, $event_data['contents'] );
+        $this->assertEquals( 0.5, $event_data['contents'][0]->getQuantity() );
+        $this->assertEquals( 20, $event_data['contents'][0]->getItemPrice() );
+    }
+
+    /**
      * Tests that track_add_to_cart_event() falls back to a direct product lookup
      * when the cart item key is not in WC()->cart (e.g. a private cart key from
      * another plugin such as a subscription cloning flow).
@@ -464,6 +561,110 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
     }
 
     /**
+     * Tests that AddToCart does not divide by a zero cart-item quantity.
+     *
+     * @return void
+     */
+    public function testAddToCartEventWithZeroCartItemQuantity() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_user_info();
+        $this->mock_wp_functions();
+
+        $cart = new class() {
+            public function get_cart() {
+                return array(
+                    'zero-quantity' => array(
+                        'data'       => new MockWCProduct( 1 ),
+                        'quantity'   => 0,
+                        'line_total' => 10,
+                    ),
+                );
+            }
+        };
+        \WP_Mock::userFunction( 'WC', array( 'return' => new MockWC( $cart ) ) );
+        \WP_Mock::userFunction( 'get_woocommerce_currency', array( 'return' => 'USD' ) );
+        \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+
+        $event_data = $this->invoke_private(
+            $this->make_integration(),
+            'get_add_to_cart_event_data',
+            array( 'zero-quantity', 1, 1, null )
+        );
+
+        $this->assertArrayNotHasKey( 'value', $event_data );
+    }
+
+    /**
+     * Tests that AddToCart tolerates a cart item without line_total.
+     *
+     * @return void
+     */
+    public function testAddToCartEventWithoutLineTotal() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_user_info();
+        $this->mock_wp_functions();
+
+        $cart = new class() {
+            public function get_cart() {
+                return array(
+                    'missing-total' => array(
+                        'data'     => new MockWCProduct( 1 ),
+                        'quantity' => 1,
+                    ),
+                );
+            }
+        };
+        \WP_Mock::userFunction( 'WC', array( 'return' => new MockWC( $cart ) ) );
+        \WP_Mock::userFunction( 'get_woocommerce_currency', array( 'return' => 'USD' ) );
+        \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+
+        $event_data = $this->invoke_private(
+            $this->make_integration(),
+            'get_add_to_cart_event_data',
+            array( 'missing-total', 1, 1, null )
+        );
+
+        $this->assertArrayNotHasKey( 'value', $event_data );
+    }
+
+    /**
+     * Tests that AddToCart computes value from a decimal cart-item quantity.
+     *
+     * @return void
+     */
+    public function testAddToCartEventWithDecimalCartItemQuantity() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_user_info();
+        $this->mock_wp_functions();
+
+        $cart = new class() {
+            public function get_cart() {
+                return array(
+                    'decimal-quantity' => array(
+                        'data'       => new MockWCProduct( 1 ),
+                        'quantity'   => 0.5,
+                        'line_total' => 10,
+                    ),
+                );
+            }
+        };
+        \WP_Mock::userFunction( 'WC', array( 'return' => new MockWC( $cart ) ) );
+        \WP_Mock::userFunction( 'get_woocommerce_currency', array( 'return' => 'USD' ) );
+        \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+
+        $event_data = $this->invoke_private(
+            $this->make_integration(),
+            'get_add_to_cart_event_data',
+            array( 'decimal-quantity', 1, 0.5, null )
+        );
+
+        $this->assertEquals( 10, $event_data['value'] );
+    }
+
+    /**
      * Tests that track_initiate_checkout_event() builds an InitiateCheckout event
      * with user PII, currency, item count, value and cart contents.
      *
@@ -506,6 +707,85 @@ final class FacebookWordpressWooCommerceTest extends FacebookWordpressTestBase {
             'woocommerce',
             $event->getCustomData()->getCustomProperty( 'fb_integration_tracking' )
         );
+    }
+
+    /**
+     * Tests that checkout contents skip an item without line_total.
+     *
+     * @return void
+     */
+    public function testInitiateCheckoutEventWithoutLineTotal() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_user_info();
+        $this->mock_wp_functions();
+
+        $cart = new class() {
+            public $total = 10;
+
+            public function get_cart() {
+                return array(
+                    array(
+                        'data'     => new MockWCProduct( 1 ),
+                        'quantity' => 1,
+                    ),
+                );
+            }
+
+            public function get_cart_contents_count() {
+                return 1;
+            }
+        };
+        \WP_Mock::userFunction( 'WC', array( 'return' => new MockWC( $cart ) ) );
+        \WP_Mock::userFunction( 'get_woocommerce_currency', array( 'return' => 'USD' ) );
+
+        $event_data = $this->invoke_private(
+            $this->make_integration(),
+            'get_initiate_checkout_event_data'
+        );
+
+        $this->assertEmpty( $event_data['contents'] );
+    }
+
+    /**
+     * Tests that checkout contents keep decimal cart-item quantities.
+     *
+     * @return void
+     */
+    public function testInitiateCheckoutEventWithDecimalQuantity() {
+        self::mockIsInternalUser( false );
+        self::mockFacebookWordpressOptions();
+        $this->mock_user_info();
+        $this->mock_wp_functions();
+
+        $cart = new class() {
+            public $total = 10;
+
+            public function get_cart() {
+                return array(
+                    array(
+                        'data'       => new MockWCProduct( 1 ),
+                        'quantity'   => 0.5,
+                        'line_total' => 10,
+                    ),
+                );
+            }
+
+            public function get_cart_contents_count() {
+                return 1;
+            }
+        };
+        \WP_Mock::userFunction( 'WC', array( 'return' => new MockWC( $cart ) ) );
+        \WP_Mock::userFunction( 'get_woocommerce_currency', array( 'return' => 'USD' ) );
+
+        $event_data = $this->invoke_private(
+            $this->make_integration(),
+            'get_initiate_checkout_event_data'
+        );
+
+        $this->assertCount( 1, $event_data['contents'] );
+        $this->assertEquals( 0.5, $event_data['contents'][0]->getQuantity() );
+        $this->assertEquals( 20, $event_data['contents'][0]->getItemPrice() );
     }
 
     /**
