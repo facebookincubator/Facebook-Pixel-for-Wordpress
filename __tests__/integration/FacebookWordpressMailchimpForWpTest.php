@@ -38,7 +38,7 @@ final class FacebookWordpressMailchimpForWpTest extends FacebookWordpressTestBas
      * @return FacebookWordpressMailchimpForWp
      */
     private function make_integration() {
-        return new FacebookWordpressMailchimpForWp( $this->make_signals() );
+        return new FacebookWordpressMailchimpForWp( $this->make_signals(), $this->make_field_mapper() );
     }
 
     /**

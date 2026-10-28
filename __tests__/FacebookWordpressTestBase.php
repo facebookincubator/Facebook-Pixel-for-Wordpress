@@ -28,6 +28,8 @@
 namespace FacebookPixelPlugin\Tests;
 
 use PHPUnit\Framework\TestCase;
+use FacebookPixelPlugin\Core\FormFieldMapper;
+use FacebookPixelPlugin\Tests\Mocks\MockFormFieldMappingStore;
 use WP_Mock\Tools\Constraints\ExpectationsMet;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
@@ -76,6 +78,17 @@ abstract class FacebookWordpressTestBase extends TestCase {
      * @var string[]
      */
     protected $registered_ajax_dom = array();
+
+    /**
+     * Builds a form field mapper over an in-memory store, so lead-form
+     * integrations never read the WordPress option in tests.
+     *
+     * @param array $mappings Initial store contents, in FormFieldMapper::get_all() shape.
+     * @return FormFieldMapper
+     */
+    protected function make_field_mapper( array $mappings = array() ) {
+        return new FormFieldMapper( new MockFormFieldMappingStore( $mappings ) );
+    }
 
     /**
      * Builds a tracking-facade double for driving instance-based integrations.

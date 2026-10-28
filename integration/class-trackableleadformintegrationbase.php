@@ -24,7 +24,10 @@ namespace FacebookPixelPlugin\Integration;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPixel;
+use FacebookPixelPlugin\Core\FacebookTrackingFacade;
+use FacebookPixelPlugin\Core\FormFieldMapper;
 use FacebookPixelPlugin\Core\ServerEventFactory;
+use FacebookPixelPlugin\Utils\StringUtils;
 
 /**
  * Base class for lead-form plugin integrations that validate and extract Meta
@@ -39,6 +42,28 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
      * @var string
      */
     const EVENT_NAME = FacebookPixel::LEAD;
+
+    /**
+     * Reads the form field mappings saved in wp-admin.
+     *
+     * @var FormFieldMapper
+     */
+    protected $field_mapper;
+
+    /**
+     * Constructor.
+     *
+     * @param FacebookTrackingFacade $signals      The tracking facade instance.
+     * @param FormFieldMapper|null   $field_mapper Optional mapping storage.
+     *                                             Defaults to the option-backed
+     *                                             mapper.
+     */
+    public function __construct( FacebookTrackingFacade $signals, $field_mapper = null ) {
+        parent::__construct( $signals );
+        $this->field_mapper = $field_mapper instanceof FormFieldMapper
+            ? $field_mapper
+            : new FormFieldMapper();
+    }
 
     /**
      * The Lead event parameters a form field may be mapped to.
@@ -168,34 +193,43 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
     /**
      * Extracts normalized Lead data from a submitted form.
      *
-     * If a form-field -> lead-parameter mapping is configured for this form
-     * (see is_mapping_available()/get_mapping_for_form()), that mapping is
-     * applied. Otherwise the integration's hard-coded fallback extraction is
-     * used. The arguments are whatever the plugin's submit hook provides and are
-     * forwarded verbatim to the integration primitives.
+     * The integration's hard-coded fallback extraction always runs. If a
+     * form-field -> lead-parameter mapping is configured for this form (see
+     * is_mapping_available()/get_mapping_for_form()), it is applied on top: a
+     * mapped field wins, and parameters the mapping does not cover keep their
+     * fallback value. The arguments are whatever the plugin's submit hook
+     * provides and are forwarded verbatim to the integration primitives.
      *
      * @param mixed ...$args The plugin submit-hook arguments.
      * @return array Normalized lead data keyed by Lead parameter name.
      */
     public function extract_lead_data( ...$args ) {
-        $form_id  = $this->get_form_id( ...$args );
-        $iterator = $this->get_form_param_iterator( ...$args );
+        $form_id = $this->get_form_id( ...$args );
+        // Materialized because both the fallback and the mapping read the rows.
+        $form_params = self::to_rows( $this->get_form_param_iterator( ...$args ) );
+        $lead_data   = $this->extract_lead_data_fallback( $form_params );
 
         $mapping = $this->is_mapping_available( $form_id )
             ? $this->get_mapping_for_form( static::INTEGRATION_NAME, $form_id )
             : array();
 
         return empty( $mapping )
-            ? $this->extract_lead_data_fallback( $iterator )
-            : $this->apply_field_mapping( $iterator, $mapping );
+            ? $lead_data
+            : array_merge( $lead_data, $this->apply_field_mapping( $form_params, $mapping ) );
     }
 
     /**
      * Applies a configured form-field -> lead-parameter mapping to the submitted
      * form parameters.
      *
+     * A row is matched by its 'id' when it carries one (integrations whose
+     * 'name' is a display label rather than a unique identifier add it), and by
+     * its 'name' otherwise. Compound targets (FormFieldMapper::COMPOUND_TARGETS)
+     * are expanded into their Lead parameters; unknown targets, empty values and
+     * non-scalar values are skipped.
+     *
      * @param iterable $form_param_iterator Rows of ['name'=>, 'type'=>, 'value'=>, ...].
-     * @param array    $mapping             form_field_name => lead_parameter.
+     * @param array    $mapping             form_field_id => lead_parameter.
      * @return array Normalized lead data keyed by Lead parameter name.
      */
     protected function apply_field_mapping( $form_param_iterator, array $mapping ) {
@@ -204,26 +238,48 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
             if ( empty( $form_param ) ) {
                 continue;
             }
-            $field_name = $form_param['name'];
-            if ( ! array_key_exists( $field_name, $mapping ) ) {
+            $field_id = self::get_mapping_key( $form_param );
+            if ( '' === $field_id || ! array_key_exists( $field_id, $mapping ) ) {
                 continue;
             }
-            $lead_param = $mapping[ $field_name ];
+            $value = $form_param['value'];
+            if ( ! is_scalar( $value ) || '' === trim( (string) $value ) ) {
+                continue;
+            }
+            $lead_param = $mapping[ $field_id ];
+            if ( isset( FormFieldMapper::COMPOUND_TARGETS[ $lead_param ] ) ) {
+                $result = array_merge( $result, $this->expand_compound_lead_param( $lead_param, (string) $value ) );
+                continue;
+            }
             if ( ! $this->is_valid_lead_param( $lead_param ) ) {
                 continue;
             }
-            // TODO(mapping-UI): no notion of compound params yet. A compound
-            // target like 'address' is not in the valid-parameter set (Meta has
-            // no 'address' field; only city/state/zip/country), so it is rejected
-            // above and silently dropped here. When the mapping UI lands, add a
-            // compound concept (e.g. COMPOUND_LEAD_PARAMETERS: address =>
-            // [city,state,zip,country]), make is_valid_lead_param /
-            // validate_lead_fields treat compound keys as valid *input*, and
-            // decompose the value here (per-integration hook) into leaf params so
-            // only leaves reach the payload. Completes TrackableLeadFormMappingTest.
-            $result[ $lead_param ] = $form_param['value'];
+            $result[ $lead_param ] = $value;
         }
         return $result;
+    }
+
+    /**
+     * Expands a compound mapping target into the Lead parameters it stands for.
+     *
+     * @param string $compound The compound target (a FormFieldMapper::COMPOUND_TARGETS key).
+     * @param string $value    The submitted field value.
+     * @return array Lead data keyed by Lead parameter name.
+     */
+    protected function expand_compound_lead_param( $compound, $value ) {
+        if ( 'full_name' !== $compound ) {
+            return array();
+        }
+        $name = StringUtils::split_name( trim( $value ) );
+        return array_filter(
+            array(
+                'first_name' => $name[0],
+                'last_name'  => $name[1],
+            ),
+            function ( $part ) {
+                return null !== $part && '' !== $part;
+            }
+        );
     }
 
     /**
@@ -233,8 +289,10 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
      * @return bool
      */
     protected function is_mapping_available( $form_id ) {
-        // TODO: read from the mapping storage once the mapping UI exists.
-        return false;
+        if ( ! is_scalar( $form_id ) || '' === (string) $form_id ) {
+            return false;
+        }
+        return ! empty( $this->get_mapping_for_form( static::INTEGRATION_NAME, $form_id ) );
     }
 
     /**
@@ -242,11 +300,38 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
      *
      * @param string $integration_name The integration name.
      * @param mixed  $form_id          The form identifier.
-     * @return array form_field_name => lead_parameter.
+     * @return array form_field_id => lead_parameter.
      */
     protected function get_mapping_for_form( $integration_name, $form_id ) {
-        // TODO: read from the mapping storage once the mapping UI exists.
-        return array();
+        return $this->field_mapper->get_mappings( $integration_name, (string) $form_id );
+    }
+
+    /**
+     * The key a form-parameter row is matched on: its native field 'id' when
+     * present, otherwise its 'name'.
+     *
+     * @param array $form_param A row from get_form_param_iterator().
+     * @return string
+     */
+    protected static function get_mapping_key( $form_param ) {
+        if ( isset( $form_param['id'] ) && '' !== (string) $form_param['id'] ) {
+            return (string) $form_param['id'];
+        }
+        return isset( $form_param['name'] ) ? (string) $form_param['name'] : '';
+    }
+
+    /**
+     * Normalizes what get_form_param_iterator() returned (a generator, an array
+     * or nothing) into an array of rows.
+     *
+     * @param mixed $form_params The iterator result.
+     * @return array
+     */
+    private static function to_rows( $form_params ) {
+        if ( $form_params instanceof \Traversable ) {
+            return iterator_to_array( $form_params, false );
+        }
+        return is_array( $form_params ) ? array_values( $form_params ) : array();
     }
 
     /**
