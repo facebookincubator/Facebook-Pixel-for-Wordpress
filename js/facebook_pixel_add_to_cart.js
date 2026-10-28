@@ -60,6 +60,16 @@ jQuery(document).ready(function ($) {
       agentString = window.FacebookSignal.tagAgent(agentString);
     }
     fbq('set', 'agent', agentString, pixelId);
+    // The event id comes from the page markup. A cached copy of the page
+    // hands the same id to every visitor, so a stale page fires without it.
+    if (
+      event_id &&
+      window.FacebookSignal &&
+      window.FacebookSignal.isStalePage &&
+      window.FacebookSignal.isStalePage()
+    ) {
+      event_id = null;
+    }
     if (event_id) {
       fbq('track', 'AddToCart', param, { eventID: event_id });
     } else {

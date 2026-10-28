@@ -16,6 +16,7 @@ window.FacebookSignal = window.FacebookSignal || {
   _queue: [],
   _config: {},
   _seenEventIds: {},
+  _storedEventIds: {},
   _fbclid: (function () {
     try {
       var match = window.location.search.match(/[?&]fbclid=([^&]*)/);
@@ -52,30 +53,66 @@ window.FacebookSignal = window.FacebookSignal || {
       fbq('consent', this._held ? 'revoke' : 'grant');
     }
 
+    // Ids that belong to this visitor alone are remembered for the session, so
+    // a script a page replays on a later load is not queued again. Ids rendered
+    // into cacheable markup are never stored: a cached copy repeats them for
+    // every visitor and every load.
+    var stored = {};
     try {
       var raw = window.sessionStorage.getItem('fbpix_seen_event_ids');
-      this._seenEventIds = raw ? JSON.parse(raw) : {};
-    } catch (e) {
-      this._seenEventIds = this._seenEventIds || {};
+      var parsed = raw ? JSON.parse(raw) : null;
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        stored = parsed;
+      }
+    } catch (e) {}
+    this._storedEventIds = stored;
+    for (var storedId in stored) {
+      if (Object.prototype.hasOwnProperty.call(stored, storedId)) {
+        this._seenEventIds[storedId] = 1;
+      }
     }
   },
 
   // True when the page HTML is older than the configured threshold, which
-  // means it was served from a page cache rather than freshly generated.
+  // means it was served from a page cache rather than generated for this
+  // request. The age is measured from the moment the browser requested the
+  // page, not from when the check runs, so a visitor who generated the page
+  // stays fresh however long they take before an event fires, such as
+  // granting consent. Pages no cache stores carry no generation time and are
+  // never stale.
   isStalePage: function () {
     var generatedAt = this._config.generatedAt;
     var staleAfter = this._config.staleAfter;
-    if (!generatedAt || !staleAfter) {
+    if (!generatedAt || typeof staleAfter !== 'number') {
       return false;
     }
-    return Math.floor(Date.now() / 1000) - generatedAt > staleAfter;
+    return (
+      Math.floor(this._navigationStart() / 1000) - generatedAt > staleAfter
+    );
+  },
+
+  // Milliseconds since the epoch at which the browser requested this page.
+  _navigationStart: function () {
+    try {
+      var perf = window.performance;
+      if (perf) {
+        if (perf.timeOrigin) {
+          return perf.timeOrigin;
+        }
+        if (perf.timing && perf.timing.navigationStart) {
+          return perf.timing.navigationStart;
+        }
+      }
+    } catch (e) {}
+    return Date.now();
   },
 
   // Inserts "_c" after the hosting flag in the agent string when the page
   // is stale, e.g. "wordpress_0-6.8-5.2.2" -> "wordpress_0_c-6.8-5.2.2".
+  // An agent that already carries the flag is returned unchanged.
   tagAgent: function (agent) {
     if (agent && this.isStalePage()) {
-      agent = agent.replace(/(wordpress_[0-7])/, '$1_c');
+      agent = agent.replace(/(wordpress_[0-7])(?!_c)/, '$1_c');
     }
     return agent;
   },
@@ -178,35 +215,115 @@ window.FacebookSignal = window.FacebookSignal || {
     }
   },
 
+  // Takes an event PHP rendered into the page. While signals are held the
+  // event waits for the release; otherwise it fires right away, which a
+  // cached copy of a page generated while held needs when the visitor who
+  // receives it has already granted consent.
   queueEvent: function (eventData) {
     if (!eventData || !eventData.event_name) {
       return;
     }
 
-    if (eventData.event_id && this._seenEventIds[eventData.event_id]) {
+    var originalId = eventData.event_id || null;
+    if (originalId && this._seenEventIds[originalId]) {
       return;
     }
 
+    // An id rendered into cacheable markup is shared by every visitor who
+    // receives a cached copy, and no server event of theirs carries it, so it
+    // is never sent as eventID and is remembered for this page load only, to
+    // tell re-executions of the same script apart. An id delivered by a live
+    // request, such as a form plugin's AJAX response, belongs to this visitor
+    // alone: it is sent, and remembered for the session.
+    var shared = eventData.cacheable !== false;
+    var method =
+      eventData.method || (eventData.is_custom ? 'trackCustom' : 'track');
+
+    if (!this._held) {
+      if (originalId) {
+        this._rememberEventId(originalId, !shared);
+      }
+      this._fireOrQueuePixelEvent(
+        eventData.event_name,
+        eventData.custom_data || {},
+        method,
+        shared ? null : originalId,
+      );
+      return;
+    }
+
+    var stale = shared && this.isStalePage();
+
+    // The queued copy is this visitor's own, so the caller's object is left
+    // alone. The release endpoint sends the queued id to the Conversions API
+    // and the browser fires it after the release, so a shared id is replaced
+    // by one minted here that only this visitor's pair of events will carry.
+    eventData = this._cloneEventData(eventData);
+    if (shared) {
+      eventData.event_id = this._generateEventId();
+    }
+    // A cached copy carries the generating request's event_time. The release
+    // endpoint rejects events older than 30 minutes, and the visitor's own
+    // view time is the right one anyway, so it comes from the browser clock.
     eventData.event_time =
-      eventData.event_time || Math.floor(Date.now() / 1000);
+      (!stale && eventData.event_time) || Math.floor(Date.now() / 1000);
     eventData.event_source_url =
       eventData.event_source_url || window.location.href;
     this._queue.push(eventData);
 
-    if (eventData.event_id) {
-      this._seenEventIds[eventData.event_id] = 1;
-      try {
-        window.sessionStorage.setItem(
-          'fbpix_seen_event_ids',
-          JSON.stringify(this._seenEventIds),
-        );
-      } catch (e) {}
+    var idToMark = originalId || eventData.event_id;
+    if (idToMark) {
+      this._rememberEventId(idToMark, !shared && !!originalId);
     }
   },
 
-  trackEvent: function (name, params, userData, method, eventId) {
+  _cloneEventData: function (eventData) {
+    var copy = {};
+    for (var key in eventData) {
+      if (Object.prototype.hasOwnProperty.call(eventData, key)) {
+        copy[key] = eventData[key];
+      }
+    }
+    return copy;
+  },
+
+  _generateEventId: function () {
+    try {
+      if (window.crypto && window.crypto.randomUUID) {
+        return window.crypto.randomUUID();
+      }
+    } catch (e) {}
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
+      /[xy]/g,
+      function (c) {
+        var r = (Math.random() * 16) | 0;
+        return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+      },
+    );
+  },
+
+  // Remembers an id for this page load, and for the session when it belongs
+  // to this visitor alone.
+  _rememberEventId: function (id, persist) {
+    this._seenEventIds[id] = 1;
+    if (!persist) {
+      return;
+    }
+    this._storedEventIds[id] = 1;
+    try {
+      window.sessionStorage.setItem(
+        'fbpix_seen_event_ids',
+        JSON.stringify(this._storedEventIds),
+      );
+    } catch (e) {}
+  },
+
+  trackEvent: function (name, params, userData, method, eventId, cacheable) {
     method = method || 'track';
     eventId = eventId || (params && params.eventID) || null;
+    // Callers that say nothing count as cacheable markup, whose ids are never
+    // remembered across page loads and are dropped on a stale copy.
+    var shared = cacheable !== false;
 
     if (this._held) {
       this.queueEvent({
@@ -215,10 +332,26 @@ window.FacebookSignal = window.FacebookSignal || {
         event_id: eventId,
         event_time: Math.floor(Date.now() / 1000),
         method: method,
+        cacheable: shared,
       });
-    } else {
-      this._fireOrQueuePixelEvent(name, params || {}, method, eventId);
+      return;
     }
+
+    if (eventId) {
+      if (shared) {
+        if (this.isStalePage()) {
+          eventId = null;
+        }
+      } else {
+        // A live id identifies one occurrence, so a script the page replays
+        // on a later load in this session is not fired again.
+        if (this._seenEventIds[eventId]) {
+          return;
+        }
+        this._rememberEventId(eventId, true);
+      }
+    }
+    this._fireOrQueuePixelEvent(name, params || {}, method, eventId);
   },
 
   hold: function () {
