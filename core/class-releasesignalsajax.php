@@ -163,7 +163,10 @@ class ReleaseSignalsAjax {
                 continue;
             }
 
-            $events_to_send[] = $this->build_event( $event_data );
+            $events_to_send[] = $this->build_event(
+                $event_data,
+                $this->resolve_event_time( $event_data, $now )
+            );
         }
 
         $this->restore_superglobal_value( '_GET', 'fbclid', $restore_get_fbclid );
@@ -216,28 +219,68 @@ class ReleaseSignalsAjax {
             return false;
         }
 
-        if ( ! empty( $event_data['event_time'] ) ) {
-            $event_time = absint( $event_data['event_time'] );
-            if ( $event_time > $now || ( $now - $event_time ) > self::MAX_EVENT_AGE ) {
-                return false;
+        return null !== $this->resolve_event_time( $event_data, $now );
+    }
+
+    /**
+     * Resolves when a released event occurred, on the server's clock.
+     *
+     * The browser reports how many seconds ago it queued the event, measured
+     * on its own clock, and the server subtracts that from its own time. Only
+     * differences of the browser clock are used, so a browser that runs
+     * minutes or hours ahead or behind the server places its events correctly
+     * and never has them rejected as coming from the future.
+     *
+     * A request without an age, from an older copy of the browser script,
+     * falls back to the absolute event_time it carries. A time later than the
+     * server's can only be clock skew, so it counts as now. Either way an
+     * event older than MAX_EVENT_AGE is refused, and an event with no timing
+     * at all is placed at the time of the release.
+     *
+     * @param array $event_data Event payload.
+     * @param int   $now        Current timestamp.
+     *
+     * @return int|null Unix timestamp, or null when the event is too old.
+     */
+    private function resolve_event_time( $event_data, $now ) {
+        if ( isset( $event_data['event_age'] ) && is_numeric( $event_data['event_age'] ) ) {
+            $age = max( 0, (int) $event_data['event_age'] );
+            if ( $age > self::MAX_EVENT_AGE ) {
+                return null;
             }
+
+            return $now - $age;
         }
 
-        return true;
+        if ( empty( $event_data['event_time'] ) ) {
+            return $now;
+        }
+
+        $event_time = min( absint( $event_data['event_time'] ), $now );
+        if ( ( $now - $event_time ) > self::MAX_EVENT_AGE ) {
+            return null;
+        }
+
+        return $event_time;
     }
 
     /**
      * Build released event from queue payload.
      *
-     * @param array $event_data Event payload.
+     * @param array    $event_data Event payload.
+     * @param int|null $event_time When the event occurred, as resolved by
+     *                             resolve_event_time(); null keeps the
+     *                             payload's own event_time.
      *
      * @return Event
      */
-    private function build_event( $event_data ) {
+    private function build_event( $event_data, $event_time = null ) {
         $event_name = sanitize_text_field( $event_data['event_name'] );
         $event      = ServerEventFactory::new_event( $event_name );
 
-        if ( ! empty( $event_data['event_time'] ) ) {
+        if ( null !== $event_time ) {
+            $event->setEventTime( $event_time );
+        } elseif ( ! empty( $event_data['event_time'] ) ) {
             $event->setEventTime( absint( $event_data['event_time'] ) );
         }
 

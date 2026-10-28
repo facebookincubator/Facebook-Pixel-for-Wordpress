@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "test:js": "node --test tests/js/*.test.js",
     "env:seed": "bash tests/e2e/scripts/seed-store.sh",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

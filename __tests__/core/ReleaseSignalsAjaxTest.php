@@ -162,4 +162,147 @@ final class ReleaseSignalsAjaxTest extends FacebookWordpressTestBase {
       $event->getCustomData()->normalize()['currency']
     );
   }
+
+  /**
+   * Mocks the sanitizers the release handler touches and returns a private
+   * method of the handler.
+   *
+   * @param string $name The method name.
+   * @return \ReflectionMethod
+   */
+  private function get_handler_method( $name ) {
+    foreach ( array( 'sanitize_text_field', 'esc_url_raw', 'wp_unslash' ) as $passthrough ) {
+      \WP_Mock::userFunction(
+        $passthrough,
+        array(
+          'return' => function ( $value ) {
+            return $value;
+          },
+        )
+      );
+    }
+    \WP_Mock::userFunction(
+      'absint',
+      array(
+        'return' => function ( $value ) {
+          return abs( (int) $value );
+        },
+      )
+    );
+
+    $method = new \ReflectionMethod( ReleaseSignalsAjax::class, $name );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $method->setAccessible( true );
+    }
+    return $method;
+  }
+
+  /**
+   * The browser reports how long ago it queued an event, and the server places
+   * the event on its own clock from that, so the browser's absolute time, which
+   * may run ahead or behind, never decides whether the event is kept.
+   *
+   * @return void
+   */
+  public function testResolveEventTimePlacesTheEventOnTheServerClockFromItsAge() {
+    $handler = new ReleaseSignalsAjax( \Mockery::mock( Capi::class ) );
+    $method  = $this->get_handler_method( 'resolve_event_time' );
+    $now     = 1800000000;
+
+    $this->assertSame(
+      $now - 90,
+      $method->invoke(
+        $handler,
+        array(
+          'event_name' => 'Purchase',
+          'event_age'  => 90,
+          'event_time' => $now + 7200,
+        ),
+        $now
+      )
+    );
+    $this->assertSame(
+      $now,
+      $method->invoke( $handler, array( 'event_name' => 'Purchase', 'event_age' => 0 ), $now )
+    );
+    $this->assertSame(
+      $now,
+      $method->invoke( $handler, array( 'event_name' => 'Purchase', 'event_age' => '-5' ), $now )
+    );
+    $this->assertNull(
+      $method->invoke( $handler, array( 'event_name' => 'Purchase', 'event_age' => 1801 ), $now )
+    );
+  }
+
+  /**
+   * An older copy of the browser script sends only an absolute time. A time
+   * later than the server's can only be clock skew, so a browser two minutes
+   * ahead keeps its event, placed at the time of the release.
+   *
+   * @return void
+   */
+  public function testResolveEventTimeTreatsAFutureAbsoluteTimeAsNow() {
+    $handler = new ReleaseSignalsAjax( \Mockery::mock( Capi::class ) );
+    $method  = $this->get_handler_method( 'resolve_event_time' );
+    $now     = 1800000000;
+
+    $this->assertSame(
+      $now,
+      $method->invoke( $handler, array( 'event_name' => 'Purchase', 'event_time' => $now + 120 ), $now )
+    );
+    $this->assertSame(
+      $now - 120,
+      $method->invoke( $handler, array( 'event_name' => 'Purchase', 'event_time' => $now - 120 ), $now )
+    );
+    $this->assertNull(
+      $method->invoke( $handler, array( 'event_name' => 'Purchase', 'event_time' => $now - 1801 ), $now )
+    );
+    $this->assertSame(
+      $now,
+      $method->invoke( $handler, array( 'event_name' => 'Purchase' ), $now )
+    );
+  }
+
+  /**
+   * Validation follows the same rules: a future absolute time passes, an age
+   * beyond the limit does not.
+   *
+   * @return void
+   */
+  public function testValidateEventAcceptsAFutureTimeAndRejectsAnOldAge() {
+    $handler = new ReleaseSignalsAjax( \Mockery::mock( Capi::class ) );
+    $method  = $this->get_handler_method( 'validate_event' );
+    $now     = time();
+
+    $this->assertTrue(
+      $method->invoke( $handler, array( 'event_name' => 'Purchase', 'event_time' => $now + 120 ), $now )
+    );
+    $this->assertTrue(
+      $method->invoke( $handler, array( 'event_name' => 'Purchase', 'event_age' => 60 ), $now )
+    );
+    $this->assertFalse(
+      $method->invoke( $handler, array( 'event_name' => 'Purchase', 'event_age' => 1801 ), $now )
+    );
+  }
+
+  /**
+   * The resolved time, not the payload's, ends up on the released event.
+   *
+   * @return void
+   */
+  public function testBuildEventUsesTheResolvedTime() {
+    $handler = new ReleaseSignalsAjax( \Mockery::mock( Capi::class ) );
+    $method  = $this->get_handler_method( 'build_event' );
+
+    $event = $method->invoke(
+      $handler,
+      array(
+        'event_name' => 'Purchase',
+        'event_time' => 1234,
+      ),
+      1800000000
+    );
+
+    $this->assertEquals( 1800000000, $event->getEventTime() );
+  }
 }
