@@ -38,7 +38,7 @@ final class FacebookWordpressNinjaFormsTest extends FacebookWordpressTestBase {
      * @return FacebookWordpressNinjaForms
      */
     private function make_integration() {
-        return new FacebookWordpressNinjaForms( $this->make_signals() );
+        return new FacebookWordpressNinjaForms( $this->make_signals(), $this->make_field_mapper() );
     }
 
     /**

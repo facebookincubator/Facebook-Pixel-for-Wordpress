@@ -147,4 +147,7 @@ class FacebookPluginConfig {
     'dismiss_connection_invalid_notice';
     const ADMIN_IGNORE_CONNECTION_INVALID_NOTICE  =
     'ignore_connection_invalid_notice';
+
+    // Form field mapping storage.
+    const FORM_FIELD_MAPPINGS_KEY = 'facebook_form_field_mappings';
 }
