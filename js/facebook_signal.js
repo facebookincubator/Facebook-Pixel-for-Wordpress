@@ -260,7 +260,7 @@ window.FacebookSignal = window.FacebookSignal || {
     // by one minted here that only this visitor's pair of events will carry.
     eventData = this._cloneEventData(eventData);
     if (shared) {
-      eventData.event_id = this._generateEventId();
+      eventData.event_id = this.generateEventId();
     }
     // A cached copy carries the generating request's event_time. The release
     // endpoint rejects events older than 30 minutes, and the visitor's own
@@ -287,7 +287,10 @@ window.FacebookSignal = window.FacebookSignal || {
     return copy;
   },
 
-  _generateEventId: function () {
+  // Mints an event id that belongs to this visitor alone. Scripts that fire
+  // an event whose id was rendered into a page a cache may store use it on a
+  // stale page, for both the Pixel fire and the id they post to the server.
+  generateEventId: function () {
     try {
       if (window.crypto && window.crypto.randomUUID) {
         return window.crypto.randomUUID();
