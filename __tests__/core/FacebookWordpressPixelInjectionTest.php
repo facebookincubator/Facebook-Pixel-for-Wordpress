@@ -172,6 +172,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_utils->shouldReceive( 'is_internal_user' )
       ->andReturn( false );
+    $this->mockCacheableResponse();
 
     \WP_Mock::userFunction(
       'wp_json_encode',
@@ -250,6 +251,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_utils->shouldReceive( 'is_internal_user' )
       ->andReturn( false );
+    $this->mockCacheableResponse();
 
     \WP_Mock::userFunction(
       'sanitize_text_field',
@@ -335,6 +337,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_utils->shouldReceive( 'is_internal_user' )
       ->andReturn( false );
+    $this->mockCacheableResponse();
 
     \WP_Mock::userFunction(
       'wp_json_encode',
@@ -406,6 +409,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_utils->shouldReceive( 'is_internal_user' )
       ->andReturn( false );
+    $this->mockCacheableResponse();
 
     \WP_Mock::userFunction(
       'wp_json_encode',
@@ -433,8 +437,9 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
 
   /**
    * The page generation time and stale threshold are threaded into the
-   * FacebookSignal.init config so the JS can detect cached pages and tag
-   * the agent string with "_c".
+   * FacebookSignal.init config of a page a cache may store, so the JS can
+   * tell a cached copy apart, tag the agent string with "_c" and drop the
+   * event ids rendered into the copy.
    */
   public function testInitConfigIncludesCacheDetectionFields() {
     FacebookWordpressPixelInjection::$render_cache = array();
@@ -457,6 +462,7 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
     );
     $mocked_utils->shouldReceive( 'is_internal_user' )
       ->andReturn( false );
+    $this->mockCacheableResponse();
 
     \WP_Mock::userFunction(
       'wp_json_encode',
@@ -492,6 +498,86 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
       '"staleAfter":' . FacebookPluginConfig::CACHE_STALE_THRESHOLD,
       $output
     );
+  }
+
+  /**
+   * Mocks everything inject_pixel_code() touches for an active guest visitor
+   * and returns the injection object.
+   *
+   * @param bool $cacheable Whether a page cache may store the response.
+   * @return FacebookWordpressPixelInjection
+   */
+  private function mock_active_injection( $cacheable = true ) {
+    FacebookWordpressPixelInjection::$render_cache = array();
+    FacebookPixel::set_pixel_id( '1234' );
+
+    $mocked_options = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
+    );
+    $mocked_options->shouldReceive( 'get_capi_integration_status' )
+      ->andReturn( '1' );
+    $mocked_options->shouldReceive( 'get_capig' )
+      ->andReturn( '0' );
+    $mocked_options->shouldReceive( 'get_agent_string' )
+      ->andReturn( 'WordPress' );
+    $mocked_options->shouldReceive( 'get_user_info' )
+      ->andReturn( array() );
+
+    $mocked_utils = \Mockery::mock(
+      'alias:FacebookPixelPlugin\Core\FacebookPluginUtils'
+    );
+    $mocked_utils->shouldReceive( 'is_internal_user' )
+      ->andReturn( false );
+    $this->mockCacheableResponse( $cacheable );
+
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'return' => function ( $data ) {
+          return json_encode( $data );
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'admin_url',
+      array(
+        'return' => 'https://www.pikachu.com/wp-admin/admin-ajax.php',
+      )
+    );
+
+    return new FacebookWordpressPixelInjection();
+  }
+
+  /**
+   * A page rendered for a logged-in visitor is never stored by a page cache,
+   * so it carries no generation time and every check on it reports fresh.
+   */
+  public function testInitConfigOmitsCacheDetectionFieldsForLoggedInVisitor() {
+    $injection_obj = $this->mock_active_injection( false );
+
+    ob_start();
+    $injection_obj->inject_pixel_code();
+    $output = ob_get_clean();
+
+    $this->assertStringContainsString( 'FacebookSignal.init', $output );
+    $this->assertStringNotContainsString( '"generatedAt"', $output );
+    $this->assertStringNotContainsString( '"staleAfter"', $output );
+  }
+
+  /**
+   * The threshold a site sets through the filter reaches the browser.
+   */
+  public function testInitConfigUsesFilteredCacheThreshold() {
+    \WP_Mock::onFilter( FacebookPluginConfig::CACHE_STALE_THRESHOLD_FILTER )
+      ->with( FacebookPluginConfig::CACHE_STALE_THRESHOLD )
+      ->reply( 120 );
+    $injection_obj = $this->mock_active_injection();
+
+    ob_start();
+    $injection_obj->inject_pixel_code();
+    $output = ob_get_clean();
+
+    $this->assertStringContainsString( '"staleAfter":120', $output );
   }
 
   /**

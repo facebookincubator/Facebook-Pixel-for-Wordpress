@@ -30,6 +30,7 @@ namespace FacebookPixelPlugin\Core;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use ReflectionClass;
+use FacebookPixelPlugin\Utils\WordPressUtils;
 
 /**
  * Class FacebookPixel
@@ -229,14 +230,15 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
             $code = sprintf(
                 'FacebookSignal.queueEvent({"event_name":%s,'
                 . '"custom_data":%s,"event_id":null,"event_time":%d,'
-                . '"is_custom":%s});',
+                . '"is_custom":%s,"cacheable":%s});',
                 wp_json_encode(
                     $event,
                     JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
                 ),
                 (string) $param,
                 time(),
-                $is_custom ? 'true' : 'false'
+                $is_custom ? 'true' : 'false',
+                WordPressUtils::is_cacheable_response() ? 'true' : 'false'
             );
         }
 
@@ -287,6 +289,10 @@ src="https://www.facebook.com/tr?id=%s&ev=%s%s&noscript=1" />
             'event_id'    => $event_id,
             'event_time'  => time(),
             'is_custom'   => (bool) $is_custom,
+            // Tells the browser whether the id may reach other visitors through
+            // a page cache, or belongs to this visitor alone because a request
+            // no cache stores delivered it.
+            'cacheable'   => WordPressUtils::is_cacheable_response(),
         );
 
         if ( ! empty( $event_id ) ) {

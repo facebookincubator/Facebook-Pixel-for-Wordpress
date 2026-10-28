@@ -34,3 +34,19 @@ jobs:
 
       - name: Run PHPCS
         run: vendor/bin/phpcs --standard=phpcs.xml --extensions=php --ignore=vendor/ .
+
+  js-unit-tests:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # The JS unit tests run on Node's built-in test runner and need no
+      # dependencies installed.
+      - name: Run JS unit tests
+        run: npm run test:js

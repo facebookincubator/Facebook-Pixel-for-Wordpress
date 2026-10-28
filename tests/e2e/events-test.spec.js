@@ -995,3 +995,83 @@ test('Privacy Sandbox - Protected Audience API shape in Chromium', async ({ page
   expect(apiShape.hasNavigator).toBe(true);
   expect(hasAnyProtectedAudienceApi).toBe(true);
 });
+
+// ---------------------------------------------------------------------------
+// Pages served from a full-page cache
+// ---------------------------------------------------------------------------
+
+/**
+ * Serves the page at `url` the way a full-page cache would: one stored copy,
+ * with its generation time moved `ageSeconds` into the past. fbevents.js is
+ * served empty so window.fbq stays the base-code stub and every call the plugin
+ * makes can be read back from window.fbq.queue.
+ *
+ * @return {string} The HTML as the server rendered it.
+ */
+async function serveCachedCopy(page, url, ageSeconds) {
+  const html = await (await page.request.get(url)).text();
+  const aged = html.replace(/"generatedAt":(\d+)/, (match, generated) => `"generatedAt":${Number(generated) - ageSeconds}`);
+  const pathname = new URL(url, process.env.WORDPRESS_URL).pathname;
+
+  await page.route(/connect\.facebook\.net\/.*fbevents\.js/, (route) =>
+    route.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
+  await page.route((candidate) => candidate.pathname === pathname, (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: aged }));
+
+  return html;
+}
+
+async function readFbqCalls(page) {
+  await page.waitForFunction(() => window.FacebookSignal && window.fbq && window.fbq.queue);
+  return page.evaluate(() =>
+    Array.from(window.fbq.queue).map((args) =>
+      Array.from(args).map((arg) => (arg && typeof arg === 'object' ? JSON.parse(JSON.stringify(arg)) : arg))));
+}
+
+test('Cached page - stale copy drops the rendered event id and flags the agent', async ({ page }, testInfo) => {
+  test.skip(userModeForProject(testInfo) !== 'guest', 'Only a page rendered for a guest can be stored by a page cache');
+
+  const html = await serveCachedCopy(page, TEST_PRODUCT_URL, 3600);
+  expect(html).toContain('"generatedAt":');
+
+  await page.goto(TEST_PRODUCT_URL);
+  const calls = await readFbqCalls(page);
+
+  const init = calls.find((call) => call[0] === 'init');
+  expect(init).toBeDefined();
+  expect(init[2]).toEqual({});
+  expect(init[3].agent).toMatch(/^wordpress_[0-7]_c/);
+  for (const call of calls.filter((c) => c[0] === 'set' && c[1] === 'agent')) {
+    expect(call[2]).toMatch(/^wordpress_[0-7]_c/);
+  }
+
+  const viewContent = calls.find((call) => call[0] === 'track' && call[1] === 'ViewContent');
+  expect(viewContent).toBeDefined();
+  expect(viewContent[3]?.eventID).toBeUndefined();
+});
+
+test('Cached page - copy served within the threshold keeps the rendered event id', async ({ page }, testInfo) => {
+  test.skip(userModeForProject(testInfo) !== 'guest', 'Only a page rendered for a guest can be stored by a page cache');
+
+  await serveCachedCopy(page, TEST_PRODUCT_URL, 0);
+
+  await page.goto(TEST_PRODUCT_URL);
+  const calls = await readFbqCalls(page);
+
+  const init = calls.find((call) => call[0] === 'init');
+  expect(init[3].agent).not.toContain('_c');
+
+  const viewContent = calls.find((call) => call[0] === 'track' && call[1] === 'ViewContent');
+  expect(viewContent).toBeDefined();
+  expect(viewContent[3]?.eventID).toBeTruthy();
+});
+
+test('Cached page - page rendered for a logged-in visitor carries no generation time', async ({ page }, testInfo) => {
+  test.skip(userModeForProject(testInfo) !== 'customer', 'Covers the logged-in page render');
+
+  const html = await (await page.request.get(TEST_PRODUCT_URL)).text();
+
+  expect(html).toContain('FacebookSignal.init(');
+  expect(html).not.toContain('"generatedAt":');
+  expect(html).not.toContain('isStalePage()');
+});

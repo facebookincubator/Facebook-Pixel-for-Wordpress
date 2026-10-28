@@ -145,4 +145,65 @@ final class WordPressUtilsTest extends FacebookWordpressTestBase {
 
     $this->assertFalse( WordPressUtils::is_ajax_or_rest_request() );
   }
+
+  /**
+   * A page rendered for a guest is what a full-page cache stores and hands to
+   * other visitors.
+   *
+   * @return void
+   */
+  public function testIsCacheableResponseForGuestPageRender() {
+    \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+    \WP_Mock::userFunction( 'is_user_logged_in', array( 'return' => false ) );
+
+    $this->assertTrue( WordPressUtils::is_cacheable_response() );
+  }
+
+  /**
+   * Page caches bypass logged-in visitors, so their pages are never shared.
+   *
+   * @return void
+   */
+  public function testIsCacheableResponseForLoggedInVisitor() {
+    \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+    \WP_Mock::userFunction( 'is_user_logged_in', array( 'return' => true ) );
+
+    $this->assertFalse( WordPressUtils::is_cacheable_response() );
+  }
+
+  /**
+   * An admin-ajax response goes to the one browser that asked for it.
+   *
+   * @return void
+   */
+  public function testIsCacheableResponseForAdminAjax() {
+    \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => true ) );
+
+    $this->assertFalse( WordPressUtils::is_cacheable_response() );
+  }
+
+  /**
+   * So does a REST response.
+   *
+   * @return void
+   */
+  public function testIsCacheableResponseForRestRequest() {
+    \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+    define( 'REST_REQUEST', true );
+
+    $this->assertFalse( WordPressUtils::is_cacheable_response() );
+  }
+
+  /**
+   * A page that asks caches to skip it, as WooCommerce does for the cart,
+   * checkout and account pages, is never shared either.
+   *
+   * @return void
+   */
+  public function testIsCacheableResponseForDoNotCachePage() {
+    \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => false ) );
+    define( 'DONOTCACHEPAGE', true );
+
+    $this->assertFalse( WordPressUtils::is_cacheable_response() );
+  }
 }

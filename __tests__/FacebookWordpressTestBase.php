@@ -215,6 +215,28 @@ abstract class FacebookWordpressTestBase extends TestCase {
     }
 
     /**
+     * Mocks the request context WordPressUtils::is_cacheable_response() reads.
+     *
+     * Pixel code rendered into a response a page cache may store carries the
+     * page generation time and lets the browser drop event ids on a stale
+     * copy, while responses no cache stores keep their ids. Tests that render
+     * Pixel code call this to say which kind of response they render into.
+     *
+     * @param bool $cacheable  Whether a page cache may store the response;
+     *                         false mocks a logged-in visitor.
+     * @param bool $doing_ajax Whether the response is an admin-ajax response.
+     *
+     * @return void
+     */
+    protected function mockCacheableResponse( $cacheable = true, $doing_ajax = false ) {
+        \WP_Mock::userFunction( 'wp_doing_ajax', array( 'return' => $doing_ajax ) );
+        \WP_Mock::userFunction(
+            'is_user_logged_in',
+            array( 'return' => ! $cacheable )
+        );
+    }
+
+    /**
      * Mocks the return value of FacebookWordpressOptions methods.
      *
      * This function mocks the return values of the FacebookWordpressOptions
