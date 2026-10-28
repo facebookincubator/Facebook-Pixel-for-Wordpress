@@ -43,12 +43,43 @@ class FacebookWordpressSettingsPage {
     private $options_page = '';
 
     /**
+     * Returns the lead-form integrations available for field mapping, keyed
+     * by INTEGRATION_NAME.
+     *
+     * @var callable
+     */
+    private $field_mapping_integrations;
+
+    /**
+     * Form field mapping storage.
+     *
+     * @var FormFieldMapper
+     */
+    private $field_mapper;
+
+    /**
      * Registers the plugin's settings page, and adds the necessary hooks
      * for registering the plugin's scripts, notices, and menu items.
      *
-     * @param string $plugin_name the name of the plugin.
+     * @param string               $plugin_name                The name of the plugin.
+     * @param callable|null        $field_mapping_integrations Returns the lead-form
+     *                                                         integrations available
+     *                                                         for field mapping,
+     *                                                         keyed by
+     *                                                         INTEGRATION_NAME.
+     * @param FormFieldMapper|null $field_mapper               Optional mapping
+     *                                                         storage.
      */
-    public function __construct( $plugin_name ) {
+    public function __construct( $plugin_name, $field_mapping_integrations = null, $field_mapper = null ) {
+        $this->field_mapping_integrations = is_callable( $field_mapping_integrations )
+            ? $field_mapping_integrations
+            : function () {
+                return array();
+            };
+        $this->field_mapper               = $field_mapper instanceof FormFieldMapper
+            ? $field_mapper
+            : new FormFieldMapper();
+
         add_filter(
             'plugin_action_links_' . $plugin_name,
             array( $this, 'add_settings_link' )
@@ -85,6 +116,13 @@ class FacebookWordpressSettingsPage {
             array(),
             FacebookPluginConfig::PLUGIN_VERSION,
             false
+        );
+        wp_register_script(
+            'meta_field_mapping_script',
+            plugins_url( '../js/field_mapping.js', __FILE__ ),
+            array( 'jquery' ),
+            FacebookPluginConfig::PLUGIN_VERSION,
+            true
         );
         wp_register_style(
             'official-facebook-pixel',
@@ -247,6 +285,10 @@ class FacebookWordpressSettingsPage {
         </div>
         </div>
     </div>
+        <?php
+        // Inside #fb-adv-conf, so it is shown only once the plugin is connected.
+        echo $this->get_field_mapping_section(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped as it is built.
+        ?>
     </div>
 
     <div class="events-manager-wrapper
@@ -484,6 +526,15 @@ class FacebookWordpressSettingsPage {
         $initial_script   = ob_get_clean();
         $access_token     = FacebookWordpressOptions::get_active_access_token();
         $has_access_token = ! empty( $access_token );
+
+        wp_enqueue_script( 'meta_field_mapping_script' );
+        wp_add_inline_script(
+            'meta_field_mapping_script',
+            'const meta_field_mapping_params = ' . wp_json_encode(
+                $this->get_field_mapping_params()
+            ) . ';',
+            'before'
+        );
 
         wp_enqueue_script( 'meta_settings_page_script' );
 
@@ -1292,5 +1343,171 @@ class FacebookWordpressSettingsPage {
             </div>
         </div>
         <?php
+    }
+
+    /**
+     * Builds an admin-ajax URL for a field mapping action, with its nonce.
+     *
+     * @param string $action_name The AJAX action name, also the nonce action.
+     * @return string
+     */
+    private function get_field_mapping_ajax_url( $action_name ) {
+        return add_query_arg(
+            array(
+                'action'   => $action_name,
+                '_wpnonce' => wp_create_nonce( $action_name ),
+            ),
+            admin_url( 'admin-ajax.php' )
+        );
+    }
+
+    /**
+     * The labels of the active form plugins, keyed by INTEGRATION_NAME.
+     *
+     * @return array<string,string>
+     */
+    private function get_field_mapping_integration_labels() {
+        $labels = array();
+        foreach ( call_user_func( $this->field_mapping_integrations ) as $name => $integration ) {
+            $labels[ $name ] = $integration->get_integration_label();
+        }
+        return $labels;
+    }
+
+    /**
+     * The targets a form field can be mapped to, in display order, as
+     * [ 'value' =>, 'label' => ] rows. Targets without a label here (e.g. a
+     * user-data field added later) are listed under their own name.
+     *
+     * @return array<int,array<string,string>>
+     */
+    private function get_field_mapping_targets() {
+        $labels  = array(
+            'email'         => 'Email',
+            'phone'         => 'Phone',
+            'full_name'     => 'Full name (split into first and last name)',
+            'first_name'    => 'First name',
+            'last_name'     => 'Last name',
+            'city'          => 'City',
+            'state'         => 'State',
+            'zip'           => 'ZIP or postal code',
+            'country'       => 'Country (two-letter code)',
+            'gender'        => 'Gender',
+            'date_of_birth' => 'Date of birth',
+            'external_id'   => 'External ID',
+        );
+        $valid   = FormFieldMapper::get_valid_targets();
+        $ordered = array_merge(
+            array_values( array_intersect( array_keys( $labels ), $valid ) ),
+            array_values( array_diff( $valid, array_keys( $labels ) ) )
+        );
+
+        $targets = array();
+        foreach ( $ordered as $target ) {
+            $targets[] = array(
+                'value' => $target,
+                'label' => isset( $labels[ $target ] ) ? $labels[ $target ] : $target,
+            );
+        }
+        return $targets;
+    }
+
+    /**
+     * The parameters js/field_mapping.js reads.
+     *
+     * @return array
+     */
+    private function get_field_mapping_params() {
+        return array(
+            'getFormsUrl'  => $this->get_field_mapping_ajax_url( FacebookPluginConfig::GET_MAPPING_FORMS_ACTION_NAME ),
+            'getFieldsUrl' => $this->get_field_mapping_ajax_url( FacebookPluginConfig::GET_MAPPING_FIELDS_ACTION_NAME ),
+            'saveUrl'      => $this->get_field_mapping_ajax_url( FacebookPluginConfig::SAVE_FIELD_MAPPING_ACTION_NAME ),
+            'deleteUrl'    => $this->get_field_mapping_ajax_url( FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME ),
+            'integrations' => $this->get_field_mapping_integration_labels(),
+            'targets'      => $this->get_field_mapping_targets(),
+            'list'         => $this->field_mapper->get_flat_list(),
+            'loadError'    => FacebookPluginConfig::FIELD_MAPPING_LOAD_ERROR,
+            'saveError'    => FacebookPluginConfig::FIELD_MAPPING_SAVE_ERROR,
+            'deleteError'  => FacebookPluginConfig::FIELD_MAPPING_DELETE_ERROR,
+        );
+    }
+
+    /**
+     * Renders the Form Field Mapping section: an overview of the saved
+     * mappings and an editor for one form's mapping, driven by
+     * js/field_mapping.js.
+     *
+     * @return string The section markup.
+     */
+    private function get_field_mapping_section() {
+        $integrations = $this->get_field_mapping_integration_labels();
+        ob_start();
+        ?>
+    <div id="fb-field-mapping">
+    <div class="fb-capi-title">Form Field Mapping</div>
+    <div class="fb-capi-desc">
+        Choose which form field holds each piece of customer information sent
+        with Lead events. A mapped field takes priority over automatic
+        detection; anything you leave unmapped is still detected
+        automatically.
+    </div>
+        <?php if ( empty( $integrations ) ) : ?>
+    <p class="fb-capi-desc fb-mapping-empty">
+        Activate Contact Form 7, WPForms, Ninja Forms, Formidable Forms or
+        Mailchimp for WP to map form fields.
+    </p>
+    <?php endif; ?>
+    <table id="fb-mapping-list" class="widefat fb-mapping-list">
+        <thead>
+            <tr>
+                <th>Form plugin</th>
+                <th>Form</th>
+                <th>Mapped fields</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+        <?php if ( ! empty( $integrations ) ) : ?>
+    <div id="fb-mapping-editor">
+        <div class="fb-mapping-row">
+            <label for="fb-mapping-integration">Form plugin</label>
+            <select id="fb-mapping-integration">
+                <option value="">Select a form plugin</option>
+                <?php foreach ( $integrations as $name => $label ) : ?>
+                <option value="<?php echo esc_attr( $name ); ?>"><?php echo esc_html( $label ); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="fb-mapping-row">
+            <label for="fb-mapping-form">Form</label>
+            <select id="fb-mapping-form" disabled>
+                <option value="">Select a form</option>
+            </select>
+        </div>
+        <table id="fb-mapping-fields" class="widefat fb-mapping-fields hidden">
+            <thead>
+                <tr>
+                    <th>Form field</th>
+                    <th>Type</th>
+                    <th>Send as</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <p id="fb-mapping-no-fields" class="hidden">
+            This form has no fields that can be mapped.
+        </p>
+        <div class="fb-mapping-actions">
+            <button type="button" id="fb-mapping-save" class="button button-primary hidden">
+                Save mapping
+            </button>
+            <span id="fb-mapping-status"></span>
+        </div>
+    </div>
+    <?php endif; ?>
+    </div>
+        <?php
+        return ob_get_clean();
     }
 }
