@@ -92,7 +92,11 @@ class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
                 $field->type,
                 $field_value->get_saved_value(),
                 'description',
-                $field->description
+                $field->description,
+                // The name is a label, not unique, so the row also carries the
+                // field id the field mapping screen lists (see get_mapping_key()).
+                'id',
+                $field->id
             );
         }
     }
@@ -154,5 +158,76 @@ class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
             $result['zip'] = $value['zip'];
         }
         return $result;
+    }
+
+    /**
+     * Whether Formidable Forms is loaded.
+     *
+     * @return bool
+     */
+    public function is_field_mapping_available() {
+        return class_exists( '\FrmForm' ) && class_exists( '\FrmField' );
+    }
+
+    /**
+     * Human-readable integration name for the field mapping screen.
+     *
+     * @return string
+     */
+    public function get_integration_label() {
+        return 'Formidable Forms';
+    }
+
+    /**
+     * Returns all published Formidable forms.
+     *
+     * @return iterable
+     */
+    protected function fetch_forms() {
+        $forms = \FrmForm::get_published_forms();
+        return is_array( $forms ) ? $forms : array();
+    }
+
+    /**
+     * Maps a Formidable form to id + title.
+     *
+     * @param mixed $raw_form A Formidable form row.
+     * @return array
+     */
+    protected function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->id,
+            'title' => $raw_form->name,
+        );
+    }
+
+    /**
+     * Returns a Formidable form's fields.
+     *
+     * @param string $form_id The form id.
+     * @return iterable
+     */
+    protected function fetch_form_fields( $form_id ) {
+        $fields = \FrmField::get_all_for_form( $form_id );
+        return is_array( $fields ) ? $fields : array();
+    }
+
+    /**
+     * Maps a Formidable field to a field. The id is the field id, which
+     * get_form_param_iterator() adds to each row.
+     *
+     * @param mixed $raw_field A Formidable field row.
+     * @return array|null
+     */
+    protected function map_field( $raw_field ) {
+        $type = isset( $raw_field->type ) ? (string) $raw_field->type : '';
+        if ( in_array( $type, array( 'divider', 'end_divider', 'html', 'captcha', 'break', 'submit' ), true ) ) {
+            return null;
+        }
+        return array(
+            'id'    => $raw_field->id,
+            'label' => isset( $raw_field->name ) ? $raw_field->name : '',
+            'type'  => $type,
+        );
     }
 }

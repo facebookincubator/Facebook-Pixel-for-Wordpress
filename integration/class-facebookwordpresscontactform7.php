@@ -211,4 +211,75 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
         }
         return $result;
     }
+
+    /**
+     * Whether Contact Form 7 is loaded.
+     *
+     * @return bool
+     */
+    public function is_field_mapping_available() {
+        return class_exists( '\WPCF7_ContactForm' );
+    }
+
+    /**
+     * Human-readable integration name for the field mapping screen.
+     *
+     * @return string
+     */
+    public function get_integration_label() {
+        return 'Contact Form 7';
+    }
+
+    /**
+     * Returns all Contact Form 7 forms.
+     *
+     * @return iterable
+     */
+    protected function fetch_forms() {
+        return \WPCF7_ContactForm::find();
+    }
+
+    /**
+     * Maps a Contact Form 7 form to id + title.
+     *
+     * @param mixed $raw_form A WPCF7_ContactForm.
+     * @return array
+     */
+    protected function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->id(),
+            'title' => $raw_form->title(),
+        );
+    }
+
+    /**
+     * Returns a Contact Form 7 form's tags.
+     *
+     * @param string $form_id The form id.
+     * @return iterable
+     */
+    protected function fetch_form_fields( $form_id ) {
+        $form = \WPCF7_ContactForm::get_instance( $form_id );
+        return empty( $form ) ? array() : $form->scan_form_tags();
+    }
+
+    /**
+     * Maps a Contact Form 7 tag to a field. The id is the tag name, which
+     * get_form_param_iterator() yields as the row name.
+     *
+     * @param mixed $raw_field A WPCF7_FormTag.
+     * @return array|null
+     */
+    protected function map_field( $raw_field ) {
+        $name     = isset( $raw_field->name ) ? (string) $raw_field->name : '';
+        $basetype = isset( $raw_field->basetype ) ? (string) $raw_field->basetype : '';
+        if ( '' === $name || in_array( $basetype, array( '', 'submit' ), true ) ) {
+            return null;
+        }
+        return array(
+            'id'    => $name,
+            'label' => $name,
+            'type'  => $basetype,
+        );
+    }
 }

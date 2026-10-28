@@ -335,6 +335,123 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
     }
 
     /**
+     * Whether the form plugin is loaded and this integration can list its
+     * forms for the field mapping screen. Integrations that implement the
+     * discovery hooks override this with a check for the plugin's API.
+     *
+     * @return bool
+     */
+    public function is_field_mapping_available() {
+        return false;
+    }
+
+    /**
+     * Human-readable integration name for the field mapping screen.
+     *
+     * @return string
+     */
+    public function get_integration_label() {
+        return static::INTEGRATION_NAME;
+    }
+
+    /**
+     * Lists the plugin's forms for the field mapping screen.
+     *
+     * @return array<int,array<string,string>> Rows of ['id' =>, 'title' =>].
+     */
+    public function get_forms() {
+        if ( ! $this->is_field_mapping_available() ) {
+            return array();
+        }
+
+        $forms = array();
+        foreach ( $this->fetch_forms() as $raw_form ) {
+            $form = $this->map_form( $raw_form );
+            if ( empty( $form['id'] ) ) {
+                continue;
+            }
+            $forms[] = array(
+                'id'    => (string) $form['id'],
+                'title' => isset( $form['title'] ) ? (string) $form['title'] : '',
+            );
+        }
+        return $forms;
+    }
+
+    /**
+     * Lists a form's input fields for the field mapping screen. Each field id
+     * is the key apply_field_mapping() matches submitted rows on (see
+     * get_mapping_key()), so a saved mapping applies on submission.
+     *
+     * @param string $form_id The native form id.
+     * @return array<int,array<string,string>> Rows of ['id' =>, 'label' =>, 'type' =>].
+     */
+    public function get_form_fields( $form_id ) {
+        if ( ! $this->is_field_mapping_available() ) {
+            return array();
+        }
+
+        $fields = array();
+        foreach ( $this->fetch_form_fields( $form_id ) as $raw_field ) {
+            $field = $this->map_field( $raw_field );
+            if ( null === $field || ! isset( $field['id'] ) || '' === (string) $field['id'] ) {
+                continue;
+            }
+            $id = (string) $field['id'];
+            if ( isset( $fields[ $id ] ) ) {
+                continue;
+            }
+            $label         = isset( $field['label'] ) ? trim( (string) $field['label'] ) : '';
+            $fields[ $id ] = array(
+                'id'    => $id,
+                'label' => '' !== $label ? $label : $id,
+                'type'  => isset( $field['type'] ) ? (string) $field['type'] : '',
+            );
+        }
+        return array_values( $fields );
+    }
+
+    /**
+     * Returns the plugin's raw forms.
+     *
+     * @return iterable
+     */
+    protected function fetch_forms() {
+        return array();
+    }
+
+    /**
+     * Maps a raw form to ['id' =>, 'title' =>].
+     *
+     * @param mixed $raw_form A raw form from fetch_forms().
+     * @return array
+     */
+    protected function map_form( $raw_form ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Base placeholder; overridden by integrations.
+        return array();
+    }
+
+    /**
+     * Returns a form's raw fields.
+     *
+     * @param string $form_id The native form id.
+     * @return iterable
+     */
+    protected function fetch_form_fields( $form_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Base placeholder; overridden by integrations.
+        return array();
+    }
+
+    /**
+     * Maps a raw field to ['id' =>, 'label' =>, 'type' =>], or null to skip
+     * it (e.g. submit buttons and layout elements).
+     *
+     * @param mixed $raw_field A raw field from fetch_form_fields().
+     * @return array|null
+     */
+    protected function map_field( $raw_field ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Base placeholder; overridden by integrations.
+        return null;
+    }
+
+    /**
      * Reads the form id from the plugin submit-hook arguments.
      *
      * @param mixed ...$args The plugin submit-hook arguments.
