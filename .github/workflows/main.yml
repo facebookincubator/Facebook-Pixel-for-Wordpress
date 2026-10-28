@@ -3,6 +3,10 @@ name: Unit tests & PHPCS
 on:
   push:
 
+# Both jobs only check the code out and run its tests.
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
