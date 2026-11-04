@@ -620,7 +620,7 @@ A rendered `held: true` alone would not solve every cross-visitor cache variant.
 - Visitors with JavaScript disabled may still register the basic Meta Pixel `noscript` PageView.
 - Backend, administrator and scheduled events are outside this flow.
 - If release fails because of a network or server error, held events may be lost when the visitor leaves or reloads the page.
-- Custom events and events sent directly through `fbq` or a separate Conversions API integration may bypass this flow.
+- Events sent directly through `fbq` or a separate Conversions API integration are outside this plugin's hold/release flow.
 - A different Complianz category, older Complianz version or future API change may require adapting the integration.
 
 The plugin's built-in event types include the following. Coverage depends on the request path:
@@ -634,7 +634,7 @@ Purchase
 Lead
 ```
 
-Valid custom event names queued through Meta pixel for WordPress can also be released. Events sent directly through another script or integration are not added to this queue.
+Custom event integrations are not supported by this guide. The supported setup covers the plugin's standard events listed above.
 
 ## Privacy responsibility
 
