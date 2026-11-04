@@ -19,6 +19,43 @@ namespace FacebookPixelPlugin\Core;
  * Class FacebookWordpressSettingsRecorder
  */
 class FacebookWordpressSettingsRecorder {
+    /**
+     * Returns the lead-form integrations available for field mapping, keyed
+     * by INTEGRATION_NAME.
+     *
+     * @var callable
+     */
+    private $field_mapping_integrations;
+
+    /**
+     * Form field mapping storage.
+     *
+     * @var FormFieldMapper
+     */
+    private $field_mapper;
+
+    /**
+     * Constructor.
+     *
+     * @param callable|null        $field_mapping_integrations Returns the lead-form
+     *                                                         integrations available
+     *                                                         for field mapping,
+     *                                                         keyed by
+     *                                                         INTEGRATION_NAME.
+     * @param FormFieldMapper|null $field_mapper               Optional mapping
+     *                                                         storage.
+     */
+    public function __construct( $field_mapping_integrations = null, $field_mapper = null ) {
+        $this->field_mapping_integrations = is_callable( $field_mapping_integrations )
+            ? $field_mapping_integrations
+            : function () {
+                return array();
+            };
+        $this->field_mapper               = $field_mapper instanceof FormFieldMapper
+            ? $field_mapper
+            : new FormFieldMapper();
+    }
+
 
     /**
      * Registers ajax actions for saving FBE,
@@ -89,6 +126,23 @@ class FacebookWordpressSettingsRecorder {
         add_action(
             'wp_ajax_fbl4b_clear_pixel',
             array( $this, 'fbl4b_clear_pixel' )
+        );
+        // Form field mapping AJAX actions.
+        add_action(
+            'wp_ajax_' . FacebookPluginConfig::GET_MAPPING_FORMS_ACTION_NAME,
+            array( $this, 'get_mapping_forms' )
+        );
+        add_action(
+            'wp_ajax_' . FacebookPluginConfig::GET_MAPPING_FIELDS_ACTION_NAME,
+            array( $this, 'get_mapping_fields' )
+        );
+        add_action(
+            'wp_ajax_' . FacebookPluginConfig::SAVE_FIELD_MAPPING_ACTION_NAME,
+            array( $this, 'save_field_mapping' )
+        );
+        add_action(
+            'wp_ajax_' . FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME,
+            array( $this, 'delete_field_mapping' )
         );
     }
 
@@ -775,5 +829,158 @@ class FacebookWordpressSettingsRecorder {
         }
 
         wp_send_json_success( array( 'data' => $pixels ) );
+    }
+
+    /**
+     * Reads a text value from the POSTed request.
+     *
+     * @param string $key The POST key.
+     * @return string
+     */
+    private function get_posted_text( $key ) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Callers verify the nonce first.
+        return isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : '';
+    }
+
+    /**
+     * Resolves the integration named in a field mapping request. Only the
+     * lead-form integrations whose plugin is loaded are eligible, so request
+     * input never selects an arbitrary class.
+     *
+     * @param string $integration_name The requested INTEGRATION_NAME.
+     * @return \FacebookPixelPlugin\Integration\TrackableLeadFormIntegrationBase|null
+     */
+    private function resolve_field_mapping_integration( $integration_name ) {
+        $integrations = call_user_func( $this->field_mapping_integrations );
+        return isset( $integrations[ $integration_name ] ) ? $integrations[ $integration_name ] : null;
+    }
+
+    /**
+     * Lists the forms of the requested form plugin.
+     *
+     * @return array response data
+     */
+    public function get_mapping_forms() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer( FacebookPluginConfig::GET_MAPPING_FORMS_ACTION_NAME );
+
+        $integration = $this->resolve_field_mapping_integration( $this->get_posted_text( 'integration' ) );
+        if ( null === $integration ) {
+            return $this->handle_invalid_request();
+        }
+
+        return $this->handle_success_request(
+            array( 'forms' => $integration->get_forms() )
+        );
+    }
+
+    /**
+     * Lists a form's fields together with its saved mapping.
+     *
+     * @return array response data
+     */
+    public function get_mapping_fields() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer( FacebookPluginConfig::GET_MAPPING_FIELDS_ACTION_NAME );
+
+        $integration_name = $this->get_posted_text( 'integration' );
+        $form_id          = $this->get_posted_text( 'form_id' );
+        $integration      = $this->resolve_field_mapping_integration( $integration_name );
+        if ( null === $integration || '' === $form_id ) {
+            return $this->handle_invalid_request();
+        }
+
+        return $this->handle_success_request(
+            array(
+                'fields'  => $integration->get_form_fields( $form_id ),
+                'mapping' => $this->field_mapper->get_mappings( $integration_name, $form_id ),
+            )
+        );
+    }
+
+    /**
+     * Saves a form's field mapping, replacing the previous one.
+     *
+     * Expects POST integration, form_id and mapping (a JSON object of
+     * field_id => target). Only fields the form has are kept, and
+     * FormFieldMapper drops invalid targets. The form title shown in the
+     * overview is read from the form plugin.
+     *
+     * @return array response data
+     */
+    public function save_field_mapping() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer( FacebookPluginConfig::SAVE_FIELD_MAPPING_ACTION_NAME );
+
+        $integration_name = $this->get_posted_text( 'integration' );
+        $form_id          = $this->get_posted_text( 'form_id' );
+        $integration      = $this->resolve_field_mapping_integration( $integration_name );
+        if ( null === $integration || '' === $form_id ) {
+            return $this->handle_invalid_request();
+        }
+
+        $form_title = null;
+        foreach ( $integration->get_forms() as $form ) {
+            if ( $form['id'] === $form_id ) {
+                $form_title = $form['title'];
+                break;
+            }
+        }
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified above; decoded keys and values are sanitized below.
+        $raw_mapping = isset( $_POST['mapping'] ) ? json_decode( wp_unslash( $_POST['mapping'] ), true ) : null;
+        if ( null === $form_title || ! is_array( $raw_mapping ) ) {
+            return $this->handle_invalid_request();
+        }
+
+        $field_ids = array_column( $integration->get_form_fields( $form_id ), 'id' );
+        $mapping   = array();
+        foreach ( $raw_mapping as $field_id => $target ) {
+            $field_id = sanitize_text_field( (string) $field_id );
+            if ( ! is_string( $target ) || ! in_array( $field_id, $field_ids, true ) ) {
+                continue;
+            }
+            $mapping[ $field_id ] = sanitize_text_field( $target );
+        }
+
+        if ( ! $this->field_mapper->save_form_mapping( $integration_name, $form_id, $form_title, $mapping ) ) {
+            return $this->handle_invalid_request();
+        }
+
+        return $this->handle_success_request(
+            array( 'list' => $this->field_mapper->get_flat_list() )
+        );
+    }
+
+    /**
+     * Deletes a form's saved field mapping. The form plugin need not be
+     * active, so mappings left behind by a deactivated plugin can be removed.
+     *
+     * @return array response data
+     */
+    public function delete_field_mapping() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer( FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME );
+
+        $integration_name = $this->get_posted_text( 'integration' );
+        $form_id          = $this->get_posted_text( 'form_id' );
+        if ( '' === $integration_name || '' === $form_id ) {
+            return $this->handle_invalid_request();
+        }
+
+        if ( ! $this->field_mapper->delete_form_mapping( $integration_name, $form_id ) ) {
+            return $this->handle_invalid_request();
+        }
+
+        return $this->handle_success_request(
+            array( 'list' => $this->field_mapper->get_flat_list() )
+        );
     }
 }
