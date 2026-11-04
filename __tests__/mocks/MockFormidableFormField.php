@@ -53,15 +53,24 @@ final class MockFormidableFormField {
     public $description;
 
     /**
+     * The id of the form field.
+     *
+     * @var string|null
+     */
+    public $id;
+
+    /**
      * Constructs a new instance of the MockFormidableFormField class.
      *
      * @param string $type The type of the form field.
      * @param string $name The name of the form field.
      * @param string $description The description of the form field.
+     * @param string $id          The id of the form field.
      */
-    public function __construct( $type, $name, $description ) {
+    public function __construct( $type, $name, $description, $id = null ) {
         $this->type        = $type;
         $this->name        = $name;
         $this->description = $description;
+        $this->id          = $id;
     }
 }

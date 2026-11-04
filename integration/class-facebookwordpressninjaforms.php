@@ -236,4 +236,76 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
         }
         return $result;
     }
+
+    /**
+     * Whether Ninja Forms is loaded.
+     *
+     * @return bool
+     */
+    public function is_field_mapping_available() {
+        return function_exists( 'Ninja_Forms' );
+    }
+
+    /**
+     * Human-readable integration name for the field mapping screen.
+     *
+     * @return string
+     */
+    public function get_integration_label() {
+        return 'Ninja Forms';
+    }
+
+    /**
+     * Returns all Ninja Forms forms.
+     *
+     * @return iterable
+     */
+    protected function fetch_forms() {
+        $forms = Ninja_Forms()->form()->get_forms();
+        return is_array( $forms ) ? $forms : array();
+    }
+
+    /**
+     * Maps a Ninja Forms form model to id + title.
+     *
+     * @param mixed $raw_form A Ninja Forms form model.
+     * @return array
+     */
+    protected function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->get_id(),
+            'title' => $raw_form->get_setting( 'title' ),
+        );
+    }
+
+    /**
+     * Returns a Ninja Forms form's field models.
+     *
+     * @param string $form_id The form id.
+     * @return iterable
+     */
+    protected function fetch_form_fields( $form_id ) {
+        $fields = Ninja_Forms()->form( $form_id )->get_fields();
+        return is_array( $fields ) ? $fields : array();
+    }
+
+    /**
+     * Maps a Ninja Forms field model to a field. The id is the field key,
+     * which get_form_param_iterator() yields as the row name.
+     *
+     * @param mixed $raw_field A Ninja Forms field model.
+     * @return array|null
+     */
+    protected function map_field( $raw_field ) {
+        $key  = (string) $raw_field->get_setting( 'key' );
+        $type = (string) $raw_field->get_setting( 'type' );
+        if ( '' === $key || in_array( $type, array( 'submit', 'hr', 'html', 'recaptcha', 'spam' ), true ) ) {
+            return null;
+        }
+        return array(
+            'id'    => $key,
+            'label' => $raw_field->get_setting( 'label' ),
+            'type'  => $type,
+        );
+    }
 }
