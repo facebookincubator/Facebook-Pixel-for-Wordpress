@@ -108,7 +108,7 @@
           $('<td>').text(
             row.mapped_count > 0
               ? row.mapped_count
-              : 'None (rejected, nothing is sent)',
+              : 'None (rejected, no Lead events)',
           ),
         )
         .append($actions)
@@ -268,25 +268,35 @@
       .fail(handlers.fail);
   }
 
+  // A mapping with no fields rejects the form: it stops sending Lead events.
+  function confirmReject() {
+    return window.confirm(
+      'Reject this mapping? Submitting this form will stop sending Lead events until you save a mapping with at least one field.',
+    );
+  }
+
+  var REJECTED_MESSAGE =
+    'Mapping rejected. This form no longer sends Lead events.';
+
   $saveButton.on('click', function (e) {
     e.preventDefault();
-    saveMapping(collectMapping(), 'Mapping saved.');
+    var mapping = collectMapping();
+    if ($.isEmptyObject(mapping)) {
+      if (confirmReject()) {
+        saveMapping(mapping, REJECTED_MESSAGE);
+      }
+      return;
+    }
+    saveMapping(mapping, 'Mapping saved.');
   });
 
   $rejectButton.on('click', function (e) {
     e.preventDefault();
-    if (
-      !window.confirm(
-        'Reject this mapping? No customer information will be sent from this form until you save a mapping for it.',
-      )
-    ) {
+    if (!confirmReject()) {
       return;
     }
     $fieldsBody.find('.fb-mapping-target').val('');
-    saveMapping(
-      {},
-      'Mapping rejected. No customer information is sent from this form.',
-    );
+    saveMapping({}, REJECTED_MESSAGE);
   });
 
   $listBody.on('click', '.fb-mapping-edit', function (e) {

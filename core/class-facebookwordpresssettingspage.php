@@ -1407,8 +1407,9 @@ class FacebookWordpressSettingsPage {
         events. Until you save or reject a mapping for a form, its fields are
         detected automatically and sent. Open a form to see what automatic
         detection sends: save the mapping to keep it (changing any field you
-        need to), or reject it to send no customer information from that form.
-        Once a mapping is saved, only the fields in it are sent.
+        need to), or reject it to stop sending Lead events from that form.
+        Once a mapping is saved, only the fields in it are sent, and a form
+        whose mapping has no fields sends no Lead events.
     </div>
         <?php if ( empty( $integrations ) ) : ?>
     <p class="fb-capi-desc fb-mapping-empty">
@@ -1458,7 +1459,8 @@ class FacebookWordpressSettingsPage {
             <strong>Not saved yet.</strong> Automatic detection currently sends
             the fields below for this form, and will keep sending them until you
             save or reject this mapping. Set a field to "Do not map" to stop
-            sending it, or reject the mapping to send none.
+            sending it, or reject the mapping to stop sending Lead events from
+            this form.
         </p>
         <p id="fb-mapping-no-fields" class="hidden">
             This form has no fields that can be mapped.

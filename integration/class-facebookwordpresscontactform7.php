@@ -62,7 +62,7 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
      */
     public function capture_submitted_form( $form, $result ) {
         $submit_failed = 'mail_sent' !== $result['status'];
-        if ( $submit_failed ) {
+        if ( $submit_failed || $this->is_form_rejected( $form ) ) {
             return;
         }
 

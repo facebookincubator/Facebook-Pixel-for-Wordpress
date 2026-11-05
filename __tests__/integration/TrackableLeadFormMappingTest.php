@@ -382,4 +382,25 @@ final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
             $integration->extract_lead_data( $form )
         );
     }
+
+    /**
+     * Only a saved mapping with no fields rejects a form; an unsaved form or
+     * one with mapped fields is tracked.
+     *
+     * @return void
+     */
+    public function testOnlyAnEmptySavedMappingRejectsTheForm() {
+        $is_rejected = function ( $mappings ) {
+            $integration = $this->make_integration( array(), array(), $mappings );
+            $method      = new \ReflectionMethod( $integration, 'is_form_rejected' );
+            if ( PHP_VERSION_ID < 80100 ) {
+                $method->setAccessible( true );
+            }
+            return $method->invoke( $integration, 7 );
+        };
+
+        $this->assertTrue( $is_rejected( array() ) );
+        $this->assertFalse( $is_rejected( null ) );
+        $this->assertFalse( $is_rejected( array( 'mail' => 'email' ) ) );
+    }
 }

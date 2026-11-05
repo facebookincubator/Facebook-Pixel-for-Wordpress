@@ -166,8 +166,8 @@ class FormFieldMapper {
      * has at most one mapping.
      *
      * Invalid targets are dropped. A mapping with no fields is still saved: it
-     * means the form sends no customer information (a rejected suggestion).
-     * Only delete_form_mapping() returns a form to automatic detection.
+     * means the form was rejected and sends no Lead event. Only
+     * delete_form_mapping() returns a form to automatic detection.
      *
      * @param string               $integration_name The integration name.
      * @param string               $form_id          The native form id.

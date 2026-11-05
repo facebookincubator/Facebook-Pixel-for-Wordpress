@@ -71,6 +71,9 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
      */
     public function capture_submitted_form( ...$args ) {
         $actions = $args[0];
+        if ( $this->is_form_rejected( ...$args ) ) {
+            return $actions;
+        }
 
         foreach ( $actions as $action ) {
             if ( ! isset( $action['settings'] ) || ! isset( $action['settings']['type'] ) ) {

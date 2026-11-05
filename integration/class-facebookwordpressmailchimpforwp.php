@@ -52,6 +52,9 @@ class FacebookWordpressMailchimpForWp extends TrackableLeadFormIntegrationBase {
      * @return void
      */
     public function capture_submitted_form( ...$args ) {
+        if ( $this->is_form_rejected( ...$args ) ) {
+            return;
+        }
         $event = $this->generate_event( self::EVENT_NAME, $this->extract_lead_data( ...$args ) );
         $this->deliver( $event );
     }
