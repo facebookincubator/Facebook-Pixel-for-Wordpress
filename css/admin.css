@@ -1143,7 +1143,9 @@
 
 /* Form Field Mapping, inside the Meta Advanced Configuration section */
 #fb-field-mapping {
-    margin-top: 20px;
+    margin-top: 24px;
+    padding-top: 15px;
+    border-top: 1px solid #ccc;
 }
 
 #fb-field-mapping .hidden {
@@ -1197,4 +1199,29 @@
 
 .fb-mapping-empty {
     font-style: italic;
+}
+
+/* Settings tabs: only once connected. Until then every panel is shown, so the
+   page looks as it did before tabs (the connection flow only). */
+.fb-settings-tabs {
+    display: none;
+}
+
+.fb-settings--connected .fb-settings-tabs {
+    display: block;
+    margin-bottom: 16px;
+}
+
+.fb-settings--connected .fb-settings-panel {
+    display: none;
+}
+
+.fb-settings--connected .fb-settings-panel--active {
+    display: block;
+}
+
+.fb-settings--connected .fb-adv-conf {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
 }

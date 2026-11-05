@@ -1363,6 +1363,8 @@ var FBEFlowContainer = React.createClass({
     jQuery('#ad-insights-plugin').hide();
     jQuery("#fb-adv-conf").hide();
     jQuery(".events-manager-wrapper input#pixel-id").val('');
+    // Lets the settings page drop its connected-only tabs.
+    jQuery(document).trigger('facebook-pixel:connection-changed', [false]);
   },
   showEventsManagerSection: function showEventsManagerSection(pixelId) {
     jQuery(".events-manager-wrapper").show();
@@ -1375,6 +1377,8 @@ var FBEFlowContainer = React.createClass({
     jQuery(".meta-event-manager a").attr("href",
       "https://business.facebook.com/events_manager2/list/pixel/" + sanitizedPixelId
     );
+    // Lets the settings page show its connected-only tabs.
+    jQuery(document).trigger('facebook-pixel:connection-changed', [true]);
   }
 });
 

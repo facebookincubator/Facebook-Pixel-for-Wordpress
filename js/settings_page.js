@@ -50,109 +50,111 @@ if ("false" == hasAccessToken) {
 } else {
     jQuery("#fb-adv-conf").show();
     jQuery("#fb-capi-ef").show();
+}
 
-    var enablePiiCachingCheckbox = document.getElementById("capi-ch");
-    var piiCachingStatus = meta_wc_params.piiCachingStatus;
-    updateCapiPiiCachingCheckbox(piiCachingStatus);
-    enablePiiCachingCheckbox.addEventListener("change", function () {
-        if (this.checked) {
-            saveCapiPiiCachingStatus("1");
-        } else {
-            saveCapiPiiCachingStatus("0");
-        }
-    });
+// Wire the checkboxes whatever the state on load: connecting without a
+// reload reveals #fb-adv-conf, and they must work then too.
+var enablePiiCachingCheckbox = document.getElementById("capi-ch");
+var piiCachingStatus = meta_wc_params.piiCachingStatus;
+updateCapiPiiCachingCheckbox(piiCachingStatus);
+enablePiiCachingCheckbox.addEventListener("change", function () {
+    if (this.checked) {
+        saveCapiPiiCachingStatus("1");
+    } else {
+        saveCapiPiiCachingStatus("0");
+    }
+});
 
-    var enablePageViewFilterCheckBox = document.getElementById("capi-ef");
-    var capiIntegrationPageViewFiltered =
-        meta_wc_params.capiIntegrationPageViewFiltered === "true" ? "1" : "0";
-    updateCapiIntegrationEventsFilter(capiIntegrationPageViewFiltered);
-    enablePageViewFilterCheckBox.addEventListener("change", function () {
-        saveCapiIntegrationEventsFilter(this.checked ? "1" : "0");
-    });
+var enablePageViewFilterCheckBox = document.getElementById("capi-ef");
+var capiIntegrationPageViewFiltered =
+    meta_wc_params.capiIntegrationPageViewFiltered === "true" ? "1" : "0";
+updateCapiIntegrationEventsFilter(capiIntegrationPageViewFiltered);
+enablePageViewFilterCheckBox.addEventListener("change", function () {
+    saveCapiIntegrationEventsFilter(this.checked ? "1" : "0");
+});
 
-    var capigCheckbox = document.getElementById("capig");
-    updateCapigCheckbox(meta_wc_params.capig);
-    capigCheckbox.addEventListener("change", function () {
-        saveCapig(this.checked ? "1" : "0");
-    });
-    function updateCapigCheckbox(val) {
-        capigCheckbox.checked = val === "1";
+var capigCheckbox = document.getElementById("capig");
+updateCapigCheckbox(meta_wc_params.capig);
+capigCheckbox.addEventListener("change", function () {
+    saveCapig(this.checked ? "1" : "0");
+});
+function updateCapigCheckbox(val) {
+    capigCheckbox.checked = val === "1";
+}
+function saveCapig(new_val) {
+    jQuery
+        .ajax({
+            type: "post",
+            dataType: "json",
+            url: meta_wc_params.capigSaveUrl,
+            data: {
+                action: meta_wc_params.capigActionName,
+                val: new_val,
+            },
+            success: function (response) {
+                updateCapigCheckbox(new_val);
+            },
+        })
+        .fail(function (jqXHR, textStatus, error) {
+            jQuery("#fb-capig-se").text(
+                meta_wc_params.capigUpdateError
+            );
+            jQuery("#fb-capig-se")
+                .show().delay(3000).fadeOut();
+            updateCapigCheckbox(new_val === "1" ? "0" : "1");
+        });
+}
+function updateCapiPiiCachingCheckbox(val) {
+    if (val === "1") {
+        enablePiiCachingCheckbox.checked = true;
+    } else {
+        enablePiiCachingCheckbox.checked = false;
     }
-    function saveCapig(new_val) {
-        jQuery
-            .ajax({
-                type: "post",
-                dataType: "json",
-                url: meta_wc_params.capigSaveUrl,
-                data: {
-                    action: meta_wc_params.capigActionName,
-                    val: new_val,
-                },
-                success: function (response) {
-                    updateCapigCheckbox(new_val);
-                },
-            })
-            .fail(function (jqXHR, textStatus, error) {
-                jQuery("#fb-capig-se").text(
-                    meta_wc_params.capigUpdateError
-                );
-                jQuery("#fb-capig-se")
-                    .show().delay(3000).fadeOut();
-                updateCapigCheckbox(new_val === "1" ? "0" : "1");
-            });
-    }
-    function updateCapiPiiCachingCheckbox(val) {
-        if (val === "1") {
-            enablePiiCachingCheckbox.checked = true;
-        } else {
-            enablePiiCachingCheckbox.checked = false;
-        }
-    }
-    function updateCapiIntegrationEventsFilter(val) {
-        enablePageViewFilterCheckBox.checked = val === "1" ? true : false;
-    }
-    function saveCapiPiiCachingStatus(new_val) {
-        jQuery
-            .ajax({
-                type: "post",
-                dataType: "json",
-                url: meta_wc_params.capiPiiCachingStatusSaveUrl,
-                data: {
-                    action: meta_wc_params.capiPiiCachingStatusActionName,
-                    val: new_val,
-                },
-                success: function (response) {
-                    updateCapiPiiCachingCheckbox(new_val);
-                },
-            })
-            .fail(function (jqXHR, textStatus, error) {
-                jQuery("#fb-capi-se").text(
-                    meta_wc_params.capiPiiCachingStatusUpdateError
-                );
-                jQuery("#fb-capi-se").show().delay(3000).fadeOut();
-                updateCapiPiiCachingCheckbox(new_val === "1" ? "0" : "1");
-            });
-    }
-    function saveCapiIntegrationEventsFilter(new_val) {
-        jQuery
-            .ajax({
-                type: "post",
-                dataType: "json",
-                url: meta_wc_params.capiIntegrationEventsFilterSaveUrl,
-                data: {
-                    action: meta_wc_params.capiIntegrationEventsFilterActionName,
-                    val: new_val,
-                },
-                success: function (response) {},
-            })
-            .fail(function (jqXHR, textStatus, error) {
-                jQuery("#fb-capi-ef-se").text(
-                    meta_wc_params.capiIntegrationEventsFilterUpdateError
-                );
-                jQuery("#fb-capi-ef-se").show().delay(3000).fadeOut();
-                updateCapiIntegrationEventsFilter(new_val === "1" ? "0" : "1");
-            });
-    }
+}
+function updateCapiIntegrationEventsFilter(val) {
+    enablePageViewFilterCheckBox.checked = val === "1" ? true : false;
+}
+function saveCapiPiiCachingStatus(new_val) {
+    jQuery
+        .ajax({
+            type: "post",
+            dataType: "json",
+            url: meta_wc_params.capiPiiCachingStatusSaveUrl,
+            data: {
+                action: meta_wc_params.capiPiiCachingStatusActionName,
+                val: new_val,
+            },
+            success: function (response) {
+                updateCapiPiiCachingCheckbox(new_val);
+            },
+        })
+        .fail(function (jqXHR, textStatus, error) {
+            jQuery("#fb-capi-se").text(
+                meta_wc_params.capiPiiCachingStatusUpdateError
+            );
+            jQuery("#fb-capi-se").show().delay(3000).fadeOut();
+            updateCapiPiiCachingCheckbox(new_val === "1" ? "0" : "1");
+        });
+}
+function saveCapiIntegrationEventsFilter(new_val) {
+    jQuery
+        .ajax({
+            type: "post",
+            dataType: "json",
+            url: meta_wc_params.capiIntegrationEventsFilterSaveUrl,
+            data: {
+                action: meta_wc_params.capiIntegrationEventsFilterActionName,
+                val: new_val,
+            },
+            success: function (response) {},
+        })
+        .fail(function (jqXHR, textStatus, error) {
+            jQuery("#fb-capi-ef-se").text(
+                meta_wc_params.capiIntegrationEventsFilterUpdateError
+            );
+            jQuery("#fb-capi-ef-se").show().delay(3000).fadeOut();
+            updateCapiIntegrationEventsFilter(new_val === "1" ? "0" : "1");
+        });
 }
 // FBL4B (Facebook Login for Business) configuration
 // All values come from PHP via meta_wc_params
@@ -445,3 +447,42 @@ function toggleHeight(element) {
         element.classList.add("hidden");
     }
 }
+
+// Settings tabs, shown once the plugin is connected (see .fb-settings--connected
+// in admin.css). The selected tab is kept in the URL hash so a reload stays on it.
+(function ($) {
+    var $settings = $("#fb-settings");
+    var $tabs = $settings.find(".fb-settings-tabs .nav-tab");
+
+    function selectTab(name) {
+        var $tab = $tabs.filter('[data-fb-tab="' + name + '"]');
+        if (!$tab.length) {
+            return;
+        }
+        $tabs.removeClass("nav-tab-active").attr("aria-selected", "false");
+        $tab.addClass("nav-tab-active").attr("aria-selected", "true");
+        $settings.find(".fb-settings-panel").removeClass("fb-settings-panel--active");
+        $("#fb-tab-" + name).addClass("fb-settings-panel--active");
+    }
+
+    $tabs.on("click", function (e) {
+        e.preventDefault();
+        var name = $(this).data("fb-tab");
+        selectTab(name);
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, "", "#fb-tab-" + name);
+        }
+    });
+
+    // The connection flow (js/lib/fbe.js) fires this when the plugin connects
+    // or disconnects without a page reload.
+    $(document).on("facebook-pixel:connection-changed", function (e, connected) {
+        $settings.toggleClass("fb-settings--connected", !!connected);
+        selectTab("connection");
+    });
+
+    var match = /^#fb-tab-(\w+)$/.exec(window.location.hash);
+    if (match) {
+        selectTab(match[1]);
+    }
+})(jQuery);

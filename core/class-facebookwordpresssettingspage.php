@@ -239,14 +239,86 @@ class FacebookWordpressSettingsPage {
                 'repeat'          => false,
             )
         );
+        // Connected pages split the settings into tabs; until then the page
+        // shows only the connection flow, as before. js/settings_page.js keeps
+        // the class in sync when the connection changes without a reload.
+        $is_connected = ! empty( FacebookWordpressOptions::get_active_pixel_id() )
+            && ! empty( FacebookWordpressOptions::get_active_access_token() );
         ?>
-<div>
+<div id="fb-settings" class="fb-settings<?php echo $is_connected ? ' fb-settings--connected' : ''; ?>">
+    <nav class="nav-tab-wrapper fb-settings-tabs" role="tablist">
+        <a href="#fb-tab-connection" class="nav-tab nav-tab-active" role="tab"
+            aria-controls="fb-tab-connection" aria-selected="true"
+            data-fb-tab="connection">Connection</a>
+        <a href="#fb-tab-configuration" class="nav-tab" role="tab"
+            aria-controls="fb-tab-configuration" aria-selected="false"
+            data-fb-tab="configuration">Configuration</a>
+        <a href="#fb-tab-testing" class="nav-tab" role="tab"
+            aria-controls="fb-tab-testing" aria-selected="false"
+            data-fb-tab="testing">Testing</a>
+    </nav>
+    <div id="fb-tab-connection" class="fb-settings-panel fb-settings-panel--active" role="tabpanel">
     <div id="fbe-iframe">
     </div>
+    <?php
+    wp_enqueue_script(
+        'facebook-sdk',
+        'https://connect.facebook.net/en_US/sdk.js',
+        array(),
+        '1.0.0',
+        false
+    );
+        ?>
+    <div id="meta-ads-plugin">
+    <div id="ad-creation-plugin" class="
+    <?php
+    // Ads Creation only available for MBE connections (requires MBE scopes).
+    echo ( 'mbe' !== FacebookWordpressOptions::get_connection_type()
+        || empty( FacebookWordpressOptions::get_access_token() ) ) ?
+    'hidden' : '';
+    ?>
+    ">
+    <h3 class="mt-5">Ads Creation</h3>
+        <div
+        class="my-3 p-3 bg-white rounded shadow-sm">
+        <div id="ad-creation-plugin-iframe" class="fb-lwi-ads-creation"
+        data-lazy=true
+        data-hide-manage-button=true
+        data-fbe-extras='<?php echo esc_html( $fbe_extras ); ?>'
+        data-fbe-scopes=
+            'manage_business_extension,business_management,ads_management'
+        data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler'
+        ></div>
+        </div>
+    </div>
+    <div id="ad-insights-plugin" class="
+    <?php
+    // Ads Insights only available for MBE connections (requires MBE scopes).
+    echo ( 'mbe' !== FacebookWordpressOptions::get_connection_type()
+        || empty( FacebookWordpressOptions::get_access_token() ) ) ?
+    'hidden' : '';
+    ?>
+    ">
+        <h3 class="mt-5">Ads Insights</h3>
+        <div
+        class="my-3 p-3 bg-white d-block rounded shadow-sm">
+        <div id="ad-insights-plugin-iframe" class="fb-lwi-ads-insights"
+        data-lazy=true
+        data-fbe-extras='<?php echo esc_html( $fbe_extras ); ?>'
+        data-fbe-scopes=
+            'manage_business_extension,business_management,ads_management'
+        data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler'
+        ></div>
+        </div>
+    </div>
+    </div>
+    </div>
+    <div id="fb-tab-configuration" class="fb-settings-panel" role="tabpanel">
     <div id="fb-adv-conf" class="fb-adv-conf">
     <div class="fb-adv-conf-title">Meta Advanced Configuration</div>
     <div id="fb-capi-ef">
-        <input type="checkbox" id="capi-ef" name="capi-ef">
+        <input type="checkbox" id="capi-ef" name="capi-ef"
+            <?php checked( FacebookWordpressOptions::get_capi_integration_page_view_filtered() ); ?>>
         <label class="fb-capi-title" for="capi-ef">Filter PageView Event</label>
         <span id="fb-capi-ef-se" class="fb-capi-se"></span>
         <br/>
@@ -254,7 +326,8 @@ class FacebookWordpressSettingsPage {
             Enable checkbox to filter PageView events from sending.
         </div>
         <div id="fb-capi-ch">
-        <input type="checkbox" id="capi-ch" name="capi-ch">
+        <input type="checkbox" id="capi-ch" name="capi-ch"
+            <?php checked( '1', FacebookWordpressOptions::get_capi_pii_caching_status() ); ?>>
         <label class="fb-capi-title" for="capi-ch">
             Enable Events Enrichment
         </label>
@@ -265,7 +338,8 @@ class FacebookWordpressSettingsPage {
         </div>
         </div>
         <div id="fb-capig">
-        <input type="checkbox" id="capig" name="capig">
+        <input type="checkbox" id="capig" name="capig"
+            <?php checked( '1', FacebookWordpressOptions::get_capig() ); ?>>
         <label class="fb-capi-title" for="capig">
             Opt in to a Meta-enabled Conversions API integration
         </label>
@@ -286,18 +360,21 @@ class FacebookWordpressSettingsPage {
         </div>
     </div>
         <?php
-        // Inside #fb-adv-conf, so it is shown only once the plugin is connected.
+        // Inside #fb-adv-conf (the Configuration tab), so it is shown only once
+        // the plugin is connected.
         echo $this->get_field_mapping_section(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped as it is built.
         ?>
     </div>
+    </div>
 
+    <div id="fb-tab-testing" class="fb-settings-panel" role="tabpanel">
     <div class="events-manager-wrapper
     <?php
     echo empty( FacebookWordpressOptions::get_active_access_token() ) ?
     'hidden' : '';
     ?>
     ">
-    <h3>Conversion API Tests</h3>
+    <h3>Testing Conversions API integration</h3>
 
     <div class="events-manager-container">
         <div>
@@ -468,57 +545,6 @@ class FacebookWordpressSettingsPage {
     </div>
     </div>
 
-    <?php
-    wp_enqueue_script(
-        'facebook-sdk',
-        'https://connect.facebook.net/en_US/sdk.js',
-        array(),
-        '1.0.0',
-        false
-    );
-        ?>
-    <div id="meta-ads-plugin">
-    <div id="ad-creation-plugin" class="
-    <?php
-    // Ads Creation only available for MBE connections (requires MBE scopes).
-    echo ( 'mbe' !== FacebookWordpressOptions::get_connection_type()
-        || empty( FacebookWordpressOptions::get_access_token() ) ) ?
-    'hidden' : '';
-    ?>
-    ">
-    <h3 class="mt-5">Ads Creation</h3>
-        <div
-        class="my-3 p-3 bg-white rounded shadow-sm">
-        <div id="ad-creation-plugin-iframe" class="fb-lwi-ads-creation"
-        data-lazy=true
-        data-hide-manage-button=true
-        data-fbe-extras='<?php echo esc_html( $fbe_extras ); ?>'
-        data-fbe-scopes=
-            'manage_business_extension,business_management,ads_management'
-        data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler'
-        ></div>
-        </div>
-    </div>
-    <div id="ad-insights-plugin" class="
-    <?php
-    // Ads Insights only available for MBE connections (requires MBE scopes).
-    echo ( 'mbe' !== FacebookWordpressOptions::get_connection_type()
-        || empty( FacebookWordpressOptions::get_access_token() ) ) ?
-    'hidden' : '';
-    ?>
-    ">
-        <h3 class="mt-5">Ads Insights</h3>
-        <div
-        class="my-3 p-3 bg-white d-block rounded shadow-sm">
-        <div id="ad-insights-plugin-iframe" class="fb-lwi-ads-insights"
-        data-lazy=true
-        data-fbe-extras='<?php echo esc_html( $fbe_extras ); ?>'
-        data-fbe-scopes=
-            'manage_business_extension,business_management,ads_management'
-        data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler'
-        ></div>
-        </div>
-    </div>
     </div>
 </div>
 
@@ -1444,7 +1470,7 @@ class FacebookWordpressSettingsPage {
         ob_start();
         ?>
     <div id="fb-field-mapping">
-    <div class="fb-capi-title">Form Field Mapping</div>
+    <div class="fb-adv-conf-title">Form Field Mapping</div>
     <div class="fb-capi-desc">
         Choose which form field holds each piece of customer information sent
         with Lead events. A mapped field takes priority over automatic
