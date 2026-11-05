@@ -121,6 +121,18 @@ class FormFieldMapper {
     }
 
     /**
+     * Whether a mapping is saved for a form, including one with no fields.
+     *
+     * @param string $integration_name The integration name (INTEGRATION_NAME).
+     * @param string $form_id          The form plugin's native form id.
+     * @return bool
+     */
+    public function has_form_mapping( $integration_name, $form_id ) {
+        $all = $this->get_all();
+        return isset( $all[ $integration_name ][ (string) $form_id ] );
+    }
+
+    /**
      * Returns a flat list of all saved mappings for the admin overview.
      *
      * Each row: integration_name, form_id, form_title, mapped_count.
@@ -153,8 +165,9 @@ class FormFieldMapper {
      * Saves the mapping for a form, replacing any existing one, so each form
      * has at most one mapping.
      *
-     * Invalid targets are dropped. If nothing valid remains, the form's entry
-     * is removed instead.
+     * Invalid targets are dropped. A mapping with no fields is still saved: it
+     * means the form sends no customer information (a rejected suggestion).
+     * Only delete_form_mapping() returns a form to automatic detection.
      *
      * @param string               $integration_name The integration name.
      * @param string               $form_id          The native form id.
@@ -173,10 +186,6 @@ class FormFieldMapper {
                 }
                 $clean[ $field_id ] = $target;
             }
-        }
-
-        if ( empty( $clean ) ) {
-            return $this->delete_form_mapping( $integration_name, $form_id );
         }
 
         $integration_name = (string) $integration_name;

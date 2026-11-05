@@ -195,7 +195,8 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
      *
      * A form-field -> lead-parameter mapping saved for this form (see
      * is_mapping_available()/get_mapping_for_form()) replaces automatic
-     * detection: only mapped fields are sent. Forms without a saved mapping
+     * detection: only mapped fields are sent, and none for a saved mapping
+     * with no fields (a rejected suggestion). Forms without a saved mapping
      * use the integration's hard-coded fallback extraction, which also seeds
      * the mapping screen (see suggest_field_mapping()). The arguments are
      * whatever the plugin's submit hook provides and are forwarded verbatim to
@@ -208,13 +209,9 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
         $form_id  = $this->get_form_id( ...$args );
         $iterator = $this->get_form_param_iterator( ...$args );
 
-        $mapping = $this->is_mapping_available( $form_id )
-            ? $this->get_mapping_for_form( static::INTEGRATION_NAME, $form_id )
-            : array();
-
-        return empty( $mapping )
-            ? $this->extract_lead_data_fallback( $iterator )
-            : $this->apply_field_mapping( $iterator, $mapping );
+        return $this->is_mapping_available( $form_id )
+            ? $this->apply_field_mapping( $iterator, $this->get_mapping_for_form( static::INTEGRATION_NAME, $form_id ) )
+            : $this->extract_lead_data_fallback( $iterator );
     }
 
     /**
@@ -318,7 +315,9 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
     }
 
     /**
-     * Whether a form-field -> lead-parameter mapping is configured for the form.
+     * Whether a form-field -> lead-parameter mapping is saved for the form. A
+     * saved mapping with no fields counts: it means send no customer
+     * information, not fall back to automatic detection.
      *
      * @param mixed $form_id The form identifier.
      * @return bool
@@ -327,7 +326,7 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
         if ( ! is_scalar( $form_id ) || '' === (string) $form_id ) {
             return false;
         }
-        return ! empty( $this->get_mapping_for_form( static::INTEGRATION_NAME, $form_id ) );
+        return $this->field_mapper->has_form_mapping( static::INTEGRATION_NAME, (string) $form_id );
     }
 
     /**

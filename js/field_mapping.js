@@ -26,6 +26,7 @@
   var $noFields = $('#fb-mapping-no-fields');
   var $suggested = $('#fb-mapping-suggested');
   var $saveButton = $('#fb-mapping-save');
+  var $rejectButton = $('#fb-mapping-reject');
   var $status = $('#fb-mapping-status');
   var $listBody = $('#fb-mapping-list').find('tbody');
 
@@ -88,7 +89,8 @@
       }
       $('<a href="#">')
         .addClass('fb-mapping-delete')
-        .text('Delete')
+        .text('Reset')
+        .attr('title', 'Remove the saved mapping and use automatic detection')
         .data('integration', row.integration_name)
         .data('form_id', row.form_id)
         .appendTo($actions);
@@ -102,7 +104,13 @@
           ),
         )
         .append($('<td>').text(row.form_title || row.form_id))
-        .append($('<td>').text(row.mapped_count))
+        .append(
+          $('<td>').text(
+            row.mapped_count > 0
+              ? row.mapped_count
+              : 'None (rejected, nothing is sent)',
+          ),
+        )
         .append($actions)
         .appendTo($listBody);
     });
@@ -114,18 +122,19 @@
     $noFields.addClass('hidden');
     $suggested.addClass('hidden');
     $saveButton.addClass('hidden');
+    $rejectButton.addClass('hidden');
   }
 
   // One row per form field, preselecting the saved mapping or, for a form
-  // without one, the targets automatic detection suggests.
-  function renderFields(fields, mapping, suggested) {
+  // without one, what automatic detection sends today. An unsaved form can
+  // also be rejected, which saves a mapping with no fields.
+  function renderFields(fields, saved, mapping, suggested) {
     resetFields();
     if (!fields || fields.length === 0) {
       $noFields.removeClass('hidden');
       return;
     }
-    var hasSaved = mapping && !$.isEmptyObject(mapping);
-    var selected = hasSaved ? mapping : suggested || {};
+    var selected = (saved ? mapping : suggested) || {};
     $.each(fields, function (i, field) {
       var $target = buildTargetSelect(selected[field.id] || '');
       $target.data('field_id', field.id);
@@ -135,7 +144,8 @@
         .append($('<td>').append($target))
         .appendTo($fieldsBody);
     });
-    $suggested.toggleClass('hidden', hasSaved || $.isEmptyObject(selected));
+    $suggested.toggleClass('hidden', !!saved);
+    $rejectButton.toggleClass('hidden', !!saved);
     $fieldsTable.removeClass('hidden');
     $saveButton.removeClass('hidden');
   }
@@ -177,6 +187,7 @@
         if (response && response.success) {
           renderFields(
             response.msg.fields,
+            response.msg.saved,
             response.msg.mapping,
             response.msg.suggested,
           );
@@ -234,21 +245,48 @@
     }
   });
 
-  $saveButton.on('click', function (e) {
-    e.preventDefault();
+  function saveMapping(mapping, successMessage) {
     var integration = $integration.val();
     var formId = $form.val();
     if (!integration || !formId) {
       return;
     }
-    var handlers = onListResponse('Mapping saved.', params.saveError);
+    var handlers = onListResponse(successMessage, params.saveError);
     post(params.saveUrl, {
       integration: integration,
       form_id: formId,
-      mapping: JSON.stringify(collectMapping()),
+      mapping: JSON.stringify(mapping),
     })
-      .done(handlers.done)
+      .done(function (response) {
+        handlers.done(response);
+        if (response && response.success) {
+          // The form now has a saved mapping: no more suggestion or reject.
+          $suggested.addClass('hidden');
+          $rejectButton.addClass('hidden');
+        }
+      })
       .fail(handlers.fail);
+  }
+
+  $saveButton.on('click', function (e) {
+    e.preventDefault();
+    saveMapping(collectMapping(), 'Mapping saved.');
+  });
+
+  $rejectButton.on('click', function (e) {
+    e.preventDefault();
+    if (
+      !window.confirm(
+        'Reject this mapping? No customer information will be sent from this form until you save a mapping for it.',
+      )
+    ) {
+      return;
+    }
+    $fieldsBody.find('.fb-mapping-target').val('');
+    saveMapping(
+      {},
+      'Mapping rejected. No customer information is sent from this form.',
+    );
   });
 
   $listBody.on('click', '.fb-mapping-edit', function (e) {
@@ -268,10 +306,17 @@
 
   $listBody.on('click', '.fb-mapping-delete', function (e) {
     e.preventDefault();
-    if (!window.confirm("Delete this form's field mapping?")) {
+    if (
+      !window.confirm(
+        "Reset this form's mapping? The saved mapping is removed and the form goes back to automatic detection.",
+      )
+    ) {
       return;
     }
-    var handlers = onListResponse('Mapping deleted.', params.deleteError);
+    var handlers = onListResponse(
+      'Mapping reset. The form uses automatic detection.',
+      params.deleteError,
+    );
     post(params.deleteUrl, {
       integration: $(this).data('integration'),
       form_id: String($(this).data('form_id')),

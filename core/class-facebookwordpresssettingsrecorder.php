@@ -896,14 +896,15 @@ class FacebookWordpressSettingsRecorder {
         }
 
         // Without a saved mapping the form still uses automatic detection;
-        // offer what it would pick so the admin can review and save it.
-        $mapping = $this->field_mapper->get_mappings( $integration_name, $form_id );
+        // offer what it sends so the admin can review it, then save or reject.
+        $saved = $this->field_mapper->has_form_mapping( $integration_name, $form_id );
 
         return $this->handle_success_request(
             array(
                 'fields'    => $integration->get_form_fields( $form_id ),
-                'mapping'   => $mapping,
-                'suggested' => empty( $mapping ) ? $integration->suggest_field_mapping( $form_id ) : array(),
+                'saved'     => $saved,
+                'mapping'   => $this->field_mapper->get_mappings( $integration_name, $form_id ),
+                'suggested' => $saved ? array() : $integration->suggest_field_mapping( $form_id ),
             )
         );
     }
@@ -964,8 +965,9 @@ class FacebookWordpressSettingsRecorder {
     }
 
     /**
-     * Deletes a form's saved field mapping. The form plugin need not be
-     * active, so mappings left behind by a deactivated plugin can be removed.
+     * Deletes a form's saved field mapping, returning the form to automatic
+     * detection. The form plugin need not be active, so mappings left behind
+     * by a deactivated plugin can be removed.
      *
      * @return array response data
      */

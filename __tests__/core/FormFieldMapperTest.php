@@ -124,18 +124,21 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * Saving a mapping with nothing valid in it removes the form's entry, and
-     * the integration's entry once it is empty.
+     * A mapping with no valid fields is still saved, as a rejection: the form
+     * then sends no customer information instead of using automatic detection.
      *
      * @return void
      */
-    public function testSaveWithNothingValidRemovesEntry() {
+    public function testSaveWithNoFieldsKeepsARejection() {
         $store  = new MockFormFieldMappingStore( $this->cf7_store() );
         $mapper = new FormFieldMapper( $store );
 
         $mapper->save_form_mapping( 'contact-form-7', '123', 'Contact form 1', array( 'x' => 'bogus' ) );
 
-        $this->assertSame( array(), $store->data );
+        $this->assertTrue( $mapper->has_form_mapping( 'contact-form-7', '123' ) );
+        $this->assertSame( array(), $mapper->get_mappings( 'contact-form-7', '123' ) );
+        $this->assertSame( 0, $mapper->get_flat_list()[0]['mapped_count'] );
+        $this->assertFalse( $mapper->has_form_mapping( 'contact-form-7', '999' ) );
     }
 
     /**

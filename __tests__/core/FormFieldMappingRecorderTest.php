@@ -179,6 +179,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
 
         $this->assertTrue( $response['success'] );
         $this->assertSame( array( 'email', 'name' ), array_column( $response['msg']['fields'], 'id' ) );
+        $this->assertTrue( $response['msg']['saved'] );
         $this->assertSame( array( 'name' => 'full_name' ), $response['msg']['mapping'] );
         $this->assertSame( array(), $response['msg']['suggested'] );
     }
@@ -199,8 +200,36 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
 
         $response = $recorder->get_mapping_fields();
 
+        $this->assertFalse( $response['msg']['saved'] );
         $this->assertSame( array(), $response['msg']['mapping'] );
         $this->assertSame( array( 'email' => 'email' ), $response['msg']['suggested'] );
+    }
+
+    /**
+     * Rejecting saves a mapping with no fields; the form then counts as saved
+     * and gets no suggestion.
+     *
+     * @return void
+     */
+    public function testRejectSavesAnEmptyMapping() {
+        $this->mock_wp();
+        $recorder = $this->make_recorder();
+        $_POST    = array(
+            'integration' => 'test-forms',
+            'form_id'     => '5',
+            'mapping'     => '{}',
+        );
+
+        $this->assertTrue( $recorder->save_field_mapping()['success'] );
+        $this->assertSame( array(), $this->store->data['test-forms']['5']['mappings'] );
+
+        $_POST    = array(
+            'integration' => 'test-forms',
+            'form_id'     => '5',
+        );
+        $response = $recorder->get_mapping_fields();
+        $this->assertTrue( $response['msg']['saved'] );
+        $this->assertSame( array(), $response['msg']['suggested'] );
     }
 
     /**

@@ -1404,10 +1404,11 @@ class FacebookWordpressSettingsPage {
     <div class="fb-adv-conf-title">Form Field Mapping</div>
     <div class="fb-capi-desc">
         Choose which form fields are sent as customer information with Lead
-        events. Forms without a saved mapping are detected automatically. When
-        you open such a form, the mapping is pre-filled with what automatic
-        detection would send, so you can review it. Once you save a mapping,
-        only the fields mapped in it are sent for that form.
+        events. Until you save or reject a mapping for a form, its fields are
+        detected automatically and sent. Open a form to see what automatic
+        detection sends: save the mapping to keep it (changing any field you
+        need to), or reject it to send no customer information from that form.
+        Once a mapping is saved, only the fields in it are sent.
     </div>
         <?php if ( empty( $integrations ) ) : ?>
     <p class="fb-capi-desc fb-mapping-empty">
@@ -1454,8 +1455,10 @@ class FacebookWordpressSettingsPage {
             <tbody></tbody>
         </table>
         <p id="fb-mapping-suggested" class="fb-capi-desc hidden">
-            Suggested from automatic detection. Review the fields and save to
-            use this mapping for the form.
+            <strong>Not saved yet.</strong> Automatic detection currently sends
+            the fields below for this form, and will keep sending them until you
+            save or reject this mapping. Set a field to "Do not map" to stop
+            sending it, or reject the mapping to send none.
         </p>
         <p id="fb-mapping-no-fields" class="hidden">
             This form has no fields that can be mapped.
@@ -1463,6 +1466,9 @@ class FacebookWordpressSettingsPage {
         <div class="fb-mapping-actions">
             <button type="button" id="fb-mapping-save" class="button button-primary hidden">
                 Save mapping
+            </button>
+            <button type="button" id="fb-mapping-reject" class="button hidden">
+                Reject
             </button>
             <span id="fb-mapping-status"></span>
         </div>

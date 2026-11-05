@@ -88,12 +88,13 @@ final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
      *
      * @param array $rows     Rows get_form_param_iterator() yields.
      * @param array $fallback What extract_lead_data_fallback() returns.
-     * @param array $mappings Mappings saved for form 7 (field id => target).
+     * @param array|null $mappings Mappings saved for form 7 (field id => target),
+     *                             or null when nothing is saved.
      * @return TrackableLeadFormIntegrationBase
      */
-    private function make_integration( array $rows, array $fallback, array $mappings ) {
+    private function make_integration( array $rows, array $fallback, $mappings ) {
         $mapper = $this->make_field_mapper(
-            empty( $mappings ) ? array() : array(
+            null === $mappings ? array() : array(
                 'test-forms' => array(
                     '7' => array(
                         'form_title' => 'Test',
@@ -184,10 +185,26 @@ final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
         $integration = $this->make_integration(
             array( array( 'name' => 'mail', 'type' => 'email', 'value' => 'a@b.co' ) ),
             array( 'email' => 'a@b.co' ),
-            array()
+            null
         );
 
         $this->assertSame( array( 'email' => 'a@b.co' ), $integration->extract_lead_data( 7 ) );
+    }
+
+    /**
+     * A rejected suggestion (a saved mapping with no fields) sends no customer
+     * information; it does not fall back to automatic detection.
+     *
+     * @return void
+     */
+    public function testRejectedMappingSendsNothing() {
+        $integration = $this->make_integration(
+            array( array( 'name' => 'mail', 'type' => 'email', 'value' => 'a@b.co' ) ),
+            array( 'email' => 'a@b.co' ),
+            array()
+        );
+
+        $this->assertSame( array(), $integration->extract_lead_data( 7 ) );
     }
 
     /**

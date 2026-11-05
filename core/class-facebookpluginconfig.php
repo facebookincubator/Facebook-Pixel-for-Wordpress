@@ -159,5 +159,5 @@ class FacebookPluginConfig {
     const FIELD_MAPPING_SAVE_ERROR         =
     'Mapping could not be saved, please refresh the page and try again.';
     const FIELD_MAPPING_DELETE_ERROR       =
-    'Mapping could not be deleted, please refresh the page and try again.';
+    'Mapping could not be reset, please refresh the page and try again.';
 }
