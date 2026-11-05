@@ -1225,3 +1225,22 @@
     padding-top: 0;
     border-top: 0;
 }
+
+.fb-mapping-plugins ul {
+    margin: 6px 0 0 18px;
+    list-style: disc;
+}
+
+.fb-mapping-plugin-status {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    background: #f0f0f1;
+    color: #50575e;
+}
+
+.fb-mapping-plugin-status--active {
+    background: #edfaef;
+    color: #00701a;
+}

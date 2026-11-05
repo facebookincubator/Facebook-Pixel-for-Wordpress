@@ -241,6 +241,15 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * This integration supports form field mapping.
+     *
+     * @return bool
+     */
+    public function supports_field_mapping() {
+        return true;
+    }
+
+    /**
      * Whether Ninja Forms is loaded.
      *
      * @return bool

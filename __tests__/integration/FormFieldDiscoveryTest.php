@@ -85,6 +85,7 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
         foreach ( $labels as $class => $label ) {
             $integration = $this->make( $class );
             $this->assertSame( $label, $integration->get_integration_label() );
+            $this->assertTrue( $integration->supports_field_mapping(), $class );
             $this->assertFalse( $integration->is_field_mapping_available(), $class );
             $this->assertSame( array(), $integration->get_forms(), $class );
             $this->assertSame( array(), $integration->get_form_fields( '1' ), $class );

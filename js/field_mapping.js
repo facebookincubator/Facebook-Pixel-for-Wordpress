@@ -100,7 +100,8 @@
           $('<td>').text(
             active
               ? params.integrations[row.integration_name]
-              : row.integration_name + ' (inactive)',
+              : (params.pluginLabels[row.integration_name] ||
+                  row.integration_name) + ' (inactive)',
           ),
         )
         .append($('<td>').text(row.form_title || row.form_id))

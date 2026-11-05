@@ -43,8 +43,8 @@ class FacebookWordpressSettingsPage {
     private $options_page = '';
 
     /**
-     * Returns the lead-form integrations available for field mapping, keyed
-     * by INTEGRATION_NAME.
+     * Returns the lead-form integrations that support field mapping, keyed by
+     * INTEGRATION_NAME.
      *
      * @var callable
      */
@@ -63,8 +63,8 @@ class FacebookWordpressSettingsPage {
      *
      * @param string               $plugin_name                The name of the plugin.
      * @param callable|null        $field_mapping_integrations Returns the lead-form
-     *                                                         integrations available
-     *                                                         for field mapping,
+     *                                                         integrations that
+     *                                                         support field mapping,
      *                                                         keyed by
      *                                                         INTEGRATION_NAME.
      * @param FormFieldMapper|null $field_mapper               Optional mapping
@@ -1318,14 +1318,34 @@ class FacebookWordpressSettingsPage {
     }
 
     /**
-     * The labels of the active form plugins, keyed by INTEGRATION_NAME.
+     * The supported form plugins, keyed by INTEGRATION_NAME, as
+     * [ 'label' =>, 'active' => ] rows.
+     *
+     * @return array<string,array>
+     */
+    private function get_supported_form_plugins() {
+        $plugins = array();
+        foreach ( call_user_func( $this->field_mapping_integrations ) as $name => $integration ) {
+            $plugins[ $name ] = array(
+                'label'  => $integration->get_integration_label(),
+                'active' => $integration->is_field_mapping_available(),
+            );
+        }
+        return $plugins;
+    }
+
+    /**
+     * The labels of the active supported form plugins, keyed by
+     * INTEGRATION_NAME.
      *
      * @return array<string,string>
      */
     private function get_field_mapping_integration_labels() {
         $labels = array();
-        foreach ( call_user_func( $this->field_mapping_integrations ) as $name => $integration ) {
-            $labels[ $name ] = $integration->get_integration_label();
+        foreach ( $this->get_supported_form_plugins() as $name => $plugin ) {
+            if ( $plugin['active'] ) {
+                $labels[ $name ] = $plugin['label'];
+            }
         }
         return $labels;
     }
@@ -1381,6 +1401,7 @@ class FacebookWordpressSettingsPage {
             'saveUrl'      => $this->get_field_mapping_ajax_url( FacebookPluginConfig::SAVE_FIELD_MAPPING_ACTION_NAME ),
             'deleteUrl'    => $this->get_field_mapping_ajax_url( FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME ),
             'integrations' => $this->get_field_mapping_integration_labels(),
+            'pluginLabels' => wp_list_pluck( $this->get_supported_form_plugins(), 'label' ),
             'targets'      => $this->get_field_mapping_targets(),
             'list'         => $this->field_mapper->get_flat_list(),
             'loadError'    => FacebookPluginConfig::FIELD_MAPPING_LOAD_ERROR,
@@ -1411,10 +1432,23 @@ class FacebookWordpressSettingsPage {
         Once a mapping is saved, only the fields in it are sent, and a form
         whose mapping has no fields sends no Lead events.
     </div>
+    <div class="fb-capi-desc fb-mapping-plugins">
+        Supported form plugins:
+        <ul>
+            <?php foreach ( $this->get_supported_form_plugins() as $plugin ) : ?>
+            <li>
+                <?php echo esc_html( $plugin['label'] ); ?>
+                <span class="fb-mapping-plugin-status<?php echo $plugin['active'] ? ' fb-mapping-plugin-status--active' : ''; ?>">
+                    <?php echo $plugin['active'] ? 'Active' : 'Not active'; ?>
+                </span>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
         <?php if ( empty( $integrations ) ) : ?>
     <p class="fb-capi-desc fb-mapping-empty">
-        Activate Contact Form 7, WPForms, Ninja Forms, Formidable Forms or
-        Mailchimp for WP to map form fields.
+        None of the supported form plugins is active. Activate one to map its
+        form fields.
     </p>
     <?php endif; ?>
     <table id="fb-mapping-list" class="widefat fb-mapping-list">

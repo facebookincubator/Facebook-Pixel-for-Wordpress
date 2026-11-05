@@ -65,11 +65,13 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
      * Builds the recorder with one active integration, 'test-forms', whose
      * form 5 ("Contact") has the fields 'email' and 'name'.
      *
-     * @param array $saved Initial mapping store contents.
+     * @param array $saved  Initial mapping store contents.
+     * @param bool  $active Whether the form plugin is active.
      * @return FacebookWordpressSettingsRecorder
      */
-    private function make_recorder( array $saved = array() ) {
+    private function make_recorder( array $saved = array(), $active = true ) {
         $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class );
+        $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $active );
         $integration->shouldReceive( 'get_forms' )->andReturn(
             array(
                 array(
@@ -158,6 +160,9 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
 
         $_POST = array( 'integration' => 'FacebookPixelPlugin\\Core\\FacebookWordpressOptions' );
         $this->assertFalse( $recorder->get_mapping_forms()['success'] );
+        // A supported plugin that is not active cannot be listed or edited.
+        $_POST = array( 'integration' => 'test-forms' );
+        $this->assertFalse( $this->make_recorder( array(), false )->get_mapping_forms()['success'] );
     }
 
     /**

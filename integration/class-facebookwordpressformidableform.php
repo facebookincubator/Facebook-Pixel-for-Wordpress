@@ -164,6 +164,15 @@ class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * This integration supports form field mapping.
+     *
+     * @return bool
+     */
+    public function supports_field_mapping() {
+        return true;
+    }
+
+    /**
      * Whether Formidable Forms is loaded.
      *
      * @return bool

@@ -370,6 +370,16 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
     }
 
     /**
+     * Whether this integration implements form field mapping (the discovery
+     * hooks below), so the mapping screen lists it as a supported form plugin.
+     *
+     * @return bool
+     */
+    public function supports_field_mapping() {
+        return false;
+    }
+
+    /**
      * Whether the form plugin is loaded and this integration can list its
      * forms for the field mapping screen. Integrations that implement the
      * discovery hooks override this with a check for the plugin's API.

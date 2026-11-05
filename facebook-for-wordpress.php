@@ -198,21 +198,22 @@ class FacebookForWordpress {
     }
 
     /**
-     * The lead-form integrations whose plugin is loaded, for the form field
-     * mapping screen, keyed by INTEGRATION_NAME. Only meaningful once the
-     * integrations are initialized on init.
+     * The lead-form integrations that support form field mapping, keyed by
+     * INTEGRATION_NAME, whether or not their plugin is active (see
+     * is_field_mapping_available()). Only meaningful once the integrations
+     * are initialized on init.
      *
      * @return TrackableLeadFormIntegrationBase[]
      */
     public function get_field_mapping_integrations() {
-        $available = array();
+        $supported = array();
         foreach ( $this->integrations as $integration ) {
             if ( $integration instanceof TrackableLeadFormIntegrationBase
-                && $integration->is_field_mapping_available() ) {
-                $available[ $integration::INTEGRATION_NAME ] = $integration;
+                && $integration->supports_field_mapping() ) {
+                $supported[ $integration::INTEGRATION_NAME ] = $integration;
             }
         }
-        return $available;
+        return $supported;
     }
 
 

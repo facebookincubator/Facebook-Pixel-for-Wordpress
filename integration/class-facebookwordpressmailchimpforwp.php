@@ -154,6 +154,15 @@ class FacebookWordpressMailchimpForWp extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * This integration supports form field mapping.
+     *
+     * @return bool
+     */
+    public function supports_field_mapping() {
+        return true;
+    }
+
+    /**
      * Whether Mailchimp for WP is loaded.
      *
      * @return bool

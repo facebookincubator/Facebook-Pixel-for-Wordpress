@@ -20,8 +20,8 @@ namespace FacebookPixelPlugin\Core;
  */
 class FacebookWordpressSettingsRecorder {
     /**
-     * Returns the lead-form integrations available for field mapping, keyed
-     * by INTEGRATION_NAME.
+     * Returns the lead-form integrations that support field mapping, keyed by
+     * INTEGRATION_NAME.
      *
      * @var callable
      */
@@ -38,8 +38,8 @@ class FacebookWordpressSettingsRecorder {
      * Constructor.
      *
      * @param callable|null        $field_mapping_integrations Returns the lead-form
-     *                                                         integrations available
-     *                                                         for field mapping,
+     *                                                         integrations that
+     *                                                         support field mapping,
      *                                                         keyed by
      *                                                         INTEGRATION_NAME.
      * @param FormFieldMapper|null $field_mapper               Optional mapping
@@ -852,7 +852,10 @@ class FacebookWordpressSettingsRecorder {
      */
     private function resolve_field_mapping_integration( $integration_name ) {
         $integrations = call_user_func( $this->field_mapping_integrations );
-        return isset( $integrations[ $integration_name ] ) ? $integrations[ $integration_name ] : null;
+        return isset( $integrations[ $integration_name ] )
+            && $integrations[ $integration_name ]->is_field_mapping_available()
+            ? $integrations[ $integration_name ]
+            : null;
     }
 
     /**

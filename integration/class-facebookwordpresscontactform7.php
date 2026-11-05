@@ -213,6 +213,15 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * This integration supports form field mapping.
+     *
+     * @return bool
+     */
+    public function supports_field_mapping() {
+        return true;
+    }
+
+    /**
      * Whether Contact Form 7 is loaded.
      *
      * @return bool
