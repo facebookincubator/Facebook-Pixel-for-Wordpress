@@ -133,35 +133,6 @@ class FormFieldMapper {
     }
 
     /**
-     * Returns a flat list of all saved mappings for the admin overview.
-     *
-     * Each row: integration_name, form_id, form_title, mapped_count.
-     *
-     * @return array<int,array<string,mixed>>
-     */
-    public function get_flat_list() {
-        $rows = array();
-        foreach ( $this->get_all() as $integration_name => $forms ) {
-            if ( ! is_array( $forms ) ) {
-                continue;
-            }
-            foreach ( $forms as $form_id => $entry ) {
-                $mappings = isset( $entry['mappings'] ) && is_array( $entry['mappings'] )
-                    ? $entry['mappings']
-                    : array();
-                $rows[]   = array(
-                    'integration_name' => (string) $integration_name,
-                    'form_id'          => (string) $form_id,
-                    'form_title'       => isset( $entry['form_title'] )
-                        ? (string) $entry['form_title'] : '',
-                    'mapped_count'     => count( $mappings ),
-                );
-            }
-        }
-        return $rows;
-    }
-
-    /**
      * Saves the mapping for a form, replacing any existing one, so each form
      * has at most one mapping.
      *

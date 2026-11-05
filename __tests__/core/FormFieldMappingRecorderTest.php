@@ -72,6 +72,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     private function make_recorder( array $saved = array(), $active = true ) {
         $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class );
         $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $active );
+        $integration->shouldReceive( 'get_integration_label' )->andReturn( 'Test Forms' );
         $integration->shouldReceive( 'get_forms' )->andReturn(
             array(
                 array(
@@ -106,14 +107,13 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * The four endpoints are registered as admin AJAX actions.
+     * The three endpoints are registered as admin AJAX actions.
      *
      * @return void
      */
     public function testActionsAdded() {
         $recorder = $this->make_recorder();
         $actions  = array(
-            FacebookPluginConfig::GET_MAPPING_FORMS_ACTION_NAME    => 'get_mapping_forms',
             FacebookPluginConfig::GET_MAPPING_FIELDS_ACTION_NAME   => 'get_mapping_fields',
             FacebookPluginConfig::SAVE_FIELD_MAPPING_ACTION_NAME   => 'save_field_mapping',
             FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME => 'delete_field_mapping',
@@ -139,30 +139,32 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             'mapping'     => '{"email":"email"}',
         );
 
-        $this->assertFalse( $recorder->get_mapping_forms()['success'] );
+        $this->assertFalse( $recorder->get_mapping_fields()['success'] );
         $this->assertFalse( $recorder->save_field_mapping()['success'] );
         $this->assertSame( 0, $this->store->writes );
     }
 
     /**
-     * Forms are listed for an active integration; any other name is refused.
+     * Only an active supported integration can be edited: an unknown name or
+     * an inactive plugin is refused.
      *
      * @return void
      */
-    public function testGetMappingForms() {
+    public function testOnlyActiveIntegrationsAreAccepted() {
         $this->mock_wp();
-        $recorder = $this->make_recorder();
 
-        $_POST    = array( 'integration' => 'test-forms' );
-        $response = $recorder->get_mapping_forms();
-        $this->assertTrue( $response['success'] );
-        $this->assertSame( '5', $response['msg']['forms'][0]['id'] );
+        $_POST = array(
+            'integration' => 'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
+            'form_id'     => '5',
+        );
+        $this->assertFalse( $this->make_recorder()->get_mapping_fields()['success'] );
 
-        $_POST = array( 'integration' => 'FacebookPixelPlugin\\Core\\FacebookWordpressOptions' );
-        $this->assertFalse( $recorder->get_mapping_forms()['success'] );
-        // A supported plugin that is not active cannot be listed or edited.
-        $_POST = array( 'integration' => 'test-forms' );
-        $this->assertFalse( $this->make_recorder( array(), false )->get_mapping_forms()['success'] );
+        $_POST = array(
+            'integration' => 'test-forms',
+            'form_id'     => '5',
+        );
+        $this->assertFalse( $this->make_recorder( array(), false )->get_mapping_fields()['success'] );
+        $this->assertTrue( $this->make_recorder()->get_mapping_fields()['success'] );
     }
 
     /**
@@ -273,7 +275,10 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             ),
             $this->store->data
         );
+        // The refreshed table lists the form as saved.
         $this->assertSame( 'Contact', $response['msg']['list'][0]['form_title'] );
+        $this->assertSame( 'saved', $response['msg']['list'][0]['status'] );
+        $this->assertSame( array( 'email' ), $response['msg']['list'][0]['targets'] );
     }
 
     /**
@@ -325,6 +330,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $this->assertTrue( $response['success'] );
         $this->assertSame( array( 'test-forms' ), array_keys( $this->store->data ) );
         $this->assertSame( array( 'test-forms' ), array_column( $response['msg']['list'], 'integration_name' ) );
+        $this->assertSame( array( 'saved' ), array_column( $response['msg']['list'], 'status' ) );
     }
 }
 

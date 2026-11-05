@@ -129,10 +129,6 @@ class FacebookWordpressSettingsRecorder {
         );
         // Form field mapping AJAX actions.
         add_action(
-            'wp_ajax_' . FacebookPluginConfig::GET_MAPPING_FORMS_ACTION_NAME,
-            array( $this, 'get_mapping_forms' )
-        );
-        add_action(
             'wp_ajax_' . FacebookPluginConfig::GET_MAPPING_FIELDS_ACTION_NAME,
             array( $this, 'get_mapping_fields' )
         );
@@ -859,23 +855,14 @@ class FacebookWordpressSettingsRecorder {
     }
 
     /**
-     * Lists the forms of the requested form plugin.
+     * The rows of the Form Field Mapping table, refreshed after a change.
      *
-     * @return array response data
+     * @return array
      */
-    public function get_mapping_forms() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            return $this->handle_unauthorized_request();
-        }
-        check_admin_referer( FacebookPluginConfig::GET_MAPPING_FORMS_ACTION_NAME );
-
-        $integration = $this->resolve_field_mapping_integration( $this->get_posted_text( 'integration' ) );
-        if ( null === $integration ) {
-            return $this->handle_invalid_request();
-        }
-
-        return $this->handle_success_request(
-            array( 'forms' => $integration->get_forms() )
+    private function get_field_mapping_overview() {
+        return FormFieldMappingOverview::build(
+            call_user_func( $this->field_mapping_integrations ),
+            $this->field_mapper
         );
     }
 
@@ -963,7 +950,7 @@ class FacebookWordpressSettingsRecorder {
         }
 
         return $this->handle_success_request(
-            array( 'list' => $this->field_mapper->get_flat_list() )
+            array( 'list' => $this->get_field_mapping_overview() )
         );
     }
 
@@ -991,7 +978,7 @@ class FacebookWordpressSettingsRecorder {
         }
 
         return $this->handle_success_request(
-            array( 'list' => $this->field_mapper->get_flat_list() )
+            array( 'list' => $this->get_field_mapping_overview() )
         );
     }
 }

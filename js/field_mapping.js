@@ -6,9 +6,11 @@
  */
 
 /**
- * Drives the Form Field Mapping section of the settings page: lists the saved
- * per-form mappings and edits one form's mapping. The admin-ajax URLs (with
- * nonces), labels and saved mappings come from meta_field_mapping_params.
+ * Drives the Form Field Mapping section of the settings page. Every form of
+ * the active form plugins is listed with what it sends (its saved mapping, or
+ * what automatic detection finds); Review / Edit opens one form in the editor.
+ * The admin-ajax URLs (with nonces), targets and rows come from
+ * meta_field_mapping_params.
  */
 (function ($) {
   'use strict';
@@ -19,16 +21,30 @@
 
   var params = meta_field_mapping_params;
 
-  var $integration = $('#fb-mapping-integration');
-  var $form = $('#fb-mapping-form');
+  var $listBody = $('#fb-mapping-list').find('tbody');
+  var $status = $('#fb-mapping-status');
+  var $editor = $('#fb-mapping-editor');
+  var $editorTitle = $('#fb-mapping-editor-title');
   var $fieldsTable = $('#fb-mapping-fields');
   var $fieldsBody = $fieldsTable.find('tbody');
   var $noFields = $('#fb-mapping-no-fields');
   var $suggested = $('#fb-mapping-suggested');
   var $saveButton = $('#fb-mapping-save');
   var $rejectButton = $('#fb-mapping-reject');
-  var $status = $('#fb-mapping-status');
-  var $listBody = $('#fb-mapping-list').find('tbody');
+
+  // The form open in the editor: { integration, formId }.
+  var current = null;
+
+  var STATUS_LABELS = {
+    automatic: 'Automatic (not reviewed)',
+    saved: 'Saved',
+    rejected: 'Rejected (no Lead events)',
+  };
+
+  var targetLabels = {};
+  $.each(params.targets, function (i, target) {
+    targetLabels[target.value] = target.label;
+  });
 
   function showStatus(message, isError) {
     $status
@@ -36,15 +52,8 @@
       .toggleClass('fb-mapping-error', !!isError)
       .stop(true, true)
       .show()
-      .delay(3000)
+      .delay(4000)
       .fadeOut();
-  }
-
-  function isActive(integrationName) {
-    return Object.prototype.hasOwnProperty.call(
-      params.integrations,
-      integrationName,
-    );
   }
 
   function post(url, data) {
@@ -65,53 +74,68 @@
     return $select;
   }
 
-  // The overview table of saved mappings. Mappings of an inactive form
-  // plugin can only be deleted: its forms cannot be listed for editing.
-  function renderList(list) {
+  function describeStatus(row) {
+    var label = STATUS_LABELS[row.status] || row.status;
+    if (!row.active) {
+      return label + ' (plugin not active)';
+    }
+    return row.missing ? label + ' (form not found)' : label;
+  }
+
+  function describeTargets(row) {
+    if (row.status === 'rejected') {
+      return 'Nothing (no Lead events)';
+    }
+    if (!row.targets.length) {
+      return row.status === 'automatic' ? 'Nothing detected' : 'Nothing';
+    }
+    return $.map(row.targets, function (target) {
+      return targetLabels[target] || target;
+    }).join(', ');
+  }
+
+  function actionLink(className, text, row) {
+    return $('<a href="#">').addClass(className).text(text).data('row', row);
+  }
+
+  // One row per form. Forms of an inactive plugin, and saved mappings of a
+  // form that no longer exists, can only be reset.
+  function renderList(rows) {
     $listBody.empty();
-    if (!list || list.length === 0) {
+    if (!rows || rows.length === 0) {
       $listBody.append(
-        $('<tr>').append($('<td colspan="4">').text('No mappings saved yet.')),
+        $('<tr>').append(
+          $('<td colspan="5">').text(
+            'No forms found in the active form plugins.',
+          ),
+        ),
       );
       return;
     }
-    $.each(list, function (i, row) {
-      var active = isActive(row.integration_name);
+    $.each(rows, function (i, row) {
       var $actions = $('<td>');
-      if (active) {
-        $('<a href="#">')
-          .addClass('fb-mapping-edit')
-          .text('Edit')
-          .data('integration', row.integration_name)
-          .data('form_id', row.form_id)
-          .appendTo($actions);
-        $actions.append(document.createTextNode(' | '));
+      if (row.active && !row.missing) {
+        actionLink(
+          'fb-mapping-edit',
+          row.status === 'automatic' ? 'Review' : 'Edit',
+          row,
+        ).appendTo($actions);
       }
-      $('<a href="#">')
-        .addClass('fb-mapping-delete')
-        .text('Reset')
-        .attr('title', 'Remove the saved mapping and use automatic detection')
-        .data('integration', row.integration_name)
-        .data('form_id', row.form_id)
-        .appendTo($actions);
+      if (row.status !== 'automatic') {
+        if ($actions.children().length) {
+          $actions.append(document.createTextNode(' | '));
+        }
+        actionLink('fb-mapping-delete', 'Reset', row)
+          .attr('title', 'Remove the saved mapping and use automatic detection')
+          .appendTo($actions);
+      }
 
       $('<tr>')
-        .append(
-          $('<td>').text(
-            active
-              ? params.integrations[row.integration_name]
-              : (params.pluginLabels[row.integration_name] ||
-                  row.integration_name) + ' (inactive)',
-          ),
-        )
+        .addClass('fb-mapping-row--' + row.status)
+        .append($('<td>').text(row.integration_label))
         .append($('<td>').text(row.form_title || row.form_id))
-        .append(
-          $('<td>').text(
-            row.mapped_count > 0
-              ? row.mapped_count
-              : 'None (rejected, no Lead events)',
-          ),
-        )
+        .append($('<td>').text(describeStatus(row)))
+        .append($('<td>').text(describeTargets(row)))
         .append($actions)
         .appendTo($listBody);
     });
@@ -124,6 +148,12 @@
     $suggested.addClass('hidden');
     $saveButton.addClass('hidden');
     $rejectButton.addClass('hidden');
+  }
+
+  function closeEditor() {
+    current = null;
+    resetFields();
+    $editor.addClass('hidden');
   }
 
   // One row per form field, preselecting the saved mapping or, for a form
@@ -151,38 +181,16 @@
     $saveButton.removeClass('hidden');
   }
 
-  function resetForms() {
-    $form
-      .empty()
-      .append($('<option>').val('').text('Select a form'))
-      .prop('disabled', true);
-  }
-
-  function loadForms(integration, selectedFormId) {
-    return post(params.getFormsUrl, { integration: integration })
-      .then(function (response) {
-        if (!response || !response.success) {
-          return $.Deferred().reject();
-        }
-        resetForms();
-        $.each(response.msg.forms, function (i, form) {
-          $('<option>')
-            .val(form.id)
-            .text(form.title || form.id)
-            .prop('selected', String(form.id) === String(selectedFormId))
-            .appendTo($form);
-        });
-        $form.prop('disabled', false);
-      })
-      .fail(function () {
-        showStatus(params.loadError, true);
-      });
-  }
-
-  function loadFields(integration, formId) {
-    return post(params.getFieldsUrl, {
-      integration: integration,
-      form_id: formId,
+  function openEditor(row) {
+    current = { integration: row.integration_name, formId: row.form_id };
+    $editorTitle.text(
+      (row.form_title || row.form_id) + ' (' + row.integration_label + ')',
+    );
+    resetFields();
+    $editor.removeClass('hidden');
+    post(params.getFieldsUrl, {
+      integration: current.integration,
+      form_id: current.formId,
     })
       .done(function (response) {
         if (response && response.success) {
@@ -199,6 +207,7 @@
       .fail(function () {
         showStatus(params.loadError, true);
       });
+    $('html, body').animate({ scrollTop: $editor.offset().top - 40 }, 300);
   }
 
   function collectMapping() {
@@ -212,61 +221,37 @@
     return mapping;
   }
 
-  function onListResponse(successMessage, errorMessage) {
-    return {
-      done: function (response) {
+  // Saves, rejects or resets, then shows the refreshed table.
+  function send(url, data, successMessage, errorMessage) {
+    post(url, data)
+      .done(function (response) {
         if (response && response.success) {
           renderList(response.msg.list);
+          closeEditor();
           showStatus(successMessage, false);
         } else {
           showStatus(errorMessage, true);
         }
-      },
-      fail: function () {
+      })
+      .fail(function () {
         showStatus(errorMessage, true);
-      },
-    };
+      });
   }
 
-  $integration.on('change', function () {
-    var integration = $(this).val();
-    resetFields();
-    resetForms();
-    if (integration) {
-      loadForms(integration, null);
-    }
-  });
-
-  $form.on('change', function () {
-    var integration = $integration.val();
-    var formId = $(this).val();
-    resetFields();
-    if (integration && formId) {
-      loadFields(integration, formId);
-    }
-  });
-
   function saveMapping(mapping, successMessage) {
-    var integration = $integration.val();
-    var formId = $form.val();
-    if (!integration || !formId) {
+    if (!current) {
       return;
     }
-    var handlers = onListResponse(successMessage, params.saveError);
-    post(params.saveUrl, {
-      integration: integration,
-      form_id: formId,
-      mapping: JSON.stringify(mapping),
-    })
-      .done(function (response) {
-        handlers.done(response);
-        if (response && response.success) {
-          // The form now has a saved mapping: no more suggestion or reject.
-          $suggested.addClass('hidden');
-          $rejectButton.addClass('hidden');
-        }
-      })
-      .fail(handlers.fail);
+    send(
+      params.saveUrl,
+      {
+        integration: current.integration,
+        form_id: current.formId,
+        mapping: JSON.stringify(mapping),
+      },
+      successMessage,
+      params.saveError,
+    );
   }
 
   // A mapping with no fields rejects the form: it stops sending Lead events.
@@ -293,26 +278,19 @@
 
   $rejectButton.on('click', function (e) {
     e.preventDefault();
-    if (!confirmReject()) {
-      return;
+    if (confirmReject()) {
+      saveMapping({}, REJECTED_MESSAGE);
     }
-    $fieldsBody.find('.fb-mapping-target').val('');
-    saveMapping({}, REJECTED_MESSAGE);
+  });
+
+  $('#fb-mapping-cancel').on('click', function (e) {
+    e.preventDefault();
+    closeEditor();
   });
 
   $listBody.on('click', '.fb-mapping-edit', function (e) {
     e.preventDefault();
-    var integration = $(this).data('integration');
-    var formId = String($(this).data('form_id'));
-    $integration.val(integration);
-    resetFields();
-    loadForms(integration, formId).done(function () {
-      loadFields(integration, formId);
-    });
-    $('html, body').animate(
-      { scrollTop: $('#fb-mapping-editor').offset().top - 40 },
-      300,
-    );
+    openEditor($(this).data('row'));
   });
 
   $listBody.on('click', '.fb-mapping-delete', function (e) {
@@ -324,16 +302,13 @@
     ) {
       return;
     }
-    var handlers = onListResponse(
+    var row = $(this).data('row');
+    send(
+      params.deleteUrl,
+      { integration: row.integration_name, form_id: row.form_id },
       'Mapping reset. The form uses automatic detection.',
       params.deleteError,
     );
-    post(params.deleteUrl, {
-      integration: $(this).data('integration'),
-      form_id: String($(this).data('form_id')),
-    })
-      .done(handlers.done)
-      .fail(handlers.fail);
   });
 
   renderList(params.list);

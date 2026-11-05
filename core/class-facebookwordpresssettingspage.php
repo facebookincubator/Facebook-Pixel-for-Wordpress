@@ -1396,14 +1396,14 @@ class FacebookWordpressSettingsPage {
      */
     private function get_field_mapping_params() {
         return array(
-            'getFormsUrl'  => $this->get_field_mapping_ajax_url( FacebookPluginConfig::GET_MAPPING_FORMS_ACTION_NAME ),
             'getFieldsUrl' => $this->get_field_mapping_ajax_url( FacebookPluginConfig::GET_MAPPING_FIELDS_ACTION_NAME ),
             'saveUrl'      => $this->get_field_mapping_ajax_url( FacebookPluginConfig::SAVE_FIELD_MAPPING_ACTION_NAME ),
             'deleteUrl'    => $this->get_field_mapping_ajax_url( FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME ),
-            'integrations' => $this->get_field_mapping_integration_labels(),
-            'pluginLabels' => wp_list_pluck( $this->get_supported_form_plugins(), 'label' ),
             'targets'      => $this->get_field_mapping_targets(),
-            'list'         => $this->field_mapper->get_flat_list(),
+            'list'         => FormFieldMappingOverview::build(
+                call_user_func( $this->field_mapping_integrations ),
+                $this->field_mapper
+            ),
             'loadError'    => FacebookPluginConfig::FIELD_MAPPING_LOAD_ERROR,
             'saveError'    => FacebookPluginConfig::FIELD_MAPPING_SAVE_ERROR,
             'deleteError'  => FacebookPluginConfig::FIELD_MAPPING_DELETE_ERROR,
@@ -1425,12 +1425,11 @@ class FacebookWordpressSettingsPage {
     <div class="fb-adv-conf-title">Form Field Mapping</div>
     <div class="fb-capi-desc">
         Choose which form fields are sent as customer information with Lead
-        events. Until you save or reject a mapping for a form, its fields are
-        detected automatically and sent. Open a form to see what automatic
-        detection sends: save the mapping to keep it (changing any field you
-        need to), or reject it to stop sending Lead events from that form.
-        Once a mapping is saved, only the fields in it are sent, and a form
-        whose mapping has no fields sends no Lead events.
+        events. Every form of the active form plugins is listed below with what
+        it sends. Forms marked Automatic send what automatic detection finds
+        until you review them: review a form to save its mapping (changing any
+        field you need to) or reject it to stop sending Lead events from that
+        form. Once a mapping is saved, only the fields in it are sent.
     </div>
     <div class="fb-capi-desc fb-mapping-plugins">
         Supported form plugins:
@@ -1456,29 +1455,24 @@ class FacebookWordpressSettingsPage {
             <tr>
                 <th>Form plugin</th>
                 <th>Form</th>
-                <th>Mapped fields</th>
+                <th>Status</th>
+                <th>Sent as customer information</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody></tbody>
     </table>
+    <p id="fb-mapping-status"></p>
         <?php if ( ! empty( $integrations ) ) : ?>
-    <div id="fb-mapping-editor">
-        <div class="fb-mapping-row">
-            <label for="fb-mapping-integration">Form plugin</label>
-            <select id="fb-mapping-integration">
-                <option value="">Select a form plugin</option>
-                <?php foreach ( $integrations as $name => $label ) : ?>
-                <option value="<?php echo esc_attr( $name ); ?>"><?php echo esc_html( $label ); ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="fb-mapping-row">
-            <label for="fb-mapping-form">Form</label>
-            <select id="fb-mapping-form" disabled>
-                <option value="">Select a form</option>
-            </select>
-        </div>
+    <div id="fb-mapping-editor" class="hidden">
+        <h4 id="fb-mapping-editor-title"></h4>
+        <p id="fb-mapping-suggested" class="fb-capi-desc hidden">
+            <strong>Not reviewed yet.</strong> Automatic detection currently
+            sends the fields below for this form, and will keep sending them
+            until you save or reject this mapping. Set a field to "Do not map"
+            to stop sending it, or reject the mapping to stop sending Lead
+            events from this form.
+        </p>
         <table id="fb-mapping-fields" class="widefat fb-mapping-fields hidden">
             <thead>
                 <tr>
@@ -1489,13 +1483,6 @@ class FacebookWordpressSettingsPage {
             </thead>
             <tbody></tbody>
         </table>
-        <p id="fb-mapping-suggested" class="fb-capi-desc hidden">
-            <strong>Not saved yet.</strong> Automatic detection currently sends
-            the fields below for this form, and will keep sending them until you
-            save or reject this mapping. Set a field to "Do not map" to stop
-            sending it, or reject the mapping to stop sending Lead events from
-            this form.
-        </p>
         <p id="fb-mapping-no-fields" class="hidden">
             This form has no fields that can be mapped.
         </p>
@@ -1506,7 +1493,9 @@ class FacebookWordpressSettingsPage {
             <button type="button" id="fb-mapping-reject" class="button hidden">
                 Reject
             </button>
-            <span id="fb-mapping-status"></span>
+            <button type="button" id="fb-mapping-cancel" class="button-link">
+                Cancel
+            </button>
         </div>
     </div>
     <?php endif; ?>

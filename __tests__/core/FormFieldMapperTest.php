@@ -137,7 +137,6 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
 
         $this->assertTrue( $mapper->has_form_mapping( 'contact-form-7', '123' ) );
         $this->assertSame( array(), $mapper->get_mappings( 'contact-form-7', '123' ) );
-        $this->assertSame( 0, $mapper->get_flat_list()[0]['mapped_count'] );
         $this->assertFalse( $mapper->has_form_mapping( 'contact-form-7', '999' ) );
     }
 
@@ -164,34 +163,5 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
         $writes = $store->writes;
         $this->assertTrue( $mapper->delete_form_mapping( 'wpforms-lite', '9' ) );
         $this->assertSame( $writes, $store->writes );
-    }
-
-    /**
-     * The flat list has one row per saved form.
-     *
-     * @return void
-     */
-    public function testGetFlatList() {
-        $data                                 = $this->cf7_store();
-        $data['ninja-forms']['1']['mappings'] = array( 'email_1' => 'email' );
-        $mapper                               = new FormFieldMapper( new MockFormFieldMappingStore( $data ) );
-
-        $this->assertSame(
-            array(
-                array(
-                    'integration_name' => 'contact-form-7',
-                    'form_id'          => '123',
-                    'form_title'       => 'Contact form 1',
-                    'mapped_count'     => 2,
-                ),
-                array(
-                    'integration_name' => 'ninja-forms',
-                    'form_id'          => '1',
-                    'form_title'       => '',
-                    'mapped_count'     => 1,
-                ),
-            ),
-            $mapper->get_flat_list()
-        );
     }
 }

@@ -601,6 +601,14 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
     $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class );
     $integration->shouldReceive( 'get_integration_label' )->andReturn( 'Contact Form 7' );
     $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $with_integration );
+    $integration->shouldReceive( 'get_forms' )->andReturn(
+      array(
+        array(
+          'id'    => '1',
+          'title' => 'Contact form 1',
+        ),
+      )
+    );
     $mapper = new FormFieldMapper(
       new MockFormFieldMappingStore(
         array(
@@ -623,9 +631,8 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
   }
 
   /**
-   * The field mapping script gets nonce-protected routes, the active form
-   * plugins, every valid target once with matching identifiers first, and the
-   * saved mappings.
+   * The field mapping script gets nonce-protected routes, every valid target
+   * once with matching identifiers first, and the table rows.
    */
   public function testFieldMappingParams() {
     \WP_Mock::userFunction( 'wp_create_nonce', array( 'return' => 'test_nonce' ) );
@@ -639,38 +646,34 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
       )
     );
 
-    \WP_Mock::userFunction(
-      'wp_list_pluck',
-      array(
-        'return' => function ( $list, $field ) {
-          return array_map(
-            function ( $row ) use ( $field ) {
-              return $row[ $field ];
-            },
-            $list
-          );
-        },
-      )
-    );
-
     $params = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_params' );
 
     $this->assertStringContainsString( 'action=facebook_save_field_mapping', $params['saveUrl'] );
     $this->assertStringContainsString( '_wpnonce=test_nonce', $params['saveUrl'] );
-    $this->assertSame( array( 'contact-form-7' => 'Contact Form 7' ), $params['integrations'] );
-    $this->assertSame( array( 'contact-form-7' => 'Contact Form 7' ), $params['pluginLabels'] );
 
     $targets = array_column( $params['targets'], 'value' );
     $this->assertSame( array( 'email', 'phone', 'full_name' ), array_slice( $targets, 0, 3 ) );
     $this->assertEqualsCanonicalizing( FormFieldMapper::get_valid_targets(), $targets );
 
-    $this->assertSame( 'Contact form 1', $params['list'][0]['form_title'] );
+    $this->assertSame(
+      array(
+        'integration_name'  => 'contact-form-7',
+        'integration_label' => 'Contact Form 7',
+        'form_id'           => '1',
+        'form_title'        => 'Contact form 1',
+        'status'            => 'saved',
+        'targets'           => array( 'email' ),
+        'active'            => true,
+        'missing'           => false,
+      ),
+      $params['list'][0]
+    );
   }
 
   /**
-   * The section lists the supported form plugins with their status, offers
-   * an editor for the active ones, and only the saved-mapping overview with a
-   * hint when none is active.
+   * The section lists the supported form plugins with their status and the
+   * forms table; the editor is only rendered when a plugin is active, and a
+   * hint is shown when none is.
    */
   public function testFieldMappingSection() {
     \WP_Mock::userFunction(
@@ -694,7 +697,8 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
     $this->assertStringContainsString( 'Supported form plugins', $section );
     $this->assertMatchesRegularExpression( '/Contact Form 7\s*<span class="fb-mapping-plugin-status fb-mapping-plugin-status--active">\s*Active/', $section );
     $this->assertStringContainsString( 'id="fb-mapping-list"', $section );
-    $this->assertStringContainsString( '<option value="contact-form-7">Contact Form 7</option>', $section );
+    $this->assertStringContainsString( 'id="fb-mapping-editor"', $section );
+    $this->assertStringNotContainsString( 'id="fb-mapping-integration"', $section );
     $this->assertStringNotContainsString( 'fb-mapping-empty', $section );
 
     $section = $this->invoke_private( $this->make_field_mapping_page( false ), 'get_field_mapping_section' );
