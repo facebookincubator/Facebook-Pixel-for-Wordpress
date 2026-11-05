@@ -30,27 +30,55 @@ use FacebookPixelPlugin\Tests\Mocks\MockContactForm7;
 final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
 
     /**
-     * When a form field is mapped to a composite Lead parameter (e.g. an
-     * address), apply_field_mapping() should expand it into its sub-parameters
-     * (city/state/zip/country) rather than assigning the raw composite value.
-     *
-     * This is not implemented yet: apply_field_mapping() currently does a flat
-     * assignment, and composite targets aren't in VALID_LEAD_PARAMETERS. It is
-     * blocked on the mapping UI, which will define how composite fields declare
-     * their sub-field targets. See the TODO(mapping-UI) note in
-     * TrackableLeadFormIntegrationBase::apply_field_mapping().
-     *
-     * Intended assertions once implemented: mapping an 'address' form field
-     * should yield lead data with 'city', 'state', 'zip', and 'country' keys.
+     * An address field submitted as parts expands into city, state, zip and a
+     * two-letter country, whichever part names the plugin uses.
      *
      * @return void
      */
     public function testCompositeAddressMappingIsExpanded() {
-        $this->markTestIncomplete(
-            'Composite (address) field mapping breakdown is pending the mapping '
-            . 'UI. See TrackableLeadFormIntegrationBase::apply_field_mapping '
-            . 'TODO(mapping-UI).'
+        $integration = $this->make_integration(
+            array(
+                array(
+                    'name'  => 'where',
+                    'type'  => 'address',
+                    'value' => array(
+                        'address1' => '1 Main St',
+                        'city'     => 'Springfield',
+                        'state'    => 'OH',
+                        'postal'   => '54321',
+                        'country'  => 'us',
+                    ),
+                ),
+            ),
+            array(),
+            array( 'where' => 'address' )
         );
+
+        $this->assertSame(
+            array(
+                'city'    => 'Springfield',
+                'state'   => 'OH',
+                'zip'     => '54321',
+                'country' => 'US',
+            ),
+            $integration->extract_lead_data( 7 )
+        );
+
+        $integration = $this->make_integration(
+            array(
+                array(
+                    'name'  => 'where',
+                    'type'  => 'address',
+                    'value' => array(
+                        'city'    => 'Springfield',
+                        'country' => 'United States',
+                    ),
+                ),
+            ),
+            array(),
+            array( 'where' => 'address' )
+        );
+        $this->assertSame( array( 'city' => 'Springfield' ), $integration->extract_lead_data( 7 ) );
     }
 
     /**
@@ -163,12 +191,12 @@ final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * A mapped field overrides the fallback for its parameter, and parameters
-     * the mapping does not cover keep their fallback value.
+     * A saved mapping replaces automatic detection: only mapped fields are
+     * sent, even when the fallback would have found more.
      *
      * @return void
      */
-    public function testMappingOverridesFallbackAndKeepsUnmappedParameters() {
+    public function testSavedMappingReplacesFallback() {
         $integration = $this->make_integration(
             array(
                 array( 'name' => 'work-email', 'type' => 'text', 'value' => 'work@b.co' ),
@@ -181,13 +209,7 @@ final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
             array( 'work-email' => 'email' )
         );
 
-        $this->assertSame(
-            array(
-                'email' => 'work@b.co',
-                'phone' => '555',
-            ),
-            $integration->extract_lead_data( 7 )
-        );
+        $this->assertSame( array( 'email' => 'work@b.co' ), $integration->extract_lead_data( 7 ) );
     }
 
     /**
@@ -207,7 +229,8 @@ final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
 
     /**
      * A full_name target is split into first and last name; a single word
-     * becomes the first name only.
+     * becomes the first name only, and a name submitted as parts uses its
+     * first and last parts.
      *
      * @return void
      */
@@ -233,6 +256,28 @@ final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
             $mappings
         );
         $this->assertSame( array( 'first_name' => 'Pikachu' ), $integration->extract_lead_data( 7 ) );
+        $integration = $this->make_integration(
+            array(
+                array(
+                    'name'  => 'who',
+                    'type'  => 'name',
+                    'value' => array(
+                        'first'  => 'Pika',
+                        'middle' => 'P',
+                        'last'   => 'Chu',
+                    ),
+                ),
+            ),
+            array(),
+            $mappings
+        );
+        $this->assertSame(
+            array(
+                'first_name' => 'Pika',
+                'last_name'  => 'Chu',
+            ),
+            $integration->extract_lead_data( 7 )
+        );
     }
 
     /**
@@ -311,9 +356,9 @@ final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
         );
         $integration = new FacebookWordpressContactForm7( $this->make_signals(), $mapper );
 
+        // The email tag is not mapped, so the saved mapping leaves it out.
         $this->assertSame(
             array(
-                'email'      => 'pika.chu@s2s.com',
                 'first_name' => 'Ash',
                 'last_name'  => 'Ketchum',
             ),

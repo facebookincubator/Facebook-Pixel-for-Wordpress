@@ -877,7 +877,8 @@ class FacebookWordpressSettingsRecorder {
     }
 
     /**
-     * Lists a form's fields together with its saved mapping.
+     * Lists a form's fields together with its saved mapping, or a suggested
+     * one when nothing is saved.
      *
      * @return array response data
      */
@@ -894,10 +895,15 @@ class FacebookWordpressSettingsRecorder {
             return $this->handle_invalid_request();
         }
 
+        // Without a saved mapping the form still uses automatic detection;
+        // offer what it would pick so the admin can review and save it.
+        $mapping = $this->field_mapper->get_mappings( $integration_name, $form_id );
+
         return $this->handle_success_request(
             array(
-                'fields'  => $integration->get_form_fields( $form_id ),
-                'mapping' => $this->field_mapper->get_mappings( $integration_name, $form_id ),
+                'fields'    => $integration->get_form_fields( $form_id ),
+                'mapping'   => $mapping,
+                'suggested' => empty( $mapping ) ? $integration->suggest_field_mapping( $form_id ) : array(),
             )
         );
     }

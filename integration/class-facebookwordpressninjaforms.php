@@ -308,4 +308,33 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
             'type'  => $type,
         );
     }
+
+    /**
+     * Suggests a target for a Ninja Forms field from its key prefix, following
+     * extract_lead_data_fallback().
+     *
+     * @param mixed $raw_field A Ninja Forms field model.
+     * @return string|null
+     */
+    protected function suggest_field_target( $raw_field ) {
+        $prefixes = array(
+            'email'       => 'email',
+            'name'        => 'full_name',
+            'firstname'   => 'first_name',
+            'lastname'    => 'last_name',
+            'phone'       => 'phone',
+            'city'        => 'city',
+            'zip'         => 'zip',
+            'liststate'   => 'state',
+            'listcountry' => 'country',
+            'gender'      => 'gender',
+        );
+        $key      = (string) $raw_field->get_setting( 'key' );
+        foreach ( $prefixes as $prefix => $target ) {
+            if ( StringUtils::starts_with( $key, $prefix ) ) {
+                return $target;
+            }
+        }
+        return null;
+    }
 }

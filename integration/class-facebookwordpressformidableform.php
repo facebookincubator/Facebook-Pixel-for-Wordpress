@@ -230,4 +230,28 @@ class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
             'type'  => $type,
         );
     }
+
+    /**
+     * Suggests a target for a Formidable field, following
+     * extract_lead_data_fallback(): email, phone and address fields by type,
+     * and the First/Last parts of a name by field name and description.
+     *
+     * @param mixed $raw_field A Formidable field row.
+     * @return string|null
+     */
+    protected function suggest_field_target( $raw_field ) {
+        $type        = isset( $raw_field->type ) ? (string) $raw_field->type : '';
+        $name        = isset( $raw_field->name ) ? (string) $raw_field->name : '';
+        $description = isset( $raw_field->description ) ? (string) $raw_field->description : '';
+        if ( in_array( $type, array( 'email', 'phone', 'address' ), true ) ) {
+            return $type;
+        }
+        if ( 'text' === $type && 'Last' === $name && 'Last' === $description ) {
+            return 'last_name';
+        }
+        if ( 'text' === $type && 'Name' === $name && 'First' === $description ) {
+            return 'first_name';
+        }
+        return null;
+    }
 }

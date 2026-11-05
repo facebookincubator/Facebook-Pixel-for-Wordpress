@@ -78,6 +78,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
                 ),
             )
         );
+        $integration->shouldReceive( 'suggest_field_mapping' )->with( '5' )->andReturn( array( 'email' => 'email' ) );
         $integration->shouldReceive( 'get_form_fields' )->with( '5' )->andReturn(
             array(
                 array(
@@ -160,7 +161,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * A form's fields come back with its saved mapping.
+     * A form's fields come back with its saved mapping and no suggestion.
      *
      * @return void
      */
@@ -179,6 +180,27 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $this->assertTrue( $response['success'] );
         $this->assertSame( array( 'email', 'name' ), array_column( $response['msg']['fields'], 'id' ) );
         $this->assertSame( array( 'name' => 'full_name' ), $response['msg']['mapping'] );
+        $this->assertSame( array(), $response['msg']['suggested'] );
+    }
+
+    /**
+     * A form without a saved mapping comes back with the mapping automatic
+     * detection suggests, for the admin to review.
+     *
+     * @return void
+     */
+    public function testGetMappingFieldsSuggestsWhenNothingIsSaved() {
+        $this->mock_wp();
+        $recorder = $this->make_recorder();
+        $_POST    = array(
+            'integration' => 'test-forms',
+            'form_id'     => '5',
+        );
+
+        $response = $recorder->get_mapping_fields();
+
+        $this->assertSame( array(), $response['msg']['mapping'] );
+        $this->assertSame( array( 'email' => 'email' ), $response['msg']['suggested'] );
     }
 
     /**

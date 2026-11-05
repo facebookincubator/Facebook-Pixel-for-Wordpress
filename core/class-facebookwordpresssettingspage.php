@@ -1342,6 +1342,7 @@ class FacebookWordpressSettingsPage {
             'email'         => 'Email',
             'phone'         => 'Phone',
             'full_name'     => 'Full name (split into first and last name)',
+            'address'       => 'Address (split into city, state, ZIP and country)',
             'first_name'    => 'First name',
             'last_name'     => 'Last name',
             'city'          => 'City',
@@ -1402,10 +1403,11 @@ class FacebookWordpressSettingsPage {
     <div id="fb-field-mapping">
     <div class="fb-adv-conf-title">Form Field Mapping</div>
     <div class="fb-capi-desc">
-        Choose which form field holds each piece of customer information sent
-        with Lead events. A mapped field takes priority over automatic
-        detection; anything you leave unmapped is still detected
-        automatically.
+        Choose which form fields are sent as customer information with Lead
+        events. Forms without a saved mapping are detected automatically. When
+        you open such a form, the mapping is pre-filled with what automatic
+        detection would send, so you can review it. Once you save a mapping,
+        only the fields mapped in it are sent for that form.
     </div>
         <?php if ( empty( $integrations ) ) : ?>
     <p class="fb-capi-desc fb-mapping-empty">
@@ -1451,6 +1453,10 @@ class FacebookWordpressSettingsPage {
             </thead>
             <tbody></tbody>
         </table>
+        <p id="fb-mapping-suggested" class="fb-capi-desc hidden">
+            Suggested from automatic detection. Review the fields and save to
+            use this mapping for the form.
+        </p>
         <p id="fb-mapping-no-fields" class="hidden">
             This form has no fields that can be mapped.
         </p>

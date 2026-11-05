@@ -282,4 +282,27 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
             'type'  => $basetype,
         );
     }
+
+    /**
+     * Suggests a target for a Contact Form 7 tag, following
+     * extract_lead_data_fallback(): email and tel tags by type, and a text tag
+     * whose name contains "name" as the full name.
+     *
+     * @param mixed $raw_field A WPCF7_FormTag.
+     * @return string|null
+     */
+    protected function suggest_field_target( $raw_field ) {
+        $name     = isset( $raw_field->name ) ? strtolower( (string) $raw_field->name ) : '';
+        $basetype = isset( $raw_field->basetype ) ? (string) $raw_field->basetype : '';
+        if ( 'email' === $basetype ) {
+            return 'email';
+        }
+        if ( 'tel' === $basetype ) {
+            return 'phone';
+        }
+        if ( 'text' === $basetype && false !== strpos( $name, 'name' ) ) {
+            return 'full_name';
+        }
+        return null;
+    }
 }

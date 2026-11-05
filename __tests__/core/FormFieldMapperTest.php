@@ -62,7 +62,8 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             $this->assertTrue( FormFieldMapper::is_valid_target( $field ), $field );
         }
         $this->assertTrue( FormFieldMapper::is_valid_target( 'full_name' ) );
-        $this->assertFalse( FormFieldMapper::is_valid_target( 'address' ) );
+        $this->assertTrue( FormFieldMapper::is_valid_target( 'address' ) );
+        $this->assertFalse( FormFieldMapper::is_valid_target( 'company' ) );
         $this->assertFalse( FormFieldMapper::is_valid_target( 'value' ) );
         $this->assertFalse( FormFieldMapper::is_valid_target( '' ) );
     }

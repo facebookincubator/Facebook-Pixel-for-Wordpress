@@ -88,6 +88,7 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
             $this->assertFalse( $integration->is_field_mapping_available(), $class );
             $this->assertSame( array(), $integration->get_forms(), $class );
             $this->assertSame( array(), $integration->get_form_fields( '1' ), $class );
+            $this->assertSame( array(), $integration->suggest_field_mapping( '1' ), $class );
         }
     }
 
@@ -139,6 +140,13 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
             ),
             $integration->get_form_fields( '123' )
         );
+        $this->assertSame(
+            array(
+                'your-name'  => 'full_name',
+                'your-email' => 'email',
+            ),
+            $integration->suggest_field_mapping( '123' )
+        );
     }
 
     /**
@@ -168,6 +176,17 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
                     '6' => array(
                         'id'   => '6',
                         'type' => 'phone',
+                    ),
+                    '7' => array(
+                        'id'     => '7',
+                        'type'   => 'name',
+                        'format' => 'first-last',
+                        'label'  => 'Name',
+                    ),
+                    '8' => array(
+                        'id'    => '8',
+                        'type'  => 'text',
+                        'label' => 'Town',
                     ),
                 ),
             )
@@ -205,8 +224,26 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
                     'label' => '6',
                     'type'  => 'phone',
                 ),
+                array(
+                    'id'    => '7',
+                    'label' => 'Name',
+                    'type'  => 'name',
+                ),
+                array(
+                    'id'    => '8',
+                    'label' => 'Town',
+                    'type'  => 'text',
+                ),
             ),
             $integration->get_form_fields( '5' )
+        );
+        $this->assertSame(
+            array(
+                '6' => 'phone',
+                '7' => 'full_name',
+                '8' => 'city',
+            ),
+            $integration->suggest_field_mapping( '5' )
         );
 
         $lead = $integration->extract_lead_data(
@@ -275,6 +312,7 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
             ),
             $integration->get_form_fields( '2' )
         );
+        $this->assertSame( array( 'email_1' => 'email' ), $integration->suggest_field_mapping( '2' ) );
     }
 
     /**
@@ -296,7 +334,16 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
         $html->name = 'Intro';
         $html->type = 'html';
         \Mockery::mock( 'alias:FrmForm' )->shouldReceive( 'get_published_forms' )->andReturn( array( $form ) );
-        \Mockery::mock( 'alias:FrmField' )->shouldReceive( 'get_all_for_form' )->with( '9' )->andReturn( array( $email, $html ) );
+        $first              = new \stdClass();
+        $first->id          = 13;
+        $first->name        = 'Name';
+        $first->description = 'First';
+        $first->type        = 'text';
+        $where              = new \stdClass();
+        $where->id          = 14;
+        $where->name        = 'Address';
+        $where->type        = 'address';
+        \Mockery::mock( 'alias:FrmField' )->shouldReceive( 'get_all_for_form' )->with( '9' )->andReturn( array( $email, $html, $first, $where ) );
         \Mockery::mock( 'overload:FrmEntryValues' )->shouldReceive( 'get_field_values' )->andReturn(
             array(
                 new MockFormidableFormFieldValue(
@@ -327,16 +374,34 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
                     'label' => 'Work email',
                     'type'  => 'text',
                 ),
+                array(
+                    'id'    => '13',
+                    'label' => 'Name',
+                    'type'  => 'text',
+                ),
+                array(
+                    'id'    => '14',
+                    'label' => 'Address',
+                    'type'  => 'address',
+                ),
             ),
             $integration->get_form_fields( '9' )
+        );
+        $this->assertSame(
+            array(
+                '13' => 'first_name',
+                '14' => 'address',
+            ),
+            $integration->suggest_field_mapping( '9' )
         );
         $this->assertSame( array( 'email' => 'work@s2s.com' ), $integration->extract_lead_data( 9, 100 ) );
     }
 
     /**
      * Mailchimp for WP lists the upper-cased input names in a form's markup,
-     * skipping internal and grouped inputs, and a mapping saved for its form
-     * id is applied on submission.
+     * grouping ADDRESS[...] inputs under ADDRESS and skipping internal ones,
+     * suggests the merge fields automatic detection knows, and applies only
+     * the saved mapping on submission.
      *
      * @return void
      */
@@ -348,6 +413,7 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
             . '<input type="text" name="fname" />'
             . "<input type='text' name='WORK_PHONE' />"
             . '<input type="text" name="ADDRESS[city]" />'
+            . '<input type="text" name="ADDRESS[country]" />'
             . '<input type="text" name="_mc4wp_honeypot" />'
             . '<input type="email" name="EMAIL" />';
         \WP_Mock::userFunction( 'mc4wp_get_forms', array( 'return' => array( $form ) ) );
@@ -373,7 +439,14 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
 
         $integration = $this->make(
             FacebookWordpressMailchimpForWp::class,
-            $this->saved( FacebookWordpressMailchimpForWp::INTEGRATION_NAME, '42', array( 'WORK_PHONE' => 'phone' ) )
+            $this->saved(
+                FacebookWordpressMailchimpForWp::INTEGRATION_NAME,
+                '42',
+                array(
+                    'WORK_PHONE' => 'phone',
+                    'ADDRESS'    => 'address',
+                )
+            )
         );
 
         $this->assertSame(
@@ -386,21 +459,62 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
             $integration->get_forms()
         );
         $this->assertSame(
-            array( 'EMAIL', 'FNAME', 'WORK_PHONE' ),
+            array( 'EMAIL', 'FNAME', 'WORK_PHONE', 'ADDRESS' ),
             array_column( $integration->get_form_fields( '42' ), 'id' )
         );
         $this->assertSame( array(), $integration->get_form_fields( '7' ) );
+        $this->assertSame(
+            array(
+                'EMAIL'   => 'email',
+                'FNAME'   => 'first_name',
+                'ADDRESS' => 'address',
+            ),
+            $integration->suggest_field_mapping( '42' )
+        );
 
+        // EMAIL is not in the saved mapping, so it is not sent.
         $form->data = array(
             'EMAIL'      => 'pika.chu@s2s.com',
             'WORK_PHONE' => '555',
+            'ADDRESS'    => array(
+                'city'    => 'Springfield',
+                'country' => 'US',
+            ),
         );
         $this->assertSame(
             array(
-                'email' => 'pika.chu@s2s.com',
-                'phone' => '555',
+                'phone'   => '555',
+                'city'    => 'Springfield',
+                'country' => 'US',
             ),
             $integration->extract_lead_data( $form )
+        );
+    }
+
+    /**
+     * A suggestion uses each target once: a second email field is left
+     * unmapped, and so is a second name field once full_name is taken.
+     *
+     * @return void
+     */
+    public function testSuggestionUsesEachTargetOnce() {
+        $form = \Mockery::mock();
+        $form->shouldReceive( 'scan_form_tags' )->andReturn(
+            array(
+                new MockContactForm7Tag( 'text', 'your-name' ),
+                new MockContactForm7Tag( 'email', 'your-email' ),
+                new MockContactForm7Tag( 'email', 'other-email' ),
+                new MockContactForm7Tag( 'text', 'company-name' ),
+            )
+        );
+        \Mockery::mock( 'alias:WPCF7_ContactForm' )->shouldReceive( 'get_instance' )->andReturn( $form );
+
+        $this->assertSame(
+            array(
+                'your-name'  => 'full_name',
+                'your-email' => 'email',
+            ),
+            $this->make( FacebookWordpressContactForm7::class )->suggest_field_mapping( '1' )
         );
     }
 }

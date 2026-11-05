@@ -32,15 +32,13 @@ class FormFieldMapper {
      * Mapping targets that are not Lead parameters themselves but expand into
      * several of them when a form is submitted: compound target => the Lead
      * parameters it produces. Only the expanded parameters reach the event.
-     *
-     * TODO: an 'address' compound (city/state/zip/country) needs each form
-     * plugin's own breakdown of its address value, so it is not offered yet.
-     * See TrackableLeadFormMappingTest::testCompositeAddressMappingIsExpanded.
+     * See TrackableLeadFormIntegrationBase::expand_compound_lead_param().
      *
      * @var array<string,string[]>
      */
     const COMPOUND_TARGETS = array(
         'full_name' => array( 'first_name', 'last_name' ),
+        'address'   => array( 'city', 'state', 'zip', 'country' ),
     );
 
     /**

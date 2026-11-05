@@ -214,15 +214,17 @@ class FacebookWordpressMailchimpForWp extends TrackableLeadFormIntegrationBase {
     /**
      * Maps an input name to a field. The id is the upper-cased name, matching
      * the keys of the submitted form data get_form_param_iterator() yields.
-     * Internal inputs (leading underscore) and grouped inputs such as
-     * ADDRESS[city], whose value is not a single string, are skipped.
+     * Grouped inputs such as ADDRESS[city] are submitted as one array under
+     * their group name, so they are listed once under it. Internal inputs
+     * (leading underscore) are skipped.
      *
      * @param mixed $raw_field An input name.
      * @return array|null
      */
     protected function map_field( $raw_field ) {
         $name = trim( (string) $raw_field );
-        if ( '' === $name || '_' === $name[0] || false !== strpos( $name, '[' ) ) {
+        $name = trim( strtok( $name, '[' ) );
+        if ( '' === $name || '_' === $name[0] ) {
             return null;
         }
         return array(
@@ -230,5 +232,24 @@ class FacebookWordpressMailchimpForWp extends TrackableLeadFormIntegrationBase {
             'label' => strtoupper( $name ),
             'type'  => '',
         );
+    }
+
+    /**
+     * Suggests a target for a Mailchimp merge field, following
+     * extract_lead_data_fallback().
+     *
+     * @param mixed $raw_field An input name.
+     * @return string|null
+     */
+    protected function suggest_field_target( $raw_field ) {
+        $targets = array(
+            'EMAIL'   => 'email',
+            'FNAME'   => 'first_name',
+            'LNAME'   => 'last_name',
+            'PHONE'   => 'phone',
+            'ADDRESS' => 'address',
+        );
+        $name    = strtoupper( trim( strtok( (string) $raw_field, '[' ) ) );
+        return isset( $targets[ $name ] ) ? $targets[ $name ] : null;
     }
 }

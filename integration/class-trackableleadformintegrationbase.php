@@ -193,29 +193,28 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
     /**
      * Extracts normalized Lead data from a submitted form.
      *
-     * The integration's hard-coded fallback extraction always runs. If a
-     * form-field -> lead-parameter mapping is configured for this form (see
-     * is_mapping_available()/get_mapping_for_form()), it is applied on top: a
-     * mapped field wins, and parameters the mapping does not cover keep their
-     * fallback value. The arguments are whatever the plugin's submit hook
-     * provides and are forwarded verbatim to the integration primitives.
+     * A form-field -> lead-parameter mapping saved for this form (see
+     * is_mapping_available()/get_mapping_for_form()) replaces automatic
+     * detection: only mapped fields are sent. Forms without a saved mapping
+     * use the integration's hard-coded fallback extraction, which also seeds
+     * the mapping screen (see suggest_field_mapping()). The arguments are
+     * whatever the plugin's submit hook provides and are forwarded verbatim to
+     * the integration primitives.
      *
      * @param mixed ...$args The plugin submit-hook arguments.
      * @return array Normalized lead data keyed by Lead parameter name.
      */
     public function extract_lead_data( ...$args ) {
-        $form_id = $this->get_form_id( ...$args );
-        // Materialized because both the fallback and the mapping read the rows.
-        $form_params = self::to_rows( $this->get_form_param_iterator( ...$args ) );
-        $lead_data   = $this->extract_lead_data_fallback( $form_params );
+        $form_id  = $this->get_form_id( ...$args );
+        $iterator = $this->get_form_param_iterator( ...$args );
 
         $mapping = $this->is_mapping_available( $form_id )
             ? $this->get_mapping_for_form( static::INTEGRATION_NAME, $form_id )
             : array();
 
         return empty( $mapping )
-            ? $lead_data
-            : array_merge( $lead_data, $this->apply_field_mapping( $form_params, $mapping ) );
+            ? $this->extract_lead_data_fallback( $iterator )
+            : $this->apply_field_mapping( $iterator, $mapping );
     }
 
     /**
@@ -225,8 +224,8 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
      * A row is matched by its 'id' when it carries one (integrations whose
      * 'name' is a display label rather than a unique identifier add it), and by
      * its 'name' otherwise. Compound targets (FormFieldMapper::COMPOUND_TARGETS)
-     * are expanded into their Lead parameters; unknown targets, empty values and
-     * non-scalar values are skipped.
+     * are expanded into their Lead parameters. Unknown targets, empty values and
+     * non-scalar values for a single parameter are skipped.
      *
      * @param iterable $form_param_iterator Rows of ['name'=>, 'type'=>, 'value'=>, ...].
      * @param array    $mapping             form_field_id => lead_parameter.
@@ -242,16 +241,14 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
             if ( '' === $field_id || ! array_key_exists( $field_id, $mapping ) ) {
                 continue;
             }
-            $value = $form_param['value'];
-            if ( ! is_scalar( $value ) || '' === trim( (string) $value ) ) {
-                continue;
-            }
             $lead_param = $mapping[ $field_id ];
+            $value      = $form_param['value'];
             if ( isset( FormFieldMapper::COMPOUND_TARGETS[ $lead_param ] ) ) {
-                $result = array_merge( $result, $this->expand_compound_lead_param( $lead_param, (string) $value ) );
+                $result = array_merge( $result, $this->expand_compound_lead_param( $lead_param, $value ) );
                 continue;
             }
-            if ( ! $this->is_valid_lead_param( $lead_param ) ) {
+            if ( ! $this->is_valid_lead_param( $lead_param )
+                || ! is_scalar( $value ) || '' === trim( (string) $value ) ) {
                 continue;
             }
             $result[ $lead_param ] = $value;
@@ -262,24 +259,62 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
     /**
      * Expands a compound mapping target into the Lead parameters it stands for.
      *
+     * - full_name: a single string is split at the first space; a name field
+     *   submitted as parts (e.g. WPForms' first/last format) uses its 'first'
+     *   and 'last' parts.
+     * - address: an address field submitted as parts yields city, state, zip
+     *   (from 'zip', 'postal' or 'postcode') and a two-letter country.
+     *
      * @param string $compound The compound target (a FormFieldMapper::COMPOUND_TARGETS key).
-     * @param string $value    The submitted field value.
+     * @param mixed  $value    The submitted field value.
      * @return array Lead data keyed by Lead parameter name.
      */
     protected function expand_compound_lead_param( $compound, $value ) {
-        if ( 'full_name' !== $compound ) {
-            return array();
+        $parts = array();
+        if ( 'full_name' === $compound ) {
+            if ( is_array( $value ) ) {
+                $parts = array(
+                    'first_name' => self::get_part( $value, array( 'first' ) ),
+                    'last_name'  => self::get_part( $value, array( 'last' ) ),
+                );
+            } elseif ( is_scalar( $value ) ) {
+                $name  = StringUtils::split_name( trim( (string) $value ) );
+                $parts = array(
+                    'first_name' => $name[0],
+                    'last_name'  => $name[1],
+                );
+            }
+        } elseif ( 'address' === $compound && is_array( $value ) ) {
+            $country = strtoupper( self::get_part( $value, array( 'country' ) ) );
+            $parts   = array(
+                'city'    => self::get_part( $value, array( 'city' ) ),
+                'state'   => self::get_part( $value, array( 'state' ) ),
+                'zip'     => self::get_part( $value, array( 'zip', 'postal', 'postcode' ) ),
+                'country' => 1 === preg_match( '/^[A-Z]{2}$/', $country ) ? $country : '',
+            );
         }
-        $name = StringUtils::split_name( trim( $value ) );
         return array_filter(
-            array(
-                'first_name' => $name[0],
-                'last_name'  => $name[1],
-            ),
+            $parts,
             function ( $part ) {
                 return null !== $part && '' !== $part;
             }
         );
+    }
+
+    /**
+     * Reads the first non-empty string part of a multi-part field value.
+     *
+     * @param array    $value The submitted parts.
+     * @param string[] $keys  The part keys to try, in order.
+     * @return string
+     */
+    private static function get_part( array $value, array $keys ) {
+        foreach ( $keys as $key ) {
+            if ( isset( $value[ $key ] ) && is_scalar( $value[ $key ] ) && '' !== trim( (string) $value[ $key ] ) ) {
+                return trim( (string) $value[ $key ] );
+            }
+        }
+        return '';
     }
 
     /**
@@ -318,20 +353,6 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
             return (string) $form_param['id'];
         }
         return isset( $form_param['name'] ) ? (string) $form_param['name'] : '';
-    }
-
-    /**
-     * Normalizes what get_form_param_iterator() returned (a generator, an array
-     * or nothing) into an array of rows.
-     *
-     * @param mixed $form_params The iterator result.
-     * @return array
-     */
-    private static function to_rows( $form_params ) {
-        if ( $form_params instanceof \Traversable ) {
-            return iterator_to_array( $form_params, false );
-        }
-        return is_array( $form_params ) ? array_values( $form_params ) : array();
     }
 
     /**
@@ -409,6 +430,55 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
             );
         }
         return array_values( $fields );
+    }
+
+    /**
+     * Proposes a mapping for a form from the same signals automatic detection
+     * uses, so the field mapping screen can pre-fill it for review instead of
+     * leaving every field unmapped. Each target is proposed for at most one
+     * field, and full_name is not combined with first_name/last_name.
+     *
+     * @param string $form_id The native form id.
+     * @return array<string,string> field_id => target.
+     */
+    public function suggest_field_mapping( $form_id ) {
+        if ( ! $this->is_field_mapping_available() ) {
+            return array();
+        }
+
+        $suggested = array();
+        $taken     = array();
+        foreach ( $this->fetch_form_fields( $form_id ) as $raw_field ) {
+            $field = $this->map_field( $raw_field );
+            if ( null === $field || ! isset( $field['id'] ) || '' === (string) $field['id'] ) {
+                continue;
+            }
+            $target = $this->suggest_field_target( $raw_field );
+            if ( null === $target || ! FormFieldMapper::is_valid_target( $target ) ) {
+                continue;
+            }
+            $produces = isset( FormFieldMapper::COMPOUND_TARGETS[ $target ] )
+                ? FormFieldMapper::COMPOUND_TARGETS[ $target ]
+                : array( $target );
+            if ( array_intersect( $produces, $taken ) || isset( $suggested[ (string) $field['id'] ] ) ) {
+                continue;
+            }
+            $suggested[ (string) $field['id'] ] = $target;
+            $taken                              = array_merge( $taken, $produces );
+        }
+        return $suggested;
+    }
+
+    /**
+     * The target automatic detection would assign to a raw field, or null.
+     * Mirrors the integration's extract_lead_data_fallback() rules, applied to
+     * the field definition instead of a submission.
+     *
+     * @param mixed $raw_field A raw field from fetch_form_fields().
+     * @return string|null
+     */
+    protected function suggest_field_target( $raw_field ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Base placeholder; overridden by integrations.
+        return null;
     }
 
     /**

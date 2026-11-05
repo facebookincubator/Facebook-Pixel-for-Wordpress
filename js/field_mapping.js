@@ -24,6 +24,7 @@
   var $fieldsTable = $('#fb-mapping-fields');
   var $fieldsBody = $fieldsTable.find('tbody');
   var $noFields = $('#fb-mapping-no-fields');
+  var $suggested = $('#fb-mapping-suggested');
   var $saveButton = $('#fb-mapping-save');
   var $status = $('#fb-mapping-status');
   var $listBody = $('#fb-mapping-list').find('tbody');
@@ -111,19 +112,22 @@
     $fieldsBody.empty();
     $fieldsTable.addClass('hidden');
     $noFields.addClass('hidden');
+    $suggested.addClass('hidden');
     $saveButton.addClass('hidden');
   }
 
-  // One row per form field, with its saved target preselected.
-  function renderFields(fields, mapping) {
+  // One row per form field, preselecting the saved mapping or, for a form
+  // without one, the targets automatic detection suggests.
+  function renderFields(fields, mapping, suggested) {
     resetFields();
     if (!fields || fields.length === 0) {
       $noFields.removeClass('hidden');
       return;
     }
-    mapping = mapping || {};
+    var hasSaved = mapping && !$.isEmptyObject(mapping);
+    var selected = hasSaved ? mapping : suggested || {};
     $.each(fields, function (i, field) {
-      var $target = buildTargetSelect(mapping[field.id] || '');
+      var $target = buildTargetSelect(selected[field.id] || '');
       $target.data('field_id', field.id);
       $('<tr>')
         .append($('<td>').text(field.label))
@@ -131,6 +135,7 @@
         .append($('<td>').append($target))
         .appendTo($fieldsBody);
     });
+    $suggested.toggleClass('hidden', hasSaved || $.isEmptyObject(selected));
     $fieldsTable.removeClass('hidden');
     $saveButton.removeClass('hidden');
   }
@@ -170,7 +175,11 @@
     })
       .done(function (response) {
         if (response && response.success) {
-          renderFields(response.msg.fields, response.msg.mapping);
+          renderFields(
+            response.msg.fields,
+            response.msg.mapping,
+            response.msg.suggested,
+          );
         } else {
           showStatus(params.loadError, true);
         }

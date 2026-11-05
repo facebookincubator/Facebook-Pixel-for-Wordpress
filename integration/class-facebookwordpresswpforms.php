@@ -358,4 +358,45 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
             'type'  => $type,
         );
     }
+
+    /**
+     * Suggests a target for a WPForms field, following
+     * extract_lead_data_fallback(): name, email, phone and address fields by
+     * type, and city/state/zip/country/phone fields by label.
+     *
+     * @param mixed $raw_field A WPForms field definition.
+     * @return string|null
+     */
+    protected function suggest_field_target( $raw_field ) {
+        $by_type = array(
+            'name'    => 'full_name',
+            'email'   => 'email',
+            'phone'   => 'phone',
+            'address' => 'address',
+        );
+        $type    = isset( $raw_field['type'] ) ? (string) $raw_field['type'] : '';
+        if ( isset( $by_type[ $type ] ) ) {
+            return $by_type[ $type ];
+        }
+        $by_label = array(
+            'phone'          => 'phone',
+            'tel'            => 'phone',
+            'telephone'      => 'phone',
+            'mobile'         => 'phone',
+            'city'           => 'city',
+            'town'           => 'city',
+            'state'          => 'state',
+            'province'       => 'state',
+            'region'         => 'state',
+            'county'         => 'state',
+            'zip'            => 'zip',
+            'postal'         => 'zip',
+            'postcode'       => 'zip',
+            'zip code'       => 'zip',
+            'country'        => 'country',
+            'country/region' => 'country',
+        );
+        $label    = isset( $raw_field['label'] ) ? strtolower( trim( (string) $raw_field['label'] ) ) : '';
+        return isset( $by_label[ $label ] ) ? $by_label[ $label ] : null;
+    }
 }
