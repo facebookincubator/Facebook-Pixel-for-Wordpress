@@ -15,15 +15,6 @@ function isValidTestEventCode(code) {
     return /^[A-Za-z0-9_]+$/.test(code);
 }
 
-window.fbAsyncInit = function () {
-    FB.init({
-        appId: "221646389321681",
-        autoLogAppEvents: true,
-        xfbml: true,
-        version: "v13.0",
-    });
-};
-
 window.facebookBusinessExtensionConfig = {
     pixelId: meta_wc_params.pixelId,
     popupOrigin: "https://business.facebook.com",
@@ -179,37 +170,6 @@ window.fbl4bConfig = {
     pixelName: meta_wc_params.fbl4bPixelName || '',
     businessId: meta_wc_params.fbl4bBusinessId || '',
 };
-
-var currentFBEInstalledStatus = meta_wc_params.connectionType === 'mbe';
-jQuery("#ad-creation-plugin-iframe").attr("data-fbe-extras", getFBEExtras());
-jQuery("#ad-insights-plugin-iframe").attr("data-fbe-extras", getFBEExtras());
-updateAdInsightsPlugin(currentFBEInstalledStatus);
-
-function getFBEExtras() {
-    $fbeConfig = window.facebookBusinessExtensionConfig;
-    return JSON.stringify({
-        business_config: {
-            business: {
-                name: $fbeConfig.businessName,
-            },
-        },
-        setup: {
-            external_business_id: $fbeConfig.externalBusinessId,
-            timezone: $fbeConfig.timeZone,
-            currency: $fbeConfig.currency,
-            business_vertical: $fbeConfig.businessVertical,
-            channel: $fbeConfig.channel,
-        },
-        repeat: false,
-    });
-}
-function updateAdInsightsPlugin(isFBEInstalled) {
-    if (isFBEInstalled) {
-        jQuery("#meta-ads-plugin").show();
-    } else {
-        jQuery("#meta-ads-plugin").hide();
-    }
-}
 
 function sendTestEvent(e) {
     e.preventDefault();

@@ -308,11 +308,9 @@ var FBEFlowContainer = React.createClass({
         if(action != null && action === 'delete') {
           // Delete asset ids stored in db instance.
           _this.deleteFBAssets();
-          _this.hideAdsPlugin();
         }else if(action != null && action === 'create') {
           _this.saveSettings(pixelId, accessToken, window.facebookBusinessExtensionConfig.externalBusinessId);
           _this.setState({installed: 'true'});
-          _this.showAdsPlugin();
         }
       }else {
       }
@@ -524,8 +522,6 @@ var FBEFlowContainer = React.createClass({
             window.fbl4bConfig.pendingPixels = null;
             _this.setState({pixelId: pixelId, installed: 'true', businessId: businessId});
             _this.showEventsManagerSection(pixelId);
-            // Hide Ads sections for FBL4B (they require MBE scopes)
-            _this.hideAdsPlugin();
           } else {
           }
         } else {
@@ -623,12 +619,6 @@ var FBEFlowContainer = React.createClass({
         console.error('There was a problem deleting the connection, Please try again.');
       }
     });
-  },
-  showAdsPlugin: function showAdsPlugin() {
-    jQuery("#meta-ads-plugin").show();
-  },
-  hideAdsPlugin: function hideAdsPlugin() {
-    jQuery("#meta-ads-plugin").hide();
   },
   componentDidMount: function componentDidMount() {
     this.bindMessageEvents();
@@ -1359,8 +1349,6 @@ var FBEFlowContainer = React.createClass({
   },
   hideEventsManagerSection: function hideEventsManagerSection() {
     jQuery(".events-manager-wrapper").hide();
-    jQuery('#ad-creation-plugin').hide();
-    jQuery('#ad-insights-plugin').hide();
     jQuery("#fb-adv-conf").hide();
     jQuery(".events-manager-wrapper input#pixel-id").val('');
     // Lets the settings page drop its connected-only tabs.
@@ -1368,8 +1356,6 @@ var FBEFlowContainer = React.createClass({
   },
   showEventsManagerSection: function showEventsManagerSection(pixelId) {
     jQuery(".events-manager-wrapper").show();
-    jQuery('#ad-creation-plugin').show();
-    jQuery('#ad-insights-plugin').show();
     jQuery("#fb-adv-conf").show();
     jQuery(".events-manager-wrapper input#pixel-id").val(pixelId);
     // Update Events Manager link with the correct pixel ID

@@ -221,24 +221,6 @@ class FacebookWordpressSettingsPage {
      */
     private function get_fbe_browser_settings() {
         ob_start();
-        $fbe_extras = wp_json_encode(
-            array(
-                'business_config' => array(
-                    'business' => array(
-                        'name' => 'Solutions_Engineering_Team',
-                    ),
-                ),
-                'setup'           => array(
-                    'external_business_id' =>
-                        FacebookWordpressOptions::get_external_business_id(),
-                    'timezone'             => 'America/Los_Angeles',
-                    'currency'             => 'USD',
-                    'business_vertical'    => 'ECOMMERCE',
-                    'channel'              => 'DEFAULT',
-                ),
-                'repeat'          => false,
-            )
-        );
         // Connected pages split the settings into tabs; until then the page
         // shows only the connection flow, as before. js/settings_page.js keeps
         // the class in sync when the connection changes without a reload.
@@ -259,58 +241,6 @@ class FacebookWordpressSettingsPage {
     </nav>
     <div id="fb-tab-connection" class="fb-settings-panel fb-settings-panel--active" role="tabpanel">
     <div id="fbe-iframe">
-    </div>
-    <?php
-    wp_enqueue_script(
-        'facebook-sdk',
-        'https://connect.facebook.net/en_US/sdk.js',
-        array(),
-        '1.0.0',
-        false
-    );
-        ?>
-    <div id="meta-ads-plugin">
-    <div id="ad-creation-plugin" class="
-    <?php
-    // Ads Creation only available for MBE connections (requires MBE scopes).
-    echo ( 'mbe' !== FacebookWordpressOptions::get_connection_type()
-        || empty( FacebookWordpressOptions::get_access_token() ) ) ?
-    'hidden' : '';
-    ?>
-    ">
-    <h3 class="mt-5">Ads Creation</h3>
-        <div
-        class="my-3 p-3 bg-white rounded shadow-sm">
-        <div id="ad-creation-plugin-iframe" class="fb-lwi-ads-creation"
-        data-lazy=true
-        data-hide-manage-button=true
-        data-fbe-extras='<?php echo esc_html( $fbe_extras ); ?>'
-        data-fbe-scopes=
-            'manage_business_extension,business_management,ads_management'
-        data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler'
-        ></div>
-        </div>
-    </div>
-    <div id="ad-insights-plugin" class="
-    <?php
-    // Ads Insights only available for MBE connections (requires MBE scopes).
-    echo ( 'mbe' !== FacebookWordpressOptions::get_connection_type()
-        || empty( FacebookWordpressOptions::get_access_token() ) ) ?
-    'hidden' : '';
-    ?>
-    ">
-        <h3 class="mt-5">Ads Insights</h3>
-        <div
-        class="my-3 p-3 bg-white d-block rounded shadow-sm">
-        <div id="ad-insights-plugin-iframe" class="fb-lwi-ads-insights"
-        data-lazy=true
-        data-fbe-extras='<?php echo esc_html( $fbe_extras ); ?>'
-        data-fbe-scopes=
-            'manage_business_extension,business_management,ads_management'
-        data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler'
-        ></div>
-        </div>
-    </div>
     </div>
     </div>
     <div id="fb-tab-configuration" class="fb-settings-panel" role="tabpanel">
