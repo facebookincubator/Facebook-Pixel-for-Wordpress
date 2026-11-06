@@ -53,6 +53,9 @@ class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
      * @return void
      */
     public function capture_submitted_form( $entry_id, $form_id ) {
+        if ( $this->is_form_rejected( $form_id, $entry_id ) ) {
+            return;
+        }
         $event = $this->generate_event( static::EVENT_NAME, $this->extract_lead_data( $form_id, $entry_id ) );
         $this->deliver( $event );
     }
@@ -92,7 +95,11 @@ class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
                 $field->type,
                 $field_value->get_saved_value(),
                 'description',
-                $field->description
+                $field->description,
+                // The name is a label, not unique, so the row also carries the
+                // field id the field mapping screen lists (see get_mapping_key()).
+                'id',
+                $field->id
             );
         }
     }
@@ -154,5 +161,109 @@ class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
             $result['zip'] = $value['zip'];
         }
         return $result;
+    }
+
+    /**
+     * This integration supports form field mapping.
+     *
+     * @return bool
+     */
+    public function supports_field_mapping() {
+        return true;
+    }
+
+    /**
+     * Whether Formidable Forms is loaded.
+     *
+     * @return bool
+     */
+    public function is_field_mapping_available() {
+        return class_exists( '\FrmForm' ) && class_exists( '\FrmField' );
+    }
+
+    /**
+     * Human-readable integration name for the field mapping screen.
+     *
+     * @return string
+     */
+    public function get_integration_label() {
+        return 'Formidable Forms';
+    }
+
+    /**
+     * Returns all published Formidable forms.
+     *
+     * @return iterable
+     */
+    protected function fetch_forms() {
+        $forms = \FrmForm::get_published_forms();
+        return is_array( $forms ) ? $forms : array();
+    }
+
+    /**
+     * Maps a Formidable form to id + title.
+     *
+     * @param mixed $raw_form A Formidable form row.
+     * @return array
+     */
+    protected function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->id,
+            'title' => $raw_form->name,
+        );
+    }
+
+    /**
+     * Returns a Formidable form's fields.
+     *
+     * @param string $form_id The form id.
+     * @return iterable
+     */
+    protected function fetch_form_fields( $form_id ) {
+        $fields = \FrmField::get_all_for_form( $form_id );
+        return is_array( $fields ) ? $fields : array();
+    }
+
+    /**
+     * Maps a Formidable field to a field. The id is the field id, which
+     * get_form_param_iterator() adds to each row.
+     *
+     * @param mixed $raw_field A Formidable field row.
+     * @return array|null
+     */
+    protected function map_field( $raw_field ) {
+        $type = isset( $raw_field->type ) ? (string) $raw_field->type : '';
+        if ( in_array( $type, array( 'divider', 'end_divider', 'html', 'captcha', 'break', 'submit' ), true ) ) {
+            return null;
+        }
+        return array(
+            'id'    => $raw_field->id,
+            'label' => isset( $raw_field->name ) ? $raw_field->name : '',
+            'type'  => $type,
+        );
+    }
+
+    /**
+     * Suggests a target for a Formidable field, following
+     * extract_lead_data_fallback(): email, phone and address fields by type,
+     * and the First/Last parts of a name by field name and description.
+     *
+     * @param mixed $raw_field A Formidable field row.
+     * @return string|null
+     */
+    protected function suggest_field_target( $raw_field ) {
+        $type        = isset( $raw_field->type ) ? (string) $raw_field->type : '';
+        $name        = isset( $raw_field->name ) ? (string) $raw_field->name : '';
+        $description = isset( $raw_field->description ) ? (string) $raw_field->description : '';
+        if ( in_array( $type, array( 'email', 'phone', 'address' ), true ) ) {
+            return $type;
+        }
+        if ( 'text' === $type && 'Last' === $name && 'Last' === $description ) {
+            return 'last_name';
+        }
+        if ( 'text' === $type && 'Name' === $name && 'First' === $description ) {
+            return 'first_name';
+        }
+        return null;
     }
 }

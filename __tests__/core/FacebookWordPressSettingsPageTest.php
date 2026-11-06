@@ -28,6 +28,9 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
+use FacebookPixelPlugin\Core\FormFieldMapper;
+use FacebookPixelPlugin\Integration\TrackableLeadFormIntegrationBase;
+use FacebookPixelPlugin\Tests\Mocks\MockFormFieldMappingStore;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
@@ -570,5 +573,138 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
         'return_arg' => 0,
       )
     );
+  }
+
+  /**
+   * Invokes a private settings page method.
+   *
+   * @param FacebookWordpressSettingsPage $settings_page The settings page.
+   * @param string                        $method        The method name.
+   * @return mixed
+   */
+  private function invoke_private( $settings_page, $method ) {
+    $reflection = new \ReflectionMethod( $settings_page, $method );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $reflection->setAccessible( true );
+    }
+    return $reflection->invoke( $settings_page );
+  }
+
+  /**
+   * Builds a settings page whose only supported form plugin is Contact Form
+   * 7, with one saved mapping.
+   *
+   * @param bool $with_integration Whether Contact Form 7 is active.
+   * @return FacebookWordpressSettingsPage
+   */
+  private function make_field_mapping_page( $with_integration = true ) {
+    $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class );
+    $integration->shouldReceive( 'get_integration_label' )->andReturn( 'Contact Form 7' );
+    $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $with_integration );
+    $integration->shouldReceive( 'get_forms' )->andReturn(
+      array(
+        array(
+          'id'    => '1',
+          'title' => 'Contact form 1',
+        ),
+      )
+    );
+    $mapper = new FormFieldMapper(
+      new MockFormFieldMappingStore(
+        array(
+          'contact-form-7' => array(
+            '1' => array(
+              'form_title' => 'Contact form 1',
+              'mappings'   => array( 'your-email' => 'email' ),
+            ),
+          ),
+        )
+      )
+    );
+    return new FacebookWordpressSettingsPage(
+      'facebook_for_wordpress',
+      function () use ( $integration ) {
+        return array( 'contact-form-7' => $integration );
+      },
+      $mapper
+    );
+  }
+
+  /**
+   * The field mapping script gets nonce-protected routes, every valid target
+   * once with matching identifiers first, and the table rows.
+   */
+  public function testFieldMappingParams() {
+    \WP_Mock::userFunction( 'wp_create_nonce', array( 'return' => 'test_nonce' ) );
+    \WP_Mock::userFunction( 'admin_url', array( 'return' => 'https://example.com/wp-admin/admin-ajax.php' ) );
+    \WP_Mock::userFunction(
+      'add_query_arg',
+      array(
+        'return' => function ( $args, $url ) {
+          return $url . '?' . http_build_query( $args );
+        },
+      )
+    );
+
+    $params = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_params' );
+
+    $this->assertStringContainsString( 'action=facebook_save_field_mapping', $params['saveUrl'] );
+    $this->assertStringContainsString( '_wpnonce=test_nonce', $params['saveUrl'] );
+
+    $targets = array_column( $params['targets'], 'value' );
+    $this->assertSame( array( 'email', 'phone', 'full_name' ), array_slice( $targets, 0, 3 ) );
+    $this->assertEqualsCanonicalizing( FormFieldMapper::get_valid_targets(), $targets );
+
+    $this->assertSame(
+      array(
+        'integration_name'  => 'contact-form-7',
+        'integration_label' => 'Contact Form 7',
+        'form_id'           => '1',
+        'form_title'        => 'Contact form 1',
+        'status'            => 'saved',
+        'targets'           => array( 'email' ),
+        'active'            => true,
+        'missing'           => false,
+      ),
+      $params['list'][0]
+    );
+  }
+
+  /**
+   * The section lists the supported form plugins with their status and the
+   * forms table; the editor is only rendered when a plugin is active, and a
+   * hint is shown when none is.
+   */
+  public function testFieldMappingSection() {
+    \WP_Mock::userFunction(
+      'esc_attr',
+      array(
+        'return' => function ( $text ) {
+          return $text;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'esc_html',
+      array(
+        'return' => function ( $text ) {
+          return $text;
+        },
+      )
+    );
+
+    $section = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_section' );
+    $this->assertStringContainsString( 'Supported form plugins', $section );
+    $this->assertMatchesRegularExpression( '/Contact Form 7\s*<span class="fb-mapping-plugin-status fb-mapping-plugin-status--active">\s*Active/', $section );
+    $this->assertStringContainsString( 'id="fb-mapping-list"', $section );
+    $this->assertStringContainsString( 'id="fb-mapping-editor"', $section );
+    $this->assertStringNotContainsString( 'id="fb-mapping-integration"', $section );
+    $this->assertStringNotContainsString( 'fb-mapping-empty', $section );
+
+    $section = $this->invoke_private( $this->make_field_mapping_page( false ), 'get_field_mapping_section' );
+    $this->assertMatchesRegularExpression( '/Contact Form 7\s*<span class="fb-mapping-plugin-status">\s*Not active/', $section );
+    $this->assertStringContainsString( 'id="fb-mapping-list"', $section );
+    $this->assertStringContainsString( 'fb-mapping-empty', $section );
+    $this->assertStringNotContainsString( 'id="fb-mapping-editor"', $section );
   }
 }

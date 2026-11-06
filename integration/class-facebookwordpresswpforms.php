@@ -65,6 +65,9 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
      * @return void
      */
     public function capture_submitted_form( ...$args ) {
+        if ( $this->is_form_rejected( ...$args ) ) {
+            return;
+        }
         $event = $this->generate_event( self::EVENT_NAME, $this->extract_lead_data( ...$args ) );
 
         // WPForms fires this hook for both AJAX and non-AJAX submits.
@@ -179,7 +182,9 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
                 $type   = $this->get_if_isset( $form_data['fields'][ $field_id ], 'type' );
                 $scheme = $this->get_if_isset( $form_data['fields'][ $field_id ], 'scheme' );
                 $format = $this->get_if_isset( $form_data['fields'][ $field_id ], 'format' );
-                yield self::get_iterator_yield_output( $name, $type, $field_value, 'format', $format, 'scheme', $scheme );
+                // The label is not unique, so the row also carries the field id the
+                // field mapping screen lists (see get_mapping_key()).
+                yield self::get_iterator_yield_output( $name, $type, $field_value, 'format', $format, 'scheme', $scheme, 'id', $field_id );
             }
         }
     }
@@ -277,5 +282,133 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
         $fn( 'country', $address_field_value );
         $fn( 'postal', $address_field_value, 'zip' );
         return $result;
+    }
+
+    /**
+     * This integration supports form field mapping.
+     *
+     * @return bool
+     */
+    public function supports_field_mapping() {
+        return true;
+    }
+
+    /**
+     * Whether WPForms (Lite or Pro) is loaded.
+     *
+     * @return bool
+     */
+    public function is_field_mapping_available() {
+        return function_exists( 'wpforms' );
+    }
+
+    /**
+     * Human-readable integration name for the field mapping screen.
+     *
+     * @return string
+     */
+    public function get_integration_label() {
+        return 'WPForms';
+    }
+
+    /**
+     * Returns all WPForms form posts.
+     *
+     * @return iterable
+     */
+    protected function fetch_forms() {
+        $forms = wpforms()->form->get( '' );
+        return is_array( $forms ) ? $forms : array();
+    }
+
+    /**
+     * Maps a WPForms form post to id + title.
+     *
+     * @param mixed $raw_form The form's WP_Post.
+     * @return array
+     */
+    protected function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->ID,
+            'title' => $raw_form->post_title,
+        );
+    }
+
+    /**
+     * Returns a WPForms form's field definitions.
+     *
+     * @param string $form_id The form id.
+     * @return iterable
+     */
+    protected function fetch_form_fields( $form_id ) {
+        $form = wpforms()->form->get( $form_id );
+        if ( empty( $form ) ) {
+            return array();
+        }
+        $data = function_exists( 'wpforms_decode' )
+            ? wpforms_decode( $form->post_content )
+            : json_decode( $form->post_content, true );
+        return ( empty( $data['fields'] ) || ! is_array( $data['fields'] ) ) ? array() : $data['fields'];
+    }
+
+    /**
+     * Maps a WPForms field definition to a field. The id is the numeric field
+     * id, which get_form_param_iterator() adds to each row.
+     *
+     * @param mixed $raw_field A WPForms field definition.
+     * @return array|null
+     */
+    protected function map_field( $raw_field ) {
+        $type = isset( $raw_field['type'] ) ? (string) $raw_field['type'] : '';
+        if ( ! isset( $raw_field['id'] )
+            || in_array( $type, array( 'divider', 'html', 'pagebreak', 'content', 'entry-preview', 'captcha' ), true ) ) {
+            return null;
+        }
+        return array(
+            'id'    => $raw_field['id'],
+            'label' => isset( $raw_field['label'] ) ? $raw_field['label'] : '',
+            'type'  => $type,
+        );
+    }
+
+    /**
+     * Suggests a target for a WPForms field, following
+     * extract_lead_data_fallback(): name, email, phone and address fields by
+     * type, and city/state/zip/country/phone fields by label.
+     *
+     * @param mixed $raw_field A WPForms field definition.
+     * @return string|null
+     */
+    protected function suggest_field_target( $raw_field ) {
+        $by_type = array(
+            'name'    => 'full_name',
+            'email'   => 'email',
+            'phone'   => 'phone',
+            'address' => 'address',
+        );
+        $type    = isset( $raw_field['type'] ) ? (string) $raw_field['type'] : '';
+        if ( isset( $by_type[ $type ] ) ) {
+            return $by_type[ $type ];
+        }
+        $by_label = array(
+            'phone'          => 'phone',
+            'tel'            => 'phone',
+            'telephone'      => 'phone',
+            'mobile'         => 'phone',
+            'city'           => 'city',
+            'town'           => 'city',
+            'state'          => 'state',
+            'province'       => 'state',
+            'region'         => 'state',
+            'county'         => 'state',
+            'zip'            => 'zip',
+            'postal'         => 'zip',
+            'postcode'       => 'zip',
+            'zip code'       => 'zip',
+            'country'        => 'country',
+            'country/region' => 'country',
+        );
+        $label    = isset( $raw_field['label'] ) ? strtolower( trim( (string) $raw_field['label'] ) ) : '';
+        return isset( $by_label[ $label ] ) ? $by_label[ $label ] : null;
     }
 }

@@ -55,12 +55,20 @@ use FacebookPixelPlugin\Core\ReleaseSignalsAjax;
 use FacebookPixelPlugin\Core\FacebookParamBuilder;
 use FacebookPixelPlugin\Core\FacebookTrackingFacade;
 use FacebookPixelPlugin\Core\ServerEventAsyncTask;
+use FacebookPixelPlugin\Integration\TrackableLeadFormIntegrationBase;
 
 /**
  * FacebookForWordpress root class.
  */
 class FacebookForWordpress {
     private $tracking_facade;
+
+    /**
+     * The initialized third-party integrations.
+     *
+     * @var object[]
+     */
+    private $integrations = array();
 
     /**
      * Plugin constructor. Initializes the plugin options, loads the translation files,
@@ -183,8 +191,29 @@ class FacebookForWordpress {
             self::INTEGRATIONS
         );
         foreach ( $integrations as $integration_class ) {
-            ( new $integration_class( $tracking_facade ) )->initialize();
+            $integration = new $integration_class( $tracking_facade );
+            $integration->initialize();
+            $this->integrations[] = $integration;
         }
+    }
+
+    /**
+     * The lead-form integrations that support form field mapping, keyed by
+     * INTEGRATION_NAME, whether or not their plugin is active (see
+     * is_field_mapping_available()). Only meaningful once the integrations
+     * are initialized on init.
+     *
+     * @return TrackableLeadFormIntegrationBase[]
+     */
+    public function get_field_mapping_integrations() {
+        $supported = array();
+        foreach ( $this->integrations as $integration ) {
+            if ( $integration instanceof TrackableLeadFormIntegrationBase
+                && $integration->supports_field_mapping() ) {
+                $supported[ $integration::INTEGRATION_NAME ] = $integration;
+            }
+        }
+        return $supported;
     }
 
 
@@ -198,8 +227,9 @@ class FacebookForWordpress {
     public function register_settings_page() {
     if ( is_admin() ) {
         $plugin_name = plugin_basename( __FILE__ );
-        new FacebookWordpressSettingsPage( $plugin_name );
-        ( new FacebookWordpressSettingsRecorder() )->init();
+        $field_mapping_integrations = array( $this, 'get_field_mapping_integrations' );
+        new FacebookWordpressSettingsPage( $plugin_name, $field_mapping_integrations );
+        ( new FacebookWordpressSettingsRecorder( $field_mapping_integrations ) )->init();
     }
     }
 

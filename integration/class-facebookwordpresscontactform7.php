@@ -62,7 +62,7 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
      */
     public function capture_submitted_form( $form, $result ) {
         $submit_failed = 'mail_sent' !== $result['status'];
-        if ( $submit_failed ) {
+        if ( $submit_failed || $this->is_form_rejected( $form ) ) {
             return;
         }
 
@@ -210,5 +210,108 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
             }
         }
         return $result;
+    }
+
+    /**
+     * This integration supports form field mapping.
+     *
+     * @return bool
+     */
+    public function supports_field_mapping() {
+        return true;
+    }
+
+    /**
+     * Whether Contact Form 7 is loaded.
+     *
+     * @return bool
+     */
+    public function is_field_mapping_available() {
+        return class_exists( '\WPCF7_ContactForm' );
+    }
+
+    /**
+     * Human-readable integration name for the field mapping screen.
+     *
+     * @return string
+     */
+    public function get_integration_label() {
+        return 'Contact Form 7';
+    }
+
+    /**
+     * Returns all Contact Form 7 forms.
+     *
+     * @return iterable
+     */
+    protected function fetch_forms() {
+        return \WPCF7_ContactForm::find();
+    }
+
+    /**
+     * Maps a Contact Form 7 form to id + title.
+     *
+     * @param mixed $raw_form A WPCF7_ContactForm.
+     * @return array
+     */
+    protected function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->id(),
+            'title' => $raw_form->title(),
+        );
+    }
+
+    /**
+     * Returns a Contact Form 7 form's tags.
+     *
+     * @param string $form_id The form id.
+     * @return iterable
+     */
+    protected function fetch_form_fields( $form_id ) {
+        $form = \WPCF7_ContactForm::get_instance( $form_id );
+        return empty( $form ) ? array() : $form->scan_form_tags();
+    }
+
+    /**
+     * Maps a Contact Form 7 tag to a field. The id is the tag name, which
+     * get_form_param_iterator() yields as the row name.
+     *
+     * @param mixed $raw_field A WPCF7_FormTag.
+     * @return array|null
+     */
+    protected function map_field( $raw_field ) {
+        $name     = isset( $raw_field->name ) ? (string) $raw_field->name : '';
+        $basetype = isset( $raw_field->basetype ) ? (string) $raw_field->basetype : '';
+        if ( '' === $name || in_array( $basetype, array( '', 'submit' ), true ) ) {
+            return null;
+        }
+        return array(
+            'id'    => $name,
+            'label' => $name,
+            'type'  => $basetype,
+        );
+    }
+
+    /**
+     * Suggests a target for a Contact Form 7 tag, following
+     * extract_lead_data_fallback(): email and tel tags by type, and a text tag
+     * whose name contains "name" as the full name.
+     *
+     * @param mixed $raw_field A WPCF7_FormTag.
+     * @return string|null
+     */
+    protected function suggest_field_target( $raw_field ) {
+        $name     = isset( $raw_field->name ) ? strtolower( (string) $raw_field->name ) : '';
+        $basetype = isset( $raw_field->basetype ) ? (string) $raw_field->basetype : '';
+        if ( 'email' === $basetype ) {
+            return 'email';
+        }
+        if ( 'tel' === $basetype ) {
+            return 'phone';
+        }
+        if ( 'text' === $basetype && false !== strpos( $name, 'name' ) ) {
+            return 'full_name';
+        }
+        return null;
     }
 }
