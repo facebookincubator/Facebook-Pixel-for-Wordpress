@@ -1,0 +1,26 @@
+name: E2E - Mailchimp for WP
+
+# Lead event E2E coverage for the Mailchimp for WP integration
+# (integration/class-facebookwordpressmailchimpforwp.php). The Mailchimp API is
+# mocked (tests/e2e/helpers/php/mailchimp-api-mock.php).
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    uses: ./.github/workflows/e2e-reusable.yml
+    with:
+      grep: '@lead-mailchimp-for-wp'
+      form-plugin: mailchimp-for-wp
+      project-set: lead
+    secrets: inherit

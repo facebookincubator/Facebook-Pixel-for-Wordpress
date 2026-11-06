@@ -1,0 +1,25 @@
+name: E2E - Contact Form 7
+
+# Lead event E2E coverage for the Contact Form 7 integration
+# (integration/class-facebookwordpresscontactform7.php).
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    uses: ./.github/workflows/e2e-reusable.yml
+    with:
+      grep: '@lead-contact-form-7'
+      form-plugin: contact-form-7
+      project-set: lead
+    secrets: inherit
