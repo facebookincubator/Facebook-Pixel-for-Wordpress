@@ -85,9 +85,9 @@ class WooCommerceIntegrationHelper {
             return null;
         }
         $cart_items = $cart->get_cart();
-            if ( ! empty( $cart_items ) && ! empty( $cart_items[ $cart_item_key ] ) ) {
+        if ( ! empty( $cart_items ) && ! empty( $cart_items[ $cart_item_key ] ) ) {
             return $cart_items[ $cart_item_key ];
-    }
+        }
         return null;
     }
 }
