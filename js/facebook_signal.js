@@ -409,12 +409,18 @@ window.FacebookSignal = window.FacebookSignal || {
       return Promise.resolve({ success: true, data: { sent_count: 0 } });
     }
 
+    // Releasing records the active state itself, as hold() records held, so
+    // the latest call decides the state and callers need not write the cookie
+    // first. A hold that lands while this release is in flight bumps the
+    // generation, and the response is then discarded.
+    self._requestedState = 'active';
+    self._setStateCookie('active');
+
     if (self._releasing) {
       // A release is already in flight. Run this one once it settles, unless
       // a hold arrives in between. Otherwise a release requested after a
       // withdrawal would be dropped while the older response is discarded,
       // leaving the page held for good.
-      self._requestedState = 'active';
       var requestedAt = self._holdGeneration;
       var rerun = function () {
         if (self._holdGeneration !== requestedAt) {
@@ -425,14 +431,7 @@ window.FacebookSignal = window.FacebookSignal || {
       return self._releasePromise.then(rerun, rerun);
     }
 
-    // A hold written after the release was requested wins: keep the queue
-    // and send nothing.
-    if (self._readCookie('wc_facebook_signals_state') === 'held') {
-      return Promise.resolve({ success: true, data: { sent_count: 0 } });
-    }
-
     self._releasing = true;
-    self._requestedState = 'active';
     var generation = self._holdGeneration;
     var postedEvents = self._queue.slice();
 
@@ -696,10 +695,6 @@ window.fbwcsignal = window.fbwcsignal || {};
       ) {
         return response;
       }
-      // No hold was requested since this release, so a `held` cookie can only
-      // be an older hold response whose headers landed after ours. Put
-      // `active` back so the runtime's own guard sees the real state.
-      setCookie('active');
       return window.FacebookSignal.release().then(function () {
         return response;
       });

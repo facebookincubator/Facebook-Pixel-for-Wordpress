@@ -174,8 +174,6 @@ describe('Signal hold/release browser runtime', () => {
       const queuedId = signals._queue[0].event_id;
       expect(queuedId).toBeTruthy();
 
-      // The helper writes `active` before it asks the runtime to release.
-      setStateCookie('active');
       const pending = signals.release();
 
       expect(releaseRequests()).toHaveLength(1);
@@ -204,7 +202,6 @@ describe('Signal hold/release browser runtime', () => {
       const signals = bootPage('held');
       signals.trackEvent('ViewContent', { content_ids: ['1'] });
 
-      setStateCookie('active');
       const pending = signals.release();
       expect(releaseRequests()).toHaveLength(1);
 
@@ -233,7 +230,6 @@ describe('Signal hold/release browser runtime', () => {
       const signals = bootPage('held');
       signals.trackEvent('ViewContent', { content_ids: ['1'] });
 
-      setStateCookie('active');
       const pending = signals.release();
       signals.hold();
 
@@ -254,7 +250,6 @@ describe('Signal hold/release browser runtime', () => {
       signals.trackEvent('AddToCart', { content_ids: ['1'] });
       signals.trackEvent('Purchase', { value: 10, currency: 'USD' });
 
-      setStateCookie('active');
       const pending = signals.release();
       signals.hold();
 
@@ -279,7 +274,6 @@ describe('Signal hold/release browser runtime', () => {
       const signals = bootPage('held');
       signals.trackEvent('ViewContent', { content_ids: ['1'] });
 
-      setStateCookie('active');
       const pending = signals.release();
       signals.hold();
 
@@ -298,7 +292,6 @@ describe('Signal hold/release browser runtime', () => {
       const signals = bootPage('held');
       signals.trackEvent('ViewContent', { content_ids: ['1'] });
 
-      setStateCookie('active');
       const pending = signals.release();
       signals.hold();
       expect(readStateCookie()).toBe('held');
@@ -323,7 +316,6 @@ describe('Signal hold/release browser runtime', () => {
       const signals = bootPage('held');
       signals.trackEvent('ViewContent', { content_ids: ['1'] });
 
-      setStateCookie('active');
       const pending = signals.release();
       signals.hold();
 
@@ -341,16 +333,21 @@ describe('Signal hold/release browser runtime', () => {
       expect(signals._queue).toHaveLength(1);
     });
 
-    it('does not post the queue when the state cookie already says held', async () => {
+    it('records the active state itself, as hold() records held', async () => {
       const signals = bootPage('held');
       signals.trackEvent('ViewContent', { content_ids: ['1'] });
 
-      const response = await signals.release();
+      const pending = signals.release();
 
-      expect(response.data.sent_count).toBe(0);
-      expect(releaseRequests()).toHaveLength(0);
-      expect(signals._held).toBe(true);
-      expect(signals._queue).toHaveLength(1);
+      expect(readStateCookie()).toBe('active');
+      expect(releaseRequests()).toHaveLength(1);
+
+      releaseRequests()[0].respond(200, {
+        success: true,
+        data: { sent_count: 1, sent_event_ids: [signals._queue[0].event_id] },
+      });
+      await pending;
+      expect(signals._held).toBe(false);
     });
   });
 
