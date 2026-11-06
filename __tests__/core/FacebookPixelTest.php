@@ -251,4 +251,68 @@ final class FacebookPixelTest extends FacebookWordpressTestBase {
 
     $this->assertCodePattern( 'get_pixel_page_view_code', 'PageView' );
   }
+
+  /**
+   * The held queue payload tells the browser whether the markup it is
+   * rendered into may be stored by a page cache, so an id rendered into a
+   * cached copy is never sent while an id delivered by an AJAX response is.
+   *
+   * @return void
+   */
+  public function testBuildQueuePayloadMarksCacheableMarkup() {
+    $this->mockCacheableResponse();
+
+    $payload = FacebookPixel::build_queue_payload(
+      'ViewContent',
+      array( 'eventID' => 'event-1' )
+    );
+
+    $this->assertSame( 'event-1', $payload['event_id'] );
+    $this->assertTrue( $payload['cacheable'] );
+  }
+
+  /**
+   * An AJAX response is never stored by a page cache.
+   *
+   * @return void
+   */
+  public function testBuildQueuePayloadMarksAjaxMarkupAsNotCacheable() {
+    $this->mockCacheableResponse( true, true );
+
+    $payload = FacebookPixel::build_queue_payload(
+      'AddToCart',
+      array( 'eventID' => 'event-2' )
+    );
+
+    $this->assertFalse( $payload['cacheable'] );
+  }
+
+  /**
+   * The hand-built queue call for string params carries the flag too.
+   *
+   * @return void
+   */
+  public function testQueueCodeForStringParamsMarksCacheableMarkup() {
+    \WP_Mock::userFunction(
+      'wp_json_encode',
+      array(
+        'return' => function ( $data ) {
+          return json_encode( $data );
+        },
+      )
+    );
+    $this->mockCacheableResponse();
+    \FacebookPixelPlugin\Core\FacebookSignalState::hold();
+    FacebookPixel::set_pixel_id( '123' );
+
+    $code = FacebookPixel::get_pixel_track_code(
+      'mockEvent',
+      '{"key": "value"}',
+      '',
+      false
+    );
+
+    $this->assertStringContainsString( 'FacebookSignal.queueEvent(', $code );
+    $this->assertStringContainsString( '"cacheable":true', $code );
+  }
 }

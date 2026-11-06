@@ -6,6 +6,23 @@
  */
 
 jQuery(document).ready(function ($) {
+  // Every add-to-cart form carries an event id the server minted when it
+  // rendered the page. The form posts the id back, so the Conversions API
+  // event and the Pixel event share it. A cached copy of the page hands the
+  // same id to every visitor who receives it, so on a stale page the forms
+  // get ids minted here instead, before any click: the browser fires them,
+  // the form posts them, and they belong to this visitor alone.
+  if (
+    window.FacebookSignal &&
+    window.FacebookSignal.isStalePage &&
+    window.FacebookSignal.generateEventId &&
+    window.FacebookSignal.isStalePage()
+  ) {
+    $("input[name='facebook_event_id']").each(function () {
+      $(this).val(window.FacebookSignal.generateEventId());
+    });
+  }
+
   $('.edd-add-to-cart').click(function (e) {
     e.preventDefault();
 
@@ -56,6 +73,9 @@ jQuery(document).ready(function ($) {
       return;
     }
 
+    if (window.FacebookSignal && window.FacebookSignal.tagAgent) {
+      agentString = window.FacebookSignal.tagAgent(agentString);
+    }
     fbq('set', 'agent', agentString, pixelId);
     if (event_id) {
       fbq('track', 'AddToCart', param, { eventID: event_id });

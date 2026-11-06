@@ -29,6 +29,8 @@ namespace FacebookPixelPlugin\Core;
 
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
+use FacebookPixelPlugin\Utils\WordPressUtils;
+
 /**
  * Class FacebookWordpressPixelInjection
  */
@@ -167,6 +169,15 @@ class FacebookWordpressPixelInjection {
             'attribution'   => (object) array(),
             'capig'         => FacebookWordpressOptions::get_capig(),
         );
+
+        // Only a response a page cache may store carries its generation time.
+        // It lets the browser tell a cached copy from the page it requested
+        // itself. Responses no cache stores carry none, so every check on them
+        // reports fresh and the event ids rendered into them are always kept.
+        if ( WordPressUtils::is_cacheable_response() ) {
+            $config['generatedAt'] = time();
+            $config['staleAfter']  = Pixel::get_cache_threshold();
+        }
 
         if ( FacebookSignalState::is_held() ) {
             $attribution = array_filter(
