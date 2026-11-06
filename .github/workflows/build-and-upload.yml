@@ -80,11 +80,13 @@ jobs:
 
           _To install: download → unzip → upload via Plugins › Add New Plugin › Upload Plugin._"
 
-          # Update the existing build comment in place (idempotent via the marker).
-          EXISTING_ID=$(gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
-            --paginate --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" | head -1)
-          if [ -n "$EXISTING_ID" ]; then
-            gh api "repos/${{ github.repository }}/issues/comments/${EXISTING_ID}" -X PATCH -f body="$BODY"
-          else
-            gh pr comment "$PR_NUMBER" --body "$BODY"
-          fi
+          # Post a new comment for every build, so the latest link sits at the
+          # bottom of the PR and notifies subscribers (an edited comment does
+          # neither), then delete this workflow's older build comments.
+          NEW_ID=$(gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            -f body="$BODY" --jq '.id')
+          gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" --paginate \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | contains(\"$MARKER\")) and .id != $NEW_ID) | .id" |
+            while read -r OLD_ID; do
+              gh api -X DELETE "repos/${{ github.repository }}/issues/comments/${OLD_ID}" || true
+            done
