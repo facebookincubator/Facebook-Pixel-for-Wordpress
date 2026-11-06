@@ -69,17 +69,19 @@ class Capi {
      * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[] $events The events to send.
      * @param string                                                     $mode   CAPI_SYNC or CAPI_ASYNC.
      * @throws \Exception When $mode is not a supported value.
-     * @return void
+     * @return array|null The sender's result: for CAPI_SYNC an array with a
+     *                    'success' flag and either 'events_received' plus
+     *                    'sent_event_ids' or an 'error' payload; for CAPI_ASYNC
+     *                    nothing, because the outcome is only known in the
+     *                    background task.
      */
     public function send( $events, $mode ) {
 
         switch ( $mode ) {
             case self::CAPI_SYNC:
-                $this->sync_sender->send( $events );
-                break;
+                return $this->sync_sender->send( $events );
             case self::CAPI_ASYNC:
-                $this->async_sender->send( $events );
-                break;
+                return $this->async_sender->send( $events );
             default:
                 throw new \Exception( esc_html( $mode ) . ' is not a supported value for $mode argument' );
         }

@@ -56,7 +56,7 @@ This prevents CookieYes default category settings from being treated as permissi
 | The visitor has not made a choice              | `held`                  | Signals stay held.                                                                               |
 | The visitor allows Advertisement cookies       | `active`                | Signals are released and begin sending normally.                                                 |
 | The visitor denies Advertisement cookies       | `held`                  | Signals stay held.                                                                               |
-| The visitor withdraws Advertisement permission | Transitioning to `held` | The integration requests a hold and reload; an in-flight release can still race with withdrawal. |
+| The visitor withdraws Advertisement permission | Transitioning to `held` | Consent is revoked now, any release still in flight is discarded, then a hold and a page reload. |
 | The visitor allows Advertisement cookies again | `active`                | Signals are released again.                                                                      |
 
 The integration uses two first-party cookies for different purposes:
@@ -77,7 +77,7 @@ The integration has two parts:
 1. Backend code establishes the signal state before Meta pixel for WordPress processes the page.
 2. Browser code responds when the visitor saves or changes their CookieYes choice.
 
-Both parts are required. The backend controls the plugin's held rendering and server-side hold on visitor requests, including `admin-ajax.php`. Admin screens and cron jobs are exempt. The browser code requests release after permission and a hold/reload after withdrawal, subject to the in-flight release race above.
+Both parts are required. The backend controls the plugin's held rendering and server-side hold on visitor requests, including `admin-ajax.php`. Admin screens and cron jobs are exempt. The browser code requests release after permission and a hold/reload after withdrawal.
 
 ## Add the integration as a must-use plugin
 
@@ -301,7 +301,7 @@ add_action(
 
         reloading = true;
         // Revoke now, rather than waiting for the state AJAX response.
-        // This does NOT cancel an already-running release in the plugin.
+        // A release still in flight is discarded when its response arrives.
         signal.hold();
         api.hold().then(
             reloadPage,
@@ -437,9 +437,7 @@ The helper writes `active` first, posts `fbpix_set_pixel_signals`, then posts qu
 
 When an active runtime is denied permission, the bridge calls `window.FacebookSignal.hold()` synchronously to revoke browser consent, then `window.fbwcsignal.hold()` to persist the state. It reloads after that request succeeds or rejects so PHP can recalculate consent.
 
-This reduces the delay in the normal hold path but **does not cancel an in-flight release**. That response can still grant browser consent and replay queued events. A stalled hold request can also delay the reload. Do not treat this example as an atomic withdrawal mechanism.
-
-If the release response arrives after withdrawal but before the hold request finishes, it replays the queued events, sets `_held` back to `false` and can reset the state cookie to `active` until the page reloads. If the reload comes first, the browser replay is cancelled, but the server has already sent the released events.
+`window.fbwcsignal.hold()` also revokes browser consent before its state request completes, so nothing fires while that request is in flight. If a release was still in progress when the hold happened, its response is discarded when it arrives: consent stays revoked, nothing is replayed, the state cookie stays `held`, and events the server had already accepted are dropped from the browser queue so they are not posted twice. A release request sent after the hold carries the `held` cookie and is rejected with `403`. Events the server accepted before the hold were sent and cannot be retracted. A stalled hold request can still delay the reload.
 
 ## What happens during each visitor flow
 
@@ -499,7 +497,7 @@ When a visitor disables the Advertisement category after signals were active:
 5. The integration reloads the page after the hold request finishes.
 6. The reloaded page begins with signals held.
 
-The reload starts a fresh, uncached page under the new choice. It cannot retract earlier events or guarantee that an in-flight release did not replay events before navigation.
+The reload starts a fresh, uncached page under the new choice. It cannot retract events that were sent before withdrawal.
 
 ### The visitor grants permission again
 
@@ -538,7 +536,7 @@ Also confirm that `window.FacebookSignal` exists and `typeof window.fbq` is `fun
 Test real banner choices (grant, deny, withdraw and re-grant), not just manually dispatched events. Also test:
 
 - Block one `fbpix_set_pixel_signals` or `fbpix_release_signals` request. The cookie may read `active` while `_held` remains `true`. After fixing the error, dispatch another consent update through the banner; the bridge should retry. Expired nonces require a fresh uncached page, and refreshing loses the old queue.
-- Delay release and withdraw before its response. The runtime should be held immediately by the bridge, but the old response can still undo it. This is an unresolved plugin bug.
+- Delay release and withdraw before its response. The runtime must stay held when the old response arrives: no replay, no consent grant, and `wc_facebook_signals_state` still reads `held`. Any events that response lists as sent are dropped from the queue so they are not posted twice.
 - Submit each supported form/cart AJAX action while denied and check its **server** send path separately to confirm that no Conversions API event is sent.
 - Load with mismatched cookies: Advertisement allowed plus Meta `held`, and Advertisement denied plus Meta `active`. On uncached requests, PHP and the browser should follow the completed CookieYes choice.
 
