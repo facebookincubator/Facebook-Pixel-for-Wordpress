@@ -3,6 +3,8 @@
  *
  * This source code is licensed under the license found in the
  * LICENSE file in the root directory of this source tree.
+ *
+ * @jest-environment node
  */
 
 /**
@@ -19,11 +21,9 @@
 
 'use strict';
 
-const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 
 const SOURCE = fs.readFileSync(
   path.resolve(__dirname, '../../js/facebook_pixel_add_to_cart.js'),
@@ -135,7 +135,8 @@ function loadScript(page, signal) {
   global.fbq = function () {
     fbqCalls.push(Array.from(arguments));
   };
-  vm.runInThisContext(SOURCE, { filename: 'facebook_pixel_add_to_cart.js' });
+  // Runs in the test's global scope, where window and document are stubbed.
+  new Function(SOURCE)();
 }
 
 function makeSignal({ stale, held = false }) {

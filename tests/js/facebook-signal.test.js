@@ -3,6 +3,8 @@
  *
  * This source code is licensed under the license found in the
  * LICENSE file in the root directory of this source tree.
+ *
+ * @jest-environment node
  */
 
 /**
@@ -10,7 +12,8 @@
  * queues and releases Pixel events and tells a page served from a full-page
  * cache from one generated for the request.
  *
- * Runs on Node's built-in test runner (`node --test tests/js`) with no DOM
+ * Runs under Jest in its Node environment (`npm run test:js`; see the
+ * pragma above) with no DOM
  * library: the script only touches window.location, window.sessionStorage,
  * window.performance, window.crypto, document.cookie, fbq and XMLHttpRequest,
  * all stubbed below. fbq stays a recorder, so every call the runtime makes can
@@ -19,11 +22,9 @@
 
 'use strict';
 
-const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 
 const SOURCE = fs.readFileSync(
   path.resolve(__dirname, '../../js/facebook_signal.js'),
@@ -108,7 +109,8 @@ function loadSignal({
   };
   global.XMLHttpRequest = FakeXMLHttpRequest;
 
-  vm.runInThisContext(SOURCE, { filename: 'facebook_signal.js' });
+  // Runs in the test's global scope, where window and document are stubbed.
+  new Function(SOURCE)();
 
   const signal = window.FacebookSignal;
   signal.init(
