@@ -142,7 +142,10 @@ test.describe('form editor links', () => {
           form.helper_url,
           `${form.helper} is gone from ${form.label}: check its editor URL and update get_form_edit_url()`,
         ).toBeTruthy();
-        expect(ourUrl).toBe(new URL(form.helper_url).href);
+        expect(
+          ourUrl,
+          `${form.label}'s ${form.helper}() returns a different URL: has its editor URL changed? Update get_form_edit_url().`,
+        ).toBe(new URL(form.helper_url).href);
       }
       if (plugin.listPath) {
         await gotoAdmin(page, plugin.listPath);
