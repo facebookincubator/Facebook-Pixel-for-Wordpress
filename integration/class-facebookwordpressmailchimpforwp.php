@@ -188,8 +188,6 @@ class FacebookWordpressMailchimpForWp extends TrackableLeadFormIntegrationBase {
      * @return string
      */
     public function get_form_edit_url( $form_id ) {
-        // TEMPORARY: E2E must fail. Ignores the plugin's helper and returns a wrong URL.
-        return admin_url( 'admin.php?page=mailchimp-for-wp-forms&view=edit-form&id=' . absint( $form_id ) );
         if ( function_exists( 'mc4wp_get_edit_form_url' ) ) {
             return (string) mc4wp_get_edit_form_url( absint( $form_id ) );
         }
