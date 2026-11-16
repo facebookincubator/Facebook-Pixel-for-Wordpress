@@ -1411,8 +1411,8 @@ class FacebookWordpressSettingsPage {
     }
 
     /**
-     * Renders the Form Field Mapping section: an overview of the saved
-     * mappings and an editor for one form's mapping, driven by
+     * Renders the Form Field Mapping section: the table of forms and the
+     * popup editor (a native dialog) for one form's mapping, driven by
      * js/field_mapping.js.
      *
      * @return string The section markup.
@@ -1462,9 +1462,9 @@ class FacebookWordpressSettingsPage {
         </thead>
         <tbody></tbody>
     </table>
-    <p id="fb-mapping-status"></p>
+    <p id="fb-mapping-status" class="fb-mapping-status"></p>
         <?php if ( ! empty( $integrations ) ) : ?>
-    <div id="fb-mapping-editor" class="hidden">
+    <dialog id="fb-mapping-editor" aria-labelledby="fb-mapping-editor-title">
         <h4 id="fb-mapping-editor-title"></h4>
         <p id="fb-mapping-suggested" class="fb-capi-desc hidden">
             <strong>Not reviewed yet.</strong> Automatic detection currently
@@ -1493,11 +1493,12 @@ class FacebookWordpressSettingsPage {
             <button type="button" id="fb-mapping-reject" class="button hidden">
                 Reject
             </button>
-            <button type="button" id="fb-mapping-cancel" class="button-link">
+            <button type="button" id="fb-mapping-cancel" class="button">
                 Cancel
             </button>
         </div>
-    </div>
+        <p id="fb-mapping-editor-status" class="fb-mapping-status"></p>
+    </dialog>
     <?php endif; ?>
     </div>
         <?php

@@ -1180,12 +1180,27 @@
 }
 
 .fb-mapping-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 12px 0 0 25px;
+}
+
+/* Save and Reject stay on the left; Cancel sits at the right end. */
+#fb-mapping-cancel {
+    margin-left: auto;
+}
+
+.fb-mapping-status {
+    color: #008a20;
 }
 
 #fb-mapping-status {
     margin: 0 0 12px 25px;
-    color: #008a20;
+}
+
+#fb-mapping-editor-status {
+    margin: 8px 0 0;
 }
 
 .fb-mapping-row--automatic td:nth-child(3) {
@@ -1193,12 +1208,26 @@
     font-weight: 600;
 }
 
+/* The editor is a native <dialog> opened with showModal(): the browser
+   centres it, dims the page behind it and closes it on Escape. */
 #fb-mapping-editor {
-    margin: 0 0 12px 25px;
-    padding: 12px 16px;
-    max-width: 760px;
+    box-sizing: border-box;
+    width: min(760px, calc(100vw - 40px));
+    max-height: calc(100vh - 80px);
+    overflow: auto;
+    padding: 16px 20px;
     border: 1px solid #c3c4c7;
+    border-radius: 4px;
     background: #fff;
+    box-shadow: 0 3px 30px rgba(0, 0, 0, 0.2);
+}
+
+#fb-mapping-editor::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+#fb-mapping-editor .fb-mapping-fields {
+    max-width: none;
 }
 
 #fb-mapping-editor .fb-mapping-fields,
@@ -1212,7 +1241,7 @@
     margin: 0 0 8px;
 }
 
-#fb-mapping-status.fb-mapping-error {
+.fb-mapping-status.fb-mapping-error {
     color: #cc0000;
 }
 

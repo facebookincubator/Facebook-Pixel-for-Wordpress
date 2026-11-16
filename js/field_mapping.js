@@ -8,7 +8,8 @@
 /**
  * Drives the Form Field Mapping section of the settings page. Every form of
  * the active form plugins is listed with what it sends (its saved mapping, or
- * what automatic detection finds); Review / Edit opens one form in the editor.
+ * what automatic detection finds); Review / Edit opens one form in the editor,
+ * a native <dialog> shown as a modal popup.
  * The admin-ajax URLs (with nonces), targets and rows come from
  * meta_field_mapping_params.
  */
@@ -23,7 +24,9 @@
 
   var $listBody = $('#fb-mapping-list').find('tbody');
   var $status = $('#fb-mapping-status');
+  var $editorStatus = $('#fb-mapping-editor-status');
   var $editor = $('#fb-mapping-editor');
+  var editor = $editor[0];
   var $editorTitle = $('#fb-mapping-editor-title');
   var $fieldsTable = $('#fb-mapping-fields');
   var $fieldsBody = $fieldsTable.find('tbody');
@@ -46,8 +49,11 @@
     targetLabels[target.value] = target.label;
   });
 
+  // While the editor is open the page behind it is covered, so its messages
+  // are shown inside the editor.
   function showStatus(message, isError) {
-    $status
+    var $target = editor && editor.open ? $editorStatus : $status;
+    $target
       .text(message)
       .toggleClass('fb-mapping-error', !!isError)
       .stop(true, true)
@@ -150,10 +156,20 @@
     $rejectButton.addClass('hidden');
   }
 
+  // Cancel, Escape and a successful save all close the dialog; its close
+  // event then clears it.
   function closeEditor() {
-    current = null;
-    resetFields();
-    $editor.addClass('hidden');
+    if (editor && editor.open) {
+      editor.close();
+    }
+  }
+
+  if (editor) {
+    $editor.on('close', function () {
+      current = null;
+      resetFields();
+      $editorStatus.stop(true, true).hide().text('');
+    });
   }
 
   // One row per form field, preselecting the saved mapping or, for a form
@@ -182,17 +198,22 @@
   }
 
   function openEditor(row) {
-    current = { integration: row.integration_name, formId: row.form_id };
+    var opened = { integration: row.integration_name, formId: row.form_id };
+    current = opened;
     $editorTitle.text(
       (row.form_title || row.form_id) + ' (' + row.integration_label + ')',
     );
     resetFields();
-    $editor.removeClass('hidden');
+    editor.showModal();
     post(params.getFieldsUrl, {
-      integration: current.integration,
-      form_id: current.formId,
+      integration: opened.integration,
+      form_id: opened.formId,
     })
       .done(function (response) {
+        // Ignore a late response for an editor that was closed meanwhile.
+        if (current !== opened) {
+          return;
+        }
         if (response && response.success) {
           renderFields(
             response.msg.fields,
@@ -205,9 +226,10 @@
         }
       })
       .fail(function () {
-        showStatus(params.loadError, true);
+        if (current === opened) {
+          showStatus(params.loadError, true);
+        }
       });
-    $('html, body').animate({ scrollTop: $editor.offset().top - 40 }, 300);
   }
 
   function collectMapping() {
