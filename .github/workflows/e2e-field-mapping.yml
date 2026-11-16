@@ -1,0 +1,163 @@
+name: E2E Tests (Form Field Mapping)
+
+# Admin E2E for the Form Field Mapping section against the latest WordPress and
+# the latest release of every supported form plugin: each form is listed with a
+# link to its plugin's editor, and that link must match the plugin's own (see
+# tests/e2e/admin/field-mapping.spec.js). The weekly run catches a form plugin
+# release that changes its editor URL even when no PR is open.
+#
+# Same barebones setup as e2e-tests.yml (WordPress tarball + `php -S` + WP-CLI
+# against a MySQL service). Needs no Meta credentials: the plugin is marked
+# connected with placeholder values and admin pages send no events.
+on:
+  pull_request:
+    paths:
+      - 'core/**'
+      - 'integration/**'
+      - 'js/**'
+      - 'css/**'
+      - 'tests/e2e/admin/**'
+      - 'tests/e2e/scripts/seed-field-mapping.sh'
+      - 'playwright.field-mapping.config.js'
+      - '.github/workflows/e2e-field-mapping.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  WORDPRESS_PATH: /tmp/wordpress
+  PLUGIN_PATH: /tmp/wordpress/wp-content/plugins/facebook-for-wordpress
+  WP_DEBUG_LOG: /tmp/wordpress/wp-content/debug.log
+  WORDPRESS_URL: http://localhost:8080
+  WP_USERNAME: admin
+  WP_PASSWORD: admin
+  FIELD_MAPPING_FORMS_FILE: /tmp/field-mapping-forms.json
+
+jobs:
+  e2e:
+    name: E2E Latest - form field mapping
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: wordpress
+          MYSQL_DATABASE: wordpress
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          # The latest Contact Form 7 requires PHP 8.3. Minimum plugin PHP
+          # compatibility is covered by the unit-test matrix.
+          php-version: '8.3'
+          extensions: mysqli, zip, gd, curl, dom, fileinfo, mbstring
+          ini-values: |
+            date.timezone=UTC
+            memory_limit=1024M
+            max_execution_time=300
+
+      - name: Install WP-CLI
+        run: |
+          curl -sL -o wp-cli.phar https://github.com/wp-cli/wp-cli/releases/download/v2.10.0/wp-cli-2.10.0.phar
+          chmod +x wp-cli.phar
+          sudo mv wp-cli.phar /usr/local/bin/wp
+          wp --version
+
+      - name: Create WordPress test environment
+        run: |
+          mkdir -p "$WORDPRESS_PATH"
+          cd "$WORDPRESS_PATH"
+          curl -sfSO https://wordpress.org/latest.tar.gz
+          tar -xzf latest.tar.gz --strip-components=1
+          cp wp-config-sample.php wp-config.php
+          sed -i "s/database_name_here/wordpress/" wp-config.php
+          sed -i "s/username_here/wordpress/" wp-config.php
+          sed -i "s/password_here/wordpress/" wp-config.php
+          sed -i "s/localhost/127.0.0.1/" wp-config.php
+          wp config set WP_DEBUG true --raw --type=constant --path="$WORDPRESS_PATH" --allow-root
+          wp config set WP_DEBUG_LOG true --raw --type=constant --path="$WORDPRESS_PATH" --allow-root
+          wp config set WP_DEBUG_DISPLAY false --raw --type=constant --path="$WORDPRESS_PATH" --allow-root
+          touch "$WP_DEBUG_LOG"; chmod 777 "$WP_DEBUG_LOG"
+
+      - name: Start PHP server
+        run: |
+          cd "$WORDPRESS_PATH"
+          php -S 127.0.0.1:8080 -t . >/tmp/php-server.log 2>&1 &
+          sleep 3
+
+      - name: Install WordPress core
+        run: |
+          wp core install --path="$WORDPRESS_PATH" --url="$WORDPRESS_URL" \
+            --title="E2E Field Mapping" --admin_user="$WP_USERNAME" --admin_password="$WP_PASSWORD" \
+            --admin_email=test@example.com --skip-email --allow-root
+
+      - name: Install the latest supported form plugins
+        run: |
+          P="--path=$WORDPRESS_PATH --allow-root"
+          wp plugin install contact-form-7 wpforms-lite ninja-forms formidable mailchimp-for-wp --activate $P
+          wp plugin list --status=active --fields=name,version $P
+
+      - name: Install this plugin (from checkout)
+        run: |
+          cp -r "$GITHUB_WORKSPACE" "$PLUGIN_PATH"
+          cd "$PLUGIN_PATH"
+          composer install --no-dev --optimize-autoloader --no-interaction
+          wp plugin activate facebook-for-wordpress --path="$WORDPRESS_PATH" --allow-root
+
+      - name: Seed forms
+        run: bash "$PLUGIN_PATH/tests/e2e/scripts/seed-field-mapping.sh"
+
+      - name: Install Playwright (Chromium)
+        working-directory: ${{ env.PLUGIN_PATH }}
+        run: |
+          npm ci
+          timeout 15m npx playwright install --with-deps chromium
+
+      - name: Run E2E
+        working-directory: ${{ env.PLUGIN_PATH }}
+        run: npx playwright test --config=playwright.field-mapping.config.js
+
+      - name: PHP error gate
+        if: always()
+        run: |
+          if [ -f "$WP_DEBUG_LOG" ]; then
+            ERRORS=$(grep -iE "PHP (Fatal|Parse) error" "$WP_DEBUG_LOG" || true)
+            if [ -n "$ERRORS" ]; then echo "❌ PHP errors:"; echo "$ERRORS"; exit 1; fi
+          fi
+          echo "✅ No fatal PHP errors"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-field-mapping-artifacts
+          path: |
+            ${{ env.PLUGIN_PATH }}/playwright-report/
+            ${{ env.PLUGIN_PATH }}/test-results/
+            ${{ env.FIELD_MAPPING_FORMS_FILE }}
+            ${{ env.WP_DEBUG_LOG }}
+          retention-days: 7
+          if-no-files-found: ignore

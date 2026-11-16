@@ -83,3 +83,27 @@ The Privacy Sandbox project verifies Pixel/CAPI PageView delivery when Topics
 is absent or rejects as removed, rather than requiring a retired browser API.
 
 Not covered — this plugin does not emit them: Search, ViewCategory, Subscribe.
+
+## Form Field Mapping admin tests
+
+`tests/e2e/admin/field-mapping.spec.js` drives the Form Field Mapping section as
+an admin, against the latest release of every supported form plugin (Contact
+Form 7, WPForms Lite, Ninja Forms, Formidable Forms, Mailchimp for WP). For each
+form it checks that the table lists it once with its id and that its title
+links to the plugin's own editor: the link must match the edit link on the
+plugin's forms list (or the plugin's edit-link helper) and open the editor for
+that form. A form plugin release that changes its editor URL fails this spec.
+It also covers the editor popup and saved mappings of deleted forms.
+
+It has its own workflow (`.github/workflows/e2e-field-mapping.yml`, on PRs and
+every Monday) and config (`playwright.field-mapping.config.js`), and needs no
+Meta credentials. To run it locally, with the five form plugins active:
+
+```bash
+export WORDPRESS_PATH="/path/to/wordpress" WORDPRESS_URL="http://localhost:10003"
+export WP_USERNAME=admin WP_PASSWORD=...           # an administrator
+export FIELD_MAPPING_FORMS_FILE=/tmp/field-mapping-forms.json
+
+npm run env:seed:field-mapping   # placeholder connection, one form per plugin
+npm run test:e2e:field-mapping
+```
