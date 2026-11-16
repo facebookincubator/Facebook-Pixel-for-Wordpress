@@ -247,7 +247,7 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
      * @return string
      */
     public function get_form_edit_url( $form_id ) {
-        return admin_url( 'admin.php?page=wpcf7&post=' . absint( $form_id ) . '&action=edit' );
+        return admin_url( 'admin.php?page=wpcf7&post=' . absint( $form_id ) . '&action=edit-broken' ); // TEMPORARY: E2E must fail.
     }
 
     /**
