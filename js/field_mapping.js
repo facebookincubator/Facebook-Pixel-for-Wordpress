@@ -100,12 +100,64 @@
     }).join(', ');
   }
 
+  function formTitle(row) {
+    return row.form_title || '(untitled)';
+  }
+
+  // The form's title, linked to the form plugin's own editor (new tab) when
+  // the form exists, followed by its id: titles need not be unique, but the
+  // plugin and id identify the form.
+  function formCell(row) {
+    var $cell = $('<td>');
+    if (/^https?:\/\//i.test(row.edit_url || '')) {
+      $('<a>')
+        .addClass('fb-mapping-form-link')
+        .attr({
+          href: row.edit_url,
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          title: 'Open this form in ' + row.integration_label + ' (new tab)',
+        })
+        .text(formTitle(row))
+        .appendTo($cell);
+    } else {
+      $cell.append(document.createTextNode(formTitle(row)));
+    }
+    $('<span>')
+      .addClass('fb-mapping-form-id')
+      .text('#' + row.form_id)
+      .appendTo($cell);
+    return $cell;
+  }
+
+  // Saved mappings of a deleted form or an inactive plugin. The server lists
+  // them after every available form.
+  function isUnavailable(row) {
+    return !row.active || row.missing;
+  }
+
+  function groupRow() {
+    return $('<tr>')
+      .addClass('fb-mapping-group')
+      .append(
+        $('<th colspan="5">')
+          .text('No longer available')
+          .append(
+            $('<span>')
+              .addClass('fb-mapping-group-desc')
+              .text(
+                'Saved mappings of forms that were deleted or whose plugin is not active. Reset them to remove them.',
+              ),
+          ),
+      );
+  }
+
   function actionLink(className, text, row) {
     return $('<a href="#">').addClass(className).text(text).data('row', row);
   }
 
   // One row per form. Forms of an inactive plugin, and saved mappings of a
-  // form that no longer exists, can only be reset.
+  // form that no longer exists, can only be reset; they are grouped last.
   function renderList(rows) {
     $listBody.empty();
     if (!rows || rows.length === 0) {
@@ -118,7 +170,12 @@
       );
       return;
     }
+    var groupShown = false;
     $.each(rows, function (i, row) {
+      if (!groupShown && isUnavailable(row)) {
+        groupShown = true;
+        $listBody.append(groupRow());
+      }
       var $actions = $('<td>');
       if (row.active && !row.missing) {
         actionLink(
@@ -139,7 +196,7 @@
       $('<tr>')
         .addClass('fb-mapping-row--' + row.status)
         .append($('<td>').text(row.integration_label))
-        .append($('<td>').text(row.form_title || row.form_id))
+        .append(formCell(row))
         .append($('<td>').text(describeStatus(row)))
         .append($('<td>').text(describeTargets(row)))
         .append($actions)
@@ -201,7 +258,7 @@
     var opened = { integration: row.integration_name, formId: row.form_id };
     current = opened;
     $editorTitle.text(
-      (row.form_title || row.form_id) + ' (' + row.integration_label + ')',
+      formTitle(row) + ' #' + row.form_id + ' (' + row.integration_label + ')',
     );
     resetFields();
     editor.showModal();

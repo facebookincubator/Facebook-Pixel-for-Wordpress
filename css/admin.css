@@ -1250,6 +1250,27 @@
     text-decoration: none;
 }
 
+.fb-mapping-form-id {
+    margin-left: 6px;
+    color: #646970;
+    font-size: 12px;
+}
+
+/* Heading above saved mappings of deleted forms or inactive plugins. */
+.fb-mapping-list .fb-mapping-group th {
+    padding-top: 14px;
+    background: #f6f7f7;
+    font-weight: 600;
+}
+
+.fb-mapping-group-desc {
+    display: block;
+    margin-top: 2px;
+    color: #646970;
+    font-weight: 400;
+    font-size: 12px;
+}
+
 .fb-mapping-empty {
     font-style: italic;
 }

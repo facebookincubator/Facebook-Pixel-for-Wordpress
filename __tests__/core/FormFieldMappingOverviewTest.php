@@ -45,6 +45,11 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
         $integration->shouldReceive( 'get_integration_label' )->andReturn( $label );
         $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $active );
         $integration->shouldReceive( 'get_forms' )->andReturn( $forms );
+        $integration->shouldReceive( 'get_form_edit_url' )->andReturnUsing(
+            function ( $form_id ) use ( $label ) {
+                return 'https://example.com/edit/' . rawurlencode( $label ) . '/' . $form_id;
+            }
+        );
         foreach ( $suggested as $form_id => $mapping ) {
             $integration->shouldReceive( 'suggest_field_mapping' )->with( (string) $form_id )->andReturn( $mapping );
         }
@@ -54,8 +59,9 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
     /**
      * Every form of an active plugin is listed: unsaved forms with what
      * automatic detection would send, saved ones with their mapping, rejected
-     * ones with nothing. Saved mappings of a gone form or an inactive plugin
-     * follow; an inactive plugin's forms are not listed otherwise.
+     * ones with nothing, each linked to the plugin's editor. Saved mappings of
+     * a gone form or an inactive plugin follow, with no editor link; an
+     * inactive plugin's forms are not listed otherwise.
      *
      * @return void
      */
@@ -126,17 +132,18 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
                     $row['targets'],
                     $row['active'],
                     $row['missing'],
+                    $row['edit_url'],
                 );
             },
             $rows
         );
         $this->assertSame(
             array(
-                array( 'Contact Form 7', '1', 'automatic', array( 'full_name', 'email' ), true, false ),
-                array( 'Contact Form 7', '2', 'saved', array( 'email' ), true, false ),
-                array( 'Contact Form 7', '3', 'rejected', array(), true, false ),
-                array( 'Contact Form 7', '99', 'saved', array( 'phone' ), true, true ),
-                array( 'Ninja Forms', '4', 'saved', array( 'email' ), false, false ),
+                array( 'Contact Form 7', '1', 'automatic', array( 'full_name', 'email' ), true, false, 'https://example.com/edit/Contact%20Form%207/1' ),
+                array( 'Contact Form 7', '2', 'saved', array( 'email' ), true, false, 'https://example.com/edit/Contact%20Form%207/2' ),
+                array( 'Contact Form 7', '3', 'rejected', array(), true, false, 'https://example.com/edit/Contact%20Form%207/3' ),
+                array( 'Contact Form 7', '99', 'saved', array( 'phone' ), true, true, '' ),
+                array( 'Ninja Forms', '4', 'saved', array( 'email' ), false, false, '' ),
             ),
             $summary
         );

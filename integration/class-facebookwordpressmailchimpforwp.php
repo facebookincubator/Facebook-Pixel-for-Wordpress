@@ -181,6 +181,20 @@ class FacebookWordpressMailchimpForWp extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * The URL of Mailchimp for WP's editor for a form, from its own
+     * mc4wp_get_edit_form_url() when available.
+     *
+     * @param string $form_id The native form id.
+     * @return string
+     */
+    public function get_form_edit_url( $form_id ) {
+        if ( function_exists( 'mc4wp_get_edit_form_url' ) ) {
+            return (string) mc4wp_get_edit_form_url( absint( $form_id ) );
+        }
+        return admin_url( 'admin.php?page=mailchimp-for-wp-forms&view=edit-form&form_id=' . absint( $form_id ) );
+    }
+
+    /**
      * Returns all Mailchimp for WP forms.
      *
      * @return iterable

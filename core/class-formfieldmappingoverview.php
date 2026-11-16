@@ -57,8 +57,9 @@ class FormFieldMappingOverview {
      *
      * Each row: integration_name, integration_label, form_id, form_title,
      * status (a STATUS_* value), targets (the targets the form sends, in field
-     * order), active (the plugin is active) and missing (the plugin is active
-     * but the form is gone).
+     * order), active (the plugin is active), missing (the plugin is active
+     * but the form is gone) and edit_url (the form plugin's editor for the
+     * form; '' for a form that is not listed by an active plugin).
      *
      * @param array           $integrations Supported lead-form integrations keyed by
      *                                      INTEGRATION_NAME.
@@ -77,7 +78,10 @@ class FormFieldMappingOverview {
                 $mapping = $saved
                     ? $mapper->get_mappings( $name, $form['id'] )
                     : $integration->suggest_field_mapping( $form['id'] );
-                $rows[]  = self::row( $name, $integration->get_integration_label(), $form['id'], $form['title'], $saved, $mapping, true, false );
+                $row     = self::row( $name, $integration->get_integration_label(), $form['id'], $form['title'], $saved, $mapping, true, false );
+
+                $row['edit_url'] = (string) $integration->get_form_edit_url( $form['id'] );
+                $rows[]          = $row;
 
                 $listed[ $name ][ $form['id'] ] = true;
             }
@@ -138,6 +142,7 @@ class FormFieldMappingOverview {
             'targets'           => array_values( array_unique( array_values( $mapping ) ) ),
             'active'            => $active,
             'missing'           => $missing,
+            'edit_url'          => '',
         );
     }
 }

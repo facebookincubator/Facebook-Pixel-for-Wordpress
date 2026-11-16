@@ -400,6 +400,19 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
     }
 
     /**
+     * The URL of the form plugin's own editor for a form, so the field
+     * mapping screen can link the form to it. Integrations override this
+     * with the URL their plugin uses, preferring the plugin's own helper
+     * when it has one.
+     *
+     * @param string $form_id The native form id.
+     * @return string The URL, or '' when there is none.
+     */
+    public function get_form_edit_url( $form_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Base placeholder; overridden by integrations.
+        return '';
+    }
+
+    /**
      * Lists the plugin's forms for the field mapping screen.
      *
      * @return array<int,array<string,string>> Rows of ['id' =>, 'title' =>].

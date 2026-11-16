@@ -312,6 +312,16 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * The URL of the WPForms form builder for a form.
+     *
+     * @param string $form_id The native form id.
+     * @return string
+     */
+    public function get_form_edit_url( $form_id ) {
+        return admin_url( 'admin.php?page=wpforms-builder&view=fields&form_id=' . absint( $form_id ) );
+    }
+
+    /**
      * Returns all WPForms form posts.
      *
      * @return iterable

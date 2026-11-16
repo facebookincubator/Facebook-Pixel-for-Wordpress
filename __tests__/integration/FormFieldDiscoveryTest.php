@@ -28,6 +28,7 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Tests\Mocks\MockContactForm7Tag;
 use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormField;
 use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormFieldValue;
+use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormWithEditLink;
 
 /**
  * Form and field discovery for the field mapping screen, and that the field
@@ -516,6 +517,81 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
                 'your-email' => 'email',
             ),
             $this->make( FacebookWordpressContactForm7::class )->suggest_field_mapping( '1' )
+        );
+    }
+
+    /**
+     * Stubs admin_url() and absint() as WordPress defines them.
+     *
+     * @return void
+     */
+    private function stub_admin_url() {
+        \WP_Mock::userFunction(
+            'admin_url',
+            array(
+                'return' => function ( $path = '' ) {
+                    return 'https://example.com/wp-admin/' . $path;
+                },
+            )
+        );
+        \WP_Mock::userFunction(
+            'absint',
+            array(
+                'return' => function ( $value ) {
+                    return abs( (int) $value );
+                },
+            )
+        );
+    }
+
+    /**
+     * Each integration links a form to its plugin's own editor, with the
+     * URL the plugin itself uses. Formidable and Mailchimp for WP fall back
+     * to that URL when their helper is missing. The E2E field mapping spec
+     * checks these against the real, latest plugins.
+     *
+     * @return void
+     */
+    public function testFormEditUrls() {
+        $this->stub_admin_url();
+        $expected = array(
+            FacebookWordpressContactForm7::class   => 'https://example.com/wp-admin/admin.php?page=wpcf7&post=12&action=edit',
+            FacebookWordpressWPForms::class        => 'https://example.com/wp-admin/admin.php?page=wpforms-builder&view=fields&form_id=12',
+            FacebookWordpressNinjaForms::class     => 'https://example.com/wp-admin/admin.php?page=ninja-forms&form_id=12',
+            FacebookWordpressFormidableForm::class => 'https://example.com/wp-admin/admin.php?page=formidable&frm_action=edit&id=12',
+            FacebookWordpressMailchimpForWp::class => 'https://example.com/wp-admin/admin.php?page=mailchimp-for-wp-forms&view=edit-form&form_id=12',
+        );
+        foreach ( $expected as $class => $url ) {
+            $this->assertSame( $url, $this->make( $class )->get_form_edit_url( '12' ), $class );
+        }
+    }
+
+    /**
+     * Formidable and Mailchimp for WP build the URL with their own helper
+     * when it is available, so a change to it in the plugin is followed.
+     *
+     * @return void
+     */
+    public function testFormEditUrlsUsePluginHelpers() {
+        $this->stub_admin_url();
+        class_alias( MockFormidableFormWithEditLink::class, 'FrmForm' );
+        \WP_Mock::userFunction(
+            'mc4wp_get_edit_form_url',
+            array(
+                'args'   => array( 12 ),
+                'times'  => 1,
+                'return' => 'https://example.com/wp-admin/admin.php?page=mailchimp-for-wp-forms&view=edit-form&form_id=12&from=helper',
+            )
+        );
+
+        $this->assertSame(
+            'https://example.com/wp-admin/admin.php?page=formidable&frm_action=edit&id=12&from=helper',
+            $this->make( FacebookWordpressFormidableForm::class )->get_form_edit_url( '12' )
+        );
+        $this->assertSame( array( 12 ), MockFormidableFormWithEditLink::$calls );
+        $this->assertSame(
+            'https://example.com/wp-admin/admin.php?page=mailchimp-for-wp-forms&view=edit-form&form_id=12&from=helper',
+            $this->make( FacebookWordpressMailchimpForWp::class )->get_form_edit_url( '12' )
         );
     }
 }

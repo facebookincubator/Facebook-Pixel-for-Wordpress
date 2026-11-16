@@ -268,6 +268,16 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * The URL of the Ninja Forms form builder for a form.
+     *
+     * @param string $form_id The native form id.
+     * @return string
+     */
+    public function get_form_edit_url( $form_id ) {
+        return admin_url( 'admin.php?page=ninja-forms&form_id=' . absint( $form_id ) );
+    }
+
+    /**
      * Returns all Ninja Forms forms.
      *
      * @return iterable

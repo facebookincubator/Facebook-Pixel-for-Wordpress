@@ -240,6 +240,17 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * The URL of Contact Form 7's editor for a form, as its forms list links
+     * it.
+     *
+     * @param string $form_id The native form id.
+     * @return string
+     */
+    public function get_form_edit_url( $form_id ) {
+        return admin_url( 'admin.php?page=wpcf7&post=' . absint( $form_id ) . '&action=edit' );
+    }
+
+    /**
      * Returns all Contact Form 7 forms.
      *
      * @return iterable

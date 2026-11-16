@@ -600,6 +600,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
   private function make_field_mapping_page( $with_integration = true ) {
     $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class );
     $integration->shouldReceive( 'get_integration_label' )->andReturn( 'Contact Form 7' );
+    $integration->shouldReceive( 'get_form_edit_url' )->with( '1' )->andReturn( 'https://example.com/wp-admin/admin.php?page=wpcf7&post=1&action=edit' );
     $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $with_integration );
     $integration->shouldReceive( 'get_forms' )->andReturn(
       array(
@@ -665,6 +666,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
         'targets'           => array( 'email' ),
         'active'            => true,
         'missing'           => false,
+        'edit_url'          => 'https://example.com/wp-admin/admin.php?page=wpcf7&post=1&action=edit',
       ),
       $params['list'][0]
     );

@@ -73,6 +73,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class );
         $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $active );
         $integration->shouldReceive( 'get_integration_label' )->andReturn( 'Test Forms' );
+        $integration->shouldReceive( 'get_form_edit_url' )->andReturn( 'https://example.com/wp-admin/admin.php?page=test-forms&form=5' );
         $integration->shouldReceive( 'get_forms' )->andReturn(
             array(
                 array(

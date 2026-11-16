@@ -191,6 +191,20 @@ class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * The URL of Formidable's editor for a form, from its own
+     * FrmForm::get_edit_link() when available.
+     *
+     * @param string $form_id The native form id.
+     * @return string
+     */
+    public function get_form_edit_url( $form_id ) {
+        if ( method_exists( '\FrmForm', 'get_edit_link' ) ) {
+            return (string) \FrmForm::get_edit_link( absint( $form_id ) );
+        }
+        return admin_url( 'admin.php?page=formidable&frm_action=edit&id=' . absint( $form_id ) );
+    }
+
+    /**
      * Returns all published Formidable forms.
      *
      * @return iterable
