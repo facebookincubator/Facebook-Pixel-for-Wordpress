@@ -123,6 +123,13 @@ class ReleaseSignalsAjax {
             wp_send_json_error( array( 'message' => 'Missing signal state.' ), 403 );
         }
 
+        // The browser writes `active` before it posts the queue. A `held` cookie
+        // here means the visitor withdrew after asking for the release, so the
+        // queued events must not be sent.
+        if ( ! self::is_releasable_state( $signal_state ) ) {
+            wp_send_json_error( array( 'message' => 'Signals are held.' ), 403 );
+        }
+
         if ( $this->is_rate_limited() ) {
             wp_send_json_error( array( 'message' => 'Rate limit exceeded.' ), 429 );
         }
@@ -163,16 +170,21 @@ class ReleaseSignalsAjax {
                 continue;
             }
 
-            $events_to_send[] = $this->build_event( $event_data );
+            $events_to_send[] = $this->build_event(
+                $event_data,
+                $this->resolve_event_time( $event_data, $now )
+            );
         }
 
         $this->restore_superglobal_value( '_GET', 'fbclid', $restore_get_fbclid );
         $this->restore_superglobal_value( '_COOKIE', '_fbp', $restore_cookie_fbp );
         $this->restore_superglobal_value( '_COOKIE', '_fbc', $restore_cookie_fbc );
 
+        $sent_event_ids = array();
         if ( ! empty( $events_to_send ) ) {
             $this->record_rate_limit_usage( count( $events_to_send ) );
-            $this->capi->send( $events_to_send, Capi::CAPI_SYNC );
+            $result         = $this->capi->send( $events_to_send, Capi::CAPI_SYNC );
+            $sent_event_ids = self::acknowledged_event_ids( $events_to_send, $result );
         }
 
         // Return fresh user_info so JS can initialise fbq with correct AAM data
@@ -189,12 +201,84 @@ class ReleaseSignalsAjax {
 
         wp_send_json_success(
             array(
-                'fbp'        => ServerEventFactory::get_fbp_value(),
-                'fbc'        => ServerEventFactory::get_fbc_value(),
-                'sent_count' => count( $events_to_send ),
-                'user_info'  => $user_info,
+                'fbp'            => ServerEventFactory::get_fbp_value(),
+                'fbc'            => ServerEventFactory::get_fbc_value(),
+                'sent_count'     => count( $sent_event_ids ),
+                // The browser drops exactly these from its queue. Events over the
+                // MAX_EVENTS cap, rejected by validate_event(), or whose delivery
+                // the transport did not confirm are not listed, so a later
+                // release can still deliver them.
+                'sent_event_ids' => $sent_event_ids,
+                'user_info'      => $user_info,
             )
         );
+    }
+
+    /**
+     * Whether a signal-state cookie value allows queued events to be released.
+     *
+     * @param string $signal_state Cookie value.
+     *
+     * @return bool
+     */
+    public static function is_releasable_state( $signal_state ) {
+        return '' !== $signal_state && Signals::STATE_HELD !== $signal_state;
+    }
+
+    /**
+     * Lists the IDs the browser may drop from its queue: those of the given
+     * events that the transport reports as sent. The before_conversions_api_
+     * event_sent filter can remove some or all events on the way out, so the
+     * input batch is not the delivered batch. A failed request, an open circuit
+     * breaker, a transport that reports no list, or an API that accepted fewer
+     * events than were sent acknowledges none, because the browser cannot
+     * recover an event it has forgotten while a resend is deduplicated by
+     * event_id.
+     *
+     * @param Event[]    $events Events handed to the transport.
+     * @param array|null $result The transport's result, as returned by Capi::send().
+     *
+     * @return string[]
+     */
+    public static function acknowledged_event_ids( array $events, $result ) {
+        if ( ! is_array( $result ) || empty( $result['success'] )
+            || ! isset( $result['sent_event_ids'] ) || ! is_array( $result['sent_event_ids'] ) ) {
+            return array();
+        }
+
+        $sent = array_values( array_filter( $result['sent_event_ids'], 'is_string' ) );
+        if ( empty( $sent ) ) {
+            return array();
+        }
+
+        if ( isset( $result['events_received'] ) && is_numeric( $result['events_received'] )
+            && (int) $result['events_received'] < count( $sent ) ) {
+            // The API accepted fewer events than went out; which ones is unknown.
+            return array();
+        }
+
+        return array_values( array_intersect( self::get_event_ids( $events ), $sent ) );
+    }
+
+    /**
+     * Lists the event IDs of the given events, skipping any without one.
+     *
+     * @param Event[] $events Events that were handed to the transport.
+     *
+     * @return string[]
+     */
+    public static function get_event_ids( array $events ) {
+        $ids = array();
+        foreach ( $events as $event ) {
+            if ( ! $event instanceof Event ) {
+                continue;
+            }
+            $id = $event->getEventId();
+            if ( is_string( $id ) && '' !== $id ) {
+                $ids[] = $id;
+            }
+        }
+        return $ids;
     }
 
     /**
@@ -216,28 +300,68 @@ class ReleaseSignalsAjax {
             return false;
         }
 
-        if ( ! empty( $event_data['event_time'] ) ) {
-            $event_time = absint( $event_data['event_time'] );
-            if ( $event_time > $now || ( $now - $event_time ) > self::MAX_EVENT_AGE ) {
-                return false;
+        return null !== $this->resolve_event_time( $event_data, $now );
+    }
+
+    /**
+     * Resolves when a released event occurred, on the server's clock.
+     *
+     * The browser reports how many seconds ago it queued the event, measured
+     * on its own clock, and the server subtracts that from its own time. Only
+     * differences of the browser clock are used, so a browser that runs
+     * minutes or hours ahead or behind the server places its events correctly
+     * and never has them rejected as coming from the future.
+     *
+     * A request without an age, from an older copy of the browser script,
+     * falls back to the absolute event_time it carries. A time later than the
+     * server's can only be clock skew, so it counts as now. Either way an
+     * event older than MAX_EVENT_AGE is refused, and an event with no timing
+     * at all is placed at the time of the release.
+     *
+     * @param array $event_data Event payload.
+     * @param int   $now        Current timestamp.
+     *
+     * @return int|null Unix timestamp, or null when the event is too old.
+     */
+    private function resolve_event_time( $event_data, $now ) {
+        if ( isset( $event_data['event_age'] ) && is_numeric( $event_data['event_age'] ) ) {
+            $age = max( 0, (int) $event_data['event_age'] );
+            if ( $age > self::MAX_EVENT_AGE ) {
+                return null;
             }
+
+            return $now - $age;
         }
 
-        return true;
+        if ( empty( $event_data['event_time'] ) ) {
+            return $now;
+        }
+
+        $event_time = min( absint( $event_data['event_time'] ), $now );
+        if ( ( $now - $event_time ) > self::MAX_EVENT_AGE ) {
+            return null;
+        }
+
+        return $event_time;
     }
 
     /**
      * Build released event from queue payload.
      *
-     * @param array $event_data Event payload.
+     * @param array    $event_data Event payload.
+     * @param int|null $event_time When the event occurred, as resolved by
+     *                             resolve_event_time(); null keeps the
+     *                             payload's own event_time.
      *
      * @return Event
      */
-    private function build_event( $event_data ) {
+    private function build_event( $event_data, $event_time = null ) {
         $event_name = sanitize_text_field( $event_data['event_name'] );
         $event      = ServerEventFactory::new_event( $event_name );
 
-        if ( ! empty( $event_data['event_time'] ) ) {
+        if ( null !== $event_time ) {
+            $event->setEventTime( $event_time );
+        } elseif ( ! empty( $event_data['event_time'] ) ) {
             $event->setEventTime( absint( $event_data['event_time'] ) );
         }
 

@@ -106,6 +106,15 @@ class FacebookPluginConfig {
     const IS_PIXEL_RENDERED    = 'is_pixel_rendered';
     const IS_NOSCRIPT_RENDERED = 'is_noscript_rendered';
 
+    // Default page age, in seconds, beyond which the browser treats a page as
+    // served from a full-page cache. The age is measured from the moment the
+    // browser requested the page, so the threshold only has to absorb clock
+    // differences between the server and the visitor, not the time a visitor
+    // spends on the page. Sites tune it through CACHE_STALE_THRESHOLD_FILTER;
+    // see Pixel::get_cache_threshold().
+    const CACHE_STALE_THRESHOLD        = 300;
+    const CACHE_STALE_THRESHOLD_FILTER = 'facebook_pixel_cache_stale_threshold';
+
     const OPEN_BRIDGE_PATH         = 'open-bridge/events';
     const CAPI_INTEGRATION_DIV_TOP = 500;
     const CAPI_INTEGRATION_STATUS  = 'facebook_capi_integration_status';

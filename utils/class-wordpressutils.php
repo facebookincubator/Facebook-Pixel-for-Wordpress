@@ -112,6 +112,32 @@ class WordPressUtils {
     }
 
     /**
+     * Whether a full-page cache could store the current response and hand it
+     * to other visitors.
+     *
+     * Only markup rendered into such a response can end up shared, so only it
+     * carries the page generation time and has its event ids checked for
+     * staleness in the browser. AJAX and REST responses, pages marked with
+     * DONOTCACHEPAGE and pages rendered for a logged-in visitor are never
+     * cached, so the event ids rendered into them always belong to the visitor
+     * who receives them. That also keeps a clock that is off from stripping the
+     * id of a Purchase or a Lead delivered through an AJAX response.
+     *
+     * @return bool True when a page cache may store the response.
+     */
+    public static function is_cacheable_response() {
+        if ( self::is_ajax_or_rest_request() ) {
+            return false;
+        }
+
+        if ( defined( 'DONOTCACHEPAGE' ) && DONOTCACHEPAGE ) {
+            return false;
+        }
+
+        return ! is_user_logged_in();
+    }
+
+    /**
      * Returns the current user's personally identifiable information.
      *
      * @return array The user info extracted from the session.

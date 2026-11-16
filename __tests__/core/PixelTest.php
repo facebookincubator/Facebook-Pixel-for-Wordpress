@@ -24,6 +24,7 @@ namespace FacebookPixelPlugin\Tests\Core;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\Pixel;
+use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
@@ -43,11 +44,16 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
 final class PixelTest extends FacebookWordpressTestBase {
 
     /**
-     * Mocks the encoding functions the render path touches.
+     * Mocks the encoding functions the render path touches, and the request
+     * context that decides whether the rendered markup may be stored by a page
+     * cache (a guest page render by default).
      *
+     * @param bool $cacheable  Whether a page cache may store the response.
+     * @param bool $doing_ajax Whether the code is rendered into an AJAX response.
      * @return void
      */
-    private function mock_wp_functions() {
+    private function mock_wp_functions( $cacheable = true, $doing_ajax = false ) {
+        $this->mockCacheableResponse( $cacheable, $doing_ajax );
         \WP_Mock::userFunction( 'get_option', array( 'return' => array() ) );
         \WP_Mock::userFunction(
             'wp_unslash',
@@ -65,6 +71,17 @@ final class PixelTest extends FacebookWordpressTestBase {
                 },
             )
         );
+    }
+
+    /**
+     * Wraps rendered fbq() options the way Pixel does for markup a page cache
+     * may store: a stale cached copy fires without the event id.
+     *
+     * @param string $options The JSON options carrying the event id.
+     * @return string The guarded JavaScript expression.
+     */
+    private function cacheable_options( $options ) {
+        return '(window.FacebookSignal && FacebookSignal.isStalePage && FacebookSignal.isStalePage() ? {} : ' . $options . ')';
     }
 
     /**
@@ -105,12 +122,60 @@ final class PixelTest extends FacebookWordpressTestBase {
         $code = $pixel->generate_script_for_event( $event, true );
 
         $expected = sprintf(
-            "<script type='text/javascript'>fbq('set', 'agent', '%s', '%s');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
+            "<script type='text/javascript'>fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, %3\$s);</script>",
+            $agent_string,
+            $pixel_id,
+            $this->cacheable_options( '{"eventID":"TestEventId"}' )
+        );
+
+        $this->assertEquals( $expected, $code );
+    }
+
+    /**
+     * An event delivered through an AJAX response, such as a form plugin's
+     * submit endpoint, is never stored by a page cache, so its event id is
+     * rendered plainly and always sent.
+     *
+     * @return void
+     */
+    public function testGenerateScriptKeepsEventIdForAjaxDeliveredEvent() {
+        $this->mock_wp_functions( true, true );
+        FacebookWordpressOptions::set_version_info();
+        $agent_string = FacebookWordpressOptions::get_agent_string();
+        $pixel_id     = '1234';
+
+        $pixel = new Pixel( $agent_string, $pixel_id );
+        $event = $this->make_event( 'Lead', 'TestEventId' );
+
+        $code = $pixel->generate_script_for_event( $event, false );
+
+        $expected = sprintf(
+            "fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});",
             $agent_string,
             $pixel_id
         );
 
         $this->assertEquals( $expected, $code );
+        $this->assertStringNotContainsString( 'isStalePage', $code );
+    }
+
+    /**
+     * A page rendered for a logged-in visitor is never stored by a page cache
+     * either, so its event ids are rendered plainly.
+     *
+     * @return void
+     */
+    public function testGenerateScriptKeepsEventIdForLoggedInVisitor() {
+        $this->mock_wp_functions( false );
+        FacebookWordpressOptions::set_version_info();
+
+        $pixel = new Pixel( FacebookWordpressOptions::get_agent_string(), '1234' );
+        $event = $this->make_event( 'Purchase', 'TestEventId' );
+
+        $code = $pixel->generate_script_for_event( $event, true );
+
+        $this->assertStringContainsString( '{"eventID":"TestEventId"});', $code );
+        $this->assertStringNotContainsString( 'isStalePage', $code );
     }
 
     /**
@@ -130,9 +195,10 @@ final class PixelTest extends FacebookWordpressTestBase {
         $code = $pixel->generate_script_for_event( $event, true );
 
         $expected = sprintf(
-            "<script type='text/javascript'>fbq('set', 'agent', '%s', '%s');fbq('trackCustom', 'Custom', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
+            "<script type='text/javascript'>fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');fbq('trackCustom', 'Custom', {\"fb_integration_tracking\":\"Test\"}, %3\$s);</script>",
             $agent_string,
-            $pixel_id
+            $pixel_id,
+            $this->cacheable_options( '{"eventID":"TestEventId"}' )
         );
 
         $this->assertEquals( $expected, $code );
@@ -158,9 +224,10 @@ final class PixelTest extends FacebookWordpressTestBase {
         $code = $pixel->generate_script_for_event( $event, true );
 
         $expected = sprintf(
-            "<script type='text/javascript'>fbq('set', 'agent', '%s', '%s');fbq('track', 'Purchase', {\"value\":\"30.00\",\"currency\":\"usd\",\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId\"});</script>",
+            "<script type='text/javascript'>fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');fbq('track', 'Purchase', {\"value\":\"30.00\",\"currency\":\"usd\",\"fb_integration_tracking\":\"Test\"}, %3\$s);</script>",
             $agent_string,
-            $pixel_id
+            $pixel_id,
+            $this->cacheable_options( '{"eventID":"TestEventId"}' )
         );
 
         $this->assertEquals( $expected, $code );
@@ -185,9 +252,11 @@ final class PixelTest extends FacebookWordpressTestBase {
         $code = $pixel->generate_script_for_tracked_events( true );
 
         $expected = sprintf(
-            "<script type='text/javascript'>fbq('set', 'agent', '%s', '%s');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId1\"});fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, {\"eventID\":\"TestEventId2\"});</script>",
+            "<script type='text/javascript'>fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, %3\$s);fbq('track', 'Lead', {\"fb_integration_tracking\":\"Test\"}, %4\$s);</script>",
             $agent_string,
-            $pixel_id
+            $pixel_id,
+            $this->cacheable_options( '{"eventID":"TestEventId1"}' ),
+            $this->cacheable_options( '{"eventID":"TestEventId2"}' )
         );
 
         $this->assertEquals( $expected, $code );
@@ -212,11 +281,68 @@ final class PixelTest extends FacebookWordpressTestBase {
         $this->assertStringContainsString( 'FacebookSignal.queueEvent(', $code );
         $this->assertStringContainsString( '"event_name":"Lead"', $code );
         $this->assertStringContainsString( '"event_id":"TestEventId"', $code );
+        $this->assertStringContainsString( '"cacheable":true', $code );
         $this->assertStringContainsString(
             '"fb_integration_tracking":"Test"',
             $code
         );
         $this->assertStringNotContainsString( "fbq('track'", $code );
+    }
+
+    /**
+     * A held event delivered through an AJAX response tells the browser its id
+     * belongs to this visitor alone, so the id is kept on release.
+     *
+     * @return void
+     */
+    public function testGenerateQueueScriptMarksAjaxMarkupAsNotCacheable() {
+        $this->mock_wp_functions( true, true );
+        FacebookSignalState::hold();
+        FacebookWordpressOptions::set_version_info();
+
+        $pixel = new Pixel( FacebookWordpressOptions::get_agent_string(), '1234' );
+        $event = $this->make_event( 'Lead', 'TestEventId' );
+
+        $code = $pixel->generate_queue_script_for_event( $event, false );
+
+        $this->assertStringContainsString( '"event_id":"TestEventId"', $code );
+        $this->assertStringContainsString( '"cacheable":false', $code );
+    }
+
+    /**
+     * The cache threshold defaults to five minutes.
+     *
+     * @return void
+     */
+    public function testGetCacheThresholdDefaultsToFiveMinutes() {
+        $this->assertSame( 300, FacebookPluginConfig::CACHE_STALE_THRESHOLD );
+        $this->assertSame( 300, Pixel::get_cache_threshold() );
+    }
+
+    /**
+     * Sites tune the cache threshold through a filter.
+     *
+     * @return void
+     */
+    public function testGetCacheThresholdIsFilterable() {
+        \WP_Mock::onFilter( FacebookPluginConfig::CACHE_STALE_THRESHOLD_FILTER )
+            ->with( FacebookPluginConfig::CACHE_STALE_THRESHOLD )
+            ->reply( '120' );
+
+        $this->assertSame( 120, Pixel::get_cache_threshold() );
+    }
+
+    /**
+     * A filter cannot push the threshold below zero.
+     *
+     * @return void
+     */
+    public function testGetCacheThresholdIsNeverNegative() {
+        \WP_Mock::onFilter( FacebookPluginConfig::CACHE_STALE_THRESHOLD_FILTER )
+            ->with( FacebookPluginConfig::CACHE_STALE_THRESHOLD )
+            ->reply( -5 );
+
+        $this->assertSame( 0, Pixel::get_cache_threshold() );
     }
 
     /**
@@ -261,7 +387,7 @@ final class PixelTest extends FacebookWordpressTestBase {
 
         // Agent line rendered once from the injected config.
         $this->assertStringContainsString(
-            sprintf( "fbq('set', 'agent', '%s', '%s');", $agent_string, $pixel_id ),
+            sprintf( "fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');", $agent_string, $pixel_id ),
             $code
         );
         // One queueEvent per event, and no direct fbq() firing.

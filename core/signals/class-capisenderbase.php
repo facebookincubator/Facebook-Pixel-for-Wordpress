@@ -41,6 +41,34 @@ abstract class CapiSenderBase {
     private $api = null;
 
     /**
+     * The events the last send_request() call actually handed to the API,
+     * after the before_conversions_api_event_sent filter ran. Empty when the
+     * filter removed everything or no request has been made yet.
+     *
+     * @var \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event[]
+     */
+    protected $last_sent_events = array();
+
+    /**
+     * Event ids of the last batch handed to the API (see $last_sent_events).
+     *
+     * @return string[]
+     */
+    protected function last_sent_event_ids() {
+        $ids = array();
+        foreach ( $this->last_sent_events as $event ) {
+            if ( ! is_object( $event ) || ! method_exists( $event, 'getEventId' ) ) {
+                continue;
+            }
+            $id = $event->getEventId();
+            if ( is_string( $id ) && '' !== $id ) {
+                $ids[] = $id;
+            }
+        }
+        return $ids;
+    }
+
+    /**
      * Whether the pixel id and access token are configured.
      *
      * @return bool
@@ -93,7 +121,8 @@ abstract class CapiSenderBase {
      *         filter removed every event (nothing sent).
      */
     protected function send_request( $events, $agent, $test_event_code = null ) {
-        $events = apply_filters( 'before_conversions_api_event_sent', $events );
+        $events                 = apply_filters( 'before_conversions_api_event_sent', $events );
+        $this->last_sent_events = is_array( $events ) ? array_values( $events ) : array();
         if ( empty( $events ) ) {
             return null;
         }
@@ -114,7 +143,7 @@ abstract class CapiSenderBase {
             $request->setTestEventCode( $test_event_code );
         }
 
-        $response = $request->execute();
+        $response = $this->execute_request( $request );
 
         // E2E instrumentation only: record the transformed events that were
         // actually sent so the Playwright suite can assert Pixel<->CAPI
@@ -122,5 +151,16 @@ abstract class CapiSenderBase {
         FacebookServerSideEvent::maybe_log_events_for_tests( $events );
 
         return $response;
+    }
+
+    /**
+     * Executes a built request against the API. Separate so tests can stand
+     * in for the network call.
+     *
+     * @param EventRequest $request The request to execute.
+     * @return \FacebookPixelPlugin\FacebookAds\Object\ServerSide\EventResponse
+     */
+    protected function execute_request( EventRequest $request ) {
+        return $request->execute();
     }
 }

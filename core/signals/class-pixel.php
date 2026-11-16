@@ -22,6 +22,7 @@ namespace FacebookPixelPlugin\Core;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
+use FacebookPixelPlugin\Utils\WordPressUtils;
 
 /**
  * Handles browser-side Meta Pixel event tracking.
@@ -45,7 +46,13 @@ class Pixel {
     const SCRIPT_TAG     =
     "<script type='text/javascript'>%s</script>";
     const FBQ_EVENT_CODE = "fbq('%s', '%s', %s, %s);";
-    const FBQ_AGENT_CODE = "fbq('set', 'agent', '%s', '%s');";
+    const FBQ_AGENT_CODE =
+    "fbq('set', 'agent', window.FacebookSignal && FacebookSignal.tagAgent ? FacebookSignal.tagAgent('%1\$s') : '%1\$s', '%2\$s');";
+    // Wraps the fbq() options of an event rendered into cacheable markup. A
+    // cached copy of the page hands the same event id to every visitor who
+    // receives it, so a stale copy fires without one.
+    const FBQ_CACHEABLE_OPTIONS_CODE =
+    '(window.FacebookSignal && FacebookSignal.isStalePage && FacebookSignal.isStalePage() ? {} : %s)';
 
     /**
      * The list of standard (normal) Meta Pixel events.
@@ -270,6 +277,38 @@ class Pixel {
     }
 
     /**
+     * Gets the page age, in seconds, beyond which the browser treats a page as
+     * served from a full-page cache.
+     *
+     * Event ids rendered into cached HTML are shared by every visitor who
+     * receives the copy, so Pixel fires from a cached copy omit them and flag
+     * the agent string instead. The browser measures the age from when it
+     * requested the page, so the threshold only has to absorb clock differences
+     * between the server and the visitor's device.
+     *
+     * Too low costs more than too high. A clock that is off by more than the
+     * threshold strips the id from every event on a fresh page, so no Pixel
+     * event pairs with its server event any more. Too high only loses the
+     * cached visitors who arrive within that many seconds of each cache fill.
+     *
+     * @return int The threshold in seconds, never negative.
+     */
+    public static function get_cache_threshold() {
+        /**
+         * Filters the page age, in seconds, beyond which the browser treats a
+         * page as served from a full-page cache.
+         *
+         * @param int $threshold Page age in seconds. Default 300.
+         */
+        $threshold = apply_filters(
+            FacebookPluginConfig::CACHE_STALE_THRESHOLD_FILTER,
+            FacebookPluginConfig::CACHE_STALE_THRESHOLD
+        );
+
+        return max( 0, (int) $threshold );
+    }
+
+    /**
      * Clears the queue of browser events.
      *
      * @return void
@@ -294,8 +333,34 @@ class Pixel {
                 self::TRACK : self::TRACK_CUSTOM,
             $event->getEventName(),
             wp_json_encode( self::get_normalized_custom_data( $event ), JSON_PRETTY_PRINT ),
-            wp_json_encode( array( self::EVENT_ID => $event->getEventId() ), JSON_PRETTY_PRINT )
+            $this->generate_event_options_code( $event )
         );
+    }
+
+    /**
+     * Generates the fbq() options argument carrying the event id.
+     *
+     * An event rendered into a response a page cache may store is wrapped so
+     * that a stale cached copy fires without the id, which every visitor who
+     * received that copy would otherwise share. An event delivered by a
+     * request no cache stores, such as a form plugin's AJAX response, always
+     * keeps its id: it belongs to this visitor alone and pairs with the server
+     * event that carries it.
+     *
+     * @param \FacebookPixelPlugin\FacebookAds\Object\ServerSide\Event $event The event to render.
+     * @return string The JavaScript expression for the options argument.
+     */
+    private function generate_event_options_code( $event ) {
+        $options = wp_json_encode(
+            array( self::EVENT_ID => $event->getEventId() ),
+            JSON_PRETTY_PRINT
+        );
+
+        if ( ! WordPressUtils::is_cacheable_response() ) {
+            return $options;
+        }
+
+        return sprintf( self::FBQ_CACHEABLE_OPTIONS_CODE, $options );
     }
 
     /**
