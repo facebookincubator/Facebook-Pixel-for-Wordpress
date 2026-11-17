@@ -93,6 +93,13 @@
     return row.missing ? label + ' (form not found)' : label;
   }
 
+  // Names a mapped field the form no longer has by the label it had when
+  // the mapping was saved. Mappings saved before labels were kept only
+  // know the field's id.
+  function missingFieldName(field) {
+    return field.label ? '"' + field.label + '"' : 'field ID ' + field.id;
+  }
+
   // A saved mapping whose fields are partly gone from the form (deleted, or
   // renamed in a plugin that identifies fields by name) sends nothing for
   // them; the status cell asks for a review.
@@ -105,9 +112,11 @@
         .text(
           'Needs review: ' +
             (gone.length === 1
-              ? 'mapped field ' + gone[0] + ' is'
-              : 'mapped fields ' + gone.join(', ') + ' are') +
-            ' no longer in the form',
+              ? 'the mapped field ' + missingFieldName(gone[0]) + ' was'
+              : 'the mapped fields ' +
+                $.map(gone, missingFieldName).join(', ') +
+                ' were') +
+            ' removed or renamed',
         )
         .appendTo($cell);
     }
@@ -265,7 +274,10 @@
     $missingList.text(
       $.map(missingFields, function (field) {
         return (
-          field.id + ' (' + (targetLabels[field.target] || field.target) + ')'
+          missingFieldName(field) +
+          ' (sent as ' +
+          (targetLabels[field.target] || field.target) +
+          ')'
         );
       }).join(', '),
     );

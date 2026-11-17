@@ -907,11 +907,14 @@ class FacebookWordpressSettingsRecorder {
         $mapping = $this->field_mapper->get_mappings( $integration_name, $form_id );
 
         // Mapped fields the form no longer has (deleted or renamed) send
-        // nothing; the editor lists them so they can be mapped again.
+        // nothing; the editor lists them, by the label they had when the
+        // mapping was saved, so they can be mapped again.
+        $labels         = $this->field_mapper->get_field_labels( $integration_name, $form_id );
         $missing_fields = array();
         foreach ( $integration->get_missing_mapped_fields( $form_id, $mapping ) as $field_id => $target ) {
             $missing_fields[] = array(
                 'id'     => (string) $field_id,
+                'label'  => isset( $labels[ $field_id ] ) ? (string) $labels[ $field_id ] : '',
                 'target' => $target,
             );
         }
@@ -967,7 +970,8 @@ class FacebookWordpressSettingsRecorder {
             return $this->handle_invalid_request();
         }
 
-        $field_ids    = array_column( $integration->get_form_fields( $form_id ), 'id' );
+        $form_fields  = $integration->get_form_fields( $form_id );
+        $field_ids    = array_column( $form_fields, 'id' );
         $mapping      = array();
         $form_changed = false;
         foreach ( $raw_mapping as $field_id => $target ) {
@@ -986,7 +990,10 @@ class FacebookWordpressSettingsRecorder {
             return $this->handle_form_changed_request();
         }
 
-        if ( ! $this->field_mapper->save_form_mapping( $integration_name, $form_id, $form_title, $mapping ) ) {
+        // The labels are kept so a mapped field the form later loses can
+        // still be named on the field mapping screen.
+        $labels = array_column( $form_fields, 'label', 'id' );
+        if ( ! $this->field_mapper->save_form_mapping( $integration_name, $form_id, $form_title, $mapping, $labels ) ) {
             return $this->handle_invalid_request();
         }
 

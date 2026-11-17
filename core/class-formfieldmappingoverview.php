@@ -58,8 +58,10 @@ class FormFieldMappingOverview {
      * Each row: integration_name, integration_label, form_id, form_title,
      * status (a STATUS_* value), targets (the targets the form sends, in field
      * order), active (the plugin is active), missing (the plugin is active
-     * but the form is gone), missing_fields (ids of mapped fields the form
-     * no longer has, e.g. deleted or renamed; nothing is sent for them) and
+     * but the form is gone), missing_fields (mapped fields the form no longer
+     * has, e.g. deleted or renamed, as ['id' =>, 'label' =>] with the label
+     * they had when the mapping was saved, '' if unknown; nothing is sent for
+     * them) and
      * edit_url (the form plugin's editor for the form; '' for a form that is
      * not listed by an active plugin).
      *
@@ -86,8 +88,15 @@ class FormFieldMappingOverview {
                 // the targets still sent, and flag the form for review.
                 $gone = $saved ? $integration->get_missing_mapped_fields( $form['id'], $mapping ) : array();
                 if ( ! empty( $gone ) ) {
+                    $labels                = $mapper->get_field_labels( $name, $form['id'] );
                     $row['targets']        = self::targets( array_diff_key( $mapping, $gone ) );
-                    $row['missing_fields'] = array_map( 'strval', array_keys( $gone ) );
+                    $row['missing_fields'] = array();
+                    foreach ( array_keys( $gone ) as $field_id ) {
+                        $row['missing_fields'][] = array(
+                            'id'    => (string) $field_id,
+                            'label' => isset( $labels[ $field_id ] ) ? (string) $labels[ $field_id ] : '',
+                        );
+                    }
                 }
 
                 $row['edit_url'] = (string) $integration->get_form_edit_url( $form['id'] );

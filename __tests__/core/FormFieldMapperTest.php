@@ -124,6 +124,36 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
     }
 
     /**
+     * The labels of the mapped fields are saved with the mapping, so a field
+     * the form later loses can still be named; labels of unmapped fields and
+     * empty labels are not kept.
+     *
+     * @return void
+     */
+    public function testSaveKeepsTheMappedFieldsLabels() {
+        $store  = new MockFormFieldMappingStore();
+        $mapper = new FormFieldMapper( $store );
+
+        $mapper->save_form_mapping(
+            'wpforms-lite',
+            '7',
+            'Contact',
+            array(
+                '1' => 'email',
+                '2' => 'phone',
+            ),
+            array(
+                '1' => ' Work email ',
+                '2' => '',
+                '3' => 'Message',
+            )
+        );
+
+        $this->assertSame( array( '1' => 'Work email' ), $mapper->get_field_labels( 'wpforms-lite', '7' ) );
+        $this->assertSame( array(), $mapper->get_field_labels( 'wpforms-lite', '8' ) );
+    }
+
+    /**
      * A mapping with no valid fields is still saved, as a rejection: the form
      * then sends no customer information instead of using automatic detection.
      *

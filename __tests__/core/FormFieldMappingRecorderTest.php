@@ -243,8 +243,8 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * Saving stores the mapping with the title from the form plugin and
-     * returns the refreshed list.
+     * Saving stores the mapping with the title from the form plugin and the
+     * mapped fields' labels, and returns the refreshed list.
      *
      * @return void
      */
@@ -270,10 +270,14 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             array(
                 'test-forms' => array(
                     '5' => array(
-                        'form_title' => 'Contact',
-                        'mappings'   => array(
+                        'form_title'   => 'Contact',
+                        'mappings'     => array(
                             'email' => 'email',
                             'name'  => 'full_name',
+                        ),
+                        'field_labels' => array(
+                            'email' => 'Email',
+                            'name'  => 'Name',
                         ),
                     ),
                 ),
@@ -349,8 +353,9 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * The editor gets the saved mapping's fields the form no longer has, so
-     * it can ask for them to be mapped again.
+     * The editor gets the saved mapping's fields the form no longer has, with
+     * the label they had when the mapping was saved ('' when unknown), so it
+     * can ask for them to be mapped again.
      *
      * @return void
      */
@@ -360,9 +365,14 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             array(
                 'test-forms' => array(
                     '5' => array(
-                        'mappings' => array(
+                        'mappings'     => array(
                             'email'      => 'email',
                             'your-phone' => 'phone',
+                            'fax'        => 'phone',
+                        ),
+                        'field_labels' => array(
+                            'email'      => 'Email',
+                            'your-phone' => 'Your phone',
                         ),
                     ),
                 ),
@@ -379,6 +389,12 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             array(
                 array(
                     'id'     => 'your-phone',
+                    'label'  => 'Your phone',
+                    'target' => 'phone',
+                ),
+                array(
+                    'id'     => 'fax',
+                    'label'  => '',
                     'target' => 'phone',
                 ),
             ),

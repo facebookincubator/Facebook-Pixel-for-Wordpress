@@ -91,8 +91,9 @@ class FormFieldMapper {
      * [
      *   '<integration_name>' => [
      *     '<form_id>' => [
-     *       'form_title' => '<title>',
-     *       'mappings'   => [ '<field_id>' => '<target>' ],
+     *       'form_title'   => '<title>',
+     *       'mappings'     => [ '<field_id>' => '<target>' ],
+     *       'field_labels' => [ '<field_id>' => '<label>' ], // Optional.
      *     ],
      *   ],
      * ]
@@ -121,6 +122,24 @@ class FormFieldMapper {
     }
 
     /**
+     * Returns the labels the mapped fields had when the mapping was saved,
+     * so a field the form no longer has can still be named.
+     *
+     * @param string $integration_name The integration name (INTEGRATION_NAME).
+     * @param string $form_id          The form plugin's native form id.
+     * @return array<string,string> field_id => label, or an empty array.
+     */
+    public function get_field_labels( $integration_name, $form_id ) {
+        $all     = $this->get_all();
+        $form_id = (string) $form_id;
+        if ( isset( $all[ $integration_name ][ $form_id ]['field_labels'] )
+            && is_array( $all[ $integration_name ][ $form_id ]['field_labels'] ) ) {
+            return $all[ $integration_name ][ $form_id ]['field_labels'];
+        }
+        return array();
+    }
+
+    /**
      * Whether a mapping is saved for a form, including one with no fields.
      *
      * @param string $integration_name The integration name (INTEGRATION_NAME).
@@ -144,9 +163,13 @@ class FormFieldMapper {
      * @param string               $form_id          The native form id.
      * @param string               $form_title       The form title, for display.
      * @param array<string,string> $mappings         field_id => target.
+     * @param array<string,string> $field_labels     Optional field_id => label
+     *                                               of the mapped fields, kept to
+     *                                               name a field the form later
+     *                                               loses.
      * @return bool True on success.
      */
-    public function save_form_mapping( $integration_name, $form_id, $form_title, $mappings ) {
+    public function save_form_mapping( $integration_name, $form_id, $form_title, $mappings, $field_labels = array() ) {
         $clean = array();
         if ( is_array( $mappings ) ) {
             foreach ( $mappings as $field_id => $target ) {
@@ -164,10 +187,22 @@ class FormFieldMapper {
         if ( ! isset( $all[ $integration_name ] ) || ! is_array( $all[ $integration_name ] ) ) {
             $all[ $integration_name ] = array();
         }
-        $all[ $integration_name ][ (string) $form_id ] = array(
+        $entry  = array(
             'form_title' => (string) $form_title,
             'mappings'   => $clean,
         );
+        $labels = array();
+        if ( is_array( $field_labels ) ) {
+            foreach ( $clean as $field_id => $target ) {
+                if ( isset( $field_labels[ $field_id ] ) && '' !== trim( (string) $field_labels[ $field_id ] ) ) {
+                    $labels[ $field_id ] = trim( (string) $field_labels[ $field_id ] );
+                }
+            }
+        }
+        if ( ! empty( $labels ) ) {
+            $entry['field_labels'] = $labels;
+        }
+        $all[ $integration_name ][ (string) $form_id ] = $entry;
 
         return $this->store->write( $all );
     }

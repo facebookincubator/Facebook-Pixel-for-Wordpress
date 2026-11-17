@@ -160,8 +160,9 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
     /**
      * Mapped fields a form no longer has (deleted, or renamed in a plugin
      * that identifies fields by name) send nothing: the row lists only the
-     * targets still sent and names the missing fields. A saved mapping whose
-     * fields are all gone stays saved, not rejected.
+     * targets still sent and names the missing fields by the label they had
+     * when the mapping was saved ('' when that is unknown). A saved mapping
+     * whose fields are all gone stays saved, not rejected.
      *
      * @return void
      */
@@ -191,12 +192,17 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
             array(
                 'contact-form-7' => array(
                     '1' => array(
-                        'form_title' => 'Contact',
-                        'mappings'   => array(
+                        'form_title'   => 'Contact',
+                        'mappings'     => array(
                             'your-name'  => 'full_name',
                             'your-email' => 'email',
                         ),
+                        'field_labels' => array(
+                            'your-name'  => 'Your name',
+                            'your-email' => 'Your email',
+                        ),
                     ),
+                    // Saved before field labels were kept.
                     '2' => array(
                         'form_title' => 'Quote',
                         'mappings'   => array( 'work' => 'email' ),
@@ -209,10 +215,26 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
 
         $this->assertSame( 'saved', $rows[0]['status'] );
         $this->assertSame( array( 'full_name' ), $rows[0]['targets'] );
-        $this->assertSame( array( 'your-email' ), $rows[0]['missing_fields'] );
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => 'your-email',
+                    'label' => 'Your email',
+                ),
+            ),
+            $rows[0]['missing_fields']
+        );
         $this->assertSame( 'saved', $rows[1]['status'] );
         $this->assertSame( array(), $rows[1]['targets'] );
-        $this->assertSame( array( 'work' ), $rows[1]['missing_fields'] );
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => 'work',
+                    'label' => '',
+                ),
+            ),
+            $rows[1]['missing_fields']
+        );
     }
 
     /**
