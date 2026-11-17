@@ -236,8 +236,10 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
      * A row is matched by its 'id' when it carries one (integrations whose
      * 'name' is a display label rather than a unique identifier add it), and by
      * its 'name' otherwise. Compound targets (FormFieldMapper::COMPOUND_TARGETS)
-     * are expanded into their Lead parameters. Unknown targets, empty values and
-     * non-scalar values for a single parameter are skipped.
+     * are expanded into their Lead parameters. A field submitted as parts and
+     * mapped to a single parameter contributes the matching part (see
+     * get_lead_param_from_parts()). Unknown targets and empty values are
+     * skipped.
      *
      * @param iterable $form_param_iterator Rows of ['name'=>, 'type'=>, 'value'=>, ...].
      * @param array    $mapping             form_field_id => lead_parameter.
@@ -259,13 +261,53 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
                 $result = array_merge( $result, $this->expand_compound_lead_param( $lead_param, $value ) );
                 continue;
             }
-            if ( ! $this->is_valid_lead_param( $lead_param )
-                || ! is_scalar( $value ) || '' === trim( (string) $value ) ) {
+            if ( ! $this->is_valid_lead_param( $lead_param ) ) {
+                continue;
+            }
+            if ( is_array( $value ) ) {
+                $value = $this->get_lead_param_from_parts( $lead_param, $value );
+            }
+            if ( ! is_scalar( $value ) || '' === trim( (string) $value ) ) {
                 continue;
             }
             $result[ $lead_param ] = $value;
         }
         return $result;
+    }
+
+    /**
+     * Reads a single Lead parameter from a field submitted as parts, so a
+     * mapping to that parameter sends what automatic detection would:
+     *
+     * - A parameter a compound target produces (first_name/last_name from a
+     *   name field, city/state/zip/country from an address field) is the part
+     *   expand_compound_lead_param() extracts for it.
+     * - Otherwise a list of choices (checkboxes, multi-selects) yields its
+     *   first non-empty choice.
+     *
+     * Any other multi-part value (e.g. an address mapped to phone) has no part
+     * for the parameter and yields ''.
+     *
+     * @param string $lead_param The Lead parameter the field is mapped to.
+     * @param array  $value      The submitted parts.
+     * @return string
+     */
+    protected function get_lead_param_from_parts( $lead_param, array $value ) {
+        foreach ( FormFieldMapper::COMPOUND_TARGETS as $compound => $params ) {
+            if ( in_array( $lead_param, $params, true ) ) {
+                $parts = $this->expand_compound_lead_param( $compound, $value );
+                return isset( $parts[ $lead_param ] ) ? $parts[ $lead_param ] : '';
+            }
+        }
+        if ( array_values( $value ) !== $value ) {
+            return '';
+        }
+        foreach ( $value as $choice ) {
+            if ( is_scalar( $choice ) && '' !== trim( (string) $choice ) ) {
+                return trim( (string) $choice );
+            }
+        }
+        return '';
     }
 
     /**

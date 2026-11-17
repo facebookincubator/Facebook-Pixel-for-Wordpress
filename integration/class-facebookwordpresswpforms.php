@@ -174,19 +174,46 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
                 if ( ! isset( $form_data['fields'][ $field_id ] ) ) {
                     continue;
                 }
+                $label       = $this->get_if_isset( $form_data['fields'][ $field_id ], 'label' );
+                $name        = empty( $label ) ? '' : strtolower( trim( $label ) );
+                $type        = $this->get_if_isset( $form_data['fields'][ $field_id ], 'type' );
+                $scheme      = $this->get_if_isset( $form_data['fields'][ $field_id ], 'scheme' );
+                $format      = $this->get_if_isset( $form_data['fields'][ $field_id ], 'format' );
+                $field_value = self::normalize_field_value( $type, $field_value, $scheme );
                 if ( empty( $field_value ) ) {
                     continue;
                 }
-                $label  = $this->get_if_isset( $form_data['fields'][ $field_id ], 'label' );
-                $name   = empty( $label ) ? '' : strtolower( trim( $label ) );
-                $type   = $this->get_if_isset( $form_data['fields'][ $field_id ], 'type' );
-                $scheme = $this->get_if_isset( $form_data['fields'][ $field_id ], 'scheme' );
-                $format = $this->get_if_isset( $form_data['fields'][ $field_id ], 'format' );
                 // The label is not unique, so the row also carries the field id the
                 // field mapping screen lists (see get_mapping_key()).
                 yield self::get_iterator_yield_output( $name, $type, $field_value, 'format', $format, 'scheme', $scheme, 'id', $field_id );
             }
         }
+    }
+
+    /**
+     * Brings a raw WPForms submission value into the shape both automatic
+     * detection and a saved mapping read, so a mapped field sends the same
+     * data as the unmapped one:
+     *
+     * - An email field with confirmation enabled submits
+     *   ['primary' => ..., 'secondary' => ...]; the primary address is used.
+     * - An address field whose scheme has no country input (e.g. 'us')
+     *   submits no country; the scheme's two-letter code is used.
+     *
+     * @param string|null $type   The WPForms field type.
+     * @param mixed       $value  The submitted value.
+     * @param string|null $scheme The address field scheme.
+     * @return mixed The normalized value.
+     */
+    private static function normalize_field_value( $type, $value, $scheme ) {
+        if ( 'email' === $type && is_array( $value ) ) {
+            return isset( $value['primary'] ) ? $value['primary'] : '';
+        }
+        if ( 'address' === $type && is_array( $value ) && empty( $value['country'] )
+            && is_string( $scheme ) && 1 === preg_match( '/^[A-Za-z]{2}$/', $scheme ) ) {
+            $value['country'] = strtoupper( $scheme );
+        }
+        return $value;
     }
 
     /**

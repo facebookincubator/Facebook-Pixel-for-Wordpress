@@ -320,7 +320,8 @@ final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * Invalid targets, empty values and non-scalar values are skipped.
+     * Invalid targets, empty values and multi-part values with no part for
+     * the target are skipped.
      *
      * @return void
      */
@@ -329,16 +330,108 @@ final class TrackableLeadFormMappingTest extends FacebookWordpressTestBase {
             array(
                 array( 'name' => 'a', 'type' => 'text', 'value' => 'x' ),
                 array( 'name' => 'b', 'type' => 'text', 'value' => '  ' ),
-                array( 'name' => 'c', 'type' => 'name', 'value' => array( 'first' => 'P' ) ),
+                array( 'name' => 'c', 'type' => 'address', 'value' => array( 'city' => 'Springfield' ) ),
+                array( 'name' => 'd', 'type' => 'name', 'value' => array( 'first' => 'P' ) ),
+                array( 'name' => 'e', 'type' => 'checkbox', 'value' => array( '', ' ' ) ),
             ),
             array(),
             array(
                 'a' => 'company',
                 'b' => 'phone',
-                'c' => 'first_name',
+                'c' => 'phone',
+                'd' => 'last_name',
+                'e' => 'gender',
             )
         );
 
+        $this->assertSame( array(), $integration->extract_lead_data( 7 ) );
+    }
+
+    /**
+     * A field submitted as parts and mapped to a single parameter sends the
+     * matching part, as automatic detection would: name parts for first and
+     * last name, address parts for city/state/zip/country (a country only
+     * when it is a two-letter code), and the first choice of a list.
+     *
+     * @return void
+     */
+    public function testPartsMappedToSingleParametersSendTheMatchingPart() {
+        $integration = $this->make_integration(
+            array(
+                array(
+                    'name'  => 'who',
+                    'type'  => 'name',
+                    'value' => array(
+                        'first'  => 'Pika',
+                        'middle' => 'P',
+                        'last'   => 'Chu',
+                    ),
+                ),
+                array(
+                    'name'  => 'who-again',
+                    'type'  => 'name',
+                    'value' => array(
+                        'first' => 'Ash',
+                        'last'  => 'Ketchum',
+                    ),
+                ),
+                array(
+                    'name'  => 'where',
+                    'type'  => 'address',
+                    'value' => array(
+                        'address1' => '1 Main St',
+                        'city'     => 'Springfield',
+                        'state'    => 'OH',
+                        'postal'   => '54321',
+                        'country'  => 'us',
+                    ),
+                ),
+                array(
+                    'name'  => 'abroad',
+                    'type'  => 'address',
+                    'value' => array(
+                        'zip'     => '10115',
+                        'country' => 'Germany',
+                    ),
+                ),
+                array(
+                    'name'  => 'pick',
+                    'type'  => 'checkbox',
+                    'value' => array( '', 'f', 'm' ),
+                ),
+            ),
+            array(),
+            array(
+                'who'       => 'first_name',
+                'who-again' => 'last_name',
+                'where'     => 'country',
+                'abroad'    => 'zip',
+                'pick'      => 'gender',
+            )
+        );
+
+        $this->assertSame(
+            array(
+                'first_name' => 'Pika',
+                'last_name'  => 'Ketchum',
+                'country'    => 'US',
+                'zip'        => '10115',
+                'gender'     => 'f',
+            ),
+            $integration->extract_lead_data( 7 )
+        );
+
+        $integration = $this->make_integration(
+            array(
+                array(
+                    'name'  => 'abroad',
+                    'type'  => 'address',
+                    'value' => array( 'country' => 'Germany' ),
+                ),
+            ),
+            array(),
+            array( 'abroad' => 'country' )
+        );
         $this->assertSame( array(), $integration->extract_lead_data( 7 ) );
     }
 
