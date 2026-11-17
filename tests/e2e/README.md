@@ -107,3 +107,16 @@ export FIELD_MAPPING_FORMS_FILE=/tmp/field-mapping-forms.json
 npm run env:seed:field-mapping   # placeholder connection, one form per plugin
 npm run test:e2e:field-mapping
 ```
+
+> **Use a disposable test site.** The seed changes the site's data:
+>
+> - It creates one form per plugin, and they are not removed.
+> - It adds a mapping for a deleted Contact Form 7 form (id 999999) to the
+>   saved mappings.
+> - When the plugin is not connected, it fills placeholder credentials into
+>   the empty connection settings. These make the site look connected (with a
+>   pixel id that is not yours) until you disconnect.
+>
+> An existing connection, either connection flow, and other saved mappings
+> are left as they are. The spec itself saves and resets mappings of the
+> forms it uses.

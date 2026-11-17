@@ -3,19 +3,24 @@
 # Seed the local WordPress install (WORDPRESS_PATH) for the Form Field Mapping
 # admin E2E spec (tests/e2e/admin/field-mapping.spec.js).
 #
-# - Marks the plugin as connected with a placeholder pixel id and token: the
-#   Form Field Mapping section only needs both to be set, and admin pages send
-#   no events, so no real Meta credentials are needed.
+# - When the plugin is not connected, marks it as connected with a placeholder
+#   pixel id and token: the Form Field Mapping section only needs both to be
+#   set, and admin pages send no events, so no real Meta credentials are
+#   needed. An existing connection (either connection flow) is left as is, and
+#   only empty settings are filled, so an existing pixel id is never replaced.
 # - Creates one form in each supported form plugin (Contact Form 7, WPForms
 #   Lite, Ninja Forms, Formidable Forms, Mailchimp for WP), plus a second
 #   Contact Form 7 form for the editor popup test.
-# - Saves a mapping for a Contact Form 7 form id that does not exist, titled
-#   like the live form, as a deleted form leaves behind.
+# - Adds a mapping for a Contact Form 7 form id that does not exist, titled
+#   like the live form, as a deleted form leaves behind. Other saved mappings
+#   are kept.
 # - Writes the forms to FIELD_MAPPING_FORMS_FILE (JSON) for the spec, with the
 #   URLs Formidable's and Mailchimp for WP's own edit-link helpers return.
 #
 # Every form plugin must be active: a missing one fails the seed, so the spec
 # never passes without checking it.
+#
+# Run it against a disposable test site: the forms it creates are not removed.
 #
 # Required env:
 #   WORDPRESS_PATH, FIELD_MAPPING_FORMS_FILE
@@ -44,12 +49,27 @@ if (\$missing) {
   exit(1);
 }
 
-// --- Connected with placeholder credentials (no events are sent from admin) ---
-update_option('facebook_business_extension_config', array(
-  'facebook_pixel_id'         => '1234567890123456',
-  'facebook_access_token'     => 'e2e-placeholder-token',
-  'facebook_is_fbe_installed' => '1',
-));
+// --- Connected with placeholder credentials (no events are sent from admin),
+// unless the site is already connected; only empty settings are filled ---
+\$options_class = '\\FacebookPixelPlugin\\Core\\FacebookWordpressOptions';
+\$connected     = class_exists(\$options_class) && '' !== (string) \$options_class::get_active_access_token();
+if (\$connected) {
+  echo "Meta connection already set: left unchanged.\n";
+} else {
+  \$config = get_option('facebook_business_extension_config', array());
+  \$config = is_array(\$config) ? \$config : array();
+  foreach (array(
+    'facebook_pixel_id'         => '1234567890123456',
+    'facebook_access_token'     => 'e2e-placeholder-token',
+    'facebook_is_fbe_installed' => '1',
+  ) as \$key => \$placeholder) {
+    if (empty(\$config[\$key])) {
+      \$config[\$key] = \$placeholder;
+    }
+  }
+  update_option('facebook_business_extension_config', \$config);
+  echo "Meta connection not set: placeholder credentials added.\n";
+}
 
 // --- Skip the form plugins' first-run welcome redirects ---
 delete_transient('wpforms_activation_redirect');
@@ -124,13 +144,15 @@ kses_remove_filters();
 ));
 
 // --- A mapping left behind by a deleted Contact Form 7 form, with the same
-// title as the live one ---
+// title as the live one, added to the saved mappings ---
 \$orphan_id = '999999';
-update_option('facebook_form_field_mappings', array(
-  'contact-form-7' => array(
-    \$orphan_id => array('form_title' => 'E2E Mapping CF7', 'mappings' => array('your-email' => 'email')),
-  ),
-), false);
+\$mappings  = get_option('facebook_form_field_mappings', array());
+\$mappings  = is_array(\$mappings) ? \$mappings : array();
+if (!isset(\$mappings['contact-form-7']) || !is_array(\$mappings['contact-form-7'])) {
+  \$mappings['contact-form-7'] = array();
+}
+\$mappings['contact-form-7'][\$orphan_id] = array('form_title' => 'E2E Mapping CF7', 'mappings' => array('your-email' => 'email'));
+update_option('facebook_form_field_mappings', \$mappings, false);
 
 \$data = array(
   'forms'  => \$forms,
