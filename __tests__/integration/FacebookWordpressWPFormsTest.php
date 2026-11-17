@@ -83,6 +83,45 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     }
 
     /**
+     * WPForms Pro is tracked like WPForms Lite, and its forms are listed on
+     * the field mapping screen.
+     *
+     * @return void
+     */
+    public function testWPFormsProIsTrackedAndListed() {
+        self::mockIsInternalUser( false );
+        $this->install_plugin_files( array( FacebookWordpressWPForms::PRO_PLUGIN_FILE ) );
+        \WP_Mock::userFunction( 'wpforms', array( 'return' => null ) );
+
+        $obj = $this->make_integration();
+        \WP_Mock::expectActionAdded(
+            'wpforms_process_before',
+            array( $obj, 'capture_submitted_form' ),
+            20,
+            2
+        );
+
+        $obj->initialize();
+
+        $this->assertHooksAdded();
+        $this->assertTrue( $obj->is_field_mapping_available() );
+    }
+
+    /**
+     * When the WPForms API is loaded but neither the Lite nor the Pro plugin
+     * file is found, tracking is not set up, so the field mapping screen does
+     * not list its forms either.
+     *
+     * @return void
+     */
+    public function testFormsAreNotListedWhenTheyAreNotTracked() {
+        $this->install_plugin_files( array() );
+        \WP_Mock::userFunction( 'wpforms', array( 'return' => null ) );
+
+        $this->assertFalse( $this->make_integration()->is_field_mapping_available() );
+    }
+
+    /**
      * Tests set_up_tracking registers the submission hook and plants the AJAX
      * listener (new equivalent of the legacy inject_pixel_code hook test).
      *

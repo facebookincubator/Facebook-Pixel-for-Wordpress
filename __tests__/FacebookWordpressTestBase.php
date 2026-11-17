@@ -91,6 +91,52 @@ abstract class FacebookWordpressTestBase extends TestCase {
     }
 
     /**
+     * Installs empty plugin main files (e.g. 'wpforms/wpforms.php') in a
+     * temporary WP_PLUGIN_DIR, so ThirdPartyIntegrationsUtil finds those
+     * plugins. Tests run in separate processes, so the directory is per test;
+     * it is removed when the process ends.
+     *
+     * @param string[] $files Plugin main files, relative to the plugins directory.
+     * @return void
+     */
+    protected function install_plugin_files( array $files ) {
+        $dir = sys_get_temp_dir() . '/fbwp-plugins-' . getmypid();
+        if ( ! defined( 'WP_PLUGIN_DIR' ) ) {
+            define( 'WP_PLUGIN_DIR', $dir );
+            register_shutdown_function(
+                function () use ( $dir ) {
+                    if ( ! is_dir( $dir ) ) {
+                        return;
+                    }
+                    $items = new \RecursiveIteratorIterator(
+                        new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ),
+                        \RecursiveIteratorIterator::CHILD_FIRST
+                    );
+                    foreach ( $items as $item ) {
+                        $item->isDir() ? rmdir( $item->getPathname() ) : unlink( $item->getPathname() );
+                    }
+                    rmdir( $dir );
+                }
+            );
+        }
+        foreach ( $files as $file ) {
+            $path = WP_PLUGIN_DIR . '/' . $file;
+            if ( ! is_dir( dirname( $path ) ) ) {
+                mkdir( dirname( $path ), 0777, true );
+            }
+            touch( $path );
+        }
+        \WP_Mock::userFunction(
+            'trailingslashit',
+            array(
+                'return' => function ( $path ) {
+                    return rtrim( $path, '/\\' ) . '/';
+                },
+            )
+        );
+    }
+
+    /**
      * Converts mapping fixtures to the FormFieldMapper::get_all() shape. For
      * brevity a fixture may give a form's included fields as 'mappings'
      * (field_id => target), plus optional 'excluded' field ids and

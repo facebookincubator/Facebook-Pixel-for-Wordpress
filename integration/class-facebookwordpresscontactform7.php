@@ -222,11 +222,11 @@ class FacebookWordpressContactForm7 extends TrackableLeadFormIntegrationBase {
     }
 
     /**
-     * Whether Contact Form 7 is loaded.
+     * Whether the Contact Form 7 API is loaded.
      *
      * @return bool
      */
-    public function is_field_mapping_available() {
+    protected function is_form_plugin_loaded() {
         return class_exists( '\WPCF7_ContactForm' );
     }
 

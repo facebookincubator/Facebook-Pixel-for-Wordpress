@@ -24,6 +24,7 @@ namespace FacebookPixelPlugin\Integration;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
+use FacebookPixelPlugin\Utils\ThirdPartyIntegrationsUtil;
 use FacebookPixelPlugin\Utils\WordPressUtils;
 use Override;
 
@@ -33,6 +34,7 @@ use Override;
 class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
 
     const PLUGIN_FILE      = 'wpforms-lite/wpforms.php';
+    const PRO_PLUGIN_FILE  = 'wpforms/wpforms.php';
     const INTEGRATION_NAME = 'wpforms-lite';
 
     const AJAX_PIXEL_CONTAINER = 'wp_form_pxl_container';
@@ -53,6 +55,18 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
         );
 
         $this->register_ajax_container( $this->get_listener_js() );
+    }
+
+    /**
+     * WPForms Lite and WPForms Pro share the same hooks and form format, so
+     * either one is tracked.
+     *
+     * @return bool
+     */
+    #[Override]
+    protected function is_integration_available() {
+        return ThirdPartyIntegrationsUtil::is_integration_available( self::PLUGIN_FILE )
+            || ThirdPartyIntegrationsUtil::is_integration_available( self::PRO_PLUGIN_FILE );
     }
 
     /**
@@ -315,11 +329,11 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
     }
 
     /**
-     * Whether WPForms (Lite or Pro) is loaded.
+     * Whether the WPForms (Lite or Pro) API is loaded.
      *
      * @return bool
      */
-    public function is_field_mapping_available() {
+    protected function is_form_plugin_loaded() {
         return function_exists( 'wpforms' );
     }
 

@@ -163,11 +163,11 @@ class FacebookWordpressMailchimpForWp extends TrackableLeadFormIntegrationBase {
     }
 
     /**
-     * Whether Mailchimp for WP is loaded.
+     * Whether the Mailchimp for WP API is loaded.
      *
      * @return bool
      */
-    public function is_field_mapping_available() {
+    protected function is_form_plugin_loaded() {
         return function_exists( 'mc4wp_get_forms' ) && function_exists( 'mc4wp_get_form' );
     }
 

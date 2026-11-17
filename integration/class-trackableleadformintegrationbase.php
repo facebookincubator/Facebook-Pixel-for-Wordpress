@@ -425,13 +425,25 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
     }
 
     /**
-     * Whether the form plugin is loaded and this integration can list its
-     * forms for the field mapping screen. Integrations that implement the
-     * discovery hooks override this with a check for the plugin's API.
+     * Whether this integration can list the plugin's forms for the field
+     * mapping screen: the plugin's API is loaded and tracking is set up for
+     * it (see TrackableIntegrationBase::initialize()). Both are required, so
+     * the screen never lists forms that send nothing, e.g. those of a plugin
+     * edition or folder the tracking check does not recognize.
      *
      * @return bool
      */
     public function is_field_mapping_available() {
+        return $this->is_form_plugin_loaded() && $this->is_integration_available();
+    }
+
+    /**
+     * Whether the form plugin's API is loaded. Integrations that implement
+     * the discovery hooks override this with a check for the plugin's API.
+     *
+     * @return bool
+     */
+    protected function is_form_plugin_loaded() {
         return false;
     }
 

@@ -39,6 +39,14 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
     const AJAX_PIXEL_CONTAINER = 'ninja_forms_pxl_container';
 
     /**
+     * Each published form's cached settings and fields, keyed by form id, or
+     * null until read (see get_form_caches()).
+     *
+     * @var array<string,array>|null
+     */
+    private $form_caches = null;
+
+    /**
      * Initialize the integration.
      *
      * @return void
@@ -254,11 +262,11 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
     }
 
     /**
-     * Whether Ninja Forms is loaded.
+     * Whether the Ninja Forms API is loaded.
      *
      * @return bool
      */
-    public function is_field_mapping_available() {
+    protected function is_form_plugin_loaded() {
         return function_exists( 'Ninja_Forms' );
     }
 
@@ -291,56 +299,123 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
     }
 
     /**
-     * Returns all Ninja Forms forms.
+     * Each published form's settings and fields as Ninja Forms caches them
+     * (the copy it renders forms from), keyed by form id, read with a single
+     * query per request. Listing forms through the Ninja Forms API instead
+     * costs several queries per form (its title, and its fields twice), which
+     * made the field mapping table slow on sites with many forms. Forms
+     * missing from the cache fall back to the API.
+     *
+     * @return array<string,array> form_id => ['settings' => [...], 'fields' => [...]].
+     */
+    private function get_form_caches() {
+        if ( null !== $this->form_caches ) {
+            return $this->form_caches;
+        }
+        $this->form_caches = array();
+        global $wpdb;
+        if ( ! isset( $wpdb ) || ! class_exists( 'WPN_Helper' ) ) {
+            return $this->form_caches;
+        }
+        // The table is missing on installs that predate it; that is not an error.
+        $suppressed = $wpdb->suppress_errors( true );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- One read of Ninja Forms' own cache table, kept for the request; no user input.
+        $rows = $wpdb->get_results( "SELECT id, cache FROM `{$wpdb->prefix}nf3_upgrades`", ARRAY_A );
+        $wpdb->suppress_errors( $suppressed );
+        foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+            $cache = \WPN_Helper::maybe_unserialize( $row['cache'] );
+            if ( is_array( $cache ) && isset( $cache['fields'] ) && is_array( $cache['fields'] ) ) {
+                $this->form_caches[ (string) $row['id'] ] = $cache;
+            }
+        }
+        return $this->form_caches;
+    }
+
+    /**
+     * Returns all Ninja Forms forms as id + title, the title from the form
+     * cache when it has the form.
      *
      * @return iterable
      */
     protected function fetch_forms() {
-        $forms = Ninja_Forms()->form()->get_forms();
-        return is_array( $forms ) ? $forms : array();
+        $forms  = Ninja_Forms()->form()->get_forms();
+        $caches = $this->get_form_caches();
+        $result = array();
+        foreach ( is_array( $forms ) ? $forms : array() as $form ) {
+            $id       = (string) $form->get_id();
+            $result[] = array(
+                'id'    => $id,
+                'title' => isset( $caches[ $id ]['settings']['title'] )
+                    ? $caches[ $id ]['settings']['title']
+                    : $form->get_setting( 'title' ),
+            );
+        }
+        return $result;
     }
 
     /**
-     * Maps a Ninja Forms form model to id + title.
+     * Forms are already id + title (see fetch_forms()).
      *
-     * @param mixed $raw_form A Ninja Forms form model.
+     * @param mixed $raw_form A form from fetch_forms().
      * @return array
      */
     protected function map_form( $raw_form ) {
-        return array(
-            'id'    => $raw_form->get_id(),
-            'title' => $raw_form->get_setting( 'title' ),
-        );
+        return $raw_form;
     }
 
     /**
-     * Returns a Ninja Forms form's field models.
+     * Returns a Ninja Forms form's fields as ['id' =>, 'settings' => [...]],
+     * from the form cache when it has the form.
      *
      * @param string $form_id The form id.
      * @return iterable
      */
     protected function fetch_form_fields( $form_id ) {
+        $caches = $this->get_form_caches();
+        if ( isset( $caches[ (string) $form_id ] ) ) {
+            return $caches[ (string) $form_id ]['fields'];
+        }
         $fields = Ninja_Forms()->form( $form_id )->get_fields();
-        return is_array( $fields ) ? $fields : array();
+        $result = array();
+        foreach ( is_array( $fields ) ? $fields : array() as $field ) {
+            $result[] = array(
+                'id'       => $field->get_id(),
+                'settings' => $field->get_settings(),
+            );
+        }
+        return $result;
     }
 
     /**
-     * Maps a Ninja Forms field model to a field. The id is the numeric field
-     * id, which get_form_param_iterator() adds to each row: unlike the field
-     * key, it does not change when the field is renamed.
+     * Reads a setting of a field from fetch_form_fields().
      *
-     * @param mixed $raw_field A Ninja Forms field model.
+     * @param array  $raw_field The field.
+     * @param string $name      The setting name.
+     * @return string
+     */
+    private static function get_field_setting( $raw_field, $name ) {
+        return isset( $raw_field['settings'][ $name ] ) && is_scalar( $raw_field['settings'][ $name ] )
+            ? (string) $raw_field['settings'][ $name ]
+            : '';
+    }
+
+    /**
+     * Maps a Ninja Forms field to a field. The id is the numeric field id,
+     * which get_form_param_iterator() adds to each row: unlike the field key,
+     * it does not change when the field is renamed.
+     *
+     * @param mixed $raw_field A field from fetch_form_fields().
      * @return array|null
      */
     protected function map_field( $raw_field ) {
-        $id   = (string) $raw_field->get_id();
-        $type = (string) $raw_field->get_setting( 'type' );
+        $id   = isset( $raw_field['id'] ) ? (string) $raw_field['id'] : '';
+        $type = self::get_field_setting( $raw_field, 'type' );
         if ( '' === $id || in_array( $type, array( 'submit', 'hr', 'html', 'recaptcha', 'spam' ), true ) ) {
             return null;
         }
         return array(
             'id'    => $id,
-            'label' => $raw_field->get_setting( 'label' ),
+            'label' => self::get_field_setting( $raw_field, 'label' ),
             'type'  => $type,
         );
     }
@@ -349,7 +424,7 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
      * Suggests a target for a Ninja Forms field from its key prefix, following
      * extract_lead_data_fallback().
      *
-     * @param mixed $raw_field A Ninja Forms field model.
+     * @param mixed $raw_field A field from fetch_form_fields().
      * @return string|null
      */
     protected function suggest_field_target( $raw_field ) {
@@ -365,7 +440,7 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
             'listcountry' => 'country',
             'gender'      => 'gender',
         );
-        $key      = (string) $raw_field->get_setting( 'key' );
+        $key      = self::get_field_setting( $raw_field, 'key' );
         foreach ( $prefixes as $prefix => $target ) {
             if ( StringUtils::starts_with( $key, $prefix ) ) {
                 return $target;

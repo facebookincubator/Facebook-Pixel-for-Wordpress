@@ -47,6 +47,16 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
      * @return \FacebookPixelPlugin\Integration\TrackableLeadFormIntegrationBase
      */
     private function make( $class, array $mappings = array() ) {
+        // The plugins are installed, so tracking is set up for them.
+        $this->install_plugin_files(
+            array(
+                FacebookWordpressContactForm7::PLUGIN_FILE,
+                FacebookWordpressWPForms::PLUGIN_FILE,
+                FacebookWordpressNinjaForms::PLUGIN_FILE,
+                FacebookWordpressFormidableForm::PLUGIN_FILE,
+                FacebookWordpressMailchimpForWp::PLUGIN_FILE,
+            )
+        );
         return new $class( $this->make_signals(), $this->make_field_mapper( $mappings ) );
     }
 
@@ -278,9 +288,13 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
             list( $id, $key, $type, $label ) = $field;
             $mock                            = \Mockery::mock();
             $mock->shouldReceive( 'get_id' )->andReturn( $id );
-            $mock->shouldReceive( 'get_setting' )->with( 'key' )->andReturn( $key );
-            $mock->shouldReceive( 'get_setting' )->with( 'type' )->andReturn( $type );
-            $mock->shouldReceive( 'get_setting' )->with( 'label' )->andReturn( $label );
+            $mock->shouldReceive( 'get_settings' )->andReturn(
+                array(
+                    'key'   => $key,
+                    'type'  => $type,
+                    'label' => $label,
+                )
+            );
             $models[] = $mock;
         }
         $form = \Mockery::mock();
@@ -365,6 +379,107 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
             array( 'email' => 'pika.chu@s2s.com' ),
             $integration->extract_lead_data( ...$this->ninja_submission( array( array( 7, 'work_address_1', 'pika.chu@s2s.com' ) ) ) )
         );
+    }
+
+    /**
+     * Ninja Forms forms are read from its form cache with one query per
+     * request: their titles, fields and suggestions come from it, and only a
+     * form missing from the cache is loaded through the Ninja Forms API.
+     *
+     * @return void
+     */
+    public function testNinjaFormsReadsTheFormCacheOnce() {
+        if ( ! defined( 'ARRAY_A' ) ) {
+            define( 'ARRAY_A', 'ARRAY_A' );
+        }
+        $cache = serialize(
+            array(
+                'settings' => array( 'title' => 'Cached form' ),
+                'fields'   => array(
+                    array(
+                        'id'       => 7,
+                        'settings' => array(
+                            'key'   => 'email_1',
+                            'type'  => 'email',
+                            'label' => 'Email',
+                        ),
+                    ),
+                ),
+            )
+        );
+        global $wpdb;
+        $wpdb         = \Mockery::mock();
+        $wpdb->prefix = 'wp_';
+        $wpdb->shouldReceive( 'suppress_errors' )->andReturn( false );
+        $wpdb->shouldReceive( 'get_results' )
+            ->once()
+            ->with( 'SELECT id, cache FROM `wp_nf3_upgrades`', ARRAY_A )
+            ->andReturn(
+                array(
+                    array(
+                        'id'    => '2',
+                        'cache' => $cache,
+                    ),
+                )
+            );
+        \Mockery::mock( 'alias:WPN_Helper' )->shouldReceive( 'maybe_unserialize' )->andReturnUsing(
+            function ( $value ) {
+                return unserialize( $value ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
+            }
+        );
+
+        $cached = \Mockery::mock();
+        $cached->shouldReceive( 'get_id' )->andReturn( 2 );
+        $cached->shouldNotReceive( 'get_setting' );
+        $uncached = \Mockery::mock();
+        $uncached->shouldReceive( 'get_id' )->andReturn( 3 );
+        $uncached->shouldReceive( 'get_setting' )->with( 'title' )->andReturn( 'Uncached form' );
+        $all_forms = \Mockery::mock();
+        $all_forms->shouldReceive( 'get_forms' )->andReturn( array( $cached, $uncached ) );
+        $field = \Mockery::mock();
+        $field->shouldReceive( 'get_id' )->andReturn( 9 );
+        $field->shouldReceive( 'get_settings' )->andReturn(
+            array(
+                'key'   => 'phone_1',
+                'type'  => 'phone',
+                'label' => 'Phone',
+            )
+        );
+        $form_three = \Mockery::mock();
+        $form_three->shouldReceive( 'get_fields' )->andReturn( array( $field ) );
+        $ninja = \Mockery::mock();
+        $ninja->shouldReceive( 'form' )->withNoArgs()->andReturn( $all_forms );
+        $ninja->shouldReceive( 'form' )->with( '3' )->andReturn( $form_three );
+        $ninja->shouldNotReceive( 'form' )->with( '2' );
+        \WP_Mock::userFunction( 'Ninja_Forms', array( 'return' => $ninja ) );
+
+        $integration = $this->make( FacebookWordpressNinjaForms::class );
+
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '2',
+                    'title' => 'Cached form',
+                ),
+                array(
+                    'id'    => '3',
+                    'title' => 'Uncached form',
+                ),
+            ),
+            $integration->get_forms()
+        );
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '7',
+                    'label' => 'Email',
+                    'type'  => 'email',
+                ),
+            ),
+            $integration->get_form_fields( '2' )
+        );
+        $this->assertSame( array( '7' => 'email' ), $integration->suggest_field_mapping( '2' ) );
+        $this->assertSame( array( '9' => 'phone' ), $integration->suggest_field_mapping( '3' ) );
     }
 
     /**

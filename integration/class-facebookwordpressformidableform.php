@@ -173,11 +173,11 @@ class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
     }
 
     /**
-     * Whether Formidable Forms is loaded.
+     * Whether the Formidable Forms API is loaded.
      *
      * @return bool
      */
-    public function is_field_mapping_available() {
+    protected function is_form_plugin_loaded() {
         return class_exists( '\FrmForm' ) && class_exists( '\FrmField' );
     }
 
