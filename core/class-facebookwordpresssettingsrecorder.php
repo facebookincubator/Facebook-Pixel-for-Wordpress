@@ -997,6 +997,7 @@ class FacebookWordpressSettingsRecorder {
         if ( ! $this->field_mapper->save_form_mapping( $integration_name, $form_id, $form_title, $decisions, $labels ) ) {
             return $this->handle_invalid_request();
         }
+        FormFieldMappingReview::invalidate();
 
         return $this->handle_success_request(
             array( 'list' => $this->get_field_mapping_overview() )
@@ -1025,6 +1026,7 @@ class FacebookWordpressSettingsRecorder {
         if ( ! $this->field_mapper->delete_form_mapping( $integration_name, $form_id ) ) {
             return $this->handle_invalid_request();
         }
+        FormFieldMappingReview::invalidate();
 
         return $this->handle_success_request(
             array( 'list' => $this->get_field_mapping_overview() )

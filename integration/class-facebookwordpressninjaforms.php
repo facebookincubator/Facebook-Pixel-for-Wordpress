@@ -263,6 +263,15 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * Ninja Forms fires these when the form builder publishes a form and when a form is deleted.
+     *
+     * @return string[]
+     */
+    public function get_form_change_hooks() {
+        return array( 'ninja_forms_save_form', 'ninja_forms_after_form_delete' );
+    }
+
+    /**
      * Human-readable integration name for the field mapping screen.
      *
      * @return string

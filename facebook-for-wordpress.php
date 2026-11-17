@@ -51,6 +51,7 @@ use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
+use FacebookPixelPlugin\Core\FormFieldMappingReview;
 use FacebookPixelPlugin\Core\ReleaseSignalsAjax;
 use FacebookPixelPlugin\Core\FacebookParamBuilder;
 use FacebookPixelPlugin\Core\FacebookTrackingFacade;
@@ -98,6 +99,12 @@ class FacebookForWordpress {
     add_action( 'init', function(...$args) use($tracking_facade) {
         $this->initialize_integrations( $tracking_facade );
     }, 0 );
+
+    // Once the integrations exist, clear the cached field mapping review
+    // whenever a form plugin changes a form.
+    add_action( 'init', function () {
+        FormFieldMappingReview::register_invalidation_hooks( array( $this, 'get_field_mapping_integrations' ) );
+    }, 1 );
 
     add_action( 'parse_request', array( $this, 'handle_events_request' ), 0 );
 

@@ -160,6 +160,8 @@ class FacebookPluginConfig {
     // Form field mapping storage and AJAX actions.
     const ADMIN_DISMISS_FIELD_MAPPING_NOTICE = 'dismiss_field_mapping_notice';
     const ADMIN_IGNORE_FIELD_MAPPING_NOTICE  = 'ignore_field_mapping_notice';
+    const FIELD_MAPPING_REVIEW_TRANSIENT     = 'facebook_field_mapping_review';
+    const FIELD_MAPPING_REVIEW_TTL           = 43200; // 12 hours.
     const FORM_FIELD_MAPPINGS_KEY            = 'facebook_form_field_mappings';
     const GET_MAPPING_FIELDS_ACTION_NAME     = 'facebook_get_mapping_fields';
     const SAVE_FIELD_MAPPING_ACTION_NAME     = 'facebook_save_field_mapping';

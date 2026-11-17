@@ -703,6 +703,9 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
       ->shouldReceive( 'get_active_access_token' )
       ->andReturn( $access_token );
     \WP_Mock::userFunction( 'get_current_user_id', array( 'return' => 1 ) );
+    // Nothing cached: the summary is computed from the forms.
+    \WP_Mock::userFunction( 'get_transient', array( 'return' => false ) );
+    \WP_Mock::userFunction( 'set_transient', array( 'return' => true ) );
     \WP_Mock::userFunction(
       'get_user_meta',
       array(
@@ -822,7 +825,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
     $this->make_field_mapping_page( true, array( 'your-email', 'your-phone' ) )->field_mapping_notice();
     $html = ob_get_clean();
 
-    $this->assertStringContainsString( 'the fields of 1 form changed since its mapping was saved', $html );
+    $this->assertStringContainsString( 'Lead form field mappings need a review (1 form changed).', $html );
     $this->assertStringContainsString( 'page=' . FacebookPluginConfig::ADMIN_MENU_SLUG . '#fb-field-mapping', $html );
     $this->assertStringContainsString(
       FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE . '=' . md5( 'new:contact-form-7/1/your-phone' )

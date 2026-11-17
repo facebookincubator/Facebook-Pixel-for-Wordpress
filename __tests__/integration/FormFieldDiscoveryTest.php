@@ -91,6 +91,8 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
             $this->assertSame( array(), $integration->get_forms(), $class );
             $this->assertSame( array(), $integration->get_form_fields( '1' ), $class );
             $this->assertSame( array(), $integration->suggest_field_mapping( '1' ), $class );
+            // Each declares the hooks its plugin fires when a form changes.
+            $this->assertNotEmpty( $integration->get_form_change_hooks(), $class );
         }
     }
 

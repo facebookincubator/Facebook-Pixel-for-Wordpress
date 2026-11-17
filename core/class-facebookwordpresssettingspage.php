@@ -58,6 +58,13 @@ class FacebookWordpressSettingsPage {
     private $field_mapper;
 
     /**
+     * The cached review summary for the form field mapping notice.
+     *
+     * @var FormFieldMappingReview
+     */
+    private $field_mapping_review;
+
+    /**
      * Registers the plugin's settings page, and adds the necessary hooks
      * for registering the plugin's scripts, notices, and menu items.
      *
@@ -79,6 +86,10 @@ class FacebookWordpressSettingsPage {
         $this->field_mapper               = $field_mapper instanceof FormFieldMapper
             ? $field_mapper
             : new FormFieldMapper();
+        $this->field_mapping_review       = new FormFieldMappingReview(
+            $this->field_mapping_integrations,
+            $this->field_mapper
+        );
 
         add_filter(
             'plugin_action_links_' . $plugin_name,
@@ -1163,8 +1174,9 @@ class FacebookWordpressSettingsPage {
      * What the form field mapping notice reports for the current user, or
      * null when it should not be shown: the plugin is not connected (the
      * mapping section is hidden then), nothing needs a review, or the user
-     * dismissed the notice for exactly these items. See
-     * FormFieldMappingOverview::summarize_review().
+     * dismissed the notice for exactly these items. The summary is cached
+     * (see FormFieldMappingReview), so admin pages do not list every form on
+     * each load.
      *
      * @return array{unreviewed: int, changed: int, signature: string}|null
      */
@@ -1172,12 +1184,7 @@ class FacebookWordpressSettingsPage {
         if ( empty( FacebookWordpressOptions::get_active_access_token() ) ) {
             return null;
         }
-        $summary = FormFieldMappingOverview::summarize_review(
-            FormFieldMappingOverview::build(
-                call_user_func( $this->field_mapping_integrations ),
-                $this->field_mapper
-            )
-        );
+        $summary = $this->field_mapping_review->get_summary();
         if ( '' === $summary['signature'] ) {
             return null;
         }
@@ -1201,28 +1208,20 @@ class FacebookWordpressSettingsPage {
         if ( null === $summary ) {
             return;
         }
+        // Counts only, so the notice stays one short line however many
+        // forms there are; the field mapping section has the details.
         $parts = array();
         if ( $summary['unreviewed'] > 0 ) {
             $parts[] = sprintf(
                 /* translators: %d: number of forms */
-                _n(
-                    '%d form has not been reviewed yet',
-                    '%d forms have not been reviewed yet',
-                    $summary['unreviewed'],
-                    'official-facebook-pixel'
-                ),
+                _n( '%d form not reviewed', '%d forms not reviewed', $summary['unreviewed'], 'official-facebook-pixel' ),
                 $summary['unreviewed']
             );
         }
         if ( $summary['changed'] > 0 ) {
             $parts[] = sprintf(
                 /* translators: %d: number of forms */
-                _n(
-                    'the fields of %d form changed since its mapping was saved',
-                    'the fields of %d forms changed since their mappings were saved',
-                    $summary['changed'],
-                    'official-facebook-pixel'
-                ),
+                _n( '%d form changed', '%d forms changed', $summary['changed'], 'official-facebook-pixel' ),
                 $summary['changed']
             );
         }
@@ -1239,27 +1238,25 @@ class FacebookWordpressSettingsPage {
         );
         ?>
         <div class="notice notice-warning">
-            <p><strong>Meta Pixel for WordPress</strong></p>
             <p>
+                <strong>Meta Pixel for WordPress:</strong>
                 <?php
                 echo esc_html(
                     sprintf(
-                        /* translators: %s: what changed, e.g. "2 forms have not been reviewed yet" */
-                        __( 'Form field mappings need a review: %s. Until they are reviewed, Lead events may not send the customer information you expect.', 'official-facebook-pixel' ),
-                        implode( '; ', $parts )
+                        /* translators: %s: what needs a review, e.g. "2 forms not reviewed, 1 form changed" */
+                        __( 'Lead form field mappings need a review (%s).', 'official-facebook-pixel' ),
+                        implode( ', ', $parts )
                     )
                 );
                 ?>
-            </p>
-            <p>
-                <a href="<?php echo esc_url( $review_url ); ?>"
-                   class="button button-primary"
-                   style="margin-right: 8px;"><?php esc_html_e( 'Review form field mappings', 'official-facebook-pixel' ); ?></a>
+                <a href="<?php echo esc_url( $review_url ); ?>"><?php esc_html_e( 'Review', 'official-facebook-pixel' ); ?></a>
+                |
                 <a href="<?php echo esc_url( $dismiss_url ); ?>"><?php esc_html_e( 'Dismiss', 'official-facebook-pixel' ); ?></a>
             </p>
         </div>
         <?php
     }
+
 
     /**
      * Displays a notice when the Meta connection is invalid.

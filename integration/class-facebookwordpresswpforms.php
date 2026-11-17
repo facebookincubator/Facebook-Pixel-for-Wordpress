@@ -324,6 +324,15 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * WPForms stores forms as wpforms posts.
+     *
+     * @return string[]
+     */
+    public function get_form_change_hooks() {
+        return array( 'save_post_wpforms' );
+    }
+
+    /**
      * Human-readable integration name for the field mapping screen.
      *
      * @return string

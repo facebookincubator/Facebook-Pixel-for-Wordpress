@@ -182,6 +182,23 @@ class FacebookWordpressFormidableForm extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * Formidable fires these when a form is updated, duplicated, imported or deleted, and when a field is created, duplicated or deleted.
+     *
+     * @return string[]
+     */
+    public function get_form_change_hooks() {
+        return array(
+            'frm_update_form',
+            'frm_after_duplicate_form',
+            'frm_after_import_form',
+            'frm_destroy_form',
+            'frm_after_field_created',
+            'frm_after_duplicate_field',
+            'frm_before_destroy_field',
+        );
+    }
+
+    /**
      * Human-readable integration name for the field mapping screen.
      *
      * @return string

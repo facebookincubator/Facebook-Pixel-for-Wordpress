@@ -42,6 +42,13 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     private $store;
 
     /**
+     * How many times the cached field mapping review was cleared.
+     *
+     * @var int
+     */
+    private $invalidations = 0;
+
+    /**
      * Mocks the WordPress functions the endpoints call.
      *
      * @param bool $can_manage Whether the user may manage options.
@@ -51,6 +58,18 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         \WP_Mock::userFunction( 'current_user_can', array( 'return' => $can_manage ) );
         \WP_Mock::userFunction( 'check_admin_referer', array( 'return' => true ) );
         \WP_Mock::userFunction( 'wp_send_json', array( 'return' => null ) );
+        $this->invalidations = 0;
+        \WP_Mock::userFunction(
+            'delete_transient',
+            array(
+                'return' => function ( $key ) {
+                    if ( FacebookPluginConfig::FIELD_MAPPING_REVIEW_TRANSIENT === $key ) {
+                        ++$this->invalidations;
+                    }
+                    return true;
+                },
+            )
+        );
         \WP_Mock::userFunction(
             'sanitize_text_field',
             array(
@@ -298,6 +317,8 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             ),
             $this->store->data
         );
+        // The cached review is cleared, so the admin notice is recomputed.
+        $this->assertSame( 1, $this->invalidations );
         // The refreshed table lists the form as saved.
         $this->assertSame( 'Contact', $response['msg']['list'][0]['form_title'] );
         $this->assertSame( 'saved', $response['msg']['list'][0]['status'] );
@@ -374,6 +395,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         }
         $this->assertSame( 0, $this->store->writes );
         $this->assertSame( $before, $this->store->data );
+        $this->assertSame( 0, $this->invalidations );
     }
 
     /**
@@ -475,6 +497,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $response = $recorder->delete_field_mapping();
 
         $this->assertTrue( $response['success'] );
+        $this->assertSame( 1, $this->invalidations );
         $this->assertSame( array( 'test-forms' ), array_keys( $this->store->data ) );
         $this->assertSame( array( 'test-forms' ), array_column( $response['msg']['list'], 'integration_name' ) );
         $this->assertSame( array( 'saved' ), array_column( $response['msg']['list'], 'status' ) );

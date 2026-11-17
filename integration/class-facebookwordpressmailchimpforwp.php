@@ -172,6 +172,15 @@ class FacebookWordpressMailchimpForWp extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * Mailchimp for WP stores forms as mc4wp-form posts.
+     *
+     * @return string[]
+     */
+    public function get_form_change_hooks() {
+        return array( 'save_post_mc4wp-form' );
+    }
+
+    /**
      * Human-readable integration name for the field mapping screen.
      *
      * @return string

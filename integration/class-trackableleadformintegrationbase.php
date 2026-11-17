@@ -436,6 +436,18 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
     }
 
     /**
+     * The hooks the form plugin fires when it saves or deletes a form or one
+     * of its fields, so the cached field mapping review can be cleared (see
+     * FormFieldMappingReview). Integrations that support field mapping
+     * override this.
+     *
+     * @return string[]
+     */
+    public function get_form_change_hooks() {
+        return array();
+    }
+
+    /**
      * Human-readable integration name for the field mapping screen.
      *
      * @return string
