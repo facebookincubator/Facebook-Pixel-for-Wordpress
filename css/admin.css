@@ -1208,6 +1208,19 @@
     font-weight: 600;
 }
 
+/* A saved mapping with fields the form no longer has. */
+.fb-mapping-needs-review {
+    display: block;
+    color: #996800;
+    font-weight: 600;
+}
+
+#fb-mapping-editor .fb-capi-desc.fb-mapping-warning {
+    padding: 8px 12px;
+    border-left: 4px solid #dba617;
+    background: #fcf9e8;
+}
+
 /* The editor is a native <dialog> opened with showModal(): the browser
    centres it, dims the page behind it and closes it on Escape. */
 #fb-mapping-editor {

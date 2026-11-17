@@ -58,8 +58,10 @@ class FormFieldMappingOverview {
      * Each row: integration_name, integration_label, form_id, form_title,
      * status (a STATUS_* value), targets (the targets the form sends, in field
      * order), active (the plugin is active), missing (the plugin is active
-     * but the form is gone) and edit_url (the form plugin's editor for the
-     * form; '' for a form that is not listed by an active plugin).
+     * but the form is gone), missing_fields (ids of mapped fields the form
+     * no longer has, e.g. deleted or renamed; nothing is sent for them) and
+     * edit_url (the form plugin's editor for the form; '' for a form that is
+     * not listed by an active plugin).
      *
      * @param array           $integrations Supported lead-form integrations keyed by
      *                                      INTEGRATION_NAME.
@@ -79,6 +81,14 @@ class FormFieldMappingOverview {
                     ? $mapper->get_mappings( $name, $form['id'] )
                     : $integration->suggest_field_mapping( $form['id'] );
                 $row     = self::row( $name, $integration->get_integration_label(), $form['id'], $form['title'], $saved, $mapping, true, false );
+
+                // Mapped fields the form no longer has send nothing: list only
+                // the targets still sent, and flag the form for review.
+                $gone = $saved ? $integration->get_missing_mapped_fields( $form['id'], $mapping ) : array();
+                if ( ! empty( $gone ) ) {
+                    $row['targets']        = self::targets( array_diff_key( $mapping, $gone ) );
+                    $row['missing_fields'] = array_map( 'strval', array_keys( $gone ) );
+                }
 
                 $row['edit_url'] = (string) $integration->get_form_edit_url( $form['id'] );
                 $rows[]          = $row;
@@ -139,10 +149,21 @@ class FormFieldMappingOverview {
             'form_id'           => (string) $form_id,
             'form_title'        => $title,
             'status'            => $status,
-            'targets'           => array_values( array_unique( array_values( $mapping ) ) ),
+            'targets'           => self::targets( $mapping ),
             'active'            => $active,
             'missing'           => $missing,
+            'missing_fields'    => array(),
             'edit_url'          => '',
         );
+    }
+
+    /**
+     * The distinct targets of a mapping, in field order.
+     *
+     * @param array $mapping field_id => target.
+     * @return string[]
+     */
+    private static function targets( array $mapping ) {
+        return array_values( array_unique( array_values( $mapping ) ) );
     }
 }

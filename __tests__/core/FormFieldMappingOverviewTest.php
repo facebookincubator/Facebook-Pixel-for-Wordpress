@@ -38,9 +38,10 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
      * @param bool   $active    Whether its plugin is active.
      * @param array  $forms     Forms it lists.
      * @param array  $suggested form_id => suggested mapping.
+     * @param array  $gone      form_id => mapped field ids the form no longer has.
      * @return TrackableLeadFormIntegrationBase
      */
-    private function integration( $label, $active, array $forms = array(), array $suggested = array() ) {
+    private function integration( $label, $active, array $forms = array(), array $suggested = array(), array $gone = array() ) {
         $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class );
         $integration->shouldReceive( 'get_integration_label' )->andReturn( $label );
         $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $active );
@@ -48,6 +49,12 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
         $integration->shouldReceive( 'get_form_edit_url' )->andReturnUsing(
             function ( $form_id ) use ( $label ) {
                 return 'https://example.com/edit/' . rawurlencode( $label ) . '/' . $form_id;
+            }
+        );
+        $integration->shouldReceive( 'get_missing_mapped_fields' )->andReturnUsing(
+            function ( $form_id, $mapping ) use ( $gone ) {
+                $ids = isset( $gone[ $form_id ] ) ? $gone[ $form_id ] : array();
+                return array_intersect_key( $mapping, array_flip( $ids ) );
             }
         );
         foreach ( $suggested as $form_id => $mapping ) {
@@ -148,6 +155,64 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
             $summary
         );
         $this->assertSame( 'Deleted form', $rows[3]['form_title'] );
+    }
+
+    /**
+     * Mapped fields a form no longer has (deleted, or renamed in a plugin
+     * that identifies fields by name) send nothing: the row lists only the
+     * targets still sent and names the missing fields. A saved mapping whose
+     * fields are all gone stays saved, not rejected.
+     *
+     * @return void
+     */
+    public function testMissingMappedFieldsAreFlagged() {
+        $integrations = array(
+            'contact-form-7' => $this->integration(
+                'Contact Form 7',
+                true,
+                array(
+                    array(
+                        'id'    => '1',
+                        'title' => 'Contact',
+                    ),
+                    array(
+                        'id'    => '2',
+                        'title' => 'Quote',
+                    ),
+                ),
+                array(),
+                array(
+                    '1' => array( 'your-email' ),
+                    '2' => array( 'work' ),
+                )
+            ),
+        );
+        $mapper       = $this->make_field_mapper(
+            array(
+                'contact-form-7' => array(
+                    '1' => array(
+                        'form_title' => 'Contact',
+                        'mappings'   => array(
+                            'your-name'  => 'full_name',
+                            'your-email' => 'email',
+                        ),
+                    ),
+                    '2' => array(
+                        'form_title' => 'Quote',
+                        'mappings'   => array( 'work' => 'email' ),
+                    ),
+                ),
+            )
+        );
+
+        $rows = FormFieldMappingOverview::build( $integrations, $mapper );
+
+        $this->assertSame( 'saved', $rows[0]['status'] );
+        $this->assertSame( array( 'full_name' ), $rows[0]['targets'] );
+        $this->assertSame( array( 'your-email' ), $rows[0]['missing_fields'] );
+        $this->assertSame( 'saved', $rows[1]['status'] );
+        $this->assertSame( array(), $rows[1]['targets'] );
+        $this->assertSame( array( 'work' ), $rows[1]['missing_fields'] );
     }
 
     /**

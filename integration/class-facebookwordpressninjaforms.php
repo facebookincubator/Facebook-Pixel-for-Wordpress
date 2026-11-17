@@ -184,7 +184,7 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
      * Yields the submitted form parameters as normalized rows.
      *
      * @param mixed ...$args The Ninja Forms submit-hook arguments.
-     * @return \Generator Rows of ['name'=>, 'value'=>].
+     * @return \Generator Rows of ['name'=>, 'value'=>, 'id'=>].
      */
     protected function get_form_param_iterator( ...$args ) {
         $form_data = $args[2];
@@ -193,7 +193,11 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
         } else {
             foreach ( $form_data['fields'] as $field ) {
                 if ( isset( $field['key'] ) && isset( $field['value'] ) ) {
-                    yield self::get_iterator_yield_output( $field['key'], '', $field['value'] );
+                    // The key is regenerated from the label when a field is
+                    // renamed, so the row also carries the numeric field id the
+                    // field mapping screen lists (see get_mapping_key()).
+                    $id = isset( $field['id'] ) ? $field['id'] : '';
+                    yield self::get_iterator_yield_output( $field['key'], '', $field['value'], 'id', $id );
                 }
             }
         }
@@ -312,20 +316,21 @@ class FacebookWordpressNinjaForms extends TrackableLeadFormIntegrationBase {
     }
 
     /**
-     * Maps a Ninja Forms field model to a field. The id is the field key,
-     * which get_form_param_iterator() yields as the row name.
+     * Maps a Ninja Forms field model to a field. The id is the numeric field
+     * id, which get_form_param_iterator() adds to each row: unlike the field
+     * key, it does not change when the field is renamed.
      *
      * @param mixed $raw_field A Ninja Forms field model.
      * @return array|null
      */
     protected function map_field( $raw_field ) {
-        $key  = (string) $raw_field->get_setting( 'key' );
+        $id   = (string) $raw_field->get_id();
         $type = (string) $raw_field->get_setting( 'type' );
-        if ( '' === $key || in_array( $type, array( 'submit', 'hr', 'html', 'recaptcha', 'spam' ), true ) ) {
+        if ( '' === $id || in_array( $type, array( 'submit', 'hr', 'html', 'recaptcha', 'spam' ), true ) ) {
             return null;
         }
         return array(
-            'id'    => $key,
+            'id'    => $id,
             'label' => $raw_field->get_setting( 'label' ),
             'type'  => $type,
         );

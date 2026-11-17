@@ -24,7 +24,6 @@ namespace FacebookPixelPlugin\Integration;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Utils\StringUtils;
 use FacebookPixelPlugin\Utils\WordPressUtils;
 use Override;
 
@@ -243,18 +242,13 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
             $name   = $param['name'];
             $type   = $param['type'];
             $value  = $param['value'];
-            $format = $param['format'];
             $scheme = $param['scheme'];
 
             if ( 'name' === $type ) {
-                if ( 'simple' === $format ) {
-                    $temp                 = StringUtils::split_name( $value );
-                    $result['first_name'] = $temp[0];
-                    $result['last_name']  = $temp[1];
-                } elseif ( 'first-last' === $format ) {
-                    $result['first_name'] = $value['first'];
-                    $result['last_name']  = $value['last'];
-                }
+                // Every name format (simple, first-last, first-middle-last) is
+                // split as a full_name mapping splits it, so the mapping screen's
+                // suggestion matches what is sent.
+                $result = array_merge( $result, $this->expand_compound_lead_param( 'full_name', $value ) );
             } elseif ( 'email' === $type ) {
                 $result['email'] = $value;
             } elseif ( 'phone' === $type ) {

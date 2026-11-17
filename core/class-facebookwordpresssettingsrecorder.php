@@ -189,6 +189,22 @@ class FacebookWordpressSettingsRecorder {
     }
 
     /**
+     * Answers a field mapping save whose mapped fields are no longer all in
+     * the form (it changed while the editor was open) with a 409 response the
+     * editor recognizes by its code, so it can reload the form's fields.
+     *
+     * @return array response data
+     */
+    private function handle_form_changed_request() {
+        $res = array(
+            'success' => false,
+            'msg'     => array( 'code' => 'form_changed' ),
+        );
+        wp_send_json( $res, 409 );
+        return $res;
+    }
+
+    /**
      * Handles saving Facebook Business Extension settings.
      *
      * This function handles saving the Facebook Business Extension settings,
@@ -887,14 +903,26 @@ class FacebookWordpressSettingsRecorder {
 
         // Without a saved mapping the form still uses automatic detection;
         // offer what it sends so the admin can review it, then save or reject.
-        $saved = $this->field_mapper->has_form_mapping( $integration_name, $form_id );
+        $saved   = $this->field_mapper->has_form_mapping( $integration_name, $form_id );
+        $mapping = $this->field_mapper->get_mappings( $integration_name, $form_id );
+
+        // Mapped fields the form no longer has (deleted or renamed) send
+        // nothing; the editor lists them so they can be mapped again.
+        $missing_fields = array();
+        foreach ( $integration->get_missing_mapped_fields( $form_id, $mapping ) as $field_id => $target ) {
+            $missing_fields[] = array(
+                'id'     => (string) $field_id,
+                'target' => $target,
+            );
+        }
 
         return $this->handle_success_request(
             array(
-                'fields'    => $integration->get_form_fields( $form_id ),
-                'saved'     => $saved,
-                'mapping'   => $this->field_mapper->get_mappings( $integration_name, $form_id ),
-                'suggested' => $saved ? array() : $integration->suggest_field_mapping( $form_id ),
+                'fields'         => $integration->get_form_fields( $form_id ),
+                'saved'          => $saved,
+                'mapping'        => $mapping,
+                'suggested'      => $saved ? array() : $integration->suggest_field_mapping( $form_id ),
+                'missing_fields' => $missing_fields,
             )
         );
     }
@@ -903,9 +931,13 @@ class FacebookWordpressSettingsRecorder {
      * Saves a form's field mapping, replacing the previous one.
      *
      * Expects POST integration, form_id and mapping (a JSON object of
-     * field_id => target). Only fields the form has are kept, and
-     * FormFieldMapper drops invalid targets. The form title shown in the
-     * overview is read from the form plugin.
+     * field_id => target). An empty mapping rejects the form (the editor
+     * confirms that first). Nothing is saved when a target is invalid, or
+     * when a mapped field is no longer in the form because the form changed
+     * while the editor was open: dropping it could leave an empty mapping
+     * that silently rejects the form, so the editor is told to reload the
+     * fields instead. The form title shown in the overview is read from the
+     * form plugin.
      *
      * @return array response data
      */
@@ -935,14 +967,23 @@ class FacebookWordpressSettingsRecorder {
             return $this->handle_invalid_request();
         }
 
-        $field_ids = array_column( $integration->get_form_fields( $form_id ), 'id' );
-        $mapping   = array();
+        $field_ids    = array_column( $integration->get_form_fields( $form_id ), 'id' );
+        $mapping      = array();
+        $form_changed = false;
         foreach ( $raw_mapping as $field_id => $target ) {
             $field_id = sanitize_text_field( (string) $field_id );
-            if ( ! is_string( $target ) || ! in_array( $field_id, $field_ids, true ) ) {
+            $target   = is_string( $target ) ? sanitize_text_field( $target ) : '';
+            if ( ! FormFieldMapper::is_valid_target( $target ) ) {
+                return $this->handle_invalid_request();
+            }
+            if ( ! in_array( $field_id, $field_ids, true ) ) {
+                $form_changed = true;
                 continue;
             }
-            $mapping[ $field_id ] = sanitize_text_field( $target );
+            $mapping[ $field_id ] = $target;
+        }
+        if ( $form_changed ) {
+            return $this->handle_form_changed_request();
         }
 
         if ( ! $this->field_mapper->save_form_mapping( $integration_name, $form_id, $form_title, $mapping ) ) {

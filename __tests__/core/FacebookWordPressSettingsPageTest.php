@@ -600,6 +600,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
   private function make_field_mapping_page( $with_integration = true ) {
     $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class );
     $integration->shouldReceive( 'get_integration_label' )->andReturn( 'Contact Form 7' );
+    $integration->shouldReceive( 'get_missing_mapped_fields' )->andReturn( array() );
     $integration->shouldReceive( 'get_form_edit_url' )->with( '1' )->andReturn( 'https://example.com/wp-admin/admin.php?page=wpcf7&post=1&action=edit' );
     $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $with_integration );
     $integration->shouldReceive( 'get_forms' )->andReturn(
@@ -651,6 +652,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
 
     $this->assertStringContainsString( 'action=facebook_save_field_mapping', $params['saveUrl'] );
     $this->assertStringContainsString( '_wpnonce=test_nonce', $params['saveUrl'] );
+    $this->assertSame( FacebookPluginConfig::FIELD_MAPPING_FORM_CHANGED_ERROR, $params['formChanged'] );
 
     $targets = array_column( $params['targets'], 'value' );
     $this->assertSame( array( 'email', 'phone', 'full_name' ), array_slice( $targets, 0, 3 ) );
@@ -666,6 +668,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
         'targets'           => array( 'email' ),
         'active'            => true,
         'missing'           => false,
+        'missing_fields'    => array(),
         'edit_url'          => 'https://example.com/wp-admin/admin.php?page=wpcf7&post=1&action=edit',
       ),
       $params['list'][0]
@@ -700,6 +703,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
     $this->assertMatchesRegularExpression( '/Contact Form 7\s*<span class="fb-mapping-plugin-status fb-mapping-plugin-status--active">\s*Active/', $section );
     $this->assertStringContainsString( 'id="fb-mapping-list"', $section );
     $this->assertStringContainsString( 'id="fb-mapping-editor"', $section );
+    $this->assertStringContainsString( 'id="fb-mapping-missing"', $section );
     $this->assertStringNotContainsString( 'id="fb-mapping-integration"', $section );
     $this->assertStringNotContainsString( 'fb-mapping-empty', $section );
 

@@ -1407,6 +1407,7 @@ class FacebookWordpressSettingsPage {
             'loadError'    => FacebookPluginConfig::FIELD_MAPPING_LOAD_ERROR,
             'saveError'    => FacebookPluginConfig::FIELD_MAPPING_SAVE_ERROR,
             'deleteError'  => FacebookPluginConfig::FIELD_MAPPING_DELETE_ERROR,
+            'formChanged'  => FacebookPluginConfig::FIELD_MAPPING_FORM_CHANGED_ERROR,
         );
     }
 
@@ -1472,6 +1473,13 @@ class FacebookWordpressSettingsPage {
             until you save or reject this mapping. Set a field to "Do not map"
             to stop sending it, or reject the mapping to stop sending Lead
             events from this form.
+        </p>
+        <p id="fb-mapping-missing" class="fb-capi-desc fb-mapping-warning hidden">
+            <strong>Some mapped fields are no longer in this form</strong>, so
+            nothing is sent for them:
+            <span id="fb-mapping-missing-list"></span>.
+            If a field was renamed, choose how to send it below and save.
+            Saving removes the missing fields from the mapping.
         </p>
         <table id="fb-mapping-fields" class="widefat fb-mapping-fields hidden">
             <thead>

@@ -514,19 +514,25 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
     /**
      * Proposes a mapping for a form from the same signals automatic detection
      * uses, so the field mapping screen can pre-fill it for review instead of
-     * leaving every field unmapped. Each target is proposed for at most one
-     * field, and full_name is not combined with first_name/last_name.
+     * leaving every field unmapped.
+     *
+     * Automatic detection reads the fields in form order and a later field
+     * overwrites the Lead parameters an earlier one set, so when several
+     * fields qualify for a parameter (e.g. two email fields) the last one is
+     * sent. The suggestion follows the same rule: a field is proposed only
+     * if it supplies at least one Lead parameter no later field supplies.
+     * Saving the suggestion therefore sends what automatic detection sends
+     * (apply_field_mapping() also lets a later field win).
      *
      * @param string $form_id The native form id.
-     * @return array<string,string> field_id => target.
+     * @return array<string,string> field_id => target, in form order.
      */
     public function suggest_field_mapping( $form_id ) {
         if ( ! $this->is_field_mapping_available() ) {
             return array();
         }
 
-        $suggested = array();
-        $taken     = array();
+        $candidates = array();
         foreach ( $this->fetch_form_fields( $form_id ) as $raw_field ) {
             $field = $this->map_field( $raw_field );
             if ( null === $field || ! isset( $field['id'] ) || '' === (string) $field['id'] ) {
@@ -536,16 +542,59 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
             if ( null === $target || ! FormFieldMapper::is_valid_target( $target ) ) {
                 continue;
             }
-            $produces = isset( FormFieldMapper::COMPOUND_TARGETS[ $target ] )
+            $candidates[] = array( (string) $field['id'], $target );
+        }
+
+        $suggested = array();
+        $taken     = array();
+        foreach ( array_reverse( $candidates ) as $candidate ) {
+            list( $field_id, $target ) = $candidate;
+            $produces                  = isset( FormFieldMapper::COMPOUND_TARGETS[ $target ] )
                 ? FormFieldMapper::COMPOUND_TARGETS[ $target ]
                 : array( $target );
-            if ( array_intersect( $produces, $taken ) || isset( $suggested[ (string) $field['id'] ] ) ) {
+            if ( isset( $suggested[ $field_id ] ) || ! array_diff( $produces, $taken ) ) {
                 continue;
             }
-            $suggested[ (string) $field['id'] ] = $target;
-            $taken                              = array_merge( $taken, $produces );
+            $suggested[ $field_id ] = $target;
+            $taken                  = array_merge( $taken, $produces );
         }
-        return $suggested;
+
+        // In form order, as get_form_fields() lists them (a field listed more
+        // than once, e.g. one input per address part, by its first place).
+        $ordered = array();
+        foreach ( $candidates as $candidate ) {
+            if ( isset( $suggested[ $candidate[0] ] ) && ! isset( $ordered[ $candidate[0] ] ) ) {
+                $ordered[ $candidate[0] ] = $suggested[ $candidate[0] ];
+            }
+        }
+        return $ordered;
+    }
+
+    /**
+     * The entries of a saved mapping whose field the form no longer has, e.g.
+     * because the field was deleted, or renamed in a form plugin that
+     * identifies fields by name (Contact Form 7, Mailchimp for WP). Nothing
+     * is sent for them, so the field mapping screen asks for a review.
+     *
+     * @param string               $form_id The native form id.
+     * @param array<string,string> $mapping The saved mapping (field_id => target).
+     * @return array<string,string> field_id => target.
+     */
+    public function get_missing_mapped_fields( $form_id, array $mapping ) {
+        if ( empty( $mapping ) || ! $this->is_field_mapping_available() ) {
+            return array();
+        }
+        $present = array();
+        foreach ( $this->get_form_fields( $form_id ) as $field ) {
+            $present[ $field['id'] ] = true;
+        }
+        $missing = array();
+        foreach ( $mapping as $field_id => $target ) {
+            if ( ! isset( $present[ (string) $field_id ] ) ) {
+                $missing[ (string) $field_id ] = $target;
+            }
+        }
+        return $missing;
     }
 
     /**

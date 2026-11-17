@@ -70,7 +70,8 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
      * @return FacebookWordpressSettingsRecorder
      */
     private function make_recorder( array $saved = array(), $active = true ) {
-        $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class );
+        // Partial, so get_missing_mapped_fields() runs on the fields below.
+        $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class )->makePartial();
         $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $active );
         $integration->shouldReceive( 'get_integration_label' )->andReturn( 'Test Forms' );
         $integration->shouldReceive( 'get_form_edit_url' )->andReturn( 'https://example.com/wp-admin/admin.php?page=test-forms&form=5' );
@@ -190,6 +191,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $this->assertTrue( $response['msg']['saved'] );
         $this->assertSame( array( 'name' => 'full_name' ), $response['msg']['mapping'] );
         $this->assertSame( array(), $response['msg']['suggested'] );
+        $this->assertSame( array(), $response['msg']['missing_fields'] );
     }
 
     /**
@@ -241,8 +243,8 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * Saving keeps only the form's own fields and valid targets, takes the
-     * title from the form plugin, and returns the refreshed list.
+     * Saving stores the mapping with the title from the form plugin and
+     * returns the refreshed list.
      *
      * @return void
      */
@@ -255,9 +257,8 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             'form_title'  => 'Ignored',
             'mapping'     => json_encode(
                 array(
-                    'email'   => 'email',
-                    'name'    => 'nickname',
-                    'unknown' => 'phone',
+                    'email' => 'email',
+                    'name'  => 'full_name',
                 )
             ),
         );
@@ -270,7 +271,10 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
                 'test-forms' => array(
                     '5' => array(
                         'form_title' => 'Contact',
-                        'mappings'   => array( 'email' => 'email' ),
+                        'mappings'   => array(
+                            'email' => 'email',
+                            'name'  => 'full_name',
+                        ),
                     ),
                 ),
             ),
@@ -279,7 +283,107 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         // The refreshed table lists the form as saved.
         $this->assertSame( 'Contact', $response['msg']['list'][0]['form_title'] );
         $this->assertSame( 'saved', $response['msg']['list'][0]['status'] );
-        $this->assertSame( array( 'email' ), $response['msg']['list'][0]['targets'] );
+        $this->assertSame( array( 'email', 'full_name' ), $response['msg']['list'][0]['targets'] );
+    }
+
+    /**
+     * A mapping with an invalid target is refused without saving.
+     *
+     * @return void
+     */
+    public function testSaveRefusesAnInvalidTarget() {
+        $this->mock_wp();
+        $recorder = $this->make_recorder();
+        $_POST    = array(
+            'integration' => 'test-forms',
+            'form_id'     => '5',
+            'mapping'     => json_encode(
+                array(
+                    'email' => 'email',
+                    'name'  => 'nickname',
+                )
+            ),
+        );
+
+        $response = $recorder->save_field_mapping();
+
+        $this->assertFalse( $response['success'] );
+        $this->assertSame( 'Invalid values', $response['msg'] );
+        $this->assertSame( 0, $this->store->writes );
+    }
+
+    /**
+     * When a mapped field is no longer in the form (it changed while the
+     * editor was open), nothing is saved and the editor is told so. In
+     * particular a mapping whose fields are all gone is not stored as an
+     * empty mapping, which would silently reject the form.
+     *
+     * @return void
+     */
+    public function testSaveRefusesFieldsTheFormNoLongerHas() {
+        $this->mock_wp();
+        $recorder = $this->make_recorder(
+            array( 'test-forms' => array( '5' => array( 'mappings' => array( 'email' => 'email' ) ) ) )
+        );
+
+        foreach ( array(
+            array( 'your-email' => 'email' ),
+            array(
+                'email'   => 'email',
+                'unknown' => 'phone',
+            ),
+        ) as $mapping ) {
+            $_POST = array(
+                'integration' => 'test-forms',
+                'form_id'     => '5',
+                'mapping'     => json_encode( $mapping ),
+            );
+
+            $response = $recorder->save_field_mapping();
+
+            $this->assertFalse( $response['success'] );
+            $this->assertSame( array( 'code' => 'form_changed' ), $response['msg'] );
+        }
+        $this->assertSame( 0, $this->store->writes );
+        $this->assertSame( array( 'email' => 'email' ), $this->store->data['test-forms']['5']['mappings'] );
+    }
+
+    /**
+     * The editor gets the saved mapping's fields the form no longer has, so
+     * it can ask for them to be mapped again.
+     *
+     * @return void
+     */
+    public function testGetMappingFieldsListsMissingMappedFields() {
+        $this->mock_wp();
+        $recorder = $this->make_recorder(
+            array(
+                'test-forms' => array(
+                    '5' => array(
+                        'mappings' => array(
+                            'email'      => 'email',
+                            'your-phone' => 'phone',
+                        ),
+                    ),
+                ),
+            )
+        );
+        $_POST    = array(
+            'integration' => 'test-forms',
+            'form_id'     => '5',
+        );
+
+        $response = $recorder->get_mapping_fields();
+
+        $this->assertSame(
+            array(
+                array(
+                    'id'     => 'your-phone',
+                    'target' => 'phone',
+                ),
+            ),
+            $response['msg']['missing_fields']
+        );
     }
 
     /**

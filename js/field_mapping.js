@@ -32,6 +32,8 @@
   var $fieldsBody = $fieldsTable.find('tbody');
   var $noFields = $('#fb-mapping-no-fields');
   var $suggested = $('#fb-mapping-suggested');
+  var $missing = $('#fb-mapping-missing');
+  var $missingList = $('#fb-mapping-missing-list');
   var $saveButton = $('#fb-mapping-save');
   var $rejectButton = $('#fb-mapping-reject');
 
@@ -66,9 +68,12 @@
     return $.ajax({ type: 'post', dataType: 'json', url: url, data: data });
   }
 
-  // The "Send as" select for one form field.
-  function buildTargetSelect(selected) {
-    var $select = $('<select>').addClass('fb-mapping-target');
+  // The "Send as" select for one form field, named after the field for
+  // screen readers (the visible field label is in another cell).
+  function buildTargetSelect(selected, fieldLabel) {
+    var $select = $('<select>')
+      .addClass('fb-mapping-target')
+      .attr('aria-label', 'Send "' + fieldLabel + '" as');
     $select.append($('<option>').val('').text('Do not map'));
     $.each(params.targets, function (i, target) {
       $('<option>')
@@ -86,6 +91,27 @@
       return label + ' (plugin not active)';
     }
     return row.missing ? label + ' (form not found)' : label;
+  }
+
+  // A saved mapping whose fields are partly gone from the form (deleted, or
+  // renamed in a plugin that identifies fields by name) sends nothing for
+  // them; the status cell asks for a review.
+  function statusCell(row) {
+    var $cell = $('<td>').text(describeStatus(row));
+    var gone = row.missing_fields || [];
+    if (gone.length) {
+      $('<span>')
+        .addClass('fb-mapping-needs-review')
+        .text(
+          'Needs review: ' +
+            (gone.length === 1
+              ? 'mapped field ' + gone[0] + ' is'
+              : 'mapped fields ' + gone.join(', ') + ' are') +
+            ' no longer in the form',
+        )
+        .appendTo($cell);
+    }
+    return $cell;
   }
 
   function describeTargets(row) {
@@ -197,7 +223,7 @@
         .addClass('fb-mapping-row--' + row.status)
         .append($('<td>').text(row.integration_label))
         .append(formCell(row))
-        .append($('<td>').text(describeStatus(row)))
+        .append(statusCell(row))
         .append($('<td>').text(describeTargets(row)))
         .append($actions)
         .appendTo($listBody);
@@ -209,6 +235,8 @@
     $fieldsTable.addClass('hidden');
     $noFields.addClass('hidden');
     $suggested.addClass('hidden');
+    $missing.addClass('hidden');
+    $missingList.text('');
     $saveButton.addClass('hidden');
     $rejectButton.addClass('hidden');
   }
@@ -229,18 +257,34 @@
     });
   }
 
+  // Lists the saved mapping's fields the form no longer has.
+  function renderMissingFields(missingFields) {
+    if (!missingFields || !missingFields.length) {
+      return;
+    }
+    $missingList.text(
+      $.map(missingFields, function (field) {
+        return (
+          field.id + ' (' + (targetLabels[field.target] || field.target) + ')'
+        );
+      }).join(', '),
+    );
+    $missing.removeClass('hidden');
+  }
+
   // One row per form field, preselecting the saved mapping or, for a form
   // without one, what automatic detection sends today. An unsaved form can
   // also be rejected, which saves a mapping with no fields.
-  function renderFields(fields, saved, mapping, suggested) {
+  function renderFields(fields, saved, mapping, suggested, missingFields) {
     resetFields();
+    renderMissingFields(missingFields);
     if (!fields || fields.length === 0) {
       $noFields.removeClass('hidden');
       return;
     }
     var selected = (saved ? mapping : suggested) || {};
     $.each(fields, function (i, field) {
-      var $target = buildTargetSelect(selected[field.id] || '');
+      var $target = buildTargetSelect(selected[field.id] || '', field.label);
       $target.data('field_id', field.id);
       $('<tr>')
         .append($('<td>').text(field.label))
@@ -260,8 +304,14 @@
     $editorTitle.text(
       formTitle(row) + ' #' + row.form_id + ' (' + row.integration_label + ')',
     );
-    resetFields();
     editor.showModal();
+    loadFields(opened);
+  }
+
+  // Loads the fields of the form open in the editor. Also used to reload
+  // them when the form changed while the editor was open.
+  function loadFields(opened) {
+    resetFields();
     post(params.getFieldsUrl, {
       integration: opened.integration,
       form_id: opened.formId,
@@ -277,6 +327,7 @@
             response.msg.saved,
             response.msg.mapping,
             response.msg.suggested,
+            response.msg.missing_fields,
           );
         } else {
           showStatus(params.loadError, true);
@@ -300,8 +351,15 @@
     return mapping;
   }
 
-  // Saves, rejects or resets, then shows the refreshed table.
-  function send(url, data, successMessage, errorMessage) {
+  // The error code of a failed request, e.g. 'form_changed'.
+  function errorCode(xhr) {
+    var body = xhr && xhr.responseJSON;
+    return body && body.msg && body.msg.code ? body.msg.code : '';
+  }
+
+  // Saves, rejects or resets, then shows the refreshed table. onFail, when
+  // given, handles a failed request first and returns true if it did.
+  function send(url, data, successMessage, errorMessage, onFail) {
     post(url, data)
       .done(function (response) {
         if (response && response.success) {
@@ -312,15 +370,20 @@
           showStatus(errorMessage, true);
         }
       })
-      .fail(function () {
-        showStatus(errorMessage, true);
+      .fail(function (xhr) {
+        if (!onFail || !onFail(xhr)) {
+          showStatus(errorMessage, true);
+        }
       });
   }
 
+  // Nothing is saved when the form changed while the editor was open (a
+  // mapped field is gone): its fields are reloaded for another review.
   function saveMapping(mapping, successMessage) {
     if (!current) {
       return;
     }
+    var opened = current;
     send(
       params.saveUrl,
       {
@@ -330,6 +393,16 @@
       },
       successMessage,
       params.saveError,
+      function (xhr) {
+        if (errorCode(xhr) !== 'form_changed') {
+          return false;
+        }
+        if (current === opened) {
+          loadFields(opened);
+          showStatus(params.formChanged, true);
+        }
+        return true;
+      },
     );
   }
 
@@ -372,20 +445,42 @@
     openEditor($(this).data('row'));
   });
 
+  // What resetting a row's mapping does. A deleted form sends nothing either
+  // way, and a form of an inactive plugin sends nothing until the plugin is
+  // activated again, so for them the saved mapping is only removed.
+  function describeReset(row) {
+    if (row.missing) {
+      return {
+        confirm:
+          'Remove the saved mapping of this deleted form? The form no longer exists, so nothing else changes.',
+        done: 'Mapping removed.',
+      };
+    }
+    if (!row.active) {
+      return {
+        confirm:
+          'Remove the saved mapping of this form? If its plugin is activated again, the form will use automatic detection.',
+        done: 'Mapping removed. If its plugin is activated again, the form will use automatic detection.',
+      };
+    }
+    return {
+      confirm:
+        "Reset this form's mapping? The saved mapping is removed and the form goes back to automatic detection.",
+      done: 'Mapping reset. The form uses automatic detection.',
+    };
+  }
+
   $listBody.on('click', '.fb-mapping-delete', function (e) {
     e.preventDefault();
-    if (
-      !window.confirm(
-        "Reset this form's mapping? The saved mapping is removed and the form goes back to automatic detection.",
-      )
-    ) {
+    var row = $(this).data('row');
+    var reset = describeReset(row);
+    if (!window.confirm(reset.confirm)) {
       return;
     }
-    var row = $(this).data('row');
     send(
       params.deleteUrl,
       { integration: row.integration_name, form_id: row.form_id },
-      'Mapping reset. The form uses automatic detection.',
+      reset.done,
       params.deleteError,
     );
   });

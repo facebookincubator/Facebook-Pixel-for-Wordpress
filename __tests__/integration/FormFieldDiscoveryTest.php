@@ -264,34 +264,72 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * Ninja Forms lists fields by key, skipping submit buttons.
+     * Mocks Ninja Forms with form 2 ("Contact Me") whose fields are $fields,
+     * each [id, key, type, label].
      *
+     * @param array $fields The form's fields.
      * @return void
      */
-    public function testNinjaFormsDiscovery() {
-        $field = function ( $key, $type, $label ) {
-            $mock = \Mockery::mock();
+    private function mock_ninja_forms( array $fields ) {
+        $models = array();
+        foreach ( $fields as $field ) {
+            list( $id, $key, $type, $label ) = $field;
+            $mock                            = \Mockery::mock();
+            $mock->shouldReceive( 'get_id' )->andReturn( $id );
             $mock->shouldReceive( 'get_setting' )->with( 'key' )->andReturn( $key );
             $mock->shouldReceive( 'get_setting' )->with( 'type' )->andReturn( $type );
             $mock->shouldReceive( 'get_setting' )->with( 'label' )->andReturn( $label );
-            return $mock;
-        };
+            $models[] = $mock;
+        }
         $form = \Mockery::mock();
         $form->shouldReceive( 'get_id' )->andReturn( 2 );
         $form->shouldReceive( 'get_setting' )->with( 'title' )->andReturn( 'Contact Me' );
         $all_forms = \Mockery::mock();
         $all_forms->shouldReceive( 'get_forms' )->andReturn( array( $form ) );
         $one_form = \Mockery::mock();
-        $one_form->shouldReceive( 'get_fields' )->andReturn(
-            array(
-                $field( 'email_1', 'email', 'Email' ),
-                $field( 'submit_2', 'submit', 'Send' ),
-            )
-        );
+        $one_form->shouldReceive( 'get_fields' )->andReturn( $models );
         $ninja = \Mockery::mock();
         $ninja->shouldReceive( 'form' )->withNoArgs()->andReturn( $all_forms );
         $ninja->shouldReceive( 'form' )->with( '2' )->andReturn( $one_form );
         \WP_Mock::userFunction( 'Ninja_Forms', array( 'return' => $ninja ) );
+    }
+
+    /**
+     * A Ninja Forms submission payload for form 2: fields of [id, key, value].
+     *
+     * @param array $fields The submitted fields.
+     * @return array The submit-hook arguments.
+     */
+    private function ninja_submission( array $fields ) {
+        $form_data = array(
+            'id'     => '2',
+            'fields' => array(),
+        );
+        foreach ( $fields as $field ) {
+            list( $id, $key, $value )         = $field;
+            $form_data['fields'][ (string) $id ] = array(
+                'id'    => $id,
+                'key'   => $key,
+                'value' => $value,
+            );
+        }
+        return array( array(), array(), $form_data );
+    }
+
+    /**
+     * Ninja Forms lists fields by their numeric id, skipping submit buttons.
+     * The key is regenerated when a field is renamed, so a mapping saved for
+     * the id still applies after a rename.
+     *
+     * @return void
+     */
+    public function testNinjaFormsDiscoveryUsesFieldIds() {
+        $this->mock_ninja_forms(
+            array(
+                array( 7, 'email_1', 'email', 'Email' ),
+                array( 8, 'submit_2', 'submit', 'Send' ),
+            )
+        );
 
         $integration = $this->make( FacebookWordpressNinjaForms::class );
 
@@ -307,14 +345,72 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
         $this->assertSame(
             array(
                 array(
-                    'id'    => 'email_1',
+                    'id'    => '7',
                     'label' => 'Email',
                     'type'  => 'email',
                 ),
             ),
             $integration->get_form_fields( '2' )
         );
-        $this->assertSame( array( 'email_1' => 'email' ), $integration->suggest_field_mapping( '2' ) );
+        $this->assertSame( array( '7' => 'email' ), $integration->suggest_field_mapping( '2' ) );
+
+        // The field was renamed after the mapping was saved: its key changed.
+        $integration = $this->make(
+            FacebookWordpressNinjaForms::class,
+            $this->saved( FacebookWordpressNinjaForms::INTEGRATION_NAME, '2', array( '7' => 'email' ) )
+        );
+        $this->assertSame(
+            array( 'email' => 'pika.chu@s2s.com' ),
+            $integration->extract_lead_data( ...$this->ninja_submission( array( array( 7, 'work_address_1', 'pika.chu@s2s.com' ) ) ) )
+        );
+    }
+
+    /**
+     * The suggestion is what automatic detection sends: when several fields
+     * qualify for a parameter the last one wins, and a full name field still
+     * supplies the last name after a later first name field.
+     *
+     * @return void
+     */
+    public function testSuggestionSendsWhatAutomaticDetectionSends() {
+        $this->mock_ninja_forms(
+            array(
+                array( 1, 'name_1', 'textbox', 'Name' ),
+                array( 2, 'email_2', 'email', 'Email' ),
+                array( 3, 'firstname_3', 'firstname', 'First name' ),
+                array( 4, 'email_4', 'email', 'Work email' ),
+            )
+        );
+        $submission = $this->ninja_submission(
+            array(
+                array( 1, 'name_1', 'Pika Chu' ),
+                array( 2, 'email_2', 'home@s2s.com' ),
+                array( 3, 'firstname_3', 'Ash' ),
+                array( 4, 'email_4', 'work@s2s.com' ),
+            )
+        );
+
+        $suggested = $this->make( FacebookWordpressNinjaForms::class )->suggest_field_mapping( '2' );
+        $this->assertSame(
+            array(
+                '1' => 'full_name',
+                '3' => 'first_name',
+                '4' => 'email',
+            ),
+            $suggested
+        );
+
+        $automatic = $this->make( FacebookWordpressNinjaForms::class )->extract_lead_data( ...$submission );
+        $mapped    = $this->make(
+            FacebookWordpressNinjaForms::class,
+            $this->saved( FacebookWordpressNinjaForms::INTEGRATION_NAME, '2', $suggested )
+        )->extract_lead_data( ...$submission );
+        ksort( $automatic );
+        ksort( $mapped );
+        $this->assertSame( $automatic, $mapped );
+        $this->assertSame( 'work@s2s.com', $mapped['email'] );
+        $this->assertSame( 'Ash', $mapped['first_name'] );
+        $this->assertSame( 'Chu', $mapped['last_name'] );
     }
 
     /**
@@ -494,12 +590,13 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * A suggestion uses each target once: a second email field is left
-     * unmapped, and so is a second name field once full_name is taken.
+     * A suggestion uses each target once, for the field automatic detection
+     * sends it from: the last of several email fields, and the last of
+     * several name fields.
      *
      * @return void
      */
-    public function testSuggestionUsesEachTargetOnce() {
+    public function testSuggestionUsesEachTargetOnceForTheLastField() {
         $form = \Mockery::mock();
         $form->shouldReceive( 'scan_form_tags' )->andReturn(
             array(
@@ -513,8 +610,8 @@ final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
 
         $this->assertSame(
             array(
-                'your-name'  => 'full_name',
-                'your-email' => 'email',
+                'other-email'  => 'email',
+                'company-name' => 'full_name',
             ),
             $this->make( FacebookWordpressContactForm7::class )->suggest_field_mapping( '1' )
         );

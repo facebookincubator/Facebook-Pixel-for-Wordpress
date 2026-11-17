@@ -342,6 +342,28 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
     }
 
     /**
+     * A first-middle-last name is sent as first and last name without a
+     * mapping too, as the mapping screen's Full name suggestion says.
+     *
+     * @return void
+     */
+    public function testFirstMiddleLastNameIsSentWithoutAMapping() {
+        $entry                = $this->create_mock_entry();
+        $entry['fields']['0'] = array(
+            'first'  => 'Pika',
+            'middle' => 'P',
+            'last'   => 'Chu',
+        );
+        $form_data                        = $this->create_mock_form_data();
+        $form_data['fields'][0]['format'] = 'first-middle-last';
+
+        $automatic = $this->make_integration()->extract_lead_data( $entry, $form_data );
+
+        $this->assertSame( 'Pika', $automatic['first_name'] );
+        $this->assertSame( 'Chu', $automatic['last_name'] );
+    }
+
+    /**
      * Builds the integration with $mappings saved for the mock form (id 123).
      *
      * @param array $mappings Field id => target.
