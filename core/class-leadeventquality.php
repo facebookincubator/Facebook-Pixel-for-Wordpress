@@ -2,9 +2,10 @@
 /**
  * Facebook Pixel Plugin LeadEventQuality class.
  *
- * Reads the Event Match Quality of the pixel's Lead events from Meta's
- * Dataset Quality API: its score (0-10) and the customer information
- * parameters received with them, with the share of events that include each.
+ * Reads the Event Match Quality of the Lead events this plugin sends to the
+ * pixel, from Meta's Dataset Quality API: their score (0-10) and the customer
+ * information parameters received with them, with the share of events that
+ * include each.
  *
  * @package FacebookPixelPlugin
  */
@@ -58,6 +59,14 @@ class LeadEventQuality {
      */
     const CACHE_TTL       = 86400;
     const ERROR_CACHE_TTL = 3600;
+
+    /**
+     * Partner agent name: the score covers the Lead events sent through this
+     * plugin.
+     *
+     * @var string
+     */
+    const AGENT_NAME = 'wordpress';
 
     /**
      * The fields asked for: the score and parameters of every web event.
@@ -136,7 +145,7 @@ class LeadEventQuality {
      * The quality of the Lead events, cached for a day or until a form
      * mapping changes.
      *
-     * @return array [ 'status' =>, 'score' => float|null, 'rating' => string|null,
+     * @return array [ 'status' =>, 'score' => float|null,
      *               'parameters' => [ [ 'identifier', 'label', 'coverage' ] ],
      *               'message' => string ]
      */
@@ -172,6 +181,7 @@ class LeadEventQuality {
         $url = add_query_arg(
             array(
                 'dataset_id' => rawurlencode( $this->pixel_id ),
+                'agent_name' => self::AGENT_NAME,
                 'fields'     => rawurlencode( self::FIELDS ),
             ),
             'https://graph.facebook.com/' . FacebookPluginConfig::GRAPH_API_VERSION . '/dataset_quality'
@@ -265,26 +275,6 @@ class LeadEventQuality {
     }
 
     /**
-     * The rating Events Manager gives a score: Poor (0-2), OK (3-5),
-     * Good (6-7) or Great (8-10).
-     *
-     * @param float $score 0-10.
-     * @return string poor|ok|good|great
-     */
-    public static function rating( $score ) {
-        if ( $score >= 8 ) {
-            return 'great';
-        }
-        if ( $score >= 6 ) {
-            return 'good';
-        }
-        if ( $score >= 3 ) {
-            return 'ok';
-        }
-        return 'poor';
-    }
-
-    /**
      * A result row.
      *
      * @param string     $status     One of the STATUS_ constants.
@@ -297,7 +287,6 @@ class LeadEventQuality {
         return array(
             'status'     => $status,
             'score'      => $score,
-            'rating'     => null === $score ? null : self::rating( $score ),
             'parameters' => $parameters,
             'message'    => $message,
         );

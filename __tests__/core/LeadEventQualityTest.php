@@ -94,7 +94,8 @@ final class LeadEventQualityTest extends FacebookWordpressTestBase {
                 'times'  => 1,
                 'args'   => array(
                     'https://graph.facebook.com/' . FacebookPluginConfig::GRAPH_API_VERSION
-                        . '/dataset_quality?dataset_id=123&fields=' . rawurlencode( LeadEventQuality::FIELDS ),
+                        . '/dataset_quality?dataset_id=123&agent_name=wordpress&fields='
+                        . rawurlencode( LeadEventQuality::FIELDS ),
                     \Mockery::on(
                         function ( $options ) {
                             return 'Bearer token' === $options['headers']['Authorization'];
@@ -165,7 +166,6 @@ final class LeadEventQualityTest extends FacebookWordpressTestBase {
             array(
                 'status'     => 'ok',
                 'score'      => 7.3,
-                'rating'     => 'good',
                 'parameters' => array(
                     array(
                         'identifier' => 'ip_address',
@@ -314,24 +314,7 @@ final class LeadEventQualityTest extends FacebookWordpressTestBase {
             )
         );
         $this->assertSame( 10.0, $result['score'] );
-        $this->assertSame( 'great', $result['rating'] );
         $this->assertSame( array(), $result['parameters'] );
-    }
-
-    /**
-     * Ratings follow Events Manager: Poor, OK, Good, Great.
-     *
-     * @return void
-     */
-    public function testRating() {
-        $this->assertSame( 'poor', LeadEventQuality::rating( 0 ) );
-        $this->assertSame( 'poor', LeadEventQuality::rating( 2.9 ) );
-        $this->assertSame( 'ok', LeadEventQuality::rating( 3 ) );
-        $this->assertSame( 'ok', LeadEventQuality::rating( 5.9 ) );
-        $this->assertSame( 'good', LeadEventQuality::rating( 6 ) );
-        $this->assertSame( 'good', LeadEventQuality::rating( 7.9 ) );
-        $this->assertSame( 'great', LeadEventQuality::rating( 8 ) );
-        $this->assertSame( 'great', LeadEventQuality::rating( 10 ) );
     }
 
     /**

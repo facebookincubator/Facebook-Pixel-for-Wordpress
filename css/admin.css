@@ -1413,23 +1413,10 @@
     stroke-linecap: round;
 }
 
+/* The whole 0-10 scale, red to green (the SVG gradient), faint; the score
+   fills it in full color. */
 .fb-lead-quality-track {
-    stroke: #dcdcde;
-}
-
-/* Events Manager's ratings: Poor, OK, Good, Great. The rating is always
-   printed next to the score, so the color never carries it alone. */
-.fb-lead-quality-fill {
-    stroke: #d03b3b;
-}
-
-[data-rating="ok"] .fb-lead-quality-fill {
-    stroke: #fab219;
-}
-
-[data-rating="good"] .fb-lead-quality-fill,
-[data-rating="great"] .fb-lead-quality-fill {
-    stroke: #0ca30c;
+    stroke-opacity: 0.2;
 }
 
 .fb-lead-quality-scale {
@@ -1451,12 +1438,6 @@
 .fb-lead-quality-max {
     font-size: 13px;
     color: #646970;
-}
-
-.fb-lead-quality-rating {
-    display: block;
-    font-weight: 600;
-    color: #1d2327;
 }
 
 .fb-lead-quality-parameters {

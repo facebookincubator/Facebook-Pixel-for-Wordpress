@@ -8,7 +8,7 @@
 /**
  * Fills the Lead event quality panel beside the Form Field Mapping table with
  * what the Dataset Quality API reports for the pixel's Lead events: a gauge of
- * their Event Match Quality (0-10, rated as in Events Manager) and the share of
+ * their Event Match Quality (0-10, red to green) and the share of
  * them that include each customer information parameter. The panel is shown
  * only when Meta returns a score.
  * The admin-ajax URL (with its nonce) comes from meta_lead_quality_params.
@@ -25,8 +25,6 @@
   if (!$panel.length) {
     return;
   }
-
-  var RATINGS = { poor: 'Poor', ok: 'OK', good: 'Good', great: 'Great' };
 
   function formatPercent(value) {
     return value === null ? '' : Math.round(value) + '%';
@@ -68,20 +66,18 @@
   }
 
   function render(result) {
-    var rating = RATINGS[result.rating] || '';
     var $gauge = $panel.find('.fb-lead-quality-gauge');
     $gauge
       .attr('aria-valuenow', result.score)
-      .attr('aria-valuetext', result.score + ' out of 10, ' + rating)
-      .attr('data-rating', result.rating);
-    // The arc's pathLength is 100: a 0-10 score fills score * 10 of it. A zero
-    // score draws nothing (a round cap would still show a dot).
+      .attr('aria-valuetext', result.score + ' out of 10');
+    // The arc's pathLength is 100: a 0-10 score fills score * 10 of it, red at
+    // 0 through to green at 10. A zero score draws nothing (a round cap would
+    // still show a dot).
     $gauge
       .find('.fb-lead-quality-fill')
-      .attr('stroke-dasharray', result.score * 10 + ' 100')
+      .attr('stroke-dasharray', Math.round(result.score * 100) / 10 + ' 100')
       .toggle(result.score > 0);
     $gauge.find('.fb-lead-quality-score').text(result.score.toFixed(1));
-    $gauge.find('.fb-lead-quality-rating').text(rating);
 
     renderParameters(result.parameters);
     $panel.removeClass('hidden');

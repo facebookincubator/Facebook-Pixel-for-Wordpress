@@ -341,9 +341,13 @@ test.describe('Lead event quality', () => {
     await expect(panel).toBeVisible();
     const gauge = panel.locator('.fb-lead-quality-gauge');
     await expect(gauge).toHaveAttribute('aria-valuenow', '7.4');
-    await expect(gauge).toHaveAttribute('data-rating', 'good');
+    await expect(gauge).toHaveAttribute('aria-valuetext', '7.4 out of 10');
     await expect(panel.locator('.fb-lead-quality-score')).toHaveText('7.4');
-    await expect(panel.locator('.fb-lead-quality-rating')).toHaveText('Good');
+    // The score fills 74 of the arc's 100, over the red-to-green scale.
+    await expect(gauge.locator('.fb-lead-quality-fill')).toHaveAttribute(
+      'stroke-dasharray',
+      '74 100',
+    );
     // Most included first.
     await expect(panel.locator('.fb-lead-quality-parameter')).toHaveText([
       /IP address\s*100%/,
@@ -369,6 +373,7 @@ test.describe('Lead event quality', () => {
     const url = new URL(sent[0].url);
     expect(url.pathname).toMatch(/\/dataset_quality$/);
     expect(url.searchParams.get('dataset_id')).toBe(PIXEL_ID);
+    expect(url.searchParams.get('agent_name')).toBe('wordpress');
     expect(url.searchParams.get('fields')).toContain(
       'event_match_quality{composite_score,match_key_feedback{identifier,coverage{percentage}}}',
     );
@@ -406,9 +411,6 @@ test.describe('Lead event quality', () => {
     );
     await openWithQuality(page);
     await expect(score).toHaveText('4.2');
-    await expect(
-      page.locator('#fb-lead-quality .fb-lead-quality-rating'),
-    ).toHaveText('OK');
     expect(await requests()).toHaveLength(2);
   });
 
