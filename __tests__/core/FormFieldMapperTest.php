@@ -20,6 +20,7 @@
 namespace FacebookPixelPlugin\Tests\Core;
 
 use FacebookPixelPlugin\Core\FormFieldMapper;
+use FacebookPixelPlugin\Core\LeadEventQuality;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Tests\Mocks\MockFormFieldMappingStore;
@@ -129,6 +130,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testSaveStoresADecisionPerField() {
+        $this->expect_quality_cache_cleared( 1 );
         $store  = new MockFormFieldMappingStore( $this->cf7_store() );
         $mapper = new FormFieldMapper( $store );
 
@@ -180,6 +182,7 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
      * @return void
      */
     public function testSaveWithNoIncludedFieldIsARejection() {
+        $this->expect_quality_cache_cleared( 1 );
         $store  = new MockFormFieldMappingStore( $this->cf7_store() );
         $mapper = new FormFieldMapper( $store );
 
@@ -202,11 +205,13 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
 
     /**
      * Deleting removes only the given form; deleting something that is not
-     * saved succeeds without writing.
+     * saved succeeds without writing (nor clearing the cached Lead event
+     * quality).
      *
      * @return void
      */
     public function testDelete() {
+        $this->expect_quality_cache_cleared( 1 );
         $data                                = $this->cf7_store();
         $data['contact-form-7']['456']       = array(
             'form_title' => 'Other',
@@ -223,5 +228,38 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
         $writes = $store->writes;
         $this->assertTrue( $mapper->delete_form_mapping( 'wpforms-lite', '9' ) );
         $this->assertSame( $writes, $store->writes );
+    }
+
+    /**
+     * A failed write reports failure and keeps the cached Lead event quality,
+     * as the mappings did not change.
+     *
+     * @return void
+     */
+    public function testFailedWriteKeepsTheQualityCache() {
+        $this->expect_quality_cache_cleared( 0 );
+        $store              = new MockFormFieldMappingStore( $this->cf7_store() );
+        $store->fail_writes = true;
+        $mapper             = new FormFieldMapper( $store );
+
+        $this->assertFalse( $mapper->save_form_mapping( 'contact-form-7', '123', 'Contact form 1', array( 'email' => 'email' ) ) );
+        $this->assertFalse( $mapper->delete_form_mapping( 'contact-form-7', '123' ) );
+    }
+
+    /**
+     * Expects the cached Lead event quality to be dropped a number of times:
+     * each change to the mappings drops it.
+     *
+     * @param int $times Expected calls.
+     * @return void
+     */
+    private function expect_quality_cache_cleared( $times ) {
+        \WP_Mock::userFunction(
+            'delete_transient',
+            array(
+                'args'  => array( LeadEventQuality::CACHE_KEY ),
+                'times' => $times,
+            )
+        );
     }
 }

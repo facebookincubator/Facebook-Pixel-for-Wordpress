@@ -8,7 +8,8 @@ name: E2E Tests (Form Field Mapping)
 #
 # Same barebones setup as e2e-tests.yml (WordPress tarball + `php -S` + WP-CLI
 # against a MySQL service). Needs no Meta credentials: the plugin is marked
-# connected with placeholder values and admin pages send no events.
+# connected with placeholder values, admin pages send no events, and a test
+# mu-plugin answers the Lead event quality panel's Dataset Quality API calls.
 on:
   pull_request:
     paths:
@@ -18,6 +19,7 @@ on:
       - 'css/**'
       - 'tests/e2e/admin/**'
       - 'tests/e2e/scripts/seed-field-mapping.sh'
+      - 'tests/e2e/fixtures/mu-plugins/**'
       - 'playwright.field-mapping.config.js'
       - '.github/workflows/e2e-field-mapping.yml'
   workflow_dispatch:

@@ -16,6 +16,9 @@
 #   are kept.
 # - Writes the forms to FIELD_MAPPING_FORMS_FILE (JSON) for the spec, with the
 #   URLs Formidable's and Mailchimp for WP's own edit-link helpers return.
+# - Installs the mu-plugin tests/e2e/fixtures/mu-plugins/e2e-dataset-quality.php,
+#   which answers Dataset Quality API requests with what the spec sets, so the
+#   Lead event quality panel is tested without calling Meta.
 #
 # Every form plugin must be active: a missing one fails the seed, so the spec
 # never passes without checking it.
@@ -166,6 +169,12 @@ update_option('facebook_form_field_mappings', \$mappings, false);
 file_put_contents('${FORMS_FILE}', json_encode(\$data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 echo json_encode(\$data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
 PHP
+
+# --- Answer Dataset Quality API requests without calling Meta (the Lead event
+# quality panel) ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+mkdir -p "$WORDPRESS_PATH/wp-content/mu-plugins"
+cp "$SCRIPT_DIR/../fixtures/mu-plugins/e2e-dataset-quality.php" "$WORDPRESS_PATH/wp-content/mu-plugins/"
 
 ENCODED="$(printf '%s' "$PHP_SEED" | base64 | tr -d '\n')"
 

@@ -246,7 +246,7 @@ class FormFieldMapper {
             'fields'     => $fields,
         );
 
-        return $this->store->write( $all );
+        return $this->write( $all );
     }
 
     /**
@@ -270,6 +270,21 @@ class FormFieldMapper {
             unset( $all[ $integration_name ] );
         }
 
-        return $this->store->write( $all );
+        return $this->write( $all );
+    }
+
+    /**
+     * Stores every mapping. A change to them changes what Lead events send,
+     * so the cached Lead event quality is dropped and read again from Meta.
+     *
+     * @param array $all integration_name => form_id => mapping row.
+     * @return bool True on success.
+     */
+    private function write( $all ) {
+        if ( ! $this->store->write( $all ) ) {
+            return false;
+        }
+        LeadEventQuality::clear_cache();
+        return true;
     }
 }

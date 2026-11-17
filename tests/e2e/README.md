@@ -93,7 +93,11 @@ form it checks that the table lists it once with its id and that its title
 links to the plugin's own editor: the link must match the edit link on the
 plugin's forms list (or the plugin's edit-link helper) and open the editor for
 that form. A form plugin release that changes its editor URL fails this spec.
-It also covers the editor popup and saved mappings of deleted forms.
+It also covers the editor popup and saved mappings of deleted forms, and the
+Lead event quality panel. The seed installs a test mu-plugin
+(`tests/e2e/fixtures/mu-plugins/e2e-dataset-quality.php`) that answers the
+panel's Dataset Quality API requests with what the spec sets, so Meta is never
+called; don't seed a site you use for anything else.
 
 It has its own workflow (`.github/workflows/e2e-field-mapping.yml`, on PRs and
 every Monday) and config (`playwright.field-mapping.config.js`), and needs no
@@ -104,7 +108,7 @@ export WORDPRESS_PATH="/path/to/wordpress" WORDPRESS_URL="http://localhost:10003
 export WP_USERNAME=admin WP_PASSWORD=...           # an administrator
 export FIELD_MAPPING_FORMS_FILE=/tmp/field-mapping-forms.json
 
-npm run env:seed:field-mapping   # placeholder connection, one form per plugin
+npm run env:seed:field-mapping   # placeholder connection, one form per plugin, test mu-plugin
 npm run test:e2e:field-mapping
 ```
 

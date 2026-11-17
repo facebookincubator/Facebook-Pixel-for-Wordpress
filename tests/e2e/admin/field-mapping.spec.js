@@ -13,6 +13,11 @@
  * - A mapping left behind by a deleted form is listed apart, without a link.
  * - The mapping editor opens in a popup that Escape and Cancel close, and
  *   saving from it updates the row.
+ * - The Lead event quality panel shows, to the right of the table, the score
+ *   and parameters the Dataset Quality API reports for Lead events (answered by
+ *   the test mu-plugin tests/e2e/fixtures/mu-plugins/e2e-dataset-quality.php),
+ *   caches them for a day or until a mapping changes, and stays hidden when
+ *   there is no score.
  */
 
 const fs = require('fs');
@@ -256,4 +261,190 @@ test('the mapping editor opens in a popup', async ({ page }) => {
   await expect(dialog).toBeHidden();
   await expect(page.locator('#fb-mapping-status')).toHaveText('Mapping saved.');
   await expect(status).toHaveText('Saved');
+});
+
+test.describe('Lead event quality', () => {
+  const QUALITY_ACTION = 'facebook_get_lead_event_quality';
+  const QUALITY_CACHE = 'facebook_lead_event_quality';
+  const PIXEL_ID = '1234567890123456';
+
+  // What the Dataset Quality API answers: a Lead and a PageView event.
+  const quality = (score) => ({
+    code: 200,
+    body: {
+      web: [
+        {
+          event_name: 'PageView',
+          event_match_quality: { composite_score: 3.1 },
+        },
+        {
+          event_name: 'Lead',
+          event_match_quality: {
+            composite_score: score,
+            match_key_feedback: [
+              { identifier: 'email', coverage: { percentage: 98.2 } },
+              { identifier: 'ip_address', coverage: { percentage: 100 } },
+              { identifier: 'phone', coverage: { percentage: 41.3 } },
+            ],
+          },
+        },
+      ],
+    },
+  });
+
+  // Runs PHP and returns what it echoes between the markers, decoded.
+  async function phpJson(php) {
+    const { stdout } = await execWP(
+      `echo '<<<' . wp_json_encode(${php}) . '>>>';`,
+    );
+    return JSON.parse(stdout.match(/<<<([\s\S]*)>>>/)[1]);
+  }
+
+  // What the test mu-plugin answers (null: the request fails).
+  async function answerWith(response) {
+    const json = Buffer.from(JSON.stringify(response)).toString('base64');
+    await execWP(
+      response === null
+        ? `delete_option('e2e_dataset_quality_response');`
+        : `update_option('e2e_dataset_quality_response', json_decode(base64_decode('${json}'), true), false);`,
+    );
+  }
+
+  // Starts with nothing cached or recorded.
+  async function reset(response) {
+    await execWP(
+      `(new \\FacebookPixelPlugin\\Core\\FormFieldMapper())->delete_form_mapping('${SEED.popup.integration}', '${SEED.popup.id}');` +
+        `delete_option('e2e_dataset_quality_requests'); delete_transient('${QUALITY_CACHE}');`,
+    );
+    await answerWith(response);
+  }
+
+  const requests = () =>
+    phpJson(`get_option('e2e_dataset_quality_requests', array())`);
+
+  // Opens the table and returns the panel's AJAX answer.
+  async function openWithQuality(page) {
+    const answer = page.waitForResponse((response) =>
+      response.url().includes(`action=${QUALITY_ACTION}`),
+    );
+    await openMappingTable(page);
+    return (await answer).json();
+  }
+
+  test('shows the Lead score from Meta beside the forms table', async ({
+    page,
+  }) => {
+    await reset(quality(7.4));
+    await openWithQuality(page);
+
+    const panel = page.locator('#fb-lead-quality');
+    await expect(panel).toBeVisible();
+    const gauge = panel.locator('.fb-lead-quality-gauge');
+    await expect(gauge).toHaveAttribute('aria-valuenow', '7.4');
+    await expect(gauge).toHaveAttribute('data-rating', 'good');
+    await expect(panel.locator('.fb-lead-quality-score')).toHaveText('7.4');
+    await expect(panel.locator('.fb-lead-quality-rating')).toHaveText('Good');
+    // Most included first.
+    await expect(panel.locator('.fb-lead-quality-parameter')).toHaveText([
+      /IP address\s*100%/,
+      /Email\s*98%/,
+      /Phone\s*41%/,
+    ]);
+
+    // For review in the report.
+    await test.info().attach('lead-event-quality', {
+      body: await page.locator('.fb-mapping-layout').screenshot(),
+      contentType: 'image/png',
+    });
+
+    // To the right of the table, level with its top.
+    const table = await page.locator('#fb-mapping-list').boundingBox();
+    const box = await panel.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(table.x + table.width);
+    expect(Math.abs(box.y - table.y)).toBeLessThan(20);
+
+    // One request, for the pixel, with the token in its header.
+    const sent = await requests();
+    expect(sent).toHaveLength(1);
+    const url = new URL(sent[0].url);
+    expect(url.pathname).toMatch(/\/dataset_quality$/);
+    expect(url.searchParams.get('dataset_id')).toBe(PIXEL_ID);
+    expect(url.searchParams.get('fields')).toContain(
+      'event_match_quality{composite_score,match_key_feedback{identifier,coverage{percentage}}}',
+    );
+    expect(url.searchParams.has('access_token')).toBe(false);
+    expect(sent[0].authorization).toBe('Bearer e2e-placeholder-token');
+  });
+
+  test('is cached for a day, until a form mapping changes', async ({
+    page,
+  }) => {
+    await reset(quality(7.4));
+    await openWithQuality(page);
+    const score = page.locator('#fb-lead-quality .fb-lead-quality-score');
+    await expect(score).toHaveText('7.4');
+    const ttl = await phpJson(
+      `(int) get_option('_transient_timeout_${QUALITY_CACHE}') - time()`,
+    );
+    expect(ttl).toBeGreaterThan(86400 - 300);
+    expect(ttl).toBeLessThanOrEqual(86400);
+
+    // Meta's score changes, but the cached one is shown.
+    await answerWith(quality(4.2));
+    await openWithQuality(page);
+    await expect(score).toHaveText('7.4');
+    expect(await requests()).toHaveLength(1);
+
+    // Saving a mapping drops the cache: the next visit asks Meta again.
+    const row = mappingRow(page, SEED.popup);
+    await row.locator('a.fb-mapping-edit').click();
+    const dialog = page.locator('dialog#fb-mapping-editor');
+    await expect(dialog).toBeVisible();
+    await dialog.locator('#fb-mapping-save').click();
+    await expect(page.locator('#fb-mapping-status')).toHaveText(
+      'Mapping saved.',
+    );
+    await openWithQuality(page);
+    await expect(score).toHaveText('4.2');
+    await expect(
+      page.locator('#fb-lead-quality .fb-lead-quality-rating'),
+    ).toHaveText('OK');
+    expect(await requests()).toHaveLength(2);
+  });
+
+  for (const [name, response, status] of [
+    [
+      'Meta returns an error',
+      {
+        code: 400,
+        body: { error: { message: 'Unsupported get request.', code: 100 } },
+      },
+      'error',
+    ],
+    [
+      'there is no Lead score',
+      {
+        code: 200,
+        body: {
+          web: [
+            {
+              event_name: 'PageView',
+              event_match_quality: { composite_score: 6 },
+            },
+          ],
+        },
+      },
+      'no_data',
+    ],
+    ['the request fails', null, 'error'],
+  ]) {
+    test(`is hidden when ${name}`, async ({ page }) => {
+      await reset(response);
+      const answer = await openWithQuality(page);
+
+      expect(answer.msg.status).toBe(status);
+      await expect(page.locator('#fb-mapping-list')).toBeVisible();
+      await expect(page.locator('#fb-lead-quality')).toBeHidden();
+    });
+  }
 });

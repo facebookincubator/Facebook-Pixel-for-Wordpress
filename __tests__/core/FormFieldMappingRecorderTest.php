@@ -128,7 +128,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * The three endpoints are registered as admin AJAX actions.
+     * The endpoints are registered as admin AJAX actions.
      *
      * @return void
      */
@@ -138,6 +138,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             FacebookPluginConfig::GET_MAPPING_FIELDS_ACTION_NAME   => 'get_mapping_fields',
             FacebookPluginConfig::SAVE_FIELD_MAPPING_ACTION_NAME   => 'save_field_mapping',
             FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME => 'delete_field_mapping',
+            FacebookPluginConfig::GET_LEAD_EVENT_QUALITY_ACTION_NAME => 'get_lead_event_quality',
         );
         foreach ( $actions as $action => $method ) {
             \WP_Mock::expectActionAdded( 'wp_ajax_' . $action, array( $recorder, $method ) );
@@ -162,6 +163,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
 
         $this->assertFalse( $recorder->get_mapping_fields()['success'] );
         $this->assertFalse( $recorder->save_field_mapping()['success'] );
+        $this->assertFalse( $recorder->get_lead_event_quality()['success'] );
         $this->assertSame( 0, $this->store->writes );
     }
 
