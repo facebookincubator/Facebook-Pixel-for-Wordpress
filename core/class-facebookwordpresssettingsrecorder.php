@@ -189,9 +189,10 @@ class FacebookWordpressSettingsRecorder {
     }
 
     /**
-     * Answers a field mapping save whose mapped fields are no longer all in
-     * the form (it changed while the editor was open) with a 409 response the
-     * editor recognizes by its code, so it can reload the form's fields.
+     * Answers a field mapping save whose decisions are not for exactly the
+     * form's fields (it changed while the editor was open) with a 409
+     * response the editor recognizes by its code, so it can reload the
+     * form's fields.
      *
      * @return array response data
      */
@@ -903,29 +904,27 @@ class FacebookWordpressSettingsRecorder {
 
         // Without a saved mapping the form still uses automatic detection;
         // offer what it sends so the admin can review it, then save or reject.
-        $saved   = $this->field_mapper->has_form_mapping( $integration_name, $form_id );
-        $mapping = $this->field_mapper->get_mappings( $integration_name, $form_id );
+        $saved       = $this->field_mapper->has_form_mapping( $integration_name, $form_id );
+        $form_fields = $integration->get_form_fields( $form_id );
 
-        // Mapped fields the form no longer has (deleted or renamed) send
-        // nothing; the editor lists them, by the label they had when the
-        // mapping was saved, so they can be mapped again.
-        $labels         = $this->field_mapper->get_field_labels( $integration_name, $form_id );
-        $missing_fields = array();
-        foreach ( $integration->get_missing_mapped_fields( $form_id, $mapping ) as $field_id => $target ) {
-            $missing_fields[] = array(
-                'id'     => (string) $field_id,
-                'label'  => isset( $labels[ $field_id ] ) ? (string) $labels[ $field_id ] : '',
-                'target' => $target,
+        // With one, list the included fields the form no longer has (they
+        // send nothing) and the fields it gained since (not reviewed yet), so
+        // the editor can ask for a review.
+        $review = $saved
+            ? FormFieldMappingOverview::review_fields( $form_fields, $this->field_mapper->get_fields( $integration_name, $form_id ) )
+            : array(
+                'missing_fields' => array(),
+                'new_fields'     => array(),
             );
-        }
 
         return $this->handle_success_request(
             array(
-                'fields'         => $integration->get_form_fields( $form_id ),
+                'fields'         => $form_fields,
                 'saved'          => $saved,
-                'mapping'        => $mapping,
+                'mapping'        => $this->field_mapper->get_mappings( $integration_name, $form_id ),
                 'suggested'      => $saved ? array() : $integration->suggest_field_mapping( $form_id ),
-                'missing_fields' => $missing_fields,
+                'missing_fields' => $review['missing_fields'],
+                'new_fields'     => array_column( $review['new_fields'], 'id' ),
             )
         );
     }
@@ -933,14 +932,17 @@ class FacebookWordpressSettingsRecorder {
     /**
      * Saves a form's field mapping, replacing the previous one.
      *
-     * Expects POST integration, form_id and mapping (a JSON object of
-     * field_id => target). An empty mapping rejects the form (the editor
-     * confirms that first). Nothing is saved when a target is invalid, or
-     * when a mapped field is no longer in the form because the form changed
-     * while the editor was open: dropping it could leave an empty mapping
-     * that silently rejects the form, so the editor is told to reload the
-     * fields instead. The form title shown in the overview is read from the
-     * form plugin.
+     * Expects POST integration, form_id and mapping: a JSON object with a
+     * decision for every field of the form, field_id => target, or '' for a
+     * field that is not sent. A mapping that sends no field rejects the form
+     * (the editor confirms that first).
+     *
+     * Nothing is saved when a target is invalid, or when the decisions are
+     * not for exactly the form's fields, because the form changed while the
+     * editor was open. Saving anyway would drop decisions (possibly leaving
+     * no field sent, which silently rejects the form) or leave a new field
+     * without one, so the editor is told to reload the fields instead. The
+     * form title shown in the overview is read from the form plugin.
      *
      * @return array response data
      */
@@ -970,30 +972,29 @@ class FacebookWordpressSettingsRecorder {
             return $this->handle_invalid_request();
         }
 
-        $form_fields  = $integration->get_form_fields( $form_id );
-        $field_ids    = array_column( $form_fields, 'id' );
-        $mapping      = array();
-        $form_changed = false;
+        $decisions = array();
         foreach ( $raw_mapping as $field_id => $target ) {
             $field_id = sanitize_text_field( (string) $field_id );
             $target   = is_string( $target ) ? sanitize_text_field( $target ) : '';
-            if ( ! FormFieldMapper::is_valid_target( $target ) ) {
+            if ( '' !== $target && ! FormFieldMapper::is_valid_target( $target ) ) {
                 return $this->handle_invalid_request();
             }
-            if ( ! in_array( $field_id, $field_ids, true ) ) {
-                $form_changed = true;
-                continue;
-            }
-            $mapping[ $field_id ] = $target;
+            $decisions[ $field_id ] = $target;
         }
-        if ( $form_changed ) {
+
+        $form_fields = $integration->get_form_fields( $form_id );
+        $field_ids   = array_column( $form_fields, 'id' );
+        $posted_ids  = array_map( 'strval', array_keys( $decisions ) );
+        sort( $field_ids, SORT_STRING );
+        sort( $posted_ids, SORT_STRING );
+        if ( $field_ids !== $posted_ids ) {
             return $this->handle_form_changed_request();
         }
 
-        // The labels are kept so a mapped field the form later loses can
+        // The labels are kept so an included field the form later loses can
         // still be named on the field mapping screen.
         $labels = array_column( $form_fields, 'label', 'id' );
-        if ( ! $this->field_mapper->save_form_mapping( $integration_name, $form_id, $form_title, $mapping, $labels ) ) {
+        if ( ! $this->field_mapper->save_form_mapping( $integration_name, $form_id, $form_title, $decisions, $labels ) ) {
             return $this->handle_invalid_request();
         }
 

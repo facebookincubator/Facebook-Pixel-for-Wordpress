@@ -3,7 +3,8 @@
  * Facebook Pixel Plugin FormFieldMapper class.
  *
  * Stores per-form mappings from a form plugin's native field ids to Meta Lead
- * parameters (e.g. 'your-email' => 'email').
+ * parameters (e.g. 'your-email' => 'email'), with a decision for every field
+ * so fields that were not reviewed can be told apart.
  *
  * @package FacebookPixelPlugin
  */
@@ -87,13 +88,25 @@ class FormFieldMapper {
     /**
      * Returns the full mapping store.
      *
+     * A saved mapping records a decision for every field the form had when
+     * it was saved: the field is included (sent as its target) or excluded
+     * (not sent). A field the form gained later has no decision, so the field
+     * mapping screen can tell it has not been reviewed. The label is the one
+     * the field had when the mapping was saved, so a field the form later
+     * loses can still be named. 'rejected' is set on save when no field is
+     * included: the form sends no Lead event, which a submission can check
+     * without reading the fields.
+     *
      * Shape:
      * [
      *   '<integration_name>' => [
      *     '<form_id>' => [
-     *       'form_title'   => '<title>',
-     *       'mappings'     => [ '<field_id>' => '<target>' ],
-     *       'field_labels' => [ '<field_id>' => '<label>' ], // Optional.
+     *       'form_title' => '<title>',
+     *       'rejected'   => false,
+     *       'fields'     => [
+     *         '<field_id>' => [ 'included' => true, 'target' => '<target>', 'label' => '<label>' ],
+     *         '<field_id>' => [ 'included' => false, 'label' => '<label>' ],
+     *       ],
      *     ],
      *   ],
      * ]
@@ -105,42 +118,58 @@ class FormFieldMapper {
     }
 
     /**
-     * Returns the field_id => target mappings saved for a form.
+     * Returns the field decisions saved for a form.
+     *
+     * @param string $integration_name The integration name (INTEGRATION_NAME).
+     * @param string $form_id          The form plugin's native form id.
+     * @return array<string,array> field_id => ['included' => bool, 'target' =>
+     *                             string ('' when excluded), 'label' => string],
+     *                             or an empty array.
+     */
+    public function get_fields( $integration_name, $form_id ) {
+        $all     = $this->get_all();
+        $form_id = (string) $form_id;
+        if ( ! isset( $all[ $integration_name ][ $form_id ]['fields'] )
+            || ! is_array( $all[ $integration_name ][ $form_id ]['fields'] ) ) {
+            return array();
+        }
+        $fields = array();
+        foreach ( $all[ $integration_name ][ $form_id ]['fields'] as $field_id => $field ) {
+            if ( ! is_array( $field ) ) {
+                continue;
+            }
+            $target              = isset( $field['target'] ) ? (string) $field['target'] : '';
+            $included            = ! empty( $field['included'] ) && self::is_valid_target( $target );
+            $fields[ $field_id ] = array(
+                'included' => $included,
+                'target'   => $included ? $target : '',
+                'label'    => isset( $field['label'] ) ? (string) $field['label'] : '',
+            );
+        }
+        return $fields;
+    }
+
+    /**
+     * Returns the included fields of a form's saved mapping as
+     * field_id => target: what a submission of the form sends.
      *
      * @param string $integration_name The integration name (INTEGRATION_NAME).
      * @param string $form_id          The form plugin's native form id.
      * @return array<string,string> The mappings, or an empty array.
      */
     public function get_mappings( $integration_name, $form_id ) {
-        $all     = $this->get_all();
-        $form_id = (string) $form_id;
-        if ( isset( $all[ $integration_name ][ $form_id ]['mappings'] )
-            && is_array( $all[ $integration_name ][ $form_id ]['mappings'] ) ) {
-            return $all[ $integration_name ][ $form_id ]['mappings'];
+        $mappings = array();
+        foreach ( $this->get_fields( $integration_name, $form_id ) as $field_id => $field ) {
+            if ( $field['included'] ) {
+                $mappings[ $field_id ] = $field['target'];
+            }
         }
-        return array();
+        return $mappings;
     }
 
     /**
-     * Returns the labels the mapped fields had when the mapping was saved,
-     * so a field the form no longer has can still be named.
-     *
-     * @param string $integration_name The integration name (INTEGRATION_NAME).
-     * @param string $form_id          The form plugin's native form id.
-     * @return array<string,string> field_id => label, or an empty array.
-     */
-    public function get_field_labels( $integration_name, $form_id ) {
-        $all     = $this->get_all();
-        $form_id = (string) $form_id;
-        if ( isset( $all[ $integration_name ][ $form_id ]['field_labels'] )
-            && is_array( $all[ $integration_name ][ $form_id ]['field_labels'] ) ) {
-            return $all[ $integration_name ][ $form_id ]['field_labels'];
-        }
-        return array();
-    }
-
-    /**
-     * Whether a mapping is saved for a form, including one with no fields.
+     * Whether a mapping is saved for a form, including one with no included
+     * field.
      *
      * @param string $integration_name The integration name (INTEGRATION_NAME).
      * @param string $form_id          The form plugin's native form id.
@@ -152,33 +181,57 @@ class FormFieldMapper {
     }
 
     /**
+     * Whether a form's saved mapping was rejected: no field is included, so
+     * the form sends no Lead event. False for a form without a saved mapping.
+     *
+     * @param string $integration_name The integration name (INTEGRATION_NAME).
+     * @param string $form_id          The form plugin's native form id.
+     * @return bool
+     */
+    public function is_form_rejected( $integration_name, $form_id ) {
+        $all = $this->get_all();
+        return ! empty( $all[ $integration_name ][ (string) $form_id ]['rejected'] );
+    }
+
+    /**
      * Saves the mapping for a form, replacing any existing one, so each form
      * has at most one mapping.
      *
-     * Invalid targets are dropped. A mapping with no fields is still saved: it
-     * means the form was rejected and sends no Lead event. Only
-     * delete_form_mapping() returns a form to automatic detection.
+     * Each field gets a decision: a valid target includes it, '' excludes
+     * it. A field with an invalid target gets no decision. A mapping with no
+     * included field is still saved: it means the form was rejected and sends
+     * no Lead event. Only delete_form_mapping() returns a form to automatic
+     * detection.
      *
      * @param string               $integration_name The integration name.
      * @param string               $form_id          The native form id.
      * @param string               $form_title       The form title, for display.
-     * @param array<string,string> $mappings         field_id => target.
-     * @param array<string,string> $field_labels     Optional field_id => label
-     *                                               of the mapped fields, kept to
-     *                                               name a field the form later
-     *                                               loses.
+     * @param array<string,string> $decisions        field_id => target, or ''
+     *                                               for a field that is not sent.
+     * @param array<string,string> $labels           Optional field_id => label.
      * @return bool True on success.
      */
-    public function save_form_mapping( $integration_name, $form_id, $form_title, $mappings, $field_labels = array() ) {
-        $clean = array();
-        if ( is_array( $mappings ) ) {
-            foreach ( $mappings as $field_id => $target ) {
+    public function save_form_mapping( $integration_name, $form_id, $form_title, $decisions, $labels = array() ) {
+        $fields   = array();
+        $rejected = true;
+        if ( is_array( $decisions ) ) {
+            foreach ( $decisions as $field_id => $target ) {
                 $field_id = (string) $field_id;
                 $target   = (string) $target;
-                if ( '' === $field_id || ! self::is_valid_target( $target ) ) {
+                if ( '' === $field_id || ( '' !== $target && ! self::is_valid_target( $target ) ) ) {
                     continue;
                 }
-                $clean[ $field_id ] = $target;
+                $field    = '' === $target
+                    ? array( 'included' => false )
+                    : array(
+                        'included' => true,
+                        'target'   => $target,
+                    );
+                $rejected = $rejected && '' === $target;
+                if ( is_array( $labels ) && isset( $labels[ $field_id ] ) && '' !== trim( (string) $labels[ $field_id ] ) ) {
+                    $field['label'] = trim( (string) $labels[ $field_id ] );
+                }
+                $fields[ $field_id ] = $field;
             }
         }
 
@@ -187,22 +240,11 @@ class FormFieldMapper {
         if ( ! isset( $all[ $integration_name ] ) || ! is_array( $all[ $integration_name ] ) ) {
             $all[ $integration_name ] = array();
         }
-        $entry  = array(
+        $all[ $integration_name ][ (string) $form_id ] = array(
             'form_title' => (string) $form_title,
-            'mappings'   => $clean,
+            'rejected'   => $rejected,
+            'fields'     => $fields,
         );
-        $labels = array();
-        if ( is_array( $field_labels ) ) {
-            foreach ( $clean as $field_id => $target ) {
-                if ( isset( $field_labels[ $field_id ] ) && '' !== trim( (string) $field_labels[ $field_id ] ) ) {
-                    $labels[ $field_id ] = trim( (string) $field_labels[ $field_id ] );
-                }
-            }
-        }
-        if ( ! empty( $labels ) ) {
-            $entry['field_labels'] = $labels;
-        }
-        $all[ $integration_name ][ (string) $form_id ] = $entry;
 
         return $this->store->write( $all );
     }

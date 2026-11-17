@@ -151,7 +151,11 @@ kses_remove_filters();
 if (!isset(\$mappings['contact-form-7']) || !is_array(\$mappings['contact-form-7'])) {
   \$mappings['contact-form-7'] = array();
 }
-\$mappings['contact-form-7'][\$orphan_id] = array('form_title' => 'E2E Mapping CF7', 'mappings' => array('your-email' => 'email'));
+\$mappings['contact-form-7'][\$orphan_id] = array(
+  'form_title' => 'E2E Mapping CF7',
+  'rejected'   => false,
+  'fields'     => array('your-email' => array('included' => true, 'target' => 'email', 'label' => 'your-email')),
+);
 update_option('facebook_form_field_mappings', \$mappings, false);
 
 \$data = array(

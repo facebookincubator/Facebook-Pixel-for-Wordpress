@@ -34,6 +34,8 @@
   var $suggested = $('#fb-mapping-suggested');
   var $missing = $('#fb-mapping-missing');
   var $missingList = $('#fb-mapping-missing-list');
+  var $new = $('#fb-mapping-new');
+  var $newList = $('#fb-mapping-new-list');
   var $saveButton = $('#fb-mapping-save');
   var $rejectButton = $('#fb-mapping-reject');
 
@@ -74,7 +76,7 @@
     var $select = $('<select>')
       .addClass('fb-mapping-target')
       .attr('aria-label', 'Send "' + fieldLabel + '" as');
-    $select.append($('<option>').val('').text('Do not map'));
+    $select.append($('<option>').val('').text('Do not send'));
     $.each(params.targets, function (i, target) {
       $('<option>')
         .val(target.value)
@@ -93,32 +95,47 @@
     return row.missing ? label + ' (form not found)' : label;
   }
 
-  // Names a mapped field the form no longer has by the label it had when
-  // the mapping was saved. Mappings saved before labels were kept only
-  // know the field's id.
-  function missingFieldName(field) {
-    return field.label ? '"' + field.label + '"' : 'field ID ' + field.id;
+  // Names a field as "ID: label". Plugins that identify fields by name
+  // (Contact Form 7, Mailchimp for WP) use the name as the label too, and a
+  // field whose label is unknown has only its ID, so either is shown once.
+  function fieldName(field) {
+    var id = String(field.id);
+    var label = field.label ? String(field.label) : '';
+    return label && label !== id ? id + ': ' + label : id;
   }
 
-  // A saved mapping whose fields are partly gone from the form (deleted, or
-  // renamed in a plugin that identifies fields by name) sends nothing for
-  // them; the status cell asks for a review.
+  function fieldNames(fields) {
+    return $.map(fields, fieldName).join(', ');
+  }
+
+  function reviewNote(text) {
+    return $('<span>').addClass('fb-mapping-needs-review').text(text);
+  }
+
+  // A saved mapping can fall out of date as the form changes: included
+  // fields it no longer has (deleted, or renamed in a plugin that identifies
+  // fields by name) send nothing, and fields it gained since the save send
+  // nothing until reviewed. The status cell asks for a review.
   function statusCell(row) {
     var $cell = $('<td>').text(describeStatus(row));
     var gone = row.missing_fields || [];
+    var added = row.new_fields || [];
     if (gone.length) {
-      $('<span>')
-        .addClass('fb-mapping-needs-review')
-        .text(
-          'Needs review: ' +
-            (gone.length === 1
-              ? 'the mapped field ' + missingFieldName(gone[0]) + ' was'
-              : 'the mapped fields ' +
-                $.map(gone, missingFieldName).join(', ') +
-                ' were') +
-            ' removed or renamed',
-        )
-        .appendTo($cell);
+      reviewNote(
+        'Needs review: ' +
+          (gone.length === 1 ? 'included field ' : 'included fields ') +
+          fieldNames(gone) +
+          (gone.length === 1 ? ' was' : ' were') +
+          ' removed or renamed',
+      ).appendTo($cell);
+    }
+    if (added.length) {
+      reviewNote(
+        'Needs review: ' +
+          (added.length === 1 ? 'new field ' : 'new fields ') +
+          fieldNames(added) +
+          ' not reviewed yet',
+      ).appendTo($cell);
     }
     return $cell;
   }
@@ -246,6 +263,8 @@
     $suggested.addClass('hidden');
     $missing.addClass('hidden');
     $missingList.text('');
+    $new.addClass('hidden');
+    $newList.text('');
     $saveButton.addClass('hidden');
     $rejectButton.addClass('hidden');
   }
@@ -266,7 +285,7 @@
     });
   }
 
-  // Lists the saved mapping's fields the form no longer has.
+  // Lists the saved mapping's included fields the form no longer has.
   function renderMissingFields(missingFields) {
     if (!missingFields || !missingFields.length) {
       return;
@@ -274,7 +293,7 @@
     $missingList.text(
       $.map(missingFields, function (field) {
         return (
-          missingFieldName(field) +
+          fieldName(field) +
           ' (sent as ' +
           (targetLabels[field.target] || field.target) +
           ')'
@@ -285,9 +304,18 @@
   }
 
   // One row per form field, preselecting the saved mapping or, for a form
-  // without one, what automatic detection sends today. An unsaved form can
-  // also be rejected, which saves a mapping with no fields.
-  function renderFields(fields, saved, mapping, suggested, missingFields) {
+  // without one, what automatic detection sends today. Fields added since
+  // the mapping was saved have no decision yet: they are marked New and
+  // preselect "Do not send". An unsaved form can also be rejected, which
+  // saves every field as not sent.
+  function renderFields(
+    fields,
+    saved,
+    mapping,
+    suggested,
+    missingFields,
+    newFields,
+  ) {
     resetFields();
     renderMissingFields(missingFields);
     if (!fields || fields.length === 0) {
@@ -295,15 +323,35 @@
       return;
     }
     var selected = (saved ? mapping : suggested) || {};
+    var isNew = {};
+    $.each(newFields || [], function (i, id) {
+      isNew[String(id)] = true;
+    });
+    var newRows = [];
     $.each(fields, function (i, field) {
-      var $target = buildTargetSelect(selected[field.id] || '', field.label);
+      var $target = buildTargetSelect(
+        selected[field.id] || '',
+        fieldName(field),
+      );
       $target.data('field_id', field.id);
+      var $name = $('<td>').text(fieldName(field));
+      if (isNew[String(field.id)]) {
+        newRows.push(field);
+        $('<span>')
+          .addClass('fb-mapping-new-badge')
+          .text('New')
+          .appendTo($name);
+      }
       $('<tr>')
-        .append($('<td>').text(field.label))
+        .append($name)
         .append($('<td>').text(field.type))
         .append($('<td>').append($target))
         .appendTo($fieldsBody);
     });
+    if (newRows.length) {
+      $newList.text(fieldNames(newRows));
+      $new.removeClass('hidden');
+    }
     $suggested.toggleClass('hidden', !!saved);
     $rejectButton.toggleClass('hidden', !!saved);
     $fieldsTable.removeClass('hidden');
@@ -340,6 +388,7 @@
             response.msg.mapping,
             response.msg.suggested,
             response.msg.missing_fields,
+            response.msg.new_fields,
           );
         } else {
           showStatus(params.loadError, true);
@@ -352,15 +401,18 @@
       });
   }
 
-  function collectMapping() {
+  // A decision for every field: its target, or '' when it is not sent.
+  // The server saves only a decision for exactly the form's fields.
+  function collectMapping(allExcluded) {
     var mapping = {};
     $fieldsBody.find('.fb-mapping-target').each(function () {
-      var value = $(this).val();
-      if (value) {
-        mapping[$(this).data('field_id')] = value;
-      }
+      mapping[$(this).data('field_id')] = allExcluded ? '' : $(this).val();
     });
     return mapping;
+  }
+
+  function sendsNoField(mapping) {
+    return !$.grep($.map(mapping, String), Boolean).length;
   }
 
   // The error code of a failed request, e.g. 'form_changed'.
@@ -418,10 +470,11 @@
     );
   }
 
-  // A mapping with no fields rejects the form: it stops sending Lead events.
+  // A mapping that sends no field rejects the form: it stops sending Lead
+  // events.
   function confirmReject() {
     return window.confirm(
-      'Reject this mapping? Submitting this form will stop sending Lead events until you save a mapping with at least one field.',
+      'Reject this mapping? Submitting this form will stop sending Lead events until you save a mapping that sends at least one field.',
     );
   }
 
@@ -430,8 +483,8 @@
 
   $saveButton.on('click', function (e) {
     e.preventDefault();
-    var mapping = collectMapping();
-    if ($.isEmptyObject(mapping)) {
+    var mapping = collectMapping(false);
+    if (sendsNoField(mapping)) {
       if (confirmReject()) {
         saveMapping(mapping, REJECTED_MESSAGE);
       }
@@ -443,7 +496,7 @@
   $rejectButton.on('click', function (e) {
     e.preventDefault();
     if (confirmReject()) {
-      saveMapping({}, REJECTED_MESSAGE);
+      saveMapping(collectMapping(true), REJECTED_MESSAGE);
     }
   });
 

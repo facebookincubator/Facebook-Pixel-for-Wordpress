@@ -33,7 +33,8 @@ use FacebookPixelPlugin\Tests\Mocks\MockFormFieldMappingStore;
 final class FormFieldMapperTest extends FacebookWordpressTestBase {
 
     /**
-     * A store holding one Contact Form 7 mapping.
+     * A store holding one Contact Form 7 mapping: two included fields and an
+     * excluded one.
      *
      * @return array
      */
@@ -42,9 +43,18 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             'contact-form-7' => array(
                 '123' => array(
                     'form_title' => 'Contact form 1',
-                    'mappings'   => array(
-                        'your-email' => 'email',
-                        'your-name'  => 'full_name',
+                    'rejected'   => false,
+                    'fields'     => array(
+                        'your-email'   => array(
+                            'included' => true,
+                            'target'   => 'email',
+                            'label'    => 'your-email',
+                        ),
+                        'your-name'    => array(
+                            'included' => true,
+                            'target'   => 'full_name',
+                        ),
+                        'your-message' => array( 'included' => false ),
                     ),
                 ),
             ),
@@ -69,11 +79,12 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * get_mappings returns a form's saved mappings, or nothing.
+     * get_mappings returns a form's included fields, get_fields every saved
+     * decision; both are empty for a form without a saved mapping.
      *
      * @return void
      */
-    public function testGetMappings() {
+    public function testGetMappingsAndFields() {
         $mapper = new FormFieldMapper( new MockFormFieldMappingStore( $this->cf7_store() ) );
 
         $this->assertSame(
@@ -83,17 +94,41 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
             ),
             $mapper->get_mappings( 'contact-form-7', 123 )
         );
+        $this->assertSame(
+            array(
+                'your-email'   => array(
+                    'included' => true,
+                    'target'   => 'email',
+                    'label'    => 'your-email',
+                ),
+                'your-name'    => array(
+                    'included' => true,
+                    'target'   => 'full_name',
+                    'label'    => '',
+                ),
+                'your-message' => array(
+                    'included' => false,
+                    'target'   => '',
+                    'label'    => '',
+                ),
+            ),
+            $mapper->get_fields( 'contact-form-7', '123' )
+        );
+        $this->assertFalse( $mapper->is_form_rejected( 'contact-form-7', '123' ) );
         $this->assertSame( array(), $mapper->get_mappings( 'contact-form-7', '999' ) );
-        $this->assertSame( array(), $mapper->get_mappings( 'ninja-forms', '123' ) );
+        $this->assertSame( array(), $mapper->get_fields( 'ninja-forms', '123' ) );
+        $this->assertFalse( $mapper->is_form_rejected( 'ninja-forms', '123' ) );
     }
 
     /**
-     * Saving replaces the form's previous mapping and drops invalid targets
-     * and empty field ids.
+     * Saving replaces the form's previous mapping with a decision per field:
+     * a valid target includes the field, '' excludes it, and an invalid
+     * target or an empty field id gets no decision. Labels are kept for the
+     * fields with a decision.
      *
      * @return void
      */
-    public function testSaveReplacesMappingAndDropsInvalidTargets() {
+    public function testSaveStoresADecisionPerField() {
         $store  = new MockFormFieldMappingStore( $this->cf7_store() );
         $mapper = new FormFieldMapper( $store );
 
@@ -104,8 +139,14 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
                 'Renamed form',
                 array(
                     'tel'     => 'phone',
+                    'note'    => '',
                     'company' => 'company_name',
                     ''        => 'email',
+                ),
+                array(
+                    'tel'     => ' Phone ',
+                    'note'    => '',
+                    'company' => 'Company',
                 )
             )
         );
@@ -115,7 +156,15 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
                 'contact-form-7' => array(
                     '123' => array(
                         'form_title' => 'Renamed form',
-                        'mappings'   => array( 'tel' => 'phone' ),
+                        'rejected'   => false,
+                        'fields'     => array(
+                            'tel'  => array(
+                                'included' => true,
+                                'target'   => 'phone',
+                                'label'    => 'Phone',
+                            ),
+                            'note' => array( 'included' => false ),
+                        ),
                     ),
                 ),
             ),
@@ -124,49 +173,30 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * The labels of the mapped fields are saved with the mapping, so a field
-     * the form later loses can still be named; labels of unmapped fields and
-     * empty labels are not kept.
+     * A mapping that includes no field is saved as a rejection, flagged on
+     * the form: it then sends no customer information instead of using
+     * automatic detection.
      *
      * @return void
      */
-    public function testSaveKeepsTheMappedFieldsLabels() {
-        $store  = new MockFormFieldMappingStore();
-        $mapper = new FormFieldMapper( $store );
-
-        $mapper->save_form_mapping(
-            'wpforms-lite',
-            '7',
-            'Contact',
-            array(
-                '1' => 'email',
-                '2' => 'phone',
-            ),
-            array(
-                '1' => ' Work email ',
-                '2' => '',
-                '3' => 'Message',
-            )
-        );
-
-        $this->assertSame( array( '1' => 'Work email' ), $mapper->get_field_labels( 'wpforms-lite', '7' ) );
-        $this->assertSame( array(), $mapper->get_field_labels( 'wpforms-lite', '8' ) );
-    }
-
-    /**
-     * A mapping with no valid fields is still saved, as a rejection: the form
-     * then sends no customer information instead of using automatic detection.
-     *
-     * @return void
-     */
-    public function testSaveWithNoFieldsKeepsARejection() {
+    public function testSaveWithNoIncludedFieldIsARejection() {
         $store  = new MockFormFieldMappingStore( $this->cf7_store() );
         $mapper = new FormFieldMapper( $store );
 
-        $mapper->save_form_mapping( 'contact-form-7', '123', 'Contact form 1', array( 'x' => 'bogus' ) );
+        $mapper->save_form_mapping(
+            'contact-form-7',
+            '123',
+            'Contact form 1',
+            array(
+                'your-email' => '',
+                'your-name'  => '',
+            )
+        );
 
         $this->assertTrue( $mapper->has_form_mapping( 'contact-form-7', '123' ) );
+        $this->assertTrue( $mapper->is_form_rejected( 'contact-form-7', '123' ) );
         $this->assertSame( array(), $mapper->get_mappings( 'contact-form-7', '123' ) );
+        $this->assertCount( 2, $mapper->get_fields( 'contact-form-7', '123' ) );
         $this->assertFalse( $mapper->has_form_mapping( 'contact-form-7', '999' ) );
     }
 
@@ -180,9 +210,9 @@ final class FormFieldMapperTest extends FacebookWordpressTestBase {
         $data                                = $this->cf7_store();
         $data['contact-form-7']['456']       = array(
             'form_title' => 'Other',
-            'mappings'   => array( 'email' => 'email' ),
+            'fields'     => array(),
         );
-        $data['ninja-forms']['1']['mappings'] = array( 'email_1' => 'email' );
+        $data['ninja-forms']['1']['fields']   = array();
         $store                               = new MockFormFieldMappingStore( $data );
         $mapper                              = new FormFieldMapper( $store );
 

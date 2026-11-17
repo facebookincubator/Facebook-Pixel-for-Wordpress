@@ -38,10 +38,10 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
      * @param bool   $active    Whether its plugin is active.
      * @param array  $forms     Forms it lists.
      * @param array  $suggested form_id => suggested mapping.
-     * @param array  $gone      form_id => mapped field ids the form no longer has.
+     * @param array  $fields    form_id => the form's field ids, id => label.
      * @return TrackableLeadFormIntegrationBase
      */
-    private function integration( $label, $active, array $forms = array(), array $suggested = array(), array $gone = array() ) {
+    private function integration( $label, $active, array $forms = array(), array $suggested = array(), array $fields = array() ) {
         $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class );
         $integration->shouldReceive( 'get_integration_label' )->andReturn( $label );
         $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $active );
@@ -51,10 +51,17 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
                 return 'https://example.com/edit/' . rawurlencode( $label ) . '/' . $form_id;
             }
         );
-        $integration->shouldReceive( 'get_missing_mapped_fields' )->andReturnUsing(
-            function ( $form_id, $mapping ) use ( $gone ) {
-                $ids = isset( $gone[ $form_id ] ) ? $gone[ $form_id ] : array();
-                return array_intersect_key( $mapping, array_flip( $ids ) );
+        $integration->shouldReceive( 'get_form_fields' )->andReturnUsing(
+            function ( $form_id ) use ( $fields ) {
+                $rows = array();
+                foreach ( isset( $fields[ $form_id ] ) ? $fields[ $form_id ] : array() as $id => $label ) {
+                    $rows[] = array(
+                        'id'    => (string) $id,
+                        'label' => $label,
+                        'type'  => 'text',
+                    );
+                }
+                return $rows;
             }
         );
         foreach ( $suggested as $form_id => $mapping ) {
@@ -95,6 +102,12 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
                     '1' => array(
                         'your-name'  => 'full_name',
                         'your-email' => 'email',
+                    ),
+                ),
+                array(
+                    '2' => array(
+                        'work'  => 'work',
+                        'other' => 'other',
                     ),
                 )
             ),
@@ -158,15 +171,17 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * Mapped fields a form no longer has (deleted, or renamed in a plugin
-     * that identifies fields by name) send nothing: the row lists only the
-     * targets still sent and names the missing fields by the label they had
-     * when the mapping was saved ('' when that is unknown). A saved mapping
-     * whose fields are all gone stays saved, not rejected.
+     * A saved mapping is compared with the form's current fields. Included
+     * fields the form no longer has send nothing: the row lists only the
+     * targets still sent and names them, with the label they had when the
+     * mapping was saved ('' when unknown). Fields the form gained since have
+     * no decision: they are listed as new. An excluded field the form no
+     * longer has is not listed. A mapping whose included fields are all gone
+     * stays saved, not rejected.
      *
      * @return void
      */
-    public function testMissingMappedFieldsAreFlagged() {
+    public function testReviewFlagsMissingAndNewFields() {
         $integrations = array(
             'contact-form-7' => $this->integration(
                 'Contact Form 7',
@@ -183,8 +198,11 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
                 ),
                 array(),
                 array(
-                    '1' => array( 'your-email' ),
-                    '2' => array( 'work' ),
+                    '1' => array(
+                        'your-name' => 'your-name',
+                        'your-tel'  => 'your-tel',
+                    ),
+                    '2' => array(),
                 )
             ),
         );
@@ -197,12 +215,9 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
                             'your-name'  => 'full_name',
                             'your-email' => 'email',
                         ),
-                        'field_labels' => array(
-                            'your-name'  => 'Your name',
-                            'your-email' => 'Your email',
-                        ),
+                        'excluded'     => array( 'your-message' ),
+                        'field_labels' => array( 'your-email' => 'your-email' ),
                     ),
-                    // Saved before field labels were kept.
                     '2' => array(
                         'form_title' => 'Quote',
                         'mappings'   => array( 'work' => 'email' ),
@@ -218,22 +233,84 @@ final class FormFieldMappingOverviewTest extends FacebookWordpressTestBase {
         $this->assertSame(
             array(
                 array(
-                    'id'    => 'your-email',
-                    'label' => 'Your email',
+                    'id'     => 'your-email',
+                    'label'  => 'your-email',
+                    'target' => 'email',
                 ),
             ),
             $rows[0]['missing_fields']
+        );
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => 'your-tel',
+                    'label' => 'your-tel',
+                ),
+            ),
+            $rows[0]['new_fields']
         );
         $this->assertSame( 'saved', $rows[1]['status'] );
         $this->assertSame( array(), $rows[1]['targets'] );
         $this->assertSame(
             array(
                 array(
-                    'id'    => 'work',
-                    'label' => '',
+                    'id'     => 'work',
+                    'label'  => '',
+                    'target' => 'email',
                 ),
             ),
             $rows[1]['missing_fields']
+        );
+        $this->assertSame( array(), $rows[1]['new_fields'] );
+    }
+
+    /**
+     * The review summary counts forms of active plugins that were never
+     * reviewed and saved mappings whose form changed; gone forms and
+     * inactive plugins are left out, and so are forms with nothing to
+     * review. The signature changes with the items and is '' without any.
+     *
+     * @return void
+     */
+    public function testSummarizeReview() {
+        $row = function ( $form_id, $status, $missing_fields = array(), $new_fields = array(), $active = true, $missing = false ) {
+            return array(
+                'integration_name' => 'contact-form-7',
+                'form_id'          => $form_id,
+                'status'           => $status,
+                'active'           => $active,
+                'missing'          => $missing,
+                'missing_fields'   => $missing_fields,
+                'new_fields'       => $new_fields,
+            );
+        };
+        $tel = array(
+            array(
+                'id'    => 'your-tel',
+                'label' => 'your-tel',
+            ),
+        );
+
+        $summary = FormFieldMappingOverview::summarize_review(
+            array(
+                $row( '1', 'automatic' ),
+                $row( '2', 'saved', array(), $tel ),
+                $row( '3', 'saved' ),
+                $row( '4', 'automatic', array(), array(), false ),
+                $row( '5', 'saved', $tel, array(), true, true ),
+            )
+        );
+        $this->assertSame( 1, $summary['unreviewed'] );
+        $this->assertSame( 1, $summary['changed'] );
+        $this->assertSame( md5( "form:contact-form-7/1\nnew:contact-form-7/2/your-tel" ), $summary['signature'] );
+
+        $this->assertSame(
+            array(
+                'unreviewed' => 0,
+                'changed'    => 0,
+                'signature'  => '',
+            ),
+            FormFieldMappingOverview::summarize_review( array( $row( '3', 'saved' ) ) )
         );
     }
 

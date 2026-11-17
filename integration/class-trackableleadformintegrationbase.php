@@ -195,9 +195,11 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
      *
      * A form-field -> lead-parameter mapping saved for this form (see
      * is_mapping_available()/get_mapping_for_form()) replaces automatic
-     * detection: only mapped fields are sent. (A saved mapping with no fields
-     * means the form was rejected and sends no Lead event; integrations check
-     * is_form_rejected() before tracking.) Forms without a saved mapping
+     * detection: only its included fields are sent; excluded fields, and
+     * fields added to the form since it was saved, are not. (A saved mapping
+     * with no included field means the form was rejected and sends no Lead
+     * event; integrations check is_form_rejected() before tracking.) Forms
+     * without a saved mapping
      * use the integration's hard-coded fallback extraction, which also seeds
      * the mapping screen (see suggest_field_mapping()). The arguments are
      * whatever the plugin's submit hook provides and are forwarded verbatim to
@@ -217,16 +219,17 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
 
     /**
      * Whether the submitted form's mapping was rejected: a saved mapping with
-     * no fields. Such a form sends no Lead event at all, browser or server,
-     * until a mapping with at least one field is saved for it.
+     * no included field (FormFieldMapper::is_form_rejected() reads the flag
+     * stored on save). Such a form sends no Lead event at all, browser or
+     * server, until a mapping that includes a field is saved for it.
      *
      * @param mixed ...$args The plugin submit-hook arguments.
      * @return bool
      */
     protected function is_form_rejected( ...$args ) {
         $form_id = $this->get_form_id( ...$args );
-        return $this->is_mapping_available( $form_id )
-            && empty( $this->get_mapping_for_form( static::INTEGRATION_NAME, $form_id ) );
+        return is_scalar( $form_id )
+            && $this->field_mapper->is_form_rejected( static::INTEGRATION_NAME, (string) $form_id );
     }
 
     /**
@@ -373,8 +376,8 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
 
     /**
      * Whether a form-field -> lead-parameter mapping is saved for the form. A
-     * saved mapping with no fields counts: the form was rejected, so it does
-     * not fall back to automatic detection.
+     * rejected mapping (no included field) counts, so the form does not fall
+     * back to automatic detection.
      *
      * @param mixed $form_id The form identifier.
      * @return bool
@@ -568,33 +571,6 @@ abstract class TrackableLeadFormIntegrationBase extends TrackableIntegrationBase
             }
         }
         return $ordered;
-    }
-
-    /**
-     * The entries of a saved mapping whose field the form no longer has, e.g.
-     * because the field was deleted, or renamed in a form plugin that
-     * identifies fields by name (Contact Form 7, Mailchimp for WP). Nothing
-     * is sent for them, so the field mapping screen asks for a review.
-     *
-     * @param string               $form_id The native form id.
-     * @param array<string,string> $mapping The saved mapping (field_id => target).
-     * @return array<string,string> field_id => target.
-     */
-    public function get_missing_mapped_fields( $form_id, array $mapping ) {
-        if ( empty( $mapping ) || ! $this->is_field_mapping_available() ) {
-            return array();
-        }
-        $present = array();
-        foreach ( $this->get_form_fields( $form_id ) as $field ) {
-            $present[ $field['id'] ] = true;
-        }
-        $missing = array();
-        foreach ( $mapping as $field_id => $target ) {
-            if ( ! isset( $present[ (string) $field_id ] ) ) {
-                $missing[ (string) $field_id ] = $target;
-            }
-        }
-        return $missing;
     }
 
     /**

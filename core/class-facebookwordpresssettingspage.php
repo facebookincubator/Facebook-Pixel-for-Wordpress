@@ -929,6 +929,18 @@ class FacebookWordpressSettingsPage {
             }
         }
 
+        // Ask for a review of the form field mappings when forms or their
+        // fields changed in a way that affects them.
+        if ( current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY )
+            && in_array( $current_screen_id, array( 'dashboard', 'plugins' ), true )
+            && null !== $this->get_field_mapping_notice_summary()
+        ) {
+            add_action(
+                'admin_notices',
+                array( $this, 'field_mapping_notice' )
+            );
+        }
+
         // Show connection invalid notice on dashboard, plugins, AND settings page.
         $connection_screens = array(
             'dashboard',
@@ -1148,6 +1160,108 @@ class FacebookWordpressSettingsPage {
     }
 
     /**
+     * What the form field mapping notice reports for the current user, or
+     * null when it should not be shown: the plugin is not connected (the
+     * mapping section is hidden then), nothing needs a review, or the user
+     * dismissed the notice for exactly these items. See
+     * FormFieldMappingOverview::summarize_review().
+     *
+     * @return array{unreviewed: int, changed: int, signature: string}|null
+     */
+    public function get_field_mapping_notice_summary() {
+        if ( empty( FacebookWordpressOptions::get_active_access_token() ) ) {
+            return null;
+        }
+        $summary = FormFieldMappingOverview::summarize_review(
+            FormFieldMappingOverview::build(
+                call_user_func( $this->field_mapping_integrations ),
+                $this->field_mapper
+            )
+        );
+        if ( '' === $summary['signature'] ) {
+            return null;
+        }
+        $dismissed = get_user_meta(
+            get_current_user_id(),
+            FacebookPluginConfig::ADMIN_IGNORE_FIELD_MAPPING_NOTICE,
+            true
+        );
+        return $dismissed === $summary['signature'] ? null : $summary;
+    }
+
+    /**
+     * Displays a notice asking for a review of the form field mappings:
+     * forms not reviewed yet, and saved mappings whose form changed.
+     * Dismissing it hides it until something else needs a review.
+     *
+     * @return void
+     */
+    public function field_mapping_notice() {
+        $summary = $this->get_field_mapping_notice_summary();
+        if ( null === $summary ) {
+            return;
+        }
+        $parts = array();
+        if ( $summary['unreviewed'] > 0 ) {
+            $parts[] = sprintf(
+                /* translators: %d: number of forms */
+                _n(
+                    '%d form has not been reviewed yet',
+                    '%d forms have not been reviewed yet',
+                    $summary['unreviewed'],
+                    'official-facebook-pixel'
+                ),
+                $summary['unreviewed']
+            );
+        }
+        if ( $summary['changed'] > 0 ) {
+            $parts[] = sprintf(
+                /* translators: %d: number of forms */
+                _n(
+                    'the fields of %d form changed since its mapping was saved',
+                    'the fields of %d forms changed since their mappings were saved',
+                    $summary['changed'],
+                    'official-facebook-pixel'
+                ),
+                $summary['changed']
+            );
+        }
+        $review_url  = admin_url(
+            'options-general.php?page=' . FacebookPluginConfig::ADMIN_MENU_SLUG
+        ) . '#fb-field-mapping';
+        $dismiss_url = wp_nonce_url(
+            add_query_arg(
+                FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE,
+                $summary['signature'],
+                admin_url()
+            ),
+            FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE
+        );
+        ?>
+        <div class="notice notice-warning">
+            <p><strong>Meta Pixel for WordPress</strong></p>
+            <p>
+                <?php
+                echo esc_html(
+                    sprintf(
+                        /* translators: %s: what changed, e.g. "2 forms have not been reviewed yet" */
+                        __( 'Form field mappings need a review: %s. Until they are reviewed, Lead events may not send the customer information you expect.', 'official-facebook-pixel' ),
+                        implode( '; ', $parts )
+                    )
+                );
+                ?>
+            </p>
+            <p>
+                <a href="<?php echo esc_url( $review_url ); ?>"
+                   class="button button-primary"
+                   style="margin-right: 8px;"><?php esc_html_e( 'Review form field mappings', 'official-facebook-pixel' ); ?></a>
+                <a href="<?php echo esc_url( $dismiss_url ); ?>"><?php esc_html_e( 'Dismiss', 'official-facebook-pixel' ); ?></a>
+            </p>
+        </div>
+        <?php
+    }
+
+    /**
      * Displays a notice when the Meta connection is invalid.
      */
     public function connection_invalid_notice() {
@@ -1261,6 +1375,20 @@ class FacebookWordpressSettingsPage {
                 $user_id,
                 FacebookPluginConfig::ADMIN_IGNORE_CONNECTION_INVALID_NOTICE,
                 true
+            );
+        }
+        // The field mapping notice stores what it reported, so it comes back
+        // only when something else needs a review.
+        if ( isset( $_GET[ FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE ], $_GET['_wpnonce'] )
+            && wp_verify_nonce(
+                sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ),
+                FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE
+            )
+        ) {
+            update_user_meta(
+                $user_id,
+                FacebookPluginConfig::ADMIN_IGNORE_FIELD_MAPPING_NOTICE,
+                sanitize_text_field( wp_unslash( $_GET[ FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE ] ) )
             );
         }
     }
@@ -1430,7 +1558,8 @@ class FacebookWordpressSettingsPage {
         it sends. Forms marked Automatic send what automatic detection finds
         until you review them: review a form to save its mapping (changing any
         field you need to) or reject it to stop sending Lead events from that
-        form. Once a mapping is saved, only the fields in it are sent.
+        form. Once a mapping is saved, only the fields it sends are sent;
+        fields added to the form later are not sent until you review them.
     </div>
     <div class="fb-capi-desc fb-mapping-plugins">
         Supported form plugins:
@@ -1470,7 +1599,7 @@ class FacebookWordpressSettingsPage {
         <p id="fb-mapping-suggested" class="fb-capi-desc hidden">
             <strong>Not reviewed yet.</strong> Automatic detection currently
             sends the fields below for this form, and will keep sending them
-            until you save or reject this mapping. Set a field to "Do not map"
+            until you save or reject this mapping. Set a field to "Do not send"
             to stop sending it, or reject the mapping to stop sending Lead
             events from this form.
         </p>
@@ -1480,6 +1609,12 @@ class FacebookWordpressSettingsPage {
             <span id="fb-mapping-missing-list"></span>.
             If a field was renamed, choose how to send it below and save.
             Saving removes the missing fields from the mapping.
+        </p>
+        <p id="fb-mapping-new" class="fb-capi-desc fb-mapping-warning hidden">
+            <strong>New fields were added to this form since its mapping was
+            saved</strong>, so nothing is sent from them yet:
+            <span id="fb-mapping-new-list"></span>.
+            Choose how to send each of them, or keep "Do not send", and save.
         </p>
         <table id="fb-mapping-fields" class="widefat fb-mapping-fields hidden">
             <thead>

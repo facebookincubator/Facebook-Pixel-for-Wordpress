@@ -83,11 +83,53 @@ abstract class FacebookWordpressTestBase extends TestCase {
      * Builds a form field mapper over an in-memory store, so lead-form
      * integrations never read the WordPress option in tests.
      *
-     * @param array $mappings Initial store contents, in FormFieldMapper::get_all() shape.
+     * @param array $mappings Initial store contents (see field_decisions()).
      * @return FormFieldMapper
      */
     protected function make_field_mapper( array $mappings = array() ) {
-        return new FormFieldMapper( new MockFormFieldMappingStore( $mappings ) );
+        return new FormFieldMapper( new MockFormFieldMappingStore( self::field_decisions( $mappings ) ) );
+    }
+
+    /**
+     * Converts mapping fixtures to the FormFieldMapper::get_all() shape. For
+     * brevity a fixture may give a form's included fields as 'mappings'
+     * (field_id => target), plus optional 'excluded' field ids and
+     * 'field_labels' (field_id => label); no included field makes the
+     * mapping rejected. Entries already in the stored shape are kept.
+     *
+     * @param array $store Fixture store contents.
+     * @return array The store in FormFieldMapper::get_all() shape.
+     */
+    protected static function field_decisions( array $store ) {
+        foreach ( $store as $name => $forms ) {
+            foreach ( $forms as $form_id => $entry ) {
+                if ( ! isset( $entry['mappings'] ) ) {
+                    continue;
+                }
+                $labels = isset( $entry['field_labels'] ) ? $entry['field_labels'] : array();
+                $fields = array();
+                foreach ( $entry['mappings'] as $field_id => $target ) {
+                    $fields[ $field_id ] = array(
+                        'included' => true,
+                        'target'   => $target,
+                    );
+                }
+                foreach ( isset( $entry['excluded'] ) ? $entry['excluded'] : array() as $field_id ) {
+                    $fields[ $field_id ] = array( 'included' => false );
+                }
+                foreach ( $labels as $field_id => $label ) {
+                    if ( isset( $fields[ $field_id ] ) ) {
+                        $fields[ $field_id ]['label'] = $label;
+                    }
+                }
+                $store[ $name ][ $form_id ] = array(
+                    'form_title' => isset( $entry['form_title'] ) ? $entry['form_title'] : '',
+                    'rejected'   => empty( $entry['mappings'] ),
+                    'fields'     => $fields,
+                );
+            }
+        }
+        return $store;
     }
 
     /**

@@ -98,7 +98,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
                 ),
             )
         );
-        $this->store = new MockFormFieldMappingStore( $saved );
+        $this->store = new MockFormFieldMappingStore( self::field_decisions( $saved ) );
 
         return new FacebookWordpressSettingsRecorder(
             function () use ( $integration ) {
@@ -177,7 +177,14 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     public function testGetMappingFields() {
         $this->mock_wp();
         $recorder = $this->make_recorder(
-            array( 'test-forms' => array( '5' => array( 'mappings' => array( 'name' => 'full_name' ) ) ) )
+            array(
+                'test-forms' => array(
+                    '5' => array(
+                        'mappings' => array( 'name' => 'full_name' ),
+                        'excluded' => array( 'email' ),
+                    ),
+                ),
+            )
         );
         $_POST    = array(
             'integration' => 'test-forms',
@@ -192,6 +199,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $this->assertSame( array( 'name' => 'full_name' ), $response['msg']['mapping'] );
         $this->assertSame( array(), $response['msg']['suggested'] );
         $this->assertSame( array(), $response['msg']['missing_fields'] );
+        $this->assertSame( array(), $response['msg']['new_fields'] );
     }
 
     /**
@@ -216,8 +224,8 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * Rejecting saves a mapping with no fields; the form then counts as saved
-     * and gets no suggestion.
+     * Rejecting saves every field as not sent; the form then counts as saved
+     * and rejected, and gets no suggestion.
      *
      * @return void
      */
@@ -227,11 +235,13 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         $_POST    = array(
             'integration' => 'test-forms',
             'form_id'     => '5',
-            'mapping'     => '{}',
+            'mapping'     => '{"email":"","name":""}',
         );
 
-        $this->assertTrue( $recorder->save_field_mapping()['success'] );
-        $this->assertSame( array(), $this->store->data['test-forms']['5']['mappings'] );
+        $response = $recorder->save_field_mapping();
+        $this->assertTrue( $response['success'] );
+        $this->assertTrue( $this->store->data['test-forms']['5']['rejected'] );
+        $this->assertSame( 'rejected', $response['msg']['list'][0]['status'] );
 
         $_POST    = array(
             'integration' => 'test-forms',
@@ -243,8 +253,8 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * Saving stores the mapping with the title from the form plugin and the
-     * mapped fields' labels, and returns the refreshed list.
+     * Saving stores a decision for every field, with its label and the title
+     * from the form plugin, and returns the refreshed list.
      *
      * @return void
      */
@@ -258,7 +268,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             'mapping'     => json_encode(
                 array(
                     'email' => 'email',
-                    'name'  => 'full_name',
+                    'name'  => '',
                 )
             ),
         );
@@ -270,14 +280,18 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             array(
                 'test-forms' => array(
                     '5' => array(
-                        'form_title'   => 'Contact',
-                        'mappings'     => array(
-                            'email' => 'email',
-                            'name'  => 'full_name',
-                        ),
-                        'field_labels' => array(
-                            'email' => 'Email',
-                            'name'  => 'Name',
+                        'form_title' => 'Contact',
+                        'rejected'   => false,
+                        'fields'     => array(
+                            'email' => array(
+                                'included' => true,
+                                'target'   => 'email',
+                                'label'    => 'Email',
+                            ),
+                            'name'  => array(
+                                'included' => false,
+                                'label'    => 'Name',
+                            ),
                         ),
                     ),
                 ),
@@ -287,7 +301,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
         // The refreshed table lists the form as saved.
         $this->assertSame( 'Contact', $response['msg']['list'][0]['form_title'] );
         $this->assertSame( 'saved', $response['msg']['list'][0]['status'] );
-        $this->assertSame( array( 'email', 'full_name' ), $response['msg']['list'][0]['targets'] );
+        $this->assertSame( array( 'email' ), $response['msg']['list'][0]['targets'] );
     }
 
     /**
@@ -317,30 +331,40 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * When a mapped field is no longer in the form (it changed while the
-     * editor was open), nothing is saved and the editor is told so. In
-     * particular a mapping whose fields are all gone is not stored as an
-     * empty mapping, which would silently reject the form.
+     * A save must decide every field the form has, and only those. When the
+     * form changed while the editor was open (a field was removed, renamed
+     * or added), nothing is saved and the editor is told so. In particular
+     * a mapping is never stored without its removed fields, which could
+     * leave no field sent and silently reject the form, or without a
+     * decision for a new field.
      *
      * @return void
      */
-    public function testSaveRefusesFieldsTheFormNoLongerHas() {
+    public function testSaveRefusesDecisionsThatDoNotMatchTheForm() {
         $this->mock_wp();
         $recorder = $this->make_recorder(
             array( 'test-forms' => array( '5' => array( 'mappings' => array( 'email' => 'email' ) ) ) )
         );
+        $before   = $this->store->data;
 
         foreach ( array(
             array( 'your-email' => 'email' ),
             array(
+                'your-email' => 'email',
+                'name'       => '',
+            ),
+            array( 'email' => 'email' ),
+            array(
                 'email'   => 'email',
+                'name'    => '',
                 'unknown' => 'phone',
             ),
+            array(),
         ) as $mapping ) {
             $_POST = array(
                 'integration' => 'test-forms',
                 'form_id'     => '5',
-                'mapping'     => json_encode( $mapping ),
+                'mapping'     => json_encode( (object) $mapping ),
             );
 
             $response = $recorder->save_field_mapping();
@@ -349,7 +373,7 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             $this->assertSame( array( 'code' => 'form_changed' ), $response['msg'] );
         }
         $this->assertSame( 0, $this->store->writes );
-        $this->assertSame( array( 'email' => 'email' ), $this->store->data['test-forms']['5']['mappings'] );
+        $this->assertSame( $before, $this->store->data );
     }
 
     /**
@@ -400,6 +424,8 @@ final class FormFieldMappingRecorderTest extends FacebookWordpressTestBase {
             ),
             $response['msg']['missing_fields']
         );
+        // The form's 'name' field has no saved decision.
+        $this->assertSame( array( 'name' ), $response['msg']['new_fields'] );
     }
 
     /**
