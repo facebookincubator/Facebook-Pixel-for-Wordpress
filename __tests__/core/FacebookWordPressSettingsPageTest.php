@@ -826,7 +826,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
     $html = ob_get_clean();
 
     $this->assertStringContainsString( 'Lead form field mappings need a review (1 form changed).', $html );
-    $this->assertStringContainsString( 'page=' . FacebookPluginConfig::ADMIN_MENU_SLUG . '#fb-field-mapping', $html );
+    $this->assertStringContainsString( 'page=' . FacebookPluginConfig::ADMIN_MENU_SLUG . '#fb-tab-configuration', $html );
     $this->assertStringContainsString(
       FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE . '=' . md5( 'new:contact-form-7/1/your-phone' )
         . '&_wpnonce=nonce-' . FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE,

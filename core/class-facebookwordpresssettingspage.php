@@ -1225,9 +1225,11 @@ class FacebookWordpressSettingsPage {
                 $summary['changed']
             );
         }
+        // js/settings_page.js opens a tab only for a #fb-tab-<name> hash; the
+        // mappings are in the Configuration tab.
         $review_url  = admin_url(
             'options-general.php?page=' . FacebookPluginConfig::ADMIN_MENU_SLUG
-        ) . '#fb-field-mapping';
+        ) . '#fb-tab-configuration';
         $dismiss_url = wp_nonce_url(
             add_query_arg(
                 FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE,
