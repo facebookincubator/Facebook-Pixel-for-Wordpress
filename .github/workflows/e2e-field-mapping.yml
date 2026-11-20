@@ -7,9 +7,9 @@ name: E2E Tests (Form Field Mapping)
 # release that changes its editor URL even when no PR is open.
 #
 # Same barebones setup as e2e-tests.yml (WordPress tarball + `php -S` + WP-CLI
-# against a MySQL service). Needs no Meta credentials: the plugin is marked
-# connected with placeholder values, admin pages send no events, and a test
-# mu-plugin answers the Lead event quality panel's Dataset Quality API calls.
+# against a MySQL service). The plugin is connected with the QA pixel and token,
+# so the Lead event quality panel shows what Meta's Dataset Quality API really
+# returns; admin pages send no events.
 on:
   pull_request:
     paths:
@@ -47,6 +47,15 @@ jobs:
     name: E2E Latest - form field mapping
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # The QA Meta pixel and token: the Lead event quality tests read the real
+    # Dataset Quality API for the Lead events the Pixel/CAPI E2E sends to it.
+    environment: QA
+    env:
+      FB_PIXEL_ID: ${{ secrets.FB_PIXEL_ID }}
+      FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+      # Where the QA secrets must exist (as in e2e-tests.yml): scheduled and
+      # manual runs and same-repo PRs. Fork PRs skip the tests that need them.
+      META_CREDENTIALS_REQUIRED: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
 
     services:
       mysql:

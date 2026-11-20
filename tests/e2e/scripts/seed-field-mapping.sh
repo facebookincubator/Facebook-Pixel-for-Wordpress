@@ -16,9 +16,9 @@
 #   are kept.
 # - Writes the forms to FIELD_MAPPING_FORMS_FILE (JSON) for the spec, with the
 #   URLs Formidable's and Mailchimp for WP's own edit-link helpers return.
-# - Installs the mu-plugin tests/e2e/fixtures/mu-plugins/e2e-dataset-quality.php,
-#   which answers Dataset Quality API requests with what the spec sets, so the
-#   Lead event quality panel is tested without calling Meta.
+# - Installs the mu-plugin tests/e2e/fixtures/mu-plugins/e2e-dataset-quality-log.php,
+#   which logs the URL of each Dataset Quality API request (it changes nothing),
+#   so the spec can count them.
 #
 # Every form plugin must be active: a missing one fails the seed, so the spec
 # never passes without checking it.
@@ -27,12 +27,28 @@
 #
 # Required env:
 #   WORDPRESS_PATH, FIELD_MAPPING_FORMS_FILE
+# Optional env:
+#   FB_PIXEL_ID, FB_ACCESS_TOKEN  real Meta credentials, for the Lead event
+#                                 quality tests (CI uses the QA ones)
 set -euo pipefail
 
 : "${WORDPRESS_PATH:?WORDPRESS_PATH must be set (path to the WordPress install)}"
 : "${FIELD_MAPPING_FORMS_FILE:?FIELD_MAPPING_FORMS_FILE must be set (where to write the seeded forms)}"
 
 WP_CLI="${WP_CLI_PATH:-wp}"
+
+# Optional real Meta credentials (the QA ones in CI), trimmed and checked so
+# they are safe inside the PHP below.
+FB_PIXEL_ID="$(printf '%s' "${FB_PIXEL_ID:-}" | tr -d '[:space:]')"
+FB_ACCESS_TOKEN="$(printf '%s' "${FB_ACCESS_TOKEN:-}" | tr -d '[:space:]')"
+if [ -n "$FB_PIXEL_ID" ] && ! printf '%s' "$FB_PIXEL_ID" | grep -Eq '^[0-9]+$'; then
+  echo "❌ FB_PIXEL_ID is not all digits after trimming — check the QA secret value." >&2
+  exit 1
+fi
+if [ -n "$FB_ACCESS_TOKEN" ] && ! printf '%s' "$FB_ACCESS_TOKEN" | grep -Eq '^[A-Za-z0-9_-]+$'; then
+  echo "❌ FB_ACCESS_TOKEN has unexpected characters — check the QA secret value." >&2
+  exit 1
+fi
 mkdir -p "$(dirname "$FIELD_MAPPING_FORMS_FILE")"
 FORMS_FILE="$(cd "$(dirname "$FIELD_MAPPING_FORMS_FILE")" && pwd)/$(basename "$FIELD_MAPPING_FORMS_FILE")"
 
@@ -52,15 +68,22 @@ if (\$missing) {
   exit(1);
 }
 
-// --- Connected with placeholder credentials (no events are sent from admin),
-// unless the site is already connected; only empty settings are filled ---
+// --- Connected with the given Meta pixel and token (FB_PIXEL_ID,
+// FB_ACCESS_TOKEN: the QA ones in CI); without them, an existing connection is
+// kept, or placeholder credentials fill the empty settings (the Lead event
+// quality tests then skip) ---
 \$options_class = '\\FacebookPixelPlugin\\Core\\FacebookWordpressOptions';
-\$connected     = class_exists(\$options_class) && '' !== (string) \$options_class::get_active_access_token();
-if (\$connected) {
+\$config        = get_option('facebook_business_extension_config', array());
+\$config        = is_array(\$config) ? \$config : array();
+if ('' !== '${FB_PIXEL_ID}' && '' !== '${FB_ACCESS_TOKEN}') {
+  \$config['facebook_pixel_id']         = '${FB_PIXEL_ID}';
+  \$config['facebook_access_token']     = '${FB_ACCESS_TOKEN}';
+  \$config['facebook_is_fbe_installed'] = '1';
+  update_option('facebook_business_extension_config', \$config);
+  echo "Meta connection set from FB_PIXEL_ID / FB_ACCESS_TOKEN.\n";
+} elseif (class_exists(\$options_class) && '' !== (string) \$options_class::get_active_access_token()) {
   echo "Meta connection already set: left unchanged.\n";
 } else {
-  \$config = get_option('facebook_business_extension_config', array());
-  \$config = is_array(\$config) ? \$config : array();
   foreach (array(
     'facebook_pixel_id'         => '1234567890123456',
     'facebook_access_token'     => 'e2e-placeholder-token',
@@ -170,11 +193,10 @@ file_put_contents('${FORMS_FILE}', json_encode(\$data, JSON_PRETTY_PRINT | JSON_
 echo json_encode(\$data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
 PHP
 
-# --- Answer Dataset Quality API requests without calling Meta (the Lead event
-# quality panel) ---
+# --- Log Dataset Quality API requests (the Lead event quality panel) ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "$WORDPRESS_PATH/wp-content/mu-plugins"
-cp "$SCRIPT_DIR/../fixtures/mu-plugins/e2e-dataset-quality.php" "$WORDPRESS_PATH/wp-content/mu-plugins/"
+cp "$SCRIPT_DIR/../fixtures/mu-plugins/e2e-dataset-quality-log.php" "$WORDPRESS_PATH/wp-content/mu-plugins/"
 
 ENCODED="$(printf '%s' "$PHP_SEED" | base64 | tr -d '\n')"
 
