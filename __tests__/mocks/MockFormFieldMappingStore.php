@@ -42,6 +42,13 @@ final class MockFormFieldMappingStore implements FormFieldMappingStore {
     public $writes = 0;
 
     /**
+     * Whether write() fails.
+     *
+     * @var bool
+     */
+    public $fail_writes = false;
+
+    /**
      * Constructor.
      *
      * @param array $data Initial store contents.
@@ -67,6 +74,9 @@ final class MockFormFieldMappingStore implements FormFieldMappingStore {
      */
     public function write( $store ) {
         ++$this->writes;
+        if ( $this->fail_writes ) {
+            return false;
+        }
         $this->data = $store;
         return true;
     }

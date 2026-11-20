@@ -140,6 +140,10 @@ class FacebookWordpressSettingsRecorder {
             'wp_ajax_' . FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME,
             array( $this, 'delete_field_mapping' )
         );
+        add_action(
+            'wp_ajax_' . FacebookPluginConfig::GET_LEAD_EVENT_QUALITY_ACTION_NAME,
+            array( $this, 'get_lead_event_quality' )
+        );
     }
 
     /**
@@ -1031,5 +1035,20 @@ class FacebookWordpressSettingsRecorder {
         return $this->handle_success_request(
             array( 'list' => $this->get_field_mapping_overview() )
         );
+    }
+
+    /**
+     * The Event Match Quality of the pixel's Lead events, from Meta's
+     * Dataset Quality API (cached for a day, or until a form mapping changes).
+     *
+     * @return array response data
+     */
+    public function get_lead_event_quality() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer( FacebookPluginConfig::GET_LEAD_EVENT_QUALITY_ACTION_NAME );
+
+        return $this->handle_success_request( LeadEventQuality::from_options()->get() );
     }
 }

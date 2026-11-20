@@ -13,6 +13,11 @@
  * - A mapping left behind by a deleted form is listed apart, without a link.
  * - The mapping editor opens in a popup that Escape and Cancel close, and
  *   saving from it updates the row.
+ * - The Lead event quality panel shows, to the right of the table, the score
+ *   and parameters Meta's Dataset Quality API really returns for the Lead
+ *   events this plugin sends (with the QA pixel and token), caches them for a
+ *   day or until a mapping changes, and stays hidden when Meta rejects the
+ *   request.
  */
 
 const fs = require('fs');
@@ -256,4 +261,240 @@ test('the mapping editor opens in a popup', async ({ page }) => {
   await expect(dialog).toBeHidden();
   await expect(page.locator('#fb-mapping-status')).toHaveText('Mapping saved.');
   await expect(status).toHaveText('Saved');
+});
+
+/**
+ * Lead event quality, read live from Meta: the plugin is connected with the QA
+ * pixel and token (FB_PIXEL_ID / FB_ACCESS_TOKEN), whose pixel receives the
+ * Lead events the Pixel/CAPI E2E sends through this plugin. Nothing is
+ * answered for Meta; the test mu-plugin e2e-dataset-quality-log.php only logs
+ * the URL of each request so they can be counted.
+ */
+test.describe('Lead event quality (live from Meta)', () => {
+  const QUALITY_ACTION = 'facebook_get_lead_event_quality';
+  const QUALITY_CACHE = 'facebook_lead_event_quality';
+  const OPTIONS = '\\FacebookPixelPlugin\\Core\\FacebookWordpressOptions';
+  const CONFIG = 'facebook_business_extension_config';
+
+  // Runs PHP that sets $result, and returns $result decoded.
+  async function php(code) {
+    const { stdout } = await execWP(
+      `${code}\necho '<<<' . wp_json_encode($result) . '>>>';`,
+    );
+    return JSON.parse(stdout.match(/<<<([\s\S]*)>>>/)[1]);
+  }
+
+  // Asks Meta directly, with the site's pixel and token, for the score of the
+  // Lead events sent through this plugin: what the panel must show.
+  const askMeta = () =>
+    php(`
+      $response = wp_remote_get(
+        add_query_arg(
+          array(
+            'dataset_id' => rawurlencode(${OPTIONS}::get_active_pixel_id()),
+            'agent_name' => 'wordpress',
+            'fields'     => rawurlencode('web{event_name,event_match_quality{composite_score,match_key_feedback{identifier,coverage{percentage}}}}'),
+          ),
+          'https://graph.facebook.com/' . \\FacebookPixelPlugin\\Core\\FacebookPluginConfig::GRAPH_API_VERSION . '/dataset_quality'
+        ),
+        array(
+          'headers' => array('Authorization' => 'Bearer ' . ${OPTIONS}::get_active_access_token()),
+          'timeout' => 30,
+        )
+      );
+      $result = is_wp_error($response)
+        ? array('code' => 0, 'body' => array('error' => array('message' => $response->get_error_message())))
+        : array('code' => wp_remote_retrieve_response_code($response), 'body' => json_decode(wp_remote_retrieve_body($response), true));
+    `);
+
+  // Whether the site is connected with real credentials, not the seed's
+  // placeholders.
+  const isLive = () =>
+    php(
+      `$token = (string) ${OPTIONS}::get_active_access_token(); $result = '' !== $token && 'e2e-placeholder-token' !== $token;`,
+    );
+
+  // The URLs of the Dataset Quality requests the plugin made.
+  const requests = () =>
+    php(`$result = get_option('e2e_dataset_quality_requests', array());`);
+
+  // Nothing cached or logged, and the popup form unreviewed.
+  const reset = () =>
+    execWP(
+      `(new \\FacebookPixelPlugin\\Core\\FormFieldMapper())->delete_form_mapping('${SEED.popup.integration}', '${SEED.popup.id}');` +
+        `delete_option('e2e_dataset_quality_requests'); delete_transient('${QUALITY_CACHE}');`,
+    );
+
+  const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  // Opens the table and returns the panel's AJAX answer.
+  async function openWithQuality(page) {
+    const answer = page.waitForResponse((response) =>
+      response.url().includes(`action=${QUALITY_ACTION}`),
+    );
+    await openMappingTable(page);
+    return (await answer).json();
+  }
+
+  test.beforeEach(async () => {
+    if (await isLive()) {
+      return;
+    }
+    if (process.env.META_CREDENTIALS_REQUIRED === 'true') {
+      throw new Error(
+        'The site is not connected with real Meta credentials: set FB_PIXEL_ID / FB_ACCESS_TOKEN (the QA secrets) before seeding.',
+      );
+    }
+    test.skip(
+      true,
+      'Needs real Meta credentials (FB_PIXEL_ID / FB_ACCESS_TOKEN)',
+    );
+  });
+
+  test("shows Meta's score for this plugin's Lead events beside the table", async ({
+    page,
+  }) => {
+    // Asked first: reset() then clears it from the request log.
+    const meta = await askMeta();
+    await reset();
+    expect(
+      meta.code,
+      `Meta refused the Dataset Quality request: ${JSON.stringify(meta.body)}`,
+    ).toBe(200);
+    const lead = (meta.body.web || []).find(
+      (event) =>
+        event.event_name === 'Lead' &&
+        event.event_match_quality &&
+        typeof event.event_match_quality.composite_score === 'number',
+    );
+    expect(
+      lead,
+      `Meta has no Lead score for agent_name=wordpress (events it scored: ${(meta.body.web || []).map((event) => event.event_name).join(', ') || 'none'}). The Pixel/CAPI E2E sends Lead events to this pixel: is agent_name=wordpress matched to the plugin's partner_agent?`,
+    ).toBeTruthy();
+
+    const answer = await openWithQuality(page);
+    expect(answer.msg.status).toBe('ok');
+    expect(answer.msg.score).toBeCloseTo(
+      lead.event_match_quality.composite_score,
+      1,
+    );
+
+    // The gauge shows the score.
+    const score = answer.msg.score;
+    const panel = page.locator('#fb-lead-quality');
+    await expect(panel).toBeVisible();
+    const gauge = panel.locator('.fb-lead-quality-gauge');
+    await expect(gauge).toHaveAttribute('aria-valuenow', String(score));
+    await expect(panel.locator('.fb-lead-quality-score')).toHaveText(
+      score.toFixed(1),
+    );
+    await expect(gauge.locator('.fb-lead-quality-fill')).toHaveAttribute(
+      'stroke-dasharray',
+      `${Math.round(score * 100) / 10} 100`,
+    );
+
+    // Every parameter Meta reports, most included first.
+    const reported = (lead.event_match_quality.match_key_feedback || [])
+      .filter((key) => key.identifier)
+      .map((key) => key.identifier);
+    const items = panel.locator('.fb-lead-quality-parameter');
+    const shown = await items.evaluateAll((elements) =>
+      elements.map((element) => element.dataset.identifier),
+    );
+    expect([...shown].sort()).toEqual([...reported].sort());
+    await expect(items).toHaveText(
+      answer.msg.parameters.map(
+        (parameter) =>
+          new RegExp(
+            `^${escapeRegExp(parameter.label)}\\s*${parameter.coverage === null ? '' : Math.round(parameter.coverage) + '%'}$`,
+          ),
+      ),
+    );
+    const coverages = answer.msg.parameters.map((parameter) =>
+      Number(parameter.coverage),
+    );
+    expect(coverages).toEqual([...coverages].sort((a, b) => b - a));
+
+    // For review in the report.
+    await test.info().attach('lead-event-quality', {
+      body: await page.locator('.fb-mapping-layout').screenshot(),
+      contentType: 'image/png',
+    });
+
+    // To the right of the table, level with its top.
+    const table = await page.locator('#fb-mapping-list').boundingBox();
+    const box = await panel.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(table.x + table.width);
+    expect(Math.abs(box.y - table.y)).toBeLessThan(20);
+
+    // One request, for the site's pixel and this plugin's agent, with the
+    // token in a header rather than the URL.
+    const sent = await requests();
+    expect(sent).toHaveLength(1);
+    const url = new URL(sent[0]);
+    expect(url.pathname).toMatch(/\/dataset_quality$/);
+    expect(url.searchParams.get('dataset_id')).toBe(
+      await php(`$result = (string) ${OPTIONS}::get_active_pixel_id();`),
+    );
+    expect(url.searchParams.get('agent_name')).toBe('wordpress');
+    expect(url.searchParams.has('access_token')).toBe(false);
+  });
+
+  test('is cached for a day, until a form mapping changes', async ({
+    page,
+  }) => {
+    await reset();
+    const first = await openWithQuality(page);
+    expect(first.msg.status).toBe('ok');
+    const ttl = await php(
+      `$result = (int) get_option('_transient_timeout_${QUALITY_CACHE}') - time();`,
+    );
+    expect(ttl).toBeGreaterThan(86400 - 300);
+    expect(ttl).toBeLessThanOrEqual(86400);
+
+    // The next visit uses the cache: Meta is not asked again.
+    const second = await openWithQuality(page);
+    expect(second.msg).toEqual(first.msg);
+    expect(await requests()).toHaveLength(1);
+
+    // Saving a mapping drops the cache: the next visit asks Meta again.
+    const row = mappingRow(page, SEED.popup);
+    await row.locator('a.fb-mapping-edit').click();
+    const dialog = page.locator('dialog#fb-mapping-editor');
+    await expect(dialog).toBeVisible();
+    await dialog.locator('#fb-mapping-save').click();
+    await expect(page.locator('#fb-mapping-status')).toHaveText(
+      'Mapping saved.',
+    );
+    expect(
+      await php(`$result = false === get_transient('${QUALITY_CACHE}');`),
+    ).toBe(true);
+    const third = await openWithQuality(page);
+    expect(third.msg.status).toBe('ok');
+    await expect(page.locator('#fb-lead-quality')).toBeVisible();
+    expect(await requests()).toHaveLength(2);
+  });
+
+  test('is hidden when Meta rejects the access token', async ({ page }) => {
+    await reset();
+    const saved = await php(`$result = get_option('${CONFIG}');`);
+    try {
+      await execWP(
+        `$config = get_option('${CONFIG}'); $config['facebook_access_token'] = 'e2e-invalid-token'; update_option('${CONFIG}', $config);`,
+      );
+      const answer = await openWithQuality(page);
+
+      // Meta's own error, as it answered the plugin's request.
+      expect(answer.msg.status).toBe('error');
+      expect(answer.msg.message).not.toBe('');
+      expect(await requests()).toHaveLength(1);
+      await expect(page.locator('#fb-mapping-list')).toBeVisible();
+      await expect(page.locator('#fb-lead-quality')).toBeHidden();
+    } finally {
+      const json = Buffer.from(JSON.stringify(saved)).toString('base64');
+      await execWP(
+        `update_option('${CONFIG}', json_decode(base64_decode('${json}'), true)); delete_transient('${QUALITY_CACHE}'); delete_transient('facebook_pixel_connection_invalid');`,
+      );
+    }
+  });
 });
