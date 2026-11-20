@@ -43,12 +43,54 @@ class FacebookWordpressSettingsPage {
     private $options_page = '';
 
     /**
+     * Returns the lead-form integrations that support field mapping, keyed by
+     * INTEGRATION_NAME.
+     *
+     * @var callable
+     */
+    private $field_mapping_integrations;
+
+    /**
+     * Form field mapping storage.
+     *
+     * @var FormFieldMapper
+     */
+    private $field_mapper;
+
+    /**
+     * The cached review summary for the form field mapping notice.
+     *
+     * @var FormFieldMappingReview
+     */
+    private $field_mapping_review;
+
+    /**
      * Registers the plugin's settings page, and adds the necessary hooks
      * for registering the plugin's scripts, notices, and menu items.
      *
-     * @param string $plugin_name the name of the plugin.
+     * @param string               $plugin_name                The name of the plugin.
+     * @param callable|null        $field_mapping_integrations Returns the lead-form
+     *                                                         integrations that
+     *                                                         support field mapping,
+     *                                                         keyed by
+     *                                                         INTEGRATION_NAME.
+     * @param FormFieldMapper|null $field_mapper               Optional mapping
+     *                                                         storage.
      */
-    public function __construct( $plugin_name ) {
+    public function __construct( $plugin_name, $field_mapping_integrations = null, $field_mapper = null ) {
+        $this->field_mapping_integrations = is_callable( $field_mapping_integrations )
+            ? $field_mapping_integrations
+            : function () {
+                return array();
+            };
+        $this->field_mapper               = $field_mapper instanceof FormFieldMapper
+            ? $field_mapper
+            : new FormFieldMapper();
+        $this->field_mapping_review       = new FormFieldMappingReview(
+            $this->field_mapping_integrations,
+            $this->field_mapper
+        );
+
         add_filter(
             'plugin_action_links_' . $plugin_name,
             array( $this, 'add_settings_link' )
@@ -85,6 +127,13 @@ class FacebookWordpressSettingsPage {
             array(),
             FacebookPluginConfig::PLUGIN_VERSION,
             false
+        );
+        wp_register_script(
+            'meta_field_mapping_script',
+            plugins_url( '../js/field_mapping.js', __FILE__ ),
+            array( 'jquery' ),
+            FacebookPluginConfig::PLUGIN_VERSION,
+            true
         );
         wp_register_style(
             'official-facebook-pixel',
@@ -183,32 +232,34 @@ class FacebookWordpressSettingsPage {
      */
     private function get_fbe_browser_settings() {
         ob_start();
-        $fbe_extras = wp_json_encode(
-            array(
-                'business_config' => array(
-                    'business' => array(
-                        'name' => 'Solutions_Engineering_Team',
-                    ),
-                ),
-                'setup'           => array(
-                    'external_business_id' =>
-                        FacebookWordpressOptions::get_external_business_id(),
-                    'timezone'             => 'America/Los_Angeles',
-                    'currency'             => 'USD',
-                    'business_vertical'    => 'ECOMMERCE',
-                    'channel'              => 'DEFAULT',
-                ),
-                'repeat'          => false,
-            )
-        );
+        // Connected pages split the settings into tabs; until then the page
+        // shows only the connection flow, as before. js/settings_page.js keeps
+        // the class in sync when the connection changes without a reload.
+        $is_connected = ! empty( FacebookWordpressOptions::get_active_pixel_id() )
+            && ! empty( FacebookWordpressOptions::get_active_access_token() );
         ?>
-<div>
+<div id="fb-settings" class="fb-settings<?php echo $is_connected ? ' fb-settings--connected' : ''; ?>">
+    <nav class="nav-tab-wrapper fb-settings-tabs" role="tablist">
+        <a href="#fb-tab-connection" class="nav-tab nav-tab-active" role="tab"
+            aria-controls="fb-tab-connection" aria-selected="true"
+            data-fb-tab="connection">Connection</a>
+        <a href="#fb-tab-configuration" class="nav-tab" role="tab"
+            aria-controls="fb-tab-configuration" aria-selected="false"
+            data-fb-tab="configuration">Configuration</a>
+        <a href="#fb-tab-testing" class="nav-tab" role="tab"
+            aria-controls="fb-tab-testing" aria-selected="false"
+            data-fb-tab="testing">Testing</a>
+    </nav>
+    <div id="fb-tab-connection" class="fb-settings-panel fb-settings-panel--active" role="tabpanel">
     <div id="fbe-iframe">
     </div>
+    </div>
+    <div id="fb-tab-configuration" class="fb-settings-panel" role="tabpanel">
     <div id="fb-adv-conf" class="fb-adv-conf">
     <div class="fb-adv-conf-title">Meta Advanced Configuration</div>
     <div id="fb-capi-ef">
-        <input type="checkbox" id="capi-ef" name="capi-ef">
+        <input type="checkbox" id="capi-ef" name="capi-ef"
+            <?php checked( FacebookWordpressOptions::get_capi_integration_page_view_filtered() ); ?>>
         <label class="fb-capi-title" for="capi-ef">Filter PageView Event</label>
         <span id="fb-capi-ef-se" class="fb-capi-se"></span>
         <br/>
@@ -216,7 +267,8 @@ class FacebookWordpressSettingsPage {
             Enable checkbox to filter PageView events from sending.
         </div>
         <div id="fb-capi-ch">
-        <input type="checkbox" id="capi-ch" name="capi-ch">
+        <input type="checkbox" id="capi-ch" name="capi-ch"
+            <?php checked( '1', FacebookWordpressOptions::get_capi_pii_caching_status() ); ?>>
         <label class="fb-capi-title" for="capi-ch">
             Enable Events Enrichment
         </label>
@@ -227,7 +279,8 @@ class FacebookWordpressSettingsPage {
         </div>
         </div>
         <div id="fb-capig">
-        <input type="checkbox" id="capig" name="capig">
+        <input type="checkbox" id="capig" name="capig"
+            <?php checked( '1', FacebookWordpressOptions::get_capig() ); ?>>
         <label class="fb-capi-title" for="capig">
             Opt in to a Meta-enabled Conversions API integration
         </label>
@@ -247,15 +300,22 @@ class FacebookWordpressSettingsPage {
         </div>
         </div>
     </div>
+        <?php
+        // Inside #fb-adv-conf (the Configuration tab), so it is shown only once
+        // the plugin is connected.
+        echo $this->get_field_mapping_section(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped as it is built.
+        ?>
+    </div>
     </div>
 
+    <div id="fb-tab-testing" class="fb-settings-panel" role="tabpanel">
     <div class="events-manager-wrapper
     <?php
     echo empty( FacebookWordpressOptions::get_active_access_token() ) ?
     'hidden' : '';
     ?>
     ">
-    <h3>Conversion API Tests</h3>
+    <h3>Testing Conversions API integration</h3>
 
     <div class="events-manager-container">
         <div>
@@ -426,57 +486,6 @@ class FacebookWordpressSettingsPage {
     </div>
     </div>
 
-    <?php
-    wp_enqueue_script(
-        'facebook-sdk',
-        'https://connect.facebook.net/en_US/sdk.js',
-        array(),
-        '1.0.0',
-        false
-    );
-        ?>
-    <div id="meta-ads-plugin">
-    <div id="ad-creation-plugin" class="
-    <?php
-    // Ads Creation only available for MBE connections (requires MBE scopes).
-    echo ( 'mbe' !== FacebookWordpressOptions::get_connection_type()
-        || empty( FacebookWordpressOptions::get_access_token() ) ) ?
-    'hidden' : '';
-    ?>
-    ">
-    <h3 class="mt-5">Ads Creation</h3>
-        <div
-        class="my-3 p-3 bg-white rounded shadow-sm">
-        <div id="ad-creation-plugin-iframe" class="fb-lwi-ads-creation"
-        data-lazy=true
-        data-hide-manage-button=true
-        data-fbe-extras='<?php echo esc_html( $fbe_extras ); ?>'
-        data-fbe-scopes=
-            'manage_business_extension,business_management,ads_management'
-        data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler'
-        ></div>
-        </div>
-    </div>
-    <div id="ad-insights-plugin" class="
-    <?php
-    // Ads Insights only available for MBE connections (requires MBE scopes).
-    echo ( 'mbe' !== FacebookWordpressOptions::get_connection_type()
-        || empty( FacebookWordpressOptions::get_access_token() ) ) ?
-    'hidden' : '';
-    ?>
-    ">
-        <h3 class="mt-5">Ads Insights</h3>
-        <div
-        class="my-3 p-3 bg-white d-block rounded shadow-sm">
-        <div id="ad-insights-plugin-iframe" class="fb-lwi-ads-insights"
-        data-lazy=true
-        data-fbe-extras='<?php echo esc_html( $fbe_extras ); ?>'
-        data-fbe-scopes=
-            'manage_business_extension,business_management,ads_management'
-        data-fbe-redirect-uri='https://business.facebook.com/fbe-iframe-handler'
-        ></div>
-        </div>
-    </div>
     </div>
 </div>
 
@@ -484,6 +493,15 @@ class FacebookWordpressSettingsPage {
         $initial_script   = ob_get_clean();
         $access_token     = FacebookWordpressOptions::get_active_access_token();
         $has_access_token = ! empty( $access_token );
+
+        wp_enqueue_script( 'meta_field_mapping_script' );
+        wp_add_inline_script(
+            'meta_field_mapping_script',
+            'const meta_field_mapping_params = ' . wp_json_encode(
+                $this->get_field_mapping_params()
+            ) . ';',
+            'before'
+        );
 
         wp_enqueue_script( 'meta_settings_page_script' );
 
@@ -922,6 +940,18 @@ class FacebookWordpressSettingsPage {
             }
         }
 
+        // Ask for a review of the form field mappings when forms or their
+        // fields changed in a way that affects them.
+        if ( current_user_can( FacebookPluginConfig::ADMIN_CAPABILITY )
+            && in_array( $current_screen_id, array( 'dashboard', 'plugins' ), true )
+            && null !== $this->get_field_mapping_notice_summary()
+        ) {
+            add_action(
+                'admin_notices',
+                array( $this, 'field_mapping_notice' )
+            );
+        }
+
         // Show connection invalid notice on dashboard, plugins, AND settings page.
         $connection_screens = array(
             'dashboard',
@@ -1141,6 +1171,96 @@ class FacebookWordpressSettingsPage {
     }
 
     /**
+     * What the form field mapping notice reports for the current user, or
+     * null when it should not be shown: the plugin is not connected (the
+     * mapping section is hidden then), nothing needs a review, or the user
+     * dismissed the notice for exactly these items. The summary is cached
+     * (see FormFieldMappingReview), so admin pages do not list every form on
+     * each load.
+     *
+     * @return array{unreviewed: int, changed: int, signature: string}|null
+     */
+    public function get_field_mapping_notice_summary() {
+        if ( empty( FacebookWordpressOptions::get_active_access_token() ) ) {
+            return null;
+        }
+        $summary = $this->field_mapping_review->get_summary();
+        if ( '' === $summary['signature'] ) {
+            return null;
+        }
+        $dismissed = get_user_meta(
+            get_current_user_id(),
+            FacebookPluginConfig::ADMIN_IGNORE_FIELD_MAPPING_NOTICE,
+            true
+        );
+        return $dismissed === $summary['signature'] ? null : $summary;
+    }
+
+    /**
+     * Displays a notice asking for a review of the form field mappings:
+     * forms not reviewed yet, and saved mappings whose form changed.
+     * Dismissing it hides it until something else needs a review.
+     *
+     * @return void
+     */
+    public function field_mapping_notice() {
+        $summary = $this->get_field_mapping_notice_summary();
+        if ( null === $summary ) {
+            return;
+        }
+        // Counts only, so the notice stays one short line however many
+        // forms there are; the field mapping section has the details.
+        $parts = array();
+        if ( $summary['unreviewed'] > 0 ) {
+            $parts[] = sprintf(
+                /* translators: %d: number of forms */
+                _n( '%d form not reviewed', '%d forms not reviewed', $summary['unreviewed'], 'official-facebook-pixel' ),
+                $summary['unreviewed']
+            );
+        }
+        if ( $summary['changed'] > 0 ) {
+            $parts[] = sprintf(
+                /* translators: %d: number of forms */
+                _n( '%d form changed', '%d forms changed', $summary['changed'], 'official-facebook-pixel' ),
+                $summary['changed']
+            );
+        }
+        // js/settings_page.js opens a tab only for a #fb-tab-<name> hash; the
+        // mappings are in the Configuration tab.
+        $review_url  = admin_url(
+            'options-general.php?page=' . FacebookPluginConfig::ADMIN_MENU_SLUG
+        ) . '#fb-tab-configuration';
+        $dismiss_url = wp_nonce_url(
+            add_query_arg(
+                FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE,
+                $summary['signature'],
+                admin_url()
+            ),
+            FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE
+        );
+        ?>
+        <div class="notice notice-warning">
+            <p>
+                <strong>Meta Pixel for WordPress:</strong>
+                <?php
+                echo esc_html(
+                    sprintf(
+                        /* translators: %s: what needs a review, e.g. "2 forms not reviewed, 1 form changed" */
+                        __( 'Lead form field mappings need a review (%s).', 'official-facebook-pixel' ),
+                        implode( ', ', $parts )
+                    )
+                );
+                ?>
+                <a href="<?php echo esc_url( $review_url ); ?>"><?php esc_html_e( 'Review', 'official-facebook-pixel' ); ?></a>
+                |
+                <a href="<?php echo esc_url( $dismiss_url ); ?>"><?php esc_html_e( 'Dismiss', 'official-facebook-pixel' ); ?></a>
+            </p>
+        </div>
+        <?php
+    }
+
+
+    /**
      * Displays a notice when the Meta connection is invalid.
      */
     public function connection_invalid_notice() {
@@ -1256,6 +1376,20 @@ class FacebookWordpressSettingsPage {
                 true
             );
         }
+        // The field mapping notice stores what it reported, so it comes back
+        // only when something else needs a review.
+        if ( isset( $_GET[ FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE ], $_GET['_wpnonce'] )
+            && wp_verify_nonce(
+                sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ),
+                FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE
+            )
+        ) {
+            update_user_meta(
+                $user_id,
+                FacebookPluginConfig::ADMIN_IGNORE_FIELD_MAPPING_NOTICE,
+                sanitize_text_field( wp_unslash( $_GET[ FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE ] ) )
+            );
+        }
     }
 
     /**
@@ -1292,5 +1426,321 @@ class FacebookWordpressSettingsPage {
             </div>
         </div>
         <?php
+    }
+
+    /**
+     * Builds an admin-ajax URL for a field mapping action, with its nonce.
+     *
+     * @param string $action_name The AJAX action name, also the nonce action.
+     * @return string
+     */
+    private function get_field_mapping_ajax_url( $action_name ) {
+        return add_query_arg(
+            array(
+                'action'   => $action_name,
+                '_wpnonce' => wp_create_nonce( $action_name ),
+            ),
+            admin_url( 'admin-ajax.php' )
+        );
+    }
+
+    /**
+     * The supported form plugins, keyed by INTEGRATION_NAME, as
+     * [ 'label' =>, 'active' => ] rows.
+     *
+     * @return array<string,array>
+     */
+    private function get_supported_form_plugins() {
+        $plugins = array();
+        foreach ( call_user_func( $this->field_mapping_integrations ) as $name => $integration ) {
+            $plugins[ $name ] = array(
+                'label'  => $integration->get_integration_label(),
+                'active' => $integration->is_field_mapping_available(),
+            );
+        }
+        return $plugins;
+    }
+
+    /**
+     * The labels of the active supported form plugins, keyed by
+     * INTEGRATION_NAME.
+     *
+     * @return array<string,string>
+     */
+    private function get_field_mapping_integration_labels() {
+        $labels = array();
+        foreach ( $this->get_supported_form_plugins() as $name => $plugin ) {
+            if ( $plugin['active'] ) {
+                $labels[ $name ] = $plugin['label'];
+            }
+        }
+        return $labels;
+    }
+
+    /**
+     * The targets a form field can be mapped to, in display order, as
+     * [ 'value' =>, 'label' => ] rows. Targets without a label here (e.g. a
+     * user-data field added later) are listed under their own name.
+     *
+     * @return array<int,array<string,string>>
+     */
+    private function get_field_mapping_targets() {
+        $labels  = array(
+            'email'         => 'Email',
+            'phone'         => 'Phone',
+            'full_name'     => 'Full name (split into first and last name)',
+            'address'       => 'Address (split into city, state, ZIP and country)',
+            'first_name'    => 'First name',
+            'last_name'     => 'Last name',
+            'city'          => 'City',
+            'state'         => 'State',
+            'zip'           => 'ZIP or postal code',
+            'country'       => 'Country (two-letter code)',
+            'gender'        => 'Gender',
+            'date_of_birth' => 'Date of birth',
+            'external_id'   => 'External ID',
+        );
+        $valid   = FormFieldMapper::get_valid_targets();
+        $ordered = array_merge(
+            array_values( array_intersect( array_keys( $labels ), $valid ) ),
+            array_values( array_diff( $valid, array_keys( $labels ) ) )
+        );
+
+        $targets = array();
+        foreach ( $ordered as $target ) {
+            $targets[] = array(
+                'value' => $target,
+                'label' => isset( $labels[ $target ] ) ? $labels[ $target ] : $target,
+            );
+        }
+        return $targets;
+    }
+
+    /**
+     * The pixel's automatic advanced matching setting, as it affects the
+     * mappings. With it on, the Meta Pixel reads customer information from
+     * form fields in the browser, whatever the mappings say; this plugin
+     * also sends only the types of customer information turned on there
+     * (see AAMFieldsExtractor). With it off, this plugin sends Lead events
+     * without customer information.
+     *
+     * @return array{state: string, blocked: string[]} The state is 'on',
+     *         'off' or 'unknown' (the setting could not be read from Meta, or
+     *         the plugin is not connected through Meta); blocked lists the
+     *         labels of the types turned off while it is on.
+     */
+    private function get_field_mapping_matching() {
+        $settings  = FacebookWordpressOptions::get_aam_settings();
+        $from_meta = FacebookWordpressOptions::get_is_fbl4b_installed()
+            || FacebookWordpressOptions::get_is_fbe_installed();
+        if ( ! $settings || ! $from_meta ) {
+            return array(
+                'state'   => 'unknown',
+                'blocked' => array(),
+            );
+        }
+        if ( ! $settings->getEnableAutomaticMatching() ) {
+            return array(
+                'state'   => 'off',
+                'blocked' => array(),
+            );
+        }
+        $labels  = array(
+            AAMSettingsFields::EMAIL         => 'email',
+            AAMSettingsFields::PHONE         => 'phone',
+            AAMSettingsFields::FIRST_NAME    => 'first name',
+            AAMSettingsFields::LAST_NAME     => 'last name',
+            AAMSettingsFields::CITY          => 'city',
+            AAMSettingsFields::STATE         => 'state',
+            AAMSettingsFields::ZIP_CODE      => 'ZIP or postal code',
+            AAMSettingsFields::COUNTRY       => 'country',
+            AAMSettingsFields::GENDER        => 'gender',
+            AAMSettingsFields::DATE_OF_BIRTH => 'date of birth',
+            AAMSettingsFields::EXTERNAL_ID   => 'external ID',
+        );
+        $enabled = (array) $settings->getEnabledAutomaticMatchingFields();
+        $blocked = array();
+        foreach ( $labels as $field => $label ) {
+            if ( ! in_array( $field, $enabled, true ) ) {
+                $blocked[] = $label;
+            }
+        }
+        return array(
+            'state'   => 'on',
+            'blocked' => $blocked,
+        );
+    }
+
+    /**
+     * Explains how the pixel's automatic advanced matching setting affects
+     * the mappings: "Do not send" does not stop the Meta Pixel reading a
+     * field, and this plugin sends only what that setting allows.
+     *
+     * @param bool $short Whether to return the one-line reminder shown in
+     *                    the editor instead of the section note.
+     * @return string Escaped HTML.
+     */
+    private function get_field_mapping_matching_note( $short ) {
+        $matching = $this->get_field_mapping_matching();
+        if ( 'off' === $matching['state'] ) {
+            return $short
+                ? 'Automatic advanced matching is off for your pixel, so nothing below is sent until it is turned on in Events Manager.'
+                : '<strong>Automatic advanced matching is off for your pixel</strong>, so Lead events from forms are sent without the customer information from the form, whatever the mappings say. To send the mapped fields, turn it on for your pixel in Events Manager.';
+        }
+        if ( 'on' === $matching['state'] ) {
+            if ( $short ) {
+                return 'Automatic advanced matching is on for your pixel, so the Meta Pixel can still read fields set to "Do not send".';
+            }
+            $note = '<strong>Automatic advanced matching is on for your pixel.</strong> "Do not send" only stops this plugin sending a field. The Meta Pixel on your site can still read customer information, such as email or phone, from form fields and send it hashed. To stop that, turn off automatic advanced matching, or the types of information you do not want sent, for your pixel in Events Manager.';
+            if ( ! empty( $matching['blocked'] ) ) {
+                $note .= ' ' . esc_html(
+                    sprintf(
+                        'These types are turned off there, so they are not sent even when mapped: %s.',
+                        implode( ', ', $matching['blocked'] )
+                    )
+                );
+            }
+            return $note;
+        }
+        return $short
+            ? 'If automatic advanced matching is on for your pixel, the Meta Pixel can still read fields set to "Do not send".'
+            : 'If automatic advanced matching is on for your pixel, the Meta Pixel on your site can read customer information from form fields itself, including fields set to "Do not send". This plugin also sends only the types of customer information turned on there. You can change this for your pixel in Events Manager.';
+    }
+
+    /**
+     * The parameters js/field_mapping.js reads.
+     *
+     * @return array
+     */
+    private function get_field_mapping_params() {
+        return array(
+            'getFieldsUrl' => $this->get_field_mapping_ajax_url( FacebookPluginConfig::GET_MAPPING_FIELDS_ACTION_NAME ),
+            'saveUrl'      => $this->get_field_mapping_ajax_url( FacebookPluginConfig::SAVE_FIELD_MAPPING_ACTION_NAME ),
+            'deleteUrl'    => $this->get_field_mapping_ajax_url( FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME ),
+            'targets'      => $this->get_field_mapping_targets(),
+            'list'         => FormFieldMappingOverview::build(
+                call_user_func( $this->field_mapping_integrations ),
+                $this->field_mapper
+            ),
+            'loadError'    => FacebookPluginConfig::FIELD_MAPPING_LOAD_ERROR,
+            'saveError'    => FacebookPluginConfig::FIELD_MAPPING_SAVE_ERROR,
+            'deleteError'  => FacebookPluginConfig::FIELD_MAPPING_DELETE_ERROR,
+            'formChanged'  => FacebookPluginConfig::FIELD_MAPPING_FORM_CHANGED_ERROR,
+        );
+    }
+
+    /**
+     * Renders the Form Field Mapping section: the table of forms and the
+     * popup editor (a native dialog) for one form's mapping, driven by
+     * js/field_mapping.js.
+     *
+     * @return string The section markup.
+     */
+    private function get_field_mapping_section() {
+        $integrations = $this->get_field_mapping_integration_labels();
+        ob_start();
+        ?>
+    <div id="fb-field-mapping">
+    <div class="fb-adv-conf-title">Form Field Mapping</div>
+    <div class="fb-capi-desc">
+        Choose which form fields are sent as customer information with Lead
+        events. Every form of the active form plugins is listed below with what
+        it sends. Forms marked Automatic send what automatic detection finds
+        until you review them: review a form to save its mapping (changing any
+        field you need to) or reject it to stop sending Lead events from that
+        form. Once a mapping is saved, only the fields it sends are sent;
+        fields added to the form later are not sent until you review them.
+    </div>
+    <p id="fb-mapping-matching" class="fb-capi-desc fb-mapping-matching">
+        <?php echo $this->get_field_mapping_matching_note( false ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped as it is built. ?>
+    </p>
+    <div class="fb-capi-desc fb-mapping-plugins">
+        Supported form plugins:
+        <ul>
+            <?php foreach ( $this->get_supported_form_plugins() as $plugin ) : ?>
+            <li>
+                <?php echo esc_html( $plugin['label'] ); ?>
+                <span class="fb-mapping-plugin-status<?php echo $plugin['active'] ? ' fb-mapping-plugin-status--active' : ''; ?>">
+                    <?php echo $plugin['active'] ? 'Active' : 'Not active'; ?>
+                </span>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+        <?php if ( empty( $integrations ) ) : ?>
+    <p class="fb-capi-desc fb-mapping-empty">
+        None of the supported form plugins is active. Activate one to map its
+        form fields.
+    </p>
+    <?php endif; ?>
+    <table id="fb-mapping-list" class="widefat fb-mapping-list">
+        <thead>
+            <tr>
+                <th>Form plugin</th>
+                <th>Form</th>
+                <th>Status</th>
+                <th>Sent as customer information</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <p id="fb-mapping-status" class="fb-mapping-status"></p>
+        <?php if ( ! empty( $integrations ) ) : ?>
+    <dialog id="fb-mapping-editor" aria-labelledby="fb-mapping-editor-title">
+        <h4 id="fb-mapping-editor-title"></h4>
+        <p id="fb-mapping-suggested" class="fb-capi-desc hidden">
+            <strong>Not reviewed yet.</strong> Automatic detection currently
+            sends the fields below for this form, and will keep sending them
+            until you save or reject this mapping. Set a field to "Do not send"
+            to stop sending it, or reject the mapping to stop sending Lead
+            events from this form.
+        </p>
+        <p id="fb-mapping-missing" class="fb-capi-desc fb-mapping-warning hidden">
+            <strong>Some mapped fields are no longer in this form</strong>, so
+            nothing is sent for them:
+            <span id="fb-mapping-missing-list"></span>.
+            If a field was renamed, choose how to send it below and save.
+            Saving removes the missing fields from the mapping.
+        </p>
+        <p id="fb-mapping-new" class="fb-capi-desc fb-mapping-warning hidden">
+            <strong>New fields were added to this form since its mapping was
+            saved</strong>, so nothing is sent from them yet:
+            <span id="fb-mapping-new-list"></span>.
+            Choose how to send each of them, or keep "Do not send", and save.
+        </p>
+        <p id="fb-mapping-editor-matching" class="fb-capi-desc fb-mapping-matching">
+            <?php echo $this->get_field_mapping_matching_note( true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped as it is built. ?>
+        </p>
+        <table id="fb-mapping-fields" class="widefat fb-mapping-fields hidden">
+            <thead>
+                <tr>
+                    <th>Form field</th>
+                    <th>Type</th>
+                    <th>Send as</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <p id="fb-mapping-no-fields" class="hidden">
+            This form has no fields that can be mapped.
+        </p>
+        <div class="fb-mapping-actions">
+            <button type="button" id="fb-mapping-save" class="button button-primary hidden">
+                Save mapping
+            </button>
+            <button type="button" id="fb-mapping-reject" class="button hidden">
+                Reject
+            </button>
+            <button type="button" id="fb-mapping-cancel" class="button">
+                Cancel
+            </button>
+        </div>
+        <p id="fb-mapping-editor-status" class="fb-mapping-status"></p>
+    </dialog>
+    <?php endif; ?>
+    </div>
+        <?php
+        return ob_get_clean();
     }
 }

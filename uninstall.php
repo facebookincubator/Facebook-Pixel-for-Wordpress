@@ -31,5 +31,11 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 delete_option( FacebookPluginConfig::SETTINGS_KEY );
 delete_option( FacebookPluginConfig::OLD_SETTINGS_KEY );
 delete_option( FacebookPluginConfig::FBL4B_SETTINGS_KEY );
+delete_option( FacebookPluginConfig::FORM_FIELD_MAPPINGS_KEY );
 
 delete_user_meta( get_current_user_id(), FacebookPluginConfig::ADMIN_IGNORE_PIXEL_ID_NOTICE );
+
+delete_transient( FacebookPluginConfig::FIELD_MAPPING_REVIEW_TRANSIENT );
+
+// The field mapping notice's dismissal is stored per user.
+delete_metadata( 'user', 0, FacebookPluginConfig::ADMIN_IGNORE_FIELD_MAPPING_NOTICE, '', true );

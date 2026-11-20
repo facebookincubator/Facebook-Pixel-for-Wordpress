@@ -384,4 +384,30 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
       )
     );
   }
+
+  /**
+   * The Meta-enabled Conversions API opt-in is on unless the admin turned it
+   * off: a missing or empty option reads as '1', a saved '0' is respected.
+   */
+  public function testCapigIsOnByDefault() {
+    $cases = array(
+      'missing' => array( FacebookPluginConfig::CAPIG_DEFAULT, '1' ),
+      'empty'   => array( '', '1' ),
+      'opt-out' => array( '0', '0' ),
+      'opt-in'  => array( '1', '1' ),
+    );
+    foreach ( $cases as $label => $case ) {
+      list( $stored, $expected ) = $case;
+      \WP_Mock::userFunction(
+        'get_option',
+        array(
+          'args'   => array( FacebookPluginConfig::CAPIG, FacebookPluginConfig::CAPIG_DEFAULT ),
+          'return' => $stored,
+          'times'  => 1,
+        )
+      );
+      FacebookWordpressOptions::set_capig();
+      $this->assertSame( $expected, FacebookWordpressOptions::get_capig(), $label );
+    }
+  }
 }

@@ -1140,3 +1140,207 @@
     margin: 0px 10px 10px 0px;
   }
 }
+
+/* Form Field Mapping, inside the Meta Advanced Configuration section */
+#fb-field-mapping {
+    margin-top: 24px;
+    padding-top: 15px;
+    border-top: 1px solid #ccc;
+}
+
+#fb-field-mapping .hidden {
+    display: none;
+}
+
+.fb-mapping-list,
+.fb-mapping-fields {
+    margin: 10px 0 12px 25px;
+    max-width: 760px;
+}
+
+.fb-mapping-list th,
+.fb-mapping-fields th {
+    text-align: left;
+}
+
+.fb-mapping-row {
+    margin: 0 0 12px 25px;
+}
+
+.fb-mapping-row label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.fb-mapping-row select,
+.fb-mapping-target {
+    min-width: 280px;
+    max-width: 100%;
+}
+
+.fb-mapping-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 0 25px;
+}
+
+/* Save and Reject stay on the left; Cancel sits at the right end. */
+#fb-mapping-cancel {
+    margin-left: auto;
+}
+
+.fb-mapping-status {
+    color: #008a20;
+}
+
+#fb-mapping-status {
+    margin: 0 0 12px 25px;
+}
+
+#fb-mapping-editor-status {
+    margin: 8px 0 0;
+}
+
+.fb-mapping-row--automatic td:nth-child(3) {
+    color: #996800;
+    font-weight: 600;
+}
+
+/* A saved mapping with fields the form no longer has. */
+.fb-mapping-needs-review {
+    display: block;
+    color: #996800;
+    font-weight: 600;
+}
+
+/* A field added to the form since its mapping was saved. */
+.fb-mapping-new-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 0 6px;
+    border-radius: 8px;
+    background: #dba617;
+    color: #1d2327;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+}
+
+#fb-mapping-editor .fb-capi-desc.fb-mapping-warning {
+    padding: 8px 12px;
+    border-left: 4px solid #dba617;
+    background: #fcf9e8;
+}
+
+/* The editor is a native <dialog> opened with showModal(): the browser
+   centres it, dims the page behind it and closes it on Escape. */
+#fb-mapping-editor {
+    box-sizing: border-box;
+    width: min(760px, calc(100vw - 40px));
+    max-height: calc(100vh - 80px);
+    overflow: auto;
+    padding: 16px 20px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 3px 30px rgba(0, 0, 0, 0.2);
+}
+
+#fb-mapping-editor::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+#fb-mapping-editor .fb-mapping-fields {
+    max-width: none;
+}
+
+#fb-mapping-editor .fb-mapping-fields,
+#fb-mapping-editor .fb-mapping-actions,
+#fb-mapping-editor .fb-capi-desc {
+    margin-left: 0;
+    padding-left: 0;
+}
+
+#fb-mapping-editor-title {
+    margin: 0 0 8px;
+}
+
+.fb-mapping-status.fb-mapping-error {
+    color: #cc0000;
+}
+
+.fb-mapping-edit,
+.fb-mapping-delete {
+    text-decoration: none;
+}
+
+.fb-mapping-form-id {
+    margin-left: 6px;
+    color: #646970;
+    font-size: 12px;
+}
+
+/* Heading above saved mappings of deleted forms or inactive plugins. */
+.fb-mapping-list .fb-mapping-group th {
+    padding-top: 14px;
+    background: #f6f7f7;
+    font-weight: 600;
+}
+
+.fb-mapping-group-desc {
+    display: block;
+    margin-top: 2px;
+    color: #646970;
+    font-weight: 400;
+    font-size: 12px;
+}
+
+.fb-mapping-empty {
+    font-style: italic;
+}
+
+/* Settings tabs: only once connected. Until then every panel is shown, so the
+   page looks as it did before tabs (the connection flow only). */
+.fb-settings-tabs {
+    display: none;
+}
+
+.fb-settings--connected .fb-settings-tabs {
+    display: block;
+    margin-bottom: 16px;
+}
+
+.fb-settings--connected .fb-settings-panel {
+    display: none;
+}
+
+.fb-settings--connected .fb-settings-panel--active {
+    display: block;
+}
+
+.fb-settings--connected .fb-adv-conf {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.fb-mapping-plugins ul {
+    margin: 6px 0 0 18px;
+    list-style: disc;
+}
+
+.fb-mapping-plugin-status {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    background: #f0f0f1;
+    color: #50575e;
+}
+
+.fb-mapping-plugin-status--active {
+    background: #edfaef;
+    color: #00701a;
+}

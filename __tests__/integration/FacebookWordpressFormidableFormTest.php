@@ -35,7 +35,7 @@ final class FacebookWordpressFormidableFormTest extends FacebookWordpressTestBas
      * @return FacebookWordpressFormidableForm
      */
     private function make_integration() {
-        return new FacebookWordpressFormidableForm( $this->make_signals() );
+        return new FacebookWordpressFormidableForm( $this->make_signals(), $this->make_field_mapper() );
     }
 
     /**

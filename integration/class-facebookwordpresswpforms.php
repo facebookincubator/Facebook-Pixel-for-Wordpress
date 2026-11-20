@@ -24,7 +24,7 @@ namespace FacebookPixelPlugin\Integration;
 defined( 'ABSPATH' ) || die( 'Direct access not allowed' );
 
 use FacebookPixelPlugin\Core\FacebookPluginUtils;
-use FacebookPixelPlugin\Utils\StringUtils;
+use FacebookPixelPlugin\Utils\ThirdPartyIntegrationsUtil;
 use FacebookPixelPlugin\Utils\WordPressUtils;
 use Override;
 
@@ -34,6 +34,7 @@ use Override;
 class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
 
     const PLUGIN_FILE      = 'wpforms-lite/wpforms.php';
+    const PRO_PLUGIN_FILE  = 'wpforms/wpforms.php';
     const INTEGRATION_NAME = 'wpforms-lite';
 
     const AJAX_PIXEL_CONTAINER = 'wp_form_pxl_container';
@@ -57,6 +58,18 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
     }
 
     /**
+     * WPForms Lite and WPForms Pro share the same hooks and form format, so
+     * either one is tracked.
+     *
+     * @return bool
+     */
+    #[Override]
+    protected function is_integration_available() {
+        return ThirdPartyIntegrationsUtil::is_integration_available( self::PLUGIN_FILE )
+            || ThirdPartyIntegrationsUtil::is_integration_available( self::PRO_PLUGIN_FILE );
+    }
+
+    /**
      * Captures a submitted form and delivers the Lead event (AJAX submits via
      * the footer listener, non-AJAX via the footer flush).
      *
@@ -65,6 +78,9 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
      * @return void
      */
     public function capture_submitted_form( ...$args ) {
+        if ( $this->is_form_rejected( ...$args ) ) {
+            return;
+        }
         $event = $this->generate_event( self::EVENT_NAME, $this->extract_lead_data( ...$args ) );
 
         // WPForms fires this hook for both AJAX and non-AJAX submits.
@@ -171,17 +187,46 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
                 if ( ! isset( $form_data['fields'][ $field_id ] ) ) {
                     continue;
                 }
+                $label       = $this->get_if_isset( $form_data['fields'][ $field_id ], 'label' );
+                $name        = empty( $label ) ? '' : strtolower( trim( $label ) );
+                $type        = $this->get_if_isset( $form_data['fields'][ $field_id ], 'type' );
+                $scheme      = $this->get_if_isset( $form_data['fields'][ $field_id ], 'scheme' );
+                $format      = $this->get_if_isset( $form_data['fields'][ $field_id ], 'format' );
+                $field_value = self::normalize_field_value( $type, $field_value, $scheme );
                 if ( empty( $field_value ) ) {
                     continue;
                 }
-                $label  = $this->get_if_isset( $form_data['fields'][ $field_id ], 'label' );
-                $name   = empty( $label ) ? '' : strtolower( trim( $label ) );
-                $type   = $this->get_if_isset( $form_data['fields'][ $field_id ], 'type' );
-                $scheme = $this->get_if_isset( $form_data['fields'][ $field_id ], 'scheme' );
-                $format = $this->get_if_isset( $form_data['fields'][ $field_id ], 'format' );
-                yield self::get_iterator_yield_output( $name, $type, $field_value, 'format', $format, 'scheme', $scheme );
+                // The label is not unique, so the row also carries the field id the
+                // field mapping screen lists (see get_mapping_key()).
+                yield self::get_iterator_yield_output( $name, $type, $field_value, 'format', $format, 'scheme', $scheme, 'id', $field_id );
             }
         }
+    }
+
+    /**
+     * Brings a raw WPForms submission value into the shape both automatic
+     * detection and a saved mapping read, so a mapped field sends the same
+     * data as the unmapped one:
+     *
+     * - An email field with confirmation enabled submits
+     *   ['primary' => ..., 'secondary' => ...]; the primary address is used.
+     * - An address field whose scheme has no country input (e.g. 'us')
+     *   submits no country; the scheme's two-letter code is used.
+     *
+     * @param string|null $type   The WPForms field type.
+     * @param mixed       $value  The submitted value.
+     * @param string|null $scheme The address field scheme.
+     * @return mixed The normalized value.
+     */
+    private static function normalize_field_value( $type, $value, $scheme ) {
+        if ( 'email' === $type && is_array( $value ) ) {
+            return isset( $value['primary'] ) ? $value['primary'] : '';
+        }
+        if ( 'address' === $type && is_array( $value ) && empty( $value['country'] )
+            && is_string( $scheme ) && 1 === preg_match( '/^[A-Za-z]{2}$/', $scheme ) ) {
+            $value['country'] = strtoupper( $scheme );
+        }
+        return $value;
     }
 
     /**
@@ -211,18 +256,13 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
             $name   = $param['name'];
             $type   = $param['type'];
             $value  = $param['value'];
-            $format = $param['format'];
             $scheme = $param['scheme'];
 
             if ( 'name' === $type ) {
-                if ( 'simple' === $format ) {
-                    $temp                 = StringUtils::split_name( $value );
-                    $result['first_name'] = $temp[0];
-                    $result['last_name']  = $temp[1];
-                } elseif ( 'first-last' === $format ) {
-                    $result['first_name'] = $value['first'];
-                    $result['last_name']  = $value['last'];
-                }
+                // Every name format (simple, first-last, first-middle-last) is
+                // split as a full_name mapping splits it, so the mapping screen's
+                // suggestion matches what is sent.
+                $result = array_merge( $result, $this->expand_compound_lead_param( 'full_name', $value ) );
             } elseif ( 'email' === $type ) {
                 $result['email'] = $value;
             } elseif ( 'phone' === $type ) {
@@ -277,5 +317,152 @@ class FacebookWordpressWPForms extends TrackableLeadFormIntegrationBase {
         $fn( 'country', $address_field_value );
         $fn( 'postal', $address_field_value, 'zip' );
         return $result;
+    }
+
+    /**
+     * This integration supports form field mapping.
+     *
+     * @return bool
+     */
+    public function supports_field_mapping() {
+        return true;
+    }
+
+    /**
+     * Whether the WPForms (Lite or Pro) API is loaded.
+     *
+     * @return bool
+     */
+    protected function is_form_plugin_loaded() {
+        return function_exists( 'wpforms' );
+    }
+
+    /**
+     * WPForms stores forms as wpforms posts.
+     *
+     * @return string[]
+     */
+    public function get_form_change_hooks() {
+        return array( 'save_post_wpforms' );
+    }
+
+    /**
+     * Human-readable integration name for the field mapping screen.
+     *
+     * @return string
+     */
+    public function get_integration_label() {
+        return 'WPForms';
+    }
+
+    /**
+     * The URL of the WPForms form builder for a form.
+     *
+     * @param string $form_id The native form id.
+     * @return string
+     */
+    public function get_form_edit_url( $form_id ) {
+        return admin_url( 'admin.php?page=wpforms-builder&view=fields&form_id=' . absint( $form_id ) );
+    }
+
+    /**
+     * Returns all WPForms form posts.
+     *
+     * @return iterable
+     */
+    protected function fetch_forms() {
+        $forms = wpforms()->form->get( '' );
+        return is_array( $forms ) ? $forms : array();
+    }
+
+    /**
+     * Maps a WPForms form post to id + title.
+     *
+     * @param mixed $raw_form The form's WP_Post.
+     * @return array
+     */
+    protected function map_form( $raw_form ) {
+        return array(
+            'id'    => $raw_form->ID,
+            'title' => $raw_form->post_title,
+        );
+    }
+
+    /**
+     * Returns a WPForms form's field definitions.
+     *
+     * @param string $form_id The form id.
+     * @return iterable
+     */
+    protected function fetch_form_fields( $form_id ) {
+        $form = wpforms()->form->get( $form_id );
+        if ( empty( $form ) ) {
+            return array();
+        }
+        $data = function_exists( 'wpforms_decode' )
+            ? wpforms_decode( $form->post_content )
+            : json_decode( $form->post_content, true );
+        return ( empty( $data['fields'] ) || ! is_array( $data['fields'] ) ) ? array() : $data['fields'];
+    }
+
+    /**
+     * Maps a WPForms field definition to a field. The id is the numeric field
+     * id, which get_form_param_iterator() adds to each row.
+     *
+     * @param mixed $raw_field A WPForms field definition.
+     * @return array|null
+     */
+    protected function map_field( $raw_field ) {
+        $type = isset( $raw_field['type'] ) ? (string) $raw_field['type'] : '';
+        if ( ! isset( $raw_field['id'] )
+            || in_array( $type, array( 'divider', 'html', 'pagebreak', 'content', 'entry-preview', 'captcha' ), true ) ) {
+            return null;
+        }
+        return array(
+            'id'    => $raw_field['id'],
+            'label' => isset( $raw_field['label'] ) ? $raw_field['label'] : '',
+            'type'  => $type,
+        );
+    }
+
+    /**
+     * Suggests a target for a WPForms field, following
+     * extract_lead_data_fallback(): name, email, phone and address fields by
+     * type, and city/state/zip/country/phone fields by label.
+     *
+     * @param mixed $raw_field A WPForms field definition.
+     * @return string|null
+     */
+    protected function suggest_field_target( $raw_field ) {
+        $by_type = array(
+            'name'    => 'full_name',
+            'email'   => 'email',
+            'phone'   => 'phone',
+            'address' => 'address',
+        );
+        $type    = isset( $raw_field['type'] ) ? (string) $raw_field['type'] : '';
+        if ( isset( $by_type[ $type ] ) ) {
+            return $by_type[ $type ];
+        }
+        $by_label = array(
+            'phone'          => 'phone',
+            'tel'            => 'phone',
+            'telephone'      => 'phone',
+            'mobile'         => 'phone',
+            'city'           => 'city',
+            'town'           => 'city',
+            'state'          => 'state',
+            'province'       => 'state',
+            'region'         => 'state',
+            'county'         => 'state',
+            'zip'            => 'zip',
+            'postal'         => 'zip',
+            'postcode'       => 'zip',
+            'zip code'       => 'zip',
+            'country'        => 'country',
+            'country/region' => 'country',
+        );
+        $label    = isset( $raw_field['label'] ) ? strtolower( trim( (string) $raw_field['label'] ) ) : '';
+        return isset( $by_label[ $label ] ) ? $by_label[ $label ] : null;
     }
 }

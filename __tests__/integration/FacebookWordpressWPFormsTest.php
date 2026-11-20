@@ -38,7 +38,7 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
      * @return FacebookWordpressWPForms
      */
     private function make_integration() {
-        return new FacebookWordpressWPForms( $this->make_signals() );
+        return new FacebookWordpressWPForms( $this->make_signals(), $this->make_field_mapper() );
     }
 
     /**
@@ -80,6 +80,45 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
                 },
             )
         );
+    }
+
+    /**
+     * WPForms Pro is tracked like WPForms Lite, and its forms are listed on
+     * the field mapping screen.
+     *
+     * @return void
+     */
+    public function testWPFormsProIsTrackedAndListed() {
+        self::mockIsInternalUser( false );
+        $this->install_plugin_files( array( FacebookWordpressWPForms::PRO_PLUGIN_FILE ) );
+        \WP_Mock::userFunction( 'wpforms', array( 'return' => null ) );
+
+        $obj = $this->make_integration();
+        \WP_Mock::expectActionAdded(
+            'wpforms_process_before',
+            array( $obj, 'capture_submitted_form' ),
+            20,
+            2
+        );
+
+        $obj->initialize();
+
+        $this->assertHooksAdded();
+        $this->assertTrue( $obj->is_field_mapping_available() );
+    }
+
+    /**
+     * When the WPForms API is loaded but neither the Lite nor the Pro plugin
+     * file is found, tracking is not set up, so the field mapping screen does
+     * not list its forms either.
+     *
+     * @return void
+     */
+    public function testFormsAreNotListedWhenTheyAreNotTracked() {
+        $this->install_plugin_files( array() );
+        \WP_Mock::userFunction( 'wpforms', array( 'return' => null ) );
+
+        $this->assertFalse( $this->make_integration()->is_field_mapping_available() );
     }
 
     /**
@@ -262,6 +301,127 @@ final class FacebookWordpressWPFormsTest extends FacebookWordpressTestBase {
         );
 
         $this->assertEquals( 'EXISTING', $response[ $key ] );
+    }
+
+    /**
+     * An email field with confirmation enabled submits primary/secondary
+     * parts; the primary address is sent with and without a saved mapping.
+     *
+     * @return void
+     */
+    public function testEmailConfirmationSendsThePrimaryEmail() {
+        $entry                = $this->create_mock_entry();
+        $entry['fields']['1'] = array(
+            'primary'   => 'pika.chu@s2s.com',
+            'secondary' => 'pika.chu@s2s.com',
+        );
+
+        $automatic = $this->make_integration()->extract_lead_data( $entry, $this->create_mock_form_data() );
+        $this->assertSame( 'pika.chu@s2s.com', $automatic['email'] );
+
+        $mapped = $this->make_mapped_integration( array( '1' => 'email' ) )
+            ->extract_lead_data( $entry, $this->create_mock_form_data() );
+        $this->assertSame( array( 'email' => 'pika.chu@s2s.com' ), $mapped );
+    }
+
+    /**
+     * A US-scheme address submits no country; its scheme provides one with
+     * and without a saved mapping, whether the address is mapped whole or by
+     * part.
+     *
+     * @return void
+     */
+    public function testAddressSchemeProvidesTheCountry() {
+        $entry                = $this->create_mock_entry();
+        $entry['fields']['3'] = array(
+            'address1' => '1 Main St',
+            'city'     => 'Springfield',
+            'state'    => 'OH',
+            'postal'   => '45401',
+        );
+        $form_data                        = $this->create_mock_form_data();
+        $form_data['fields'][3]['scheme'] = 'us';
+
+        $automatic = $this->make_integration()->extract_lead_data( $entry, $form_data );
+        $this->assertSame( 'US', $automatic['country'] );
+
+        $this->assertSame(
+            array(
+                'city'    => 'Springfield',
+                'state'   => 'OH',
+                'zip'     => '45401',
+                'country' => 'US',
+            ),
+            $this->make_mapped_integration( array( '3' => 'address' ) )->extract_lead_data( $entry, $form_data )
+        );
+
+        $this->assertSame(
+            array( 'country' => 'US' ),
+            $this->make_mapped_integration( array( '3' => 'country' ) )->extract_lead_data( $entry, $form_data )
+        );
+    }
+
+    /**
+     * A first/last name field mapped to first_name and last_name sends each
+     * part.
+     *
+     * @return void
+     */
+    public function testNamePartsMappedToSingleParameters() {
+        $this->assertSame(
+            array( 'first_name' => 'Pika' ),
+            $this->make_mapped_integration( array( '0' => 'first_name' ) )
+                ->extract_lead_data( $this->create_mock_entry(), $this->create_mock_form_data() )
+        );
+        $this->assertSame(
+            array( 'last_name' => 'Chu' ),
+            $this->make_mapped_integration( array( '0' => 'last_name' ) )
+                ->extract_lead_data( $this->create_mock_entry(), $this->create_mock_form_data() )
+        );
+    }
+
+    /**
+     * A first-middle-last name is sent as first and last name without a
+     * mapping too, as the mapping screen's Full name suggestion says.
+     *
+     * @return void
+     */
+    public function testFirstMiddleLastNameIsSentWithoutAMapping() {
+        $entry                = $this->create_mock_entry();
+        $entry['fields']['0'] = array(
+            'first'  => 'Pika',
+            'middle' => 'P',
+            'last'   => 'Chu',
+        );
+        $form_data                        = $this->create_mock_form_data();
+        $form_data['fields'][0]['format'] = 'first-middle-last';
+
+        $automatic = $this->make_integration()->extract_lead_data( $entry, $form_data );
+
+        $this->assertSame( 'Pika', $automatic['first_name'] );
+        $this->assertSame( 'Chu', $automatic['last_name'] );
+    }
+
+    /**
+     * Builds the integration with $mappings saved for the mock form (id 123).
+     *
+     * @param array $mappings Field id => target.
+     * @return FacebookWordpressWPForms
+     */
+    private function make_mapped_integration( array $mappings ) {
+        return new FacebookWordpressWPForms(
+            $this->make_signals(),
+            $this->make_field_mapper(
+                array(
+                    FacebookWordpressWPForms::INTEGRATION_NAME => array(
+                        '123' => array(
+                            'form_title' => 'Contact',
+                            'mappings'   => $mappings,
+                        ),
+                    ),
+                )
+            )
+        );
     }
 
     /**

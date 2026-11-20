@@ -156,4 +156,22 @@ class FacebookPluginConfig {
     'dismiss_connection_invalid_notice';
     const ADMIN_IGNORE_CONNECTION_INVALID_NOTICE  =
     'ignore_connection_invalid_notice';
+
+    // Form field mapping storage and AJAX actions.
+    const ADMIN_DISMISS_FIELD_MAPPING_NOTICE = 'dismiss_field_mapping_notice';
+    const ADMIN_IGNORE_FIELD_MAPPING_NOTICE  = 'ignore_field_mapping_notice';
+    const FIELD_MAPPING_REVIEW_TRANSIENT     = 'facebook_field_mapping_review';
+    const FIELD_MAPPING_REVIEW_TTL           = 43200; // 12 hours.
+    const FORM_FIELD_MAPPINGS_KEY            = 'facebook_form_field_mappings';
+    const GET_MAPPING_FIELDS_ACTION_NAME     = 'facebook_get_mapping_fields';
+    const SAVE_FIELD_MAPPING_ACTION_NAME     = 'facebook_save_field_mapping';
+    const DELETE_FIELD_MAPPING_ACTION_NAME   = 'facebook_delete_field_mapping';
+    const FIELD_MAPPING_LOAD_ERROR           =
+    'Form fields could not be loaded, please refresh the page and try again.';
+    const FIELD_MAPPING_SAVE_ERROR           =
+    'Mapping could not be saved, please refresh the page and try again.';
+    const FIELD_MAPPING_DELETE_ERROR         =
+    'Mapping could not be reset, please refresh the page and try again.';
+    const FIELD_MAPPING_FORM_CHANGED_ERROR   =
+    'This form changed while the editor was open, so nothing was saved. Its fields were reloaded: review the mapping and save again.';
 }

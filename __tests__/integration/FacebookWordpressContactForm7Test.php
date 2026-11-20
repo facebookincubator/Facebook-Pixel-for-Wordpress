@@ -39,7 +39,7 @@ final class FacebookWordpressContactForm7Test extends FacebookWordpressTestBase 
      * @return FacebookWordpressContactForm7
      */
     private function make_integration() {
-        return new FacebookWordpressContactForm7( $this->make_signals() );
+        return new FacebookWordpressContactForm7( $this->make_signals(), $this->make_field_mapper() );
     }
 
     /**

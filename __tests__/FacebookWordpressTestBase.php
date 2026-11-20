@@ -28,6 +28,8 @@
 namespace FacebookPixelPlugin\Tests;
 
 use PHPUnit\Framework\TestCase;
+use FacebookPixelPlugin\Core\FormFieldMapper;
+use FacebookPixelPlugin\Tests\Mocks\MockFormFieldMappingStore;
 use WP_Mock\Tools\Constraints\ExpectationsMet;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
@@ -76,6 +78,105 @@ abstract class FacebookWordpressTestBase extends TestCase {
      * @var string[]
      */
     protected $registered_ajax_dom = array();
+
+    /**
+     * Builds a form field mapper over an in-memory store, so lead-form
+     * integrations never read the WordPress option in tests.
+     *
+     * @param array $mappings Initial store contents (see field_decisions()).
+     * @return FormFieldMapper
+     */
+    protected function make_field_mapper( array $mappings = array() ) {
+        return new FormFieldMapper( new MockFormFieldMappingStore( self::field_decisions( $mappings ) ) );
+    }
+
+    /**
+     * Installs empty plugin main files (e.g. 'wpforms/wpforms.php') in a
+     * temporary WP_PLUGIN_DIR, so ThirdPartyIntegrationsUtil finds those
+     * plugins. Tests run in separate processes, so the directory is per test;
+     * it is removed when the process ends.
+     *
+     * @param string[] $files Plugin main files, relative to the plugins directory.
+     * @return void
+     */
+    protected function install_plugin_files( array $files ) {
+        $dir = sys_get_temp_dir() . '/fbwp-plugins-' . getmypid();
+        if ( ! defined( 'WP_PLUGIN_DIR' ) ) {
+            define( 'WP_PLUGIN_DIR', $dir );
+            register_shutdown_function(
+                function () use ( $dir ) {
+                    if ( ! is_dir( $dir ) ) {
+                        return;
+                    }
+                    $items = new \RecursiveIteratorIterator(
+                        new \RecursiveDirectoryIterator( $dir, \FilesystemIterator::SKIP_DOTS ),
+                        \RecursiveIteratorIterator::CHILD_FIRST
+                    );
+                    foreach ( $items as $item ) {
+                        $item->isDir() ? rmdir( $item->getPathname() ) : unlink( $item->getPathname() );
+                    }
+                    rmdir( $dir );
+                }
+            );
+        }
+        foreach ( $files as $file ) {
+            $path = WP_PLUGIN_DIR . '/' . $file;
+            if ( ! is_dir( dirname( $path ) ) ) {
+                mkdir( dirname( $path ), 0777, true );
+            }
+            touch( $path );
+        }
+        \WP_Mock::userFunction(
+            'trailingslashit',
+            array(
+                'return' => function ( $path ) {
+                    return rtrim( $path, '/\\' ) . '/';
+                },
+            )
+        );
+    }
+
+    /**
+     * Converts mapping fixtures to the FormFieldMapper::get_all() shape. For
+     * brevity a fixture may give a form's included fields as 'mappings'
+     * (field_id => target), plus optional 'excluded' field ids and
+     * 'field_labels' (field_id => label); no included field makes the
+     * mapping rejected. Entries already in the stored shape are kept.
+     *
+     * @param array $store Fixture store contents.
+     * @return array The store in FormFieldMapper::get_all() shape.
+     */
+    protected static function field_decisions( array $store ) {
+        foreach ( $store as $name => $forms ) {
+            foreach ( $forms as $form_id => $entry ) {
+                if ( ! isset( $entry['mappings'] ) ) {
+                    continue;
+                }
+                $labels = isset( $entry['field_labels'] ) ? $entry['field_labels'] : array();
+                $fields = array();
+                foreach ( $entry['mappings'] as $field_id => $target ) {
+                    $fields[ $field_id ] = array(
+                        'included' => true,
+                        'target'   => $target,
+                    );
+                }
+                foreach ( isset( $entry['excluded'] ) ? $entry['excluded'] : array() as $field_id ) {
+                    $fields[ $field_id ] = array( 'included' => false );
+                }
+                foreach ( $labels as $field_id => $label ) {
+                    if ( isset( $fields[ $field_id ] ) ) {
+                        $fields[ $field_id ]['label'] = $label;
+                    }
+                }
+                $store[ $name ][ $form_id ] = array(
+                    'form_title' => isset( $entry['form_title'] ) ? $entry['form_title'] : '',
+                    'rejected'   => empty( $entry['mappings'] ),
+                    'fields'     => $fields,
+                );
+            }
+        }
+        return $store;
+    }
 
     /**
      * Builds a tracking-facade double for driving instance-based integrations.

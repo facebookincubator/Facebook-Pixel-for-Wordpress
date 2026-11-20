@@ -10,7 +10,9 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "test:js": "jest"
+    "test:js": "jest",
+    "env:seed:field-mapping": "bash tests/e2e/scripts/seed-field-mapping.sh",
+    "test:e2e:field-mapping": "playwright test --config=playwright.field-mapping.config.js"
   },
   "keywords": [],
   "author": "",

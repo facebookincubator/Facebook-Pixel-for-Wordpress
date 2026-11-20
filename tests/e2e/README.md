@@ -83,3 +83,40 @@ The Privacy Sandbox project verifies Pixel/CAPI PageView delivery when Topics
 is absent or rejects as removed, rather than requiring a retired browser API.
 
 Not covered — this plugin does not emit them: Search, ViewCategory, Subscribe.
+
+## Form Field Mapping admin tests
+
+`tests/e2e/admin/field-mapping.spec.js` drives the Form Field Mapping section as
+an admin, against the latest release of every supported form plugin (Contact
+Form 7, WPForms Lite, Ninja Forms, Formidable Forms, Mailchimp for WP). For each
+form it checks that the table lists it once with its id and that its title
+links to the plugin's own editor: the link must match the edit link on the
+plugin's forms list (or the plugin's edit-link helper) and open the editor for
+that form. A form plugin release that changes its editor URL fails this spec.
+It also covers the editor popup and saved mappings of deleted forms.
+
+It has its own workflow (`.github/workflows/e2e-field-mapping.yml`, on PRs and
+every Monday) and config (`playwright.field-mapping.config.js`), and needs no
+Meta credentials. To run it locally, with the five form plugins active:
+
+```bash
+export WORDPRESS_PATH="/path/to/wordpress" WORDPRESS_URL="http://localhost:10003"
+export WP_USERNAME=admin WP_PASSWORD=...           # an administrator
+export FIELD_MAPPING_FORMS_FILE=/tmp/field-mapping-forms.json
+
+npm run env:seed:field-mapping   # placeholder connection, one form per plugin
+npm run test:e2e:field-mapping
+```
+
+> **Use a disposable test site.** The seed changes the site's data:
+>
+> - It creates one form per plugin, and they are not removed.
+> - It adds a mapping for a deleted Contact Form 7 form (id 999999) to the
+>   saved mappings.
+> - When the plugin is not connected, it fills placeholder credentials into
+>   the empty connection settings. These make the site look connected (with a
+>   pixel id that is not yours) until you disconnect.
+>
+> An existing connection, either connection flow, and other saved mappings
+> are left as they are. The spec itself saves and resets mappings of the
+> forms it uses.

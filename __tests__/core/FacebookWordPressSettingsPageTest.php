@@ -27,7 +27,12 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
+use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
+use FacebookPixelPlugin\Core\FormFieldMapper;
+use FacebookPixelPlugin\Integration\TrackableLeadFormIntegrationBase;
+use FacebookPixelPlugin\Tests\Mocks\MockFormFieldMappingStore;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
@@ -570,5 +575,460 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
         'return_arg' => 0,
       )
     );
+  }
+
+  /**
+   * Invokes a private settings page method.
+   *
+   * @param FacebookWordpressSettingsPage $settings_page The settings page.
+   * @param string                        $method        The method name.
+   * @return mixed
+   */
+  private function invoke_private( $settings_page, $method, ...$args ) {
+    $reflection = new \ReflectionMethod( $settings_page, $method );
+    if ( PHP_VERSION_ID < 80100 ) {
+      $reflection->setAccessible( true );
+    }
+    return $reflection->invoke( $settings_page, ...$args );
+  }
+
+  /**
+   * Mocks the pixel's automatic advanced matching setting.
+   *
+   * @param bool|null $enabled   Whether it is on; null when it could not be
+   *                             read from Meta.
+   * @param string[]  $fields    The types of customer information turned on.
+   * @param bool      $from_meta Whether the plugin is connected through Meta.
+   * @return void
+   */
+  private function mock_automatic_matching( $enabled, array $fields = array(), $from_meta = true ) {
+    $settings = null;
+    if ( null !== $enabled ) {
+      $settings = new AdsPixelSettings();
+      $settings->setEnableAutomaticMatching( $enabled );
+      $settings->setEnabledAutomaticMatchingFields( $fields );
+    }
+    $options = \Mockery::mock( 'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions' );
+    $options->shouldReceive( 'get_aam_settings' )->andReturn( $settings );
+    $options->shouldReceive( 'get_is_fbl4b_installed' )->andReturn( $from_meta );
+    $options->shouldReceive( 'get_is_fbe_installed' )->andReturn( false );
+  }
+
+  /**
+   * The note on automatic advanced matching follows the pixel's setting:
+   * with it on, "Do not send" does not stop the Meta Pixel reading a field
+   * and the types turned off are named; with it off, nothing from the forms
+   * is sent; when it is not known, both are explained as conditions.
+   */
+  public function testFieldMappingMatchingNote() {
+    \WP_Mock::userFunction(
+      'esc_html',
+      array(
+        'return' => function ( $text ) {
+          return $text;
+        },
+      )
+    );
+    $page = $this->make_field_mapping_page();
+
+    $this->mock_automatic_matching( true, array( 'em', 'fn', 'ln', 'ct', 'st', 'zp', 'country', 'external_id' ) );
+    $note = $this->invoke_private( $page, 'get_field_mapping_matching_note', false );
+    $this->assertStringContainsString( 'Automatic advanced matching is on for your pixel.', $note );
+    $this->assertStringContainsString( 'The Meta Pixel on your site can still read customer information', $note );
+    $this->assertStringContainsString( 'not sent even when mapped: phone, gender, date of birth.', $note );
+    $this->assertStringContainsString(
+      'the Meta Pixel can still read fields set to "Do not send"',
+      $this->invoke_private( $page, 'get_field_mapping_matching_note', true )
+    );
+  }
+
+  /**
+   * With every type turned on, the note names none as not sent.
+   */
+  public function testFieldMappingMatchingNoteWithEveryTypeOn() {
+    $this->mock_automatic_matching( true, AAMSettingsFields::get_all_fields() );
+    $note = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_matching_note', false );
+    $this->assertStringContainsString( 'Automatic advanced matching is on for your pixel.', $note );
+    $this->assertStringNotContainsString( 'not sent even when mapped', $note );
+  }
+
+  /**
+   * With automatic advanced matching off, the note says the forms send no
+   * customer information until it is turned on.
+   */
+  public function testFieldMappingMatchingNoteWhenOff() {
+    $this->mock_automatic_matching( false );
+    $page = $this->make_field_mapping_page();
+    $this->assertStringContainsString(
+      'sent without the customer information from the form, whatever the mappings say',
+      $this->invoke_private( $page, 'get_field_mapping_matching_note', false )
+    );
+    $this->assertStringContainsString(
+      'nothing below is sent until it is turned on',
+      $this->invoke_private( $page, 'get_field_mapping_matching_note', true )
+    );
+  }
+
+  /**
+   * When the setting could not be read from Meta, or the plugin is not
+   * connected through Meta, the note explains both effects as conditions.
+   */
+  public function testFieldMappingMatchingNoteWhenUnknown() {
+    $this->mock_automatic_matching( null );
+    $note = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_matching_note', false );
+    $this->assertStringStartsWith( 'If automatic advanced matching is on for your pixel', $note );
+  }
+
+  /**
+   * Settings kept from the plugin's old connection flow do not come from
+   * the pixel, so the note does not claim the pixel's state.
+   */
+  public function testFieldMappingMatchingNoteWithoutMetaConnection() {
+    $this->mock_automatic_matching( true, AAMSettingsFields::get_all_fields(), false );
+    $note = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_matching_note', false );
+    $this->assertStringStartsWith( 'If automatic advanced matching is on for your pixel', $note );
+  }
+
+  /**
+   * Builds a settings page whose only supported form plugin is Contact Form
+   * 7, with one saved mapping.
+   *
+   * @param bool  $with_integration Whether Contact Form 7 is active.
+   * @param array $field_ids        The form's current field ids.
+   * @return FacebookWordpressSettingsPage
+   */
+  private function make_field_mapping_page( $with_integration = true, array $field_ids = array( 'your-email' ) ) {
+    $integration = \Mockery::mock( TrackableLeadFormIntegrationBase::class );
+    $integration->shouldReceive( 'get_integration_label' )->andReturn( 'Contact Form 7' );
+    $integration->shouldReceive( 'get_form_fields' )->with( '1' )->andReturn(
+      array_map(
+        function ( $id ) {
+          return array(
+            'id'    => $id,
+            'label' => $id,
+            'type'  => 'text',
+          );
+        },
+        $field_ids
+      )
+    );
+    $integration->shouldReceive( 'get_form_edit_url' )->with( '1' )->andReturn( 'https://example.com/wp-admin/admin.php?page=wpcf7&post=1&action=edit' );
+    $integration->shouldReceive( 'is_field_mapping_available' )->andReturn( $with_integration );
+    $integration->shouldReceive( 'get_forms' )->andReturn(
+      array(
+        array(
+          'id'    => '1',
+          'title' => 'Contact form 1',
+        ),
+      )
+    );
+    $mapper = new FormFieldMapper(
+      new MockFormFieldMappingStore(
+        self::field_decisions(
+          array(
+            'contact-form-7' => array(
+              '1' => array(
+                'form_title' => 'Contact form 1',
+                'mappings'   => array( 'your-email' => 'email' ),
+              ),
+            ),
+          )
+        )
+      )
+    );
+    return new FacebookWordpressSettingsPage(
+      'facebook_for_wordpress',
+      function () use ( $integration ) {
+        return array( 'contact-form-7' => $integration );
+      },
+      $mapper
+    );
+  }
+
+  /**
+   * The field mapping script gets nonce-protected routes, every valid target
+   * once with matching identifiers first, and the table rows.
+   */
+  public function testFieldMappingParams() {
+    \WP_Mock::userFunction( 'wp_create_nonce', array( 'return' => 'test_nonce' ) );
+    \WP_Mock::userFunction( 'admin_url', array( 'return' => 'https://example.com/wp-admin/admin-ajax.php' ) );
+    \WP_Mock::userFunction(
+      'add_query_arg',
+      array(
+        'return' => function ( $args, $url ) {
+          return $url . '?' . http_build_query( $args );
+        },
+      )
+    );
+
+    $params = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_params' );
+
+    $this->assertStringContainsString( 'action=facebook_save_field_mapping', $params['saveUrl'] );
+    $this->assertStringContainsString( '_wpnonce=test_nonce', $params['saveUrl'] );
+    $this->assertSame( FacebookPluginConfig::FIELD_MAPPING_FORM_CHANGED_ERROR, $params['formChanged'] );
+
+    $targets = array_column( $params['targets'], 'value' );
+    $this->assertSame( array( 'email', 'phone', 'full_name' ), array_slice( $targets, 0, 3 ) );
+    $this->assertEqualsCanonicalizing( FormFieldMapper::get_valid_targets(), $targets );
+
+    $this->assertSame(
+      array(
+        'integration_name'  => 'contact-form-7',
+        'integration_label' => 'Contact Form 7',
+        'form_id'           => '1',
+        'form_title'        => 'Contact form 1',
+        'status'            => 'saved',
+        'targets'           => array( 'email' ),
+        'active'            => true,
+        'missing'           => false,
+        'missing_fields'    => array(),
+        'new_fields'        => array(),
+        'edit_url'          => 'https://example.com/wp-admin/admin.php?page=wpcf7&post=1&action=edit',
+      ),
+      $params['list'][0]
+    );
+  }
+
+  /**
+   * Mocks the connection state and the current user's dismissal of the
+   * field mapping notice.
+   *
+   * @param string $access_token The active access token ('' when not connected).
+   * @param string $dismissed    The dismissed signature ('' when never dismissed).
+   * @return void
+   */
+  private function mock_field_mapping_notice_state( $access_token, $dismissed ) {
+    \Mockery::mock( 'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions' )
+      ->shouldReceive( 'get_active_access_token' )
+      ->andReturn( $access_token );
+    \WP_Mock::userFunction( 'get_current_user_id', array( 'return' => 1 ) );
+    // Nothing cached: the summary is computed from the forms.
+    \WP_Mock::userFunction( 'get_transient', array( 'return' => false ) );
+    \WP_Mock::userFunction( 'set_transient', array( 'return' => true ) );
+    \WP_Mock::userFunction(
+      'get_user_meta',
+      array(
+        'args'   => array( 1, FacebookPluginConfig::ADMIN_IGNORE_FIELD_MAPPING_NOTICE, true ),
+        'return' => $dismissed,
+      )
+    );
+  }
+
+  /**
+   * The field mapping notice reports a saved mapping whose form gained a
+   * field, while the plugin is connected and the user has not dismissed it
+   * for exactly what it reports.
+   */
+  public function testFieldMappingNoticeSummary() {
+    $this->mock_field_mapping_notice_state( 'token', '' );
+    $page    = $this->make_field_mapping_page( true, array( 'your-email', 'your-phone' ) );
+    $summary = $page->get_field_mapping_notice_summary();
+
+    $this->assertSame( 0, $summary['unreviewed'] );
+    $this->assertSame( 1, $summary['changed'] );
+    $this->assertNotSame( '', $summary['signature'] );
+  }
+
+  /**
+   * The field mapping notice is not shown when the plugin is not connected.
+   */
+  public function testFieldMappingNoticeHiddenWhenNotConnected() {
+    $this->mock_field_mapping_notice_state( '', '' );
+    $page = $this->make_field_mapping_page( true, array( 'your-email', 'your-phone' ) );
+
+    $this->assertNull( $page->get_field_mapping_notice_summary() );
+  }
+
+  /**
+   * The field mapping notice is not shown when the form's changes do not
+   * affect its mapping.
+   */
+  public function testFieldMappingNoticeHiddenWhenNothingNeedsAReview() {
+    $this->mock_field_mapping_notice_state( 'token', '' );
+    $page = $this->make_field_mapping_page();
+
+    $this->assertNull( $page->get_field_mapping_notice_summary() );
+  }
+
+  /**
+   * A dismissed notice stays hidden while it would report the same items,
+   * and comes back when something else needs a review.
+   */
+  public function testFieldMappingNoticeDismissal() {
+    // The form's new field 'your-phone' is the only item to review.
+    $this->mock_field_mapping_notice_state( 'token', md5( 'new:contact-form-7/1/your-phone' ) );
+
+    $this->assertNull(
+      $this->make_field_mapping_page( true, array( 'your-email', 'your-phone' ) )->get_field_mapping_notice_summary()
+    );
+    $this->assertNotNull(
+      $this->make_field_mapping_page( true, array( 'your-email', 'your-phone', 'your-fax' ) )->get_field_mapping_notice_summary()
+    );
+  }
+
+
+  /**
+   * The notice says what needs a review, links to the field mapping section
+   * and dismisses for exactly what it reports, behind a nonce.
+   */
+  public function testFieldMappingNoticeRendering() {
+    $this->mock_field_mapping_notice_state( 'token', '' );
+    $passthrough = function ( $text ) {
+      return $text;
+    };
+    foreach ( array( '__', 'esc_html', 'esc_url' ) as $function ) {
+      \WP_Mock::userFunction( $function, array( 'return' => $passthrough ) );
+    }
+    \WP_Mock::userFunction(
+      'esc_html_e',
+      array(
+        'return' => function ( $text ) {
+          echo $text; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      '_n',
+      array(
+        'return' => function ( $single, $plural, $number ) {
+          return 1 === $number ? $single : $plural;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'admin_url',
+      array(
+        'return' => function ( $path = '' ) {
+          return 'https://example.com/wp-admin/' . $path;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'add_query_arg',
+      array(
+        'return' => function ( $key, $value, $url ) {
+          return $url . '?' . $key . '=' . $value;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_nonce_url',
+      array(
+        'return' => function ( $url, $action ) {
+          return $url . '&_wpnonce=nonce-' . $action;
+        },
+      )
+    );
+
+    ob_start();
+    $this->make_field_mapping_page( true, array( 'your-email', 'your-phone' ) )->field_mapping_notice();
+    $html = ob_get_clean();
+
+    $this->assertStringContainsString( 'Lead form field mappings need a review (1 form changed).', $html );
+    $this->assertStringContainsString( 'page=' . FacebookPluginConfig::ADMIN_MENU_SLUG . '#fb-tab-configuration', $html );
+    $this->assertStringContainsString(
+      FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE . '=' . md5( 'new:contact-form-7/1/your-phone' )
+        . '&_wpnonce=nonce-' . FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE,
+      $html
+    );
+  }
+
+  /**
+   * Dismissing the field mapping notice stores the signature it reported,
+   * only with a valid nonce.
+   *
+   * @dataProvider fieldMappingNoticeNonceProvider
+   * @param bool $valid_nonce Whether the nonce verifies.
+   */
+  public function testFieldMappingNoticeDismissStoresTheSignature( $valid_nonce ) {
+    $this->mock_field_mapping_notice_state( 'token', '' );
+    $page = $this->make_field_mapping_page();
+    $_GET = array(
+      FacebookPluginConfig::ADMIN_DISMISS_FIELD_MAPPING_NOTICE => 'abc123',
+      '_wpnonce'                                               => 'nonce',
+    );
+    \WP_Mock::userFunction(
+      'sanitize_text_field',
+      array(
+        'return' => function ( $text ) {
+          return $text;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'wp_unslash',
+      array(
+        'return' => function ( $text ) {
+          return $text;
+        },
+      )
+    );
+    \WP_Mock::userFunction( 'wp_verify_nonce', array( 'return' => $valid_nonce ) );
+    \WP_Mock::userFunction(
+      'update_user_meta',
+      array(
+        'args'  => array( 1, FacebookPluginConfig::ADMIN_IGNORE_FIELD_MAPPING_NOTICE, 'abc123' ),
+        'times' => $valid_nonce ? 1 : 0,
+      )
+    );
+
+    $page->dismiss_notices();
+    $_GET = array();
+    $this->assertConditionsMet();
+  }
+
+  /**
+   * Valid and invalid nonces.
+   *
+   * @return array
+   */
+  public function fieldMappingNoticeNonceProvider() {
+    return array(
+      'valid nonce'   => array( true ),
+      'invalid nonce' => array( false ),
+    );
+  }
+
+  /**
+   * The section lists the supported form plugins with their status and the
+   * forms table; the editor is only rendered when a plugin is active, and a
+   * hint is shown when none is.
+   */
+  public function testFieldMappingSection() {
+    \WP_Mock::userFunction(
+      'esc_attr',
+      array(
+        'return' => function ( $text ) {
+          return $text;
+        },
+      )
+    );
+    \WP_Mock::userFunction(
+      'esc_html',
+      array(
+        'return' => function ( $text ) {
+          return $text;
+        },
+      )
+    );
+
+    $this->mock_automatic_matching( true, AAMSettingsFields::get_all_fields() );
+
+    $section = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_section' );
+    $this->assertStringContainsString( 'Supported form plugins', $section );
+    $this->assertMatchesRegularExpression( '/id="fb-mapping-matching"[^>]*>\s*<strong>Automatic advanced matching is on/', $section );
+    $this->assertMatchesRegularExpression( '/id="fb-mapping-editor-matching"[^>]*>\s*Automatic advanced matching is on/', $section );
+    $this->assertMatchesRegularExpression( '/Contact Form 7\s*<span class="fb-mapping-plugin-status fb-mapping-plugin-status--active">\s*Active/', $section );
+    $this->assertStringContainsString( 'id="fb-mapping-list"', $section );
+    $this->assertStringContainsString( 'id="fb-mapping-editor"', $section );
+    $this->assertStringContainsString( 'id="fb-mapping-missing"', $section );
+    $this->assertStringNotContainsString( 'id="fb-mapping-integration"', $section );
+    $this->assertStringNotContainsString( 'fb-mapping-empty', $section );
+
+    $section = $this->invoke_private( $this->make_field_mapping_page( false ), 'get_field_mapping_section' );
+    $this->assertMatchesRegularExpression( '/Contact Form 7\s*<span class="fb-mapping-plugin-status">\s*Not active/', $section );
+    $this->assertStringContainsString( 'id="fb-mapping-list"', $section );
+    $this->assertStringContainsString( 'fb-mapping-empty', $section );
+    $this->assertStringNotContainsString( 'id="fb-mapping-editor"', $section );
   }
 }

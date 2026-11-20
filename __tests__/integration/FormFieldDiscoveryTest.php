@@ -1,0 +1,811 @@
+<?php
+/**
+ * Facebook Pixel Plugin FormFieldDiscoveryTest class.
+ *
+ * @package FacebookPixelPlugin
+ */
+
+/*
+* Copyright (C) 2017-present, Meta, Inc.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; version 2 of the License.
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*/
+
+namespace FacebookPixelPlugin\Tests\Integration;
+
+use FacebookPixelPlugin\Integration\FacebookWordpressContactForm7;
+use FacebookPixelPlugin\Integration\FacebookWordpressFormidableForm;
+use FacebookPixelPlugin\Integration\FacebookWordpressMailchimpForWp;
+use FacebookPixelPlugin\Integration\FacebookWordpressNinjaForms;
+use FacebookPixelPlugin\Integration\FacebookWordpressWPForms;
+use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
+use FacebookPixelPlugin\Tests\Mocks\MockContactForm7Tag;
+use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormField;
+use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormFieldValue;
+use FacebookPixelPlugin\Tests\Mocks\MockFormidableFormWithEditLink;
+
+/**
+ * Form and field discovery for the field mapping screen, and that the field
+ * ids it lists are the ones a saved mapping is matched on at submission.
+ *
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
+ */
+final class FormFieldDiscoveryTest extends FacebookWordpressTestBase {
+
+    /**
+     * Builds an integration with the given saved mappings.
+     *
+     * @param string $class    The integration class.
+     * @param array  $mappings Initial mapping store contents.
+     * @return \FacebookPixelPlugin\Integration\TrackableLeadFormIntegrationBase
+     */
+    private function make( $class, array $mappings = array() ) {
+        // The plugins are installed, so tracking is set up for them.
+        $this->install_plugin_files(
+            array(
+                FacebookWordpressContactForm7::PLUGIN_FILE,
+                FacebookWordpressWPForms::PLUGIN_FILE,
+                FacebookWordpressNinjaForms::PLUGIN_FILE,
+                FacebookWordpressFormidableForm::PLUGIN_FILE,
+                FacebookWordpressMailchimpForWp::PLUGIN_FILE,
+            )
+        );
+        return new $class( $this->make_signals(), $this->make_field_mapper( $mappings ) );
+    }
+
+    /**
+     * Saved mappings for one form.
+     *
+     * @param string $integration_name The integration name.
+     * @param string $form_id          The form id.
+     * @param array  $mappings         field id => target.
+     * @return array
+     */
+    private function saved( $integration_name, $form_id, array $mappings ) {
+        return array(
+            $integration_name => array(
+                $form_id => array(
+                    'form_title' => 'Form',
+                    'mappings'   => $mappings,
+                ),
+            ),
+        );
+    }
+
+    /**
+     * Every lead-form integration has a label, and lists nothing while its
+     * plugin is not loaded.
+     *
+     * @return void
+     */
+    public function testUnavailablePluginsListNothing() {
+        $labels = array(
+            FacebookWordpressContactForm7::class   => 'Contact Form 7',
+            FacebookWordpressWPForms::class        => 'WPForms',
+            FacebookWordpressNinjaForms::class     => 'Ninja Forms',
+            FacebookWordpressFormidableForm::class => 'Formidable Forms',
+            FacebookWordpressMailchimpForWp::class => 'Mailchimp for WP',
+        );
+        foreach ( $labels as $class => $label ) {
+            $integration = $this->make( $class );
+            $this->assertSame( $label, $integration->get_integration_label() );
+            $this->assertTrue( $integration->supports_field_mapping(), $class );
+            $this->assertFalse( $integration->is_field_mapping_available(), $class );
+            $this->assertSame( array(), $integration->get_forms(), $class );
+            $this->assertSame( array(), $integration->get_form_fields( '1' ), $class );
+            $this->assertSame( array(), $integration->suggest_field_mapping( '1' ), $class );
+            // Each declares the hooks its plugin fires when a form changes.
+            $this->assertNotEmpty( $integration->get_form_change_hooks(), $class );
+        }
+    }
+
+    /**
+     * Contact Form 7 lists its forms, and each form's named input tags once.
+     *
+     * @return void
+     */
+    public function testContactForm7Discovery() {
+        $form = \Mockery::mock();
+        $form->shouldReceive( 'id' )->andReturn( 123 );
+        $form->shouldReceive( 'title' )->andReturn( 'Contact form 1' );
+        $form->shouldReceive( 'scan_form_tags' )->andReturn(
+            array(
+                new MockContactForm7Tag( 'text', 'your-name' ),
+                new MockContactForm7Tag( 'email', 'your-email' ),
+                new MockContactForm7Tag( 'email', 'your-email' ),
+                new MockContactForm7Tag( 'submit', 'send' ),
+                new MockContactForm7Tag( 'text', '' ),
+            )
+        );
+        $cf7 = \Mockery::mock( 'alias:WPCF7_ContactForm' );
+        $cf7->shouldReceive( 'find' )->andReturn( array( $form ) );
+        $cf7->shouldReceive( 'get_instance' )->with( '123' )->andReturn( $form );
+
+        $integration = $this->make( FacebookWordpressContactForm7::class );
+
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '123',
+                    'title' => 'Contact form 1',
+                ),
+            ),
+            $integration->get_forms()
+        );
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => 'your-name',
+                    'label' => 'your-name',
+                    'type'  => 'text',
+                ),
+                array(
+                    'id'    => 'your-email',
+                    'label' => 'your-email',
+                    'type'  => 'email',
+                ),
+            ),
+            $integration->get_form_fields( '123' )
+        );
+        $this->assertSame(
+            array(
+                'your-name'  => 'full_name',
+                'your-email' => 'email',
+            ),
+            $integration->suggest_field_mapping( '123' )
+        );
+    }
+
+    /**
+     * WPForms lists fields by numeric id, skipping layout fields, and a mapping
+     * saved for a field id is applied on submission even though the row's name
+     * is the field label.
+     *
+     * @return void
+     */
+    public function testWPFormsDiscoveryIdsMatchSubmission() {
+        $post               = new \stdClass();
+        $post->ID           = 5;
+        $post->post_title   = 'Contact';
+        $post->post_content = json_encode(
+            array(
+                'fields' => array(
+                    '3' => array(
+                        'id'    => '3',
+                        'type'  => 'text',
+                        'label' => 'Work email',
+                    ),
+                    '4' => array(
+                        'id'    => '4',
+                        'type'  => 'divider',
+                        'label' => 'Section',
+                    ),
+                    '6' => array(
+                        'id'   => '6',
+                        'type' => 'phone',
+                    ),
+                    '7' => array(
+                        'id'     => '7',
+                        'type'   => 'name',
+                        'format' => 'first-last',
+                        'label'  => 'Name',
+                    ),
+                    '8' => array(
+                        'id'    => '8',
+                        'type'  => 'text',
+                        'label' => 'Town',
+                    ),
+                ),
+            )
+        );
+        $forms = \Mockery::mock();
+        $forms->shouldReceive( 'get' )->with( '' )->andReturn( array( $post ) );
+        $forms->shouldReceive( 'get' )->with( '5' )->andReturn( $post );
+        $wpforms       = new \stdClass();
+        $wpforms->form = $forms;
+        \WP_Mock::userFunction( 'wpforms', array( 'return' => $wpforms ) );
+
+        $integration = $this->make(
+            FacebookWordpressWPForms::class,
+            $this->saved( FacebookWordpressWPForms::INTEGRATION_NAME, '5', array( '3' => 'email' ) )
+        );
+
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '5',
+                    'title' => 'Contact',
+                ),
+            ),
+            $integration->get_forms()
+        );
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '3',
+                    'label' => 'Work email',
+                    'type'  => 'text',
+                ),
+                array(
+                    'id'    => '6',
+                    'label' => '6',
+                    'type'  => 'phone',
+                ),
+                array(
+                    'id'    => '7',
+                    'label' => 'Name',
+                    'type'  => 'name',
+                ),
+                array(
+                    'id'    => '8',
+                    'label' => 'Town',
+                    'type'  => 'text',
+                ),
+            ),
+            $integration->get_form_fields( '5' )
+        );
+        $this->assertSame(
+            array(
+                '6' => 'phone',
+                '7' => 'full_name',
+                '8' => 'city',
+            ),
+            $integration->suggest_field_mapping( '5' )
+        );
+
+        $lead = $integration->extract_lead_data(
+            array( 'fields' => array( '3' => 'work@s2s.com' ) ),
+            array(
+                'id'     => 5,
+                'fields' => array(
+                    '3' => array(
+                        'label' => 'Work email',
+                        'type'  => 'text',
+                    ),
+                ),
+            )
+        );
+        $this->assertSame( array( 'email' => 'work@s2s.com' ), $lead );
+    }
+
+    /**
+     * Mocks Ninja Forms with form 2 ("Contact Me") whose fields are $fields,
+     * each [id, key, type, label].
+     *
+     * @param array $fields The form's fields.
+     * @return void
+     */
+    private function mock_ninja_forms( array $fields ) {
+        $models = array();
+        foreach ( $fields as $field ) {
+            list( $id, $key, $type, $label ) = $field;
+            $mock                            = \Mockery::mock();
+            $mock->shouldReceive( 'get_id' )->andReturn( $id );
+            $mock->shouldReceive( 'get_settings' )->andReturn(
+                array(
+                    'key'   => $key,
+                    'type'  => $type,
+                    'label' => $label,
+                )
+            );
+            $models[] = $mock;
+        }
+        $form = \Mockery::mock();
+        $form->shouldReceive( 'get_id' )->andReturn( 2 );
+        $form->shouldReceive( 'get_setting' )->with( 'title' )->andReturn( 'Contact Me' );
+        $all_forms = \Mockery::mock();
+        $all_forms->shouldReceive( 'get_forms' )->andReturn( array( $form ) );
+        $one_form = \Mockery::mock();
+        $one_form->shouldReceive( 'get_fields' )->andReturn( $models );
+        $ninja = \Mockery::mock();
+        $ninja->shouldReceive( 'form' )->withNoArgs()->andReturn( $all_forms );
+        $ninja->shouldReceive( 'form' )->with( '2' )->andReturn( $one_form );
+        \WP_Mock::userFunction( 'Ninja_Forms', array( 'return' => $ninja ) );
+    }
+
+    /**
+     * A Ninja Forms submission payload for form 2: fields of [id, key, value].
+     *
+     * @param array $fields The submitted fields.
+     * @return array The submit-hook arguments.
+     */
+    private function ninja_submission( array $fields ) {
+        $form_data = array(
+            'id'     => '2',
+            'fields' => array(),
+        );
+        foreach ( $fields as $field ) {
+            list( $id, $key, $value )         = $field;
+            $form_data['fields'][ (string) $id ] = array(
+                'id'    => $id,
+                'key'   => $key,
+                'value' => $value,
+            );
+        }
+        return array( array(), array(), $form_data );
+    }
+
+    /**
+     * Ninja Forms lists fields by their numeric id, skipping submit buttons.
+     * The key is regenerated when a field is renamed, so a mapping saved for
+     * the id still applies after a rename.
+     *
+     * @return void
+     */
+    public function testNinjaFormsDiscoveryUsesFieldIds() {
+        $this->mock_ninja_forms(
+            array(
+                array( 7, 'email_1', 'email', 'Email' ),
+                array( 8, 'submit_2', 'submit', 'Send' ),
+            )
+        );
+
+        $integration = $this->make( FacebookWordpressNinjaForms::class );
+
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '2',
+                    'title' => 'Contact Me',
+                ),
+            ),
+            $integration->get_forms()
+        );
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '7',
+                    'label' => 'Email',
+                    'type'  => 'email',
+                ),
+            ),
+            $integration->get_form_fields( '2' )
+        );
+        $this->assertSame( array( '7' => 'email' ), $integration->suggest_field_mapping( '2' ) );
+
+        // The field was renamed after the mapping was saved: its key changed.
+        $integration = $this->make(
+            FacebookWordpressNinjaForms::class,
+            $this->saved( FacebookWordpressNinjaForms::INTEGRATION_NAME, '2', array( '7' => 'email' ) )
+        );
+        $this->assertSame(
+            array( 'email' => 'pika.chu@s2s.com' ),
+            $integration->extract_lead_data( ...$this->ninja_submission( array( array( 7, 'work_address_1', 'pika.chu@s2s.com' ) ) ) )
+        );
+    }
+
+    /**
+     * Ninja Forms forms are read from its form cache with one query per
+     * request: their titles, fields and suggestions come from it, and only a
+     * form missing from the cache is loaded through the Ninja Forms API.
+     *
+     * @return void
+     */
+    public function testNinjaFormsReadsTheFormCacheOnce() {
+        if ( ! defined( 'ARRAY_A' ) ) {
+            define( 'ARRAY_A', 'ARRAY_A' );
+        }
+        $cache = serialize(
+            array(
+                'settings' => array( 'title' => 'Cached form' ),
+                'fields'   => array(
+                    array(
+                        'id'       => 7,
+                        'settings' => array(
+                            'key'   => 'email_1',
+                            'type'  => 'email',
+                            'label' => 'Email',
+                        ),
+                    ),
+                ),
+            )
+        );
+        global $wpdb;
+        $wpdb         = \Mockery::mock();
+        $wpdb->prefix = 'wp_';
+        $wpdb->shouldReceive( 'suppress_errors' )->andReturn( false );
+        $wpdb->shouldReceive( 'get_results' )
+            ->once()
+            ->with( 'SELECT id, cache FROM `wp_nf3_upgrades`', ARRAY_A )
+            ->andReturn(
+                array(
+                    array(
+                        'id'    => '2',
+                        'cache' => $cache,
+                    ),
+                )
+            );
+        \Mockery::mock( 'alias:WPN_Helper' )->shouldReceive( 'maybe_unserialize' )->andReturnUsing(
+            function ( $value ) {
+                return unserialize( $value ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
+            }
+        );
+
+        $cached = \Mockery::mock();
+        $cached->shouldReceive( 'get_id' )->andReturn( 2 );
+        $cached->shouldNotReceive( 'get_setting' );
+        $uncached = \Mockery::mock();
+        $uncached->shouldReceive( 'get_id' )->andReturn( 3 );
+        $uncached->shouldReceive( 'get_setting' )->with( 'title' )->andReturn( 'Uncached form' );
+        $all_forms = \Mockery::mock();
+        $all_forms->shouldReceive( 'get_forms' )->andReturn( array( $cached, $uncached ) );
+        $field = \Mockery::mock();
+        $field->shouldReceive( 'get_id' )->andReturn( 9 );
+        $field->shouldReceive( 'get_settings' )->andReturn(
+            array(
+                'key'   => 'phone_1',
+                'type'  => 'phone',
+                'label' => 'Phone',
+            )
+        );
+        $form_three = \Mockery::mock();
+        $form_three->shouldReceive( 'get_fields' )->andReturn( array( $field ) );
+        $ninja = \Mockery::mock();
+        $ninja->shouldReceive( 'form' )->withNoArgs()->andReturn( $all_forms );
+        $ninja->shouldReceive( 'form' )->with( '3' )->andReturn( $form_three );
+        $ninja->shouldNotReceive( 'form' )->with( '2' );
+        \WP_Mock::userFunction( 'Ninja_Forms', array( 'return' => $ninja ) );
+
+        $integration = $this->make( FacebookWordpressNinjaForms::class );
+
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '2',
+                    'title' => 'Cached form',
+                ),
+                array(
+                    'id'    => '3',
+                    'title' => 'Uncached form',
+                ),
+            ),
+            $integration->get_forms()
+        );
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '7',
+                    'label' => 'Email',
+                    'type'  => 'email',
+                ),
+            ),
+            $integration->get_form_fields( '2' )
+        );
+        $this->assertSame( array( '7' => 'email' ), $integration->suggest_field_mapping( '2' ) );
+        $this->assertSame( array( '9' => 'phone' ), $integration->suggest_field_mapping( '3' ) );
+    }
+
+    /**
+     * The suggestion is what automatic detection sends: when several fields
+     * qualify for a parameter the last one wins, and a full name field still
+     * supplies the last name after a later first name field.
+     *
+     * @return void
+     */
+    public function testSuggestionSendsWhatAutomaticDetectionSends() {
+        $this->mock_ninja_forms(
+            array(
+                array( 1, 'name_1', 'textbox', 'Name' ),
+                array( 2, 'email_2', 'email', 'Email' ),
+                array( 3, 'firstname_3', 'firstname', 'First name' ),
+                array( 4, 'email_4', 'email', 'Work email' ),
+            )
+        );
+        $submission = $this->ninja_submission(
+            array(
+                array( 1, 'name_1', 'Pika Chu' ),
+                array( 2, 'email_2', 'home@s2s.com' ),
+                array( 3, 'firstname_3', 'Ash' ),
+                array( 4, 'email_4', 'work@s2s.com' ),
+            )
+        );
+
+        $suggested = $this->make( FacebookWordpressNinjaForms::class )->suggest_field_mapping( '2' );
+        $this->assertSame(
+            array(
+                '1' => 'full_name',
+                '3' => 'first_name',
+                '4' => 'email',
+            ),
+            $suggested
+        );
+
+        $automatic = $this->make( FacebookWordpressNinjaForms::class )->extract_lead_data( ...$submission );
+        $mapped    = $this->make(
+            FacebookWordpressNinjaForms::class,
+            $this->saved( FacebookWordpressNinjaForms::INTEGRATION_NAME, '2', $suggested )
+        )->extract_lead_data( ...$submission );
+        ksort( $automatic );
+        ksort( $mapped );
+        $this->assertSame( $automatic, $mapped );
+        $this->assertSame( 'work@s2s.com', $mapped['email'] );
+        $this->assertSame( 'Ash', $mapped['first_name'] );
+        $this->assertSame( 'Chu', $mapped['last_name'] );
+    }
+
+    /**
+     * Formidable lists fields by id, skipping layout fields, and a mapping
+     * saved for a field id is applied on submission.
+     *
+     * @return void
+     */
+    public function testFormidableDiscoveryIdsMatchSubmission() {
+        $form       = new \stdClass();
+        $form->id   = 9;
+        $form->name = 'Lead';
+        $email      = new \stdClass();
+        $email->id   = 11;
+        $email->name = 'Work email';
+        $email->type = 'text';
+        $html       = new \stdClass();
+        $html->id   = 12;
+        $html->name = 'Intro';
+        $html->type = 'html';
+        \Mockery::mock( 'alias:FrmForm' )->shouldReceive( 'get_published_forms' )->andReturn( array( $form ) );
+        $first              = new \stdClass();
+        $first->id          = 13;
+        $first->name        = 'Name';
+        $first->description = 'First';
+        $first->type        = 'text';
+        $where              = new \stdClass();
+        $where->id          = 14;
+        $where->name        = 'Address';
+        $where->type        = 'address';
+        \Mockery::mock( 'alias:FrmField' )->shouldReceive( 'get_all_for_form' )->with( '9' )->andReturn( array( $email, $html, $first, $where ) );
+        \Mockery::mock( 'overload:FrmEntryValues' )->shouldReceive( 'get_field_values' )->andReturn(
+            array(
+                new MockFormidableFormFieldValue(
+                    new MockFormidableFormField( 'text', 'Work email', '', '11' ),
+                    'work@s2s.com'
+                ),
+            )
+        );
+
+        $integration = $this->make(
+            FacebookWordpressFormidableForm::class,
+            $this->saved( FacebookWordpressFormidableForm::INTEGRATION_NAME, '9', array( '11' => 'email' ) )
+        );
+
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '9',
+                    'title' => 'Lead',
+                ),
+            ),
+            $integration->get_forms()
+        );
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '11',
+                    'label' => 'Work email',
+                    'type'  => 'text',
+                ),
+                array(
+                    'id'    => '13',
+                    'label' => 'Name',
+                    'type'  => 'text',
+                ),
+                array(
+                    'id'    => '14',
+                    'label' => 'Address',
+                    'type'  => 'address',
+                ),
+            ),
+            $integration->get_form_fields( '9' )
+        );
+        $this->assertSame(
+            array(
+                '13' => 'first_name',
+                '14' => 'address',
+            ),
+            $integration->suggest_field_mapping( '9' )
+        );
+        $this->assertSame( array( 'email' => 'work@s2s.com' ), $integration->extract_lead_data( 9, 100 ) );
+    }
+
+    /**
+     * Mailchimp for WP lists the upper-cased input names in a form's markup,
+     * grouping ADDRESS[...] inputs under ADDRESS and skipping internal ones,
+     * suggests the merge fields automatic detection knows, and applies only
+     * the saved mapping on submission.
+     *
+     * @return void
+     */
+    public function testMailchimpDiscoveryAndSubmission() {
+        $form          = new \stdClass();
+        $form->ID      = 42;
+        $form->name    = 'Newsletter';
+        $form->content = '<input type="email" name="EMAIL" />'
+            . '<input type="text" name="fname" />'
+            . "<input type='text' name='WORK_PHONE' />"
+            . '<input type="text" name="ADDRESS[city]" />'
+            . '<input type="text" name="ADDRESS[country]" />'
+            . '<input type="text" name="_mc4wp_honeypot" />'
+            . '<input type="email" name="EMAIL" />';
+        \WP_Mock::userFunction( 'mc4wp_get_forms', array( 'return' => array( $form ) ) );
+        \WP_Mock::userFunction(
+            'mc4wp_get_form',
+            array(
+                'return' => function ( $id ) use ( $form ) {
+                    if ( '42' !== (string) $id ) {
+                        throw new \Exception( 'Form not found' );
+                    }
+                    return $form;
+                },
+            )
+        );
+        \WP_Mock::userFunction(
+            'sanitize_text_field',
+            array(
+                'return' => function ( $input ) {
+                    return $input;
+                },
+            )
+        );
+
+        $integration = $this->make(
+            FacebookWordpressMailchimpForWp::class,
+            $this->saved(
+                FacebookWordpressMailchimpForWp::INTEGRATION_NAME,
+                '42',
+                array(
+                    'WORK_PHONE' => 'phone',
+                    'ADDRESS'    => 'address',
+                )
+            )
+        );
+
+        $this->assertSame(
+            array(
+                array(
+                    'id'    => '42',
+                    'title' => 'Newsletter',
+                ),
+            ),
+            $integration->get_forms()
+        );
+        $this->assertSame(
+            array( 'EMAIL', 'FNAME', 'WORK_PHONE', 'ADDRESS' ),
+            array_column( $integration->get_form_fields( '42' ), 'id' )
+        );
+        $this->assertSame( array(), $integration->get_form_fields( '7' ) );
+        $this->assertSame(
+            array(
+                'EMAIL'   => 'email',
+                'FNAME'   => 'first_name',
+                'ADDRESS' => 'address',
+            ),
+            $integration->suggest_field_mapping( '42' )
+        );
+
+        // EMAIL is not in the saved mapping, so it is not sent.
+        $form->data = array(
+            'EMAIL'      => 'pika.chu@s2s.com',
+            'WORK_PHONE' => '555',
+            'ADDRESS'    => array(
+                'city'    => 'Springfield',
+                'country' => 'US',
+            ),
+        );
+        $this->assertSame(
+            array(
+                'phone'   => '555',
+                'city'    => 'Springfield',
+                'country' => 'US',
+            ),
+            $integration->extract_lead_data( $form )
+        );
+    }
+
+    /**
+     * A suggestion uses each target once, for the field automatic detection
+     * sends it from: the last of several email fields, and the last of
+     * several name fields.
+     *
+     * @return void
+     */
+    public function testSuggestionUsesEachTargetOnceForTheLastField() {
+        $form = \Mockery::mock();
+        $form->shouldReceive( 'scan_form_tags' )->andReturn(
+            array(
+                new MockContactForm7Tag( 'text', 'your-name' ),
+                new MockContactForm7Tag( 'email', 'your-email' ),
+                new MockContactForm7Tag( 'email', 'other-email' ),
+                new MockContactForm7Tag( 'text', 'company-name' ),
+            )
+        );
+        \Mockery::mock( 'alias:WPCF7_ContactForm' )->shouldReceive( 'get_instance' )->andReturn( $form );
+
+        $this->assertSame(
+            array(
+                'other-email'  => 'email',
+                'company-name' => 'full_name',
+            ),
+            $this->make( FacebookWordpressContactForm7::class )->suggest_field_mapping( '1' )
+        );
+    }
+
+    /**
+     * Stubs admin_url() and absint() as WordPress defines them.
+     *
+     * @return void
+     */
+    private function stub_admin_url() {
+        \WP_Mock::userFunction(
+            'admin_url',
+            array(
+                'return' => function ( $path = '' ) {
+                    return 'https://example.com/wp-admin/' . $path;
+                },
+            )
+        );
+        \WP_Mock::userFunction(
+            'absint',
+            array(
+                'return' => function ( $value ) {
+                    return abs( (int) $value );
+                },
+            )
+        );
+    }
+
+    /**
+     * Each integration links a form to its plugin's own editor, with the
+     * URL the plugin itself uses. Formidable and Mailchimp for WP fall back
+     * to that URL when their helper is missing. The E2E field mapping spec
+     * checks these against the real, latest plugins.
+     *
+     * @return void
+     */
+    public function testFormEditUrls() {
+        $this->stub_admin_url();
+        $expected = array(
+            FacebookWordpressContactForm7::class   => 'https://example.com/wp-admin/admin.php?page=wpcf7&post=12&action=edit',
+            FacebookWordpressWPForms::class        => 'https://example.com/wp-admin/admin.php?page=wpforms-builder&view=fields&form_id=12',
+            FacebookWordpressNinjaForms::class     => 'https://example.com/wp-admin/admin.php?page=ninja-forms&form_id=12',
+            FacebookWordpressFormidableForm::class => 'https://example.com/wp-admin/admin.php?page=formidable&frm_action=edit&id=12',
+            FacebookWordpressMailchimpForWp::class => 'https://example.com/wp-admin/admin.php?page=mailchimp-for-wp-forms&view=edit-form&form_id=12',
+        );
+        foreach ( $expected as $class => $url ) {
+            $this->assertSame( $url, $this->make( $class )->get_form_edit_url( '12' ), $class );
+        }
+    }
+
+    /**
+     * Formidable and Mailchimp for WP build the URL with their own helper
+     * when it is available, so a change to it in the plugin is followed.
+     *
+     * @return void
+     */
+    public function testFormEditUrlsUsePluginHelpers() {
+        $this->stub_admin_url();
+        class_alias( MockFormidableFormWithEditLink::class, 'FrmForm' );
+        \WP_Mock::userFunction(
+            'mc4wp_get_edit_form_url',
+            array(
+                'args'   => array( 12 ),
+                'times'  => 1,
+                'return' => 'https://example.com/wp-admin/admin.php?page=mailchimp-for-wp-forms&view=edit-form&form_id=12&from=helper',
+            )
+        );
+
+        $this->assertSame(
+            'https://example.com/wp-admin/admin.php?page=formidable&frm_action=edit&id=12&from=helper',
+            $this->make( FacebookWordpressFormidableForm::class )->get_form_edit_url( '12' )
+        );
+        $this->assertSame( array( 12 ), MockFormidableFormWithEditLink::$calls );
+        $this->assertSame(
+            'https://example.com/wp-admin/admin.php?page=mailchimp-for-wp-forms&view=edit-form&form_id=12&from=helper',
+            $this->make( FacebookWordpressMailchimpForWp::class )->get_form_edit_url( '12' )
+        );
+    }
+}
