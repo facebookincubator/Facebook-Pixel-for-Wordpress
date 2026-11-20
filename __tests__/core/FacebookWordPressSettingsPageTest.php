@@ -27,7 +27,9 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
+use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
+use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 use FacebookPixelPlugin\Core\FormFieldMapper;
 use FacebookPixelPlugin\Integration\TrackableLeadFormIntegrationBase;
 use FacebookPixelPlugin\Tests\Mocks\MockFormFieldMappingStore;
@@ -582,12 +584,109 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
    * @param string                        $method        The method name.
    * @return mixed
    */
-  private function invoke_private( $settings_page, $method ) {
+  private function invoke_private( $settings_page, $method, ...$args ) {
     $reflection = new \ReflectionMethod( $settings_page, $method );
     if ( PHP_VERSION_ID < 80100 ) {
       $reflection->setAccessible( true );
     }
-    return $reflection->invoke( $settings_page );
+    return $reflection->invoke( $settings_page, ...$args );
+  }
+
+  /**
+   * Mocks the pixel's automatic advanced matching setting.
+   *
+   * @param bool|null $enabled   Whether it is on; null when it could not be
+   *                             read from Meta.
+   * @param string[]  $fields    The types of customer information turned on.
+   * @param bool      $from_meta Whether the plugin is connected through Meta.
+   * @return void
+   */
+  private function mock_automatic_matching( $enabled, array $fields = array(), $from_meta = true ) {
+    $settings = null;
+    if ( null !== $enabled ) {
+      $settings = new AdsPixelSettings();
+      $settings->setEnableAutomaticMatching( $enabled );
+      $settings->setEnabledAutomaticMatchingFields( $fields );
+    }
+    $options = \Mockery::mock( 'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions' );
+    $options->shouldReceive( 'get_aam_settings' )->andReturn( $settings );
+    $options->shouldReceive( 'get_is_fbl4b_installed' )->andReturn( $from_meta );
+    $options->shouldReceive( 'get_is_fbe_installed' )->andReturn( false );
+  }
+
+  /**
+   * The note on automatic advanced matching follows the pixel's setting:
+   * with it on, "Do not send" does not stop the Meta Pixel reading a field
+   * and the types turned off are named; with it off, nothing from the forms
+   * is sent; when it is not known, both are explained as conditions.
+   */
+  public function testFieldMappingMatchingNote() {
+    \WP_Mock::userFunction(
+      'esc_html',
+      array(
+        'return' => function ( $text ) {
+          return $text;
+        },
+      )
+    );
+    $page = $this->make_field_mapping_page();
+
+    $this->mock_automatic_matching( true, array( 'em', 'fn', 'ln', 'ct', 'st', 'zp', 'country', 'external_id' ) );
+    $note = $this->invoke_private( $page, 'get_field_mapping_matching_note', false );
+    $this->assertStringContainsString( 'Automatic advanced matching is on for your pixel.', $note );
+    $this->assertStringContainsString( 'The Meta Pixel on your site can still read customer information', $note );
+    $this->assertStringContainsString( 'not sent even when mapped: phone, gender, date of birth.', $note );
+    $this->assertStringContainsString(
+      'the Meta Pixel can still read fields set to "Do not send"',
+      $this->invoke_private( $page, 'get_field_mapping_matching_note', true )
+    );
+  }
+
+  /**
+   * With every type turned on, the note names none as not sent.
+   */
+  public function testFieldMappingMatchingNoteWithEveryTypeOn() {
+    $this->mock_automatic_matching( true, AAMSettingsFields::get_all_fields() );
+    $note = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_matching_note', false );
+    $this->assertStringContainsString( 'Automatic advanced matching is on for your pixel.', $note );
+    $this->assertStringNotContainsString( 'not sent even when mapped', $note );
+  }
+
+  /**
+   * With automatic advanced matching off, the note says the forms send no
+   * customer information until it is turned on.
+   */
+  public function testFieldMappingMatchingNoteWhenOff() {
+    $this->mock_automatic_matching( false );
+    $page = $this->make_field_mapping_page();
+    $this->assertStringContainsString(
+      'sent without the customer information from the form, whatever the mappings say',
+      $this->invoke_private( $page, 'get_field_mapping_matching_note', false )
+    );
+    $this->assertStringContainsString(
+      'nothing below is sent until it is turned on',
+      $this->invoke_private( $page, 'get_field_mapping_matching_note', true )
+    );
+  }
+
+  /**
+   * When the setting could not be read from Meta, or the plugin is not
+   * connected through Meta, the note explains both effects as conditions.
+   */
+  public function testFieldMappingMatchingNoteWhenUnknown() {
+    $this->mock_automatic_matching( null );
+    $note = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_matching_note', false );
+    $this->assertStringStartsWith( 'If automatic advanced matching is on for your pixel', $note );
+  }
+
+  /**
+   * Settings kept from the plugin's old connection flow do not come from
+   * the pixel, so the note does not claim the pixel's state.
+   */
+  public function testFieldMappingMatchingNoteWithoutMetaConnection() {
+    $this->mock_automatic_matching( true, AAMSettingsFields::get_all_fields(), false );
+    $note = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_matching_note', false );
+    $this->assertStringStartsWith( 'If automatic advanced matching is on for your pixel', $note );
   }
 
   /**
@@ -913,8 +1012,12 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
       )
     );
 
+    $this->mock_automatic_matching( true, AAMSettingsFields::get_all_fields() );
+
     $section = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_section' );
     $this->assertStringContainsString( 'Supported form plugins', $section );
+    $this->assertMatchesRegularExpression( '/id="fb-mapping-matching"[^>]*>\s*<strong>Automatic advanced matching is on/', $section );
+    $this->assertMatchesRegularExpression( '/id="fb-mapping-editor-matching"[^>]*>\s*Automatic advanced matching is on/', $section );
     $this->assertMatchesRegularExpression( '/Contact Form 7\s*<span class="fb-mapping-plugin-status fb-mapping-plugin-status--active">\s*Active/', $section );
     $this->assertStringContainsString( 'id="fb-mapping-list"', $section );
     $this->assertStringContainsString( 'id="fb-mapping-editor"', $section );

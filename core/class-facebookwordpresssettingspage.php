@@ -1517,6 +1517,97 @@ class FacebookWordpressSettingsPage {
     }
 
     /**
+     * The pixel's automatic advanced matching setting, as it affects the
+     * mappings. With it on, the Meta Pixel reads customer information from
+     * form fields in the browser, whatever the mappings say; this plugin
+     * also sends only the types of customer information turned on there
+     * (see AAMFieldsExtractor). With it off, this plugin sends Lead events
+     * without customer information.
+     *
+     * @return array{state: string, blocked: string[]} The state is 'on',
+     *         'off' or 'unknown' (the setting could not be read from Meta, or
+     *         the plugin is not connected through Meta); blocked lists the
+     *         labels of the types turned off while it is on.
+     */
+    private function get_field_mapping_matching() {
+        $settings  = FacebookWordpressOptions::get_aam_settings();
+        $from_meta = FacebookWordpressOptions::get_is_fbl4b_installed()
+            || FacebookWordpressOptions::get_is_fbe_installed();
+        if ( ! $settings || ! $from_meta ) {
+            return array(
+                'state'   => 'unknown',
+                'blocked' => array(),
+            );
+        }
+        if ( ! $settings->getEnableAutomaticMatching() ) {
+            return array(
+                'state'   => 'off',
+                'blocked' => array(),
+            );
+        }
+        $labels  = array(
+            AAMSettingsFields::EMAIL         => 'email',
+            AAMSettingsFields::PHONE         => 'phone',
+            AAMSettingsFields::FIRST_NAME    => 'first name',
+            AAMSettingsFields::LAST_NAME     => 'last name',
+            AAMSettingsFields::CITY          => 'city',
+            AAMSettingsFields::STATE         => 'state',
+            AAMSettingsFields::ZIP_CODE      => 'ZIP or postal code',
+            AAMSettingsFields::COUNTRY       => 'country',
+            AAMSettingsFields::GENDER        => 'gender',
+            AAMSettingsFields::DATE_OF_BIRTH => 'date of birth',
+            AAMSettingsFields::EXTERNAL_ID   => 'external ID',
+        );
+        $enabled = (array) $settings->getEnabledAutomaticMatchingFields();
+        $blocked = array();
+        foreach ( $labels as $field => $label ) {
+            if ( ! in_array( $field, $enabled, true ) ) {
+                $blocked[] = $label;
+            }
+        }
+        return array(
+            'state'   => 'on',
+            'blocked' => $blocked,
+        );
+    }
+
+    /**
+     * Explains how the pixel's automatic advanced matching setting affects
+     * the mappings: "Do not send" does not stop the Meta Pixel reading a
+     * field, and this plugin sends only what that setting allows.
+     *
+     * @param bool $short Whether to return the one-line reminder shown in
+     *                    the editor instead of the section note.
+     * @return string Escaped HTML.
+     */
+    private function get_field_mapping_matching_note( $short ) {
+        $matching = $this->get_field_mapping_matching();
+        if ( 'off' === $matching['state'] ) {
+            return $short
+                ? 'Automatic advanced matching is off for your pixel, so nothing below is sent until it is turned on in Events Manager.'
+                : '<strong>Automatic advanced matching is off for your pixel</strong>, so Lead events from forms are sent without the customer information from the form, whatever the mappings say. To send the mapped fields, turn it on for your pixel in Events Manager.';
+        }
+        if ( 'on' === $matching['state'] ) {
+            if ( $short ) {
+                return 'Automatic advanced matching is on for your pixel, so the Meta Pixel can still read fields set to "Do not send".';
+            }
+            $note = '<strong>Automatic advanced matching is on for your pixel.</strong> "Do not send" only stops this plugin sending a field. The Meta Pixel on your site can still read customer information, such as email or phone, from form fields and send it hashed. To stop that, turn off automatic advanced matching, or the types of information you do not want sent, for your pixel in Events Manager.';
+            if ( ! empty( $matching['blocked'] ) ) {
+                $note .= ' ' . esc_html(
+                    sprintf(
+                        'These types are turned off there, so they are not sent even when mapped: %s.',
+                        implode( ', ', $matching['blocked'] )
+                    )
+                );
+            }
+            return $note;
+        }
+        return $short
+            ? 'If automatic advanced matching is on for your pixel, the Meta Pixel can still read fields set to "Do not send".'
+            : 'If automatic advanced matching is on for your pixel, the Meta Pixel on your site can read customer information from form fields itself, including fields set to "Do not send". This plugin also sends only the types of customer information turned on there. You can change this for your pixel in Events Manager.';
+    }
+
+    /**
      * The parameters js/field_mapping.js reads.
      *
      * @return array
@@ -1560,6 +1651,9 @@ class FacebookWordpressSettingsPage {
         form. Once a mapping is saved, only the fields it sends are sent;
         fields added to the form later are not sent until you review them.
     </div>
+    <p id="fb-mapping-matching" class="fb-capi-desc fb-mapping-matching">
+        <?php echo $this->get_field_mapping_matching_note( false ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped as it is built. ?>
+    </p>
     <div class="fb-capi-desc fb-mapping-plugins">
         Supported form plugins:
         <ul>
@@ -1614,6 +1708,9 @@ class FacebookWordpressSettingsPage {
             saved</strong>, so nothing is sent from them yet:
             <span id="fb-mapping-new-list"></span>.
             Choose how to send each of them, or keep "Do not send", and save.
+        </p>
+        <p id="fb-mapping-editor-matching" class="fb-capi-desc fb-mapping-matching">
+            <?php echo $this->get_field_mapping_matching_note( true ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped as it is built. ?>
         </p>
         <table id="fb-mapping-fields" class="widefat fb-mapping-fields hidden">
             <thead>
