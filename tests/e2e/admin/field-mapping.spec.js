@@ -266,7 +266,6 @@ test('the mapping editor opens in a popup', async ({ page }) => {
 test.describe('Lead event quality', () => {
   const QUALITY_ACTION = 'facebook_get_lead_event_quality';
   const QUALITY_CACHE = 'facebook_lead_event_quality';
-  const PIXEL_ID = '1234567890123456';
 
   // What the Dataset Quality API answers: a Lead and a PageView event.
   const quality = (score) => ({
@@ -319,8 +318,11 @@ test.describe('Lead event quality', () => {
     await answerWith(response);
   }
 
+  // The URLs of the Dataset Quality requests made (not their token header).
   const requests = () =>
-    phpJson(`get_option('e2e_dataset_quality_requests', array())`);
+    phpJson(
+      `array_column(get_option('e2e_dataset_quality_requests', array()), 'url')`,
+    );
 
   // Opens the table and returns the panel's AJAX answer.
   async function openWithQuality(page) {
@@ -367,18 +369,29 @@ test.describe('Lead event quality', () => {
     expect(box.x).toBeGreaterThanOrEqual(table.x + table.width);
     expect(Math.abs(box.y - table.y)).toBeLessThan(20);
 
-    // One request, for the pixel, with the token in its header.
+    // One request, for the site's pixel, with its token in the header (the
+    // seed keeps a real connection, so both are read from the site; the
+    // token is compared in PHP so it is never printed).
     const sent = await requests();
     expect(sent).toHaveLength(1);
-    const url = new URL(sent[0].url);
+    const url = new URL(sent[0]);
     expect(url.pathname).toMatch(/\/dataset_quality$/);
-    expect(url.searchParams.get('dataset_id')).toBe(PIXEL_ID);
+    expect(url.searchParams.get('dataset_id')).toBe(
+      await phpJson(
+        `(string) \\FacebookPixelPlugin\\Core\\FacebookWordpressOptions::get_active_pixel_id()`,
+      ),
+    );
     expect(url.searchParams.get('agent_name')).toBe('wordpress');
     expect(url.searchParams.get('fields')).toContain(
       'event_match_quality{composite_score,match_key_feedback{identifier,coverage{percentage}}}',
     );
     expect(url.searchParams.has('access_token')).toBe(false);
-    expect(sent[0].authorization).toBe('Bearer e2e-placeholder-token');
+    expect(
+      await phpJson(
+        `get_option('e2e_dataset_quality_requests')[0]['authorization'] === 'Bearer ' . \\FacebookPixelPlugin\\Core\\FacebookWordpressOptions::get_active_access_token()`,
+      ),
+      'the request does not carry the site access token',
+    ).toBe(true);
   });
 
   test('is cached for a day, until a form mapping changes', async ({
