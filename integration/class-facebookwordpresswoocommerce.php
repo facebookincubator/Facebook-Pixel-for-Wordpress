@@ -125,8 +125,13 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
      * @return void
      */
     public function track_purchase_event( $order_id ) {
+        $event_data = $this->get_purchase_event_data( $order_id );
+        if ( null === $event_data ) {
+            return;
+        }
+
         // Page-render event: use the current (thank-you page) URL, not the referrer.
-        $event = $this->generate_event( 'Purchase', $this->get_purchase_event_data( $order_id ), false );
+        $event = $this->generate_event( 'Purchase', $event_data, false );
         $this->deliver( $event, self::BROWSER_INLINE );
     }
 
@@ -267,10 +272,13 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
      * list of purchased contents.
      *
      * @param int $order_id The WooCommerce order ID.
-     * @return array The Purchase event data.
+     * @return array|null The Purchase event data, or null when the order is unavailable.
      */
     private function get_purchase_event_data( $order_id ) {
         $order = WooCommerceIntegrationHelper::get_order( $order_id );
+        if ( ! is_object( $order ) || ! method_exists( $order, 'get_items' ) ) {
+            return null;
+        }
 
         $content_type = 'product';
         $product_ids  = array();
@@ -284,11 +292,15 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
                 continue;
             }
 
+            $quantity = (float) $item->get_quantity();
+            if ( $quantity <= 0 ) {
+                continue;
+            }
+
             if ( 'product_group' !== $content_type && $product->is_type( 'variable' ) ) {
                 $content_type = 'product_group';
             }
 
-            $quantity   = $item->get_quantity();
             $product_id = self::get_product_id( $product );
 
             $content = new Content();
@@ -340,7 +352,11 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
             $event_data['content_ids'] = array(
                 self::get_product_id( $cart_item['data'] ),
             );
-            $event_data['value']       = $quantity * ( $cart_item['line_total'] / $cart_item['quantity'] );
+
+            $item_quantity = isset( $cart_item['quantity'] ) ? (float) $cart_item['quantity'] : 0;
+            if ( $item_quantity > 0 && isset( $cart_item['line_total'] ) ) {
+                $event_data['value'] = $quantity * ( $cart_item['line_total'] / $item_quantity );
+            }
 
             return $event_data;
         }
@@ -471,13 +487,13 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
     private static function get_contents( $cart ) {
         $contents = array();
         foreach ( $cart->get_cart() as $item ) {
-            if ( ! empty( $item['data'] ) && ! empty( $item['quantity'] ) ) {
-            $content = new Content();
-            $content->setProductId( self::get_product_id( $item['data'] ) );
-            $content->setQuantity( $item['quantity'] );
-            $content->setItemPrice( $item['line_total'] / $item['quantity'] );
+            if ( ! empty( $item['data'] ) && ! empty( $item['quantity'] ) && isset( $item['line_total'] ) ) {
+                $content = new Content();
+                $content->setProductId( self::get_product_id( $item['data'] ) );
+                $content->setQuantity( $item['quantity'] );
+                $content->setItemPrice( $item['line_total'] / $item['quantity'] );
 
-            $contents[] = $content;
+                $contents[] = $content;
             }
         }
 
@@ -494,7 +510,7 @@ class FacebookWordpressWooCommerce extends TrackableIntegrationBase {
         $product_ids = array();
         foreach ( $cart->get_cart() as $item ) {
             if ( ! empty( $item['data'] ) ) {
-            $product_ids[] = self::get_product_id( $item['data'] );
+                $product_ids[] = self::get_product_id( $item['data'] );
             }
         }
 
