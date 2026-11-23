@@ -21,8 +21,9 @@
  *   and parameters Meta's Dataset Quality API really returns for the Lead
  *   events this plugin sends (with the QA pixel and token), caches them for a
  *   day or until a mapping or the pixel or token changes, stays hidden when
- *   Meta rejects the request, and follows connection changes without a
- *   reload.
+ *   Meta rejects the token (on Facebook Login for Business, the plugin then
+ *   disconnects), follows connection changes without a reload, and is hidden
+ *   while a replacement is picked for a pixel the site lost access to.
  */
 
 const fs = require('fs');
@@ -363,17 +364,41 @@ test.describe('Lead event quality (live from Meta)', () => {
   const INVALID_TOKEN = 'e2e-invalid-token';
   const BACKUP = 'e2e_saved_meta_settings';
 
-  // Replaces the token the plugin sends events with, whichever connection
-  // the site uses (Facebook Login for Business or the legacy one), with one
-  // Meta rejects. The settings are backed up and restored inside PHP: the
-  // QA token never passes through a command line, so a failed command
-  // cannot put it in the test report.
-  async function invalidateToken() {
-    await execWP(`
-      update_option('${BACKUP}', array(
+  // The Meta settings are backed up and restored inside PHP: the QA token
+  // never passes through a command line, so a failed command cannot put it
+  // in the test report. The first backup is kept until restoreSettings().
+  const backupSettings = () =>
+    execWP(`
+      add_option('${BACKUP}', array(
         'mbe'   => get_option(${PLUGIN_CONFIG}::SETTINGS_KEY),
         'fbl4b' => get_option(${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY),
-      ), false);
+      ), '', 'no');
+    `);
+
+  // Puts back the settings backed up. The cached answer is left alone: the
+  // plugin must notice the change by itself.
+  const restoreSettings = () =>
+    execWP(`
+      $saved = get_option('${BACKUP}');
+      if (is_array($saved)) {
+        foreach (array('mbe' => ${PLUGIN_CONFIG}::SETTINGS_KEY, 'fbl4b' => ${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY) as $key => $option) {
+          if (false === $saved[$key]) {
+            delete_option($option);
+          } else {
+            update_option($option, $saved[$key]);
+          }
+        }
+        delete_option('${BACKUP}');
+      }
+      delete_transient('facebook_pixel_connection_invalid');
+    `);
+
+  // Replaces the token the plugin sends events with, whichever connection
+  // the site uses (Facebook Login for Business or the legacy one), with one
+  // Meta rejects.
+  async function invalidateToken() {
+    await backupSettings();
+    await execWP(`
       if ('fbl4b' === ${OPTIONS}::get_connection_type()) {
         $settings = get_option(${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY);
         $settings[${PLUGIN_CONFIG}::FBL4B_ACCESS_TOKEN_KEY] = ${OPTIONS}::encrypt_token('${INVALID_TOKEN}');
@@ -392,30 +417,68 @@ test.describe('Lead event quality (live from Meta)', () => {
     ).toBe(true);
   }
 
-  // Puts back the settings invalidateToken() replaced. The cached answer is
-  // left alone: the plugin must notice the token changed by itself.
-  const restoreToken = () =>
-    execWP(`
-      $saved = get_option('${BACKUP}');
-      if (is_array($saved)) {
-        foreach (array('mbe' => ${PLUGIN_CONFIG}::SETTINGS_KEY, 'fbl4b' => ${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY) as $key => $option) {
-          if (false === $saved[$key]) {
-            delete_option($option);
-          } else {
-            update_option($option, $saved[$key]);
-          }
-        }
-        delete_option('${BACKUP}');
-      }
-      delete_transient('facebook_pixel_connection_invalid');
-    `);
+  const FBL4B_BUSINESS = 'e2e-business';
+  const ajaxAction = (action) => (url) =>
+    url.searchParams.get('action') === action;
+  const VALIDATE_TOKEN = ajaxAction('fbl4b_validate_token');
+  const FETCH_PIXELS = ajaxAction('fbl4b_fetch_pixels');
 
-  // Runs PHP that sets $result, and returns $result decoded.
-  async function php(code) {
-    const { stdout } = await execWP(
-      `${code}\necho '<<<' . wp_json_encode($result) . '>>>';`,
+  // Answers, in the page, Facebook Login for Business's own checks on load:
+  // the token is valid, and the business has these pixels (by default, the
+  // site's). The QA token is not a Facebook Login for Business one, so Meta
+  // cannot answer them; the Lead event quality is still asked of Meta.
+  // `before` holds the pixels answer back until it settles.
+  async function routeFbl4b(page, { pixels = null, before = null } = {}) {
+    const pixelId = await php(
+      `$result = (string) ${OPTIONS}::get_active_pixel_id();`,
     );
-    return JSON.parse(stdout.match(/<<<([\s\S]*)>>>/)[1]);
+    await page.route(VALIDATE_TOKEN, (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { valid: true, client_business_id: FBL4B_BUSINESS },
+        }),
+      }),
+    );
+    await page.route(FETCH_PIXELS, async (route) => {
+      if (before) {
+        await before;
+      }
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { data: pixels || [{ id: pixelId, name: 'E2E pixel' }] },
+        }),
+      });
+    });
+  }
+
+  // Connects the site through Facebook Login for Business instead, with the
+  // QA pixel and token (the legacy connection is kept, marked uninstalled,
+  // as the plugin does), and answers its checks in the page.
+  async function useFbl4b(page, options) {
+    await backupSettings();
+    await execWP(`
+      $mbe = get_option(${PLUGIN_CONFIG}::SETTINGS_KEY);
+      update_option(${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY, array(
+        ${PLUGIN_CONFIG}::FBL4B_ACCESS_TOKEN_KEY => ${OPTIONS}::encrypt_token((string) $mbe[${PLUGIN_CONFIG}::ACCESS_TOKEN_KEY]),
+        ${PLUGIN_CONFIG}::FBL4B_PIXEL_ID_KEY     => (string) $mbe[${PLUGIN_CONFIG}::PIXEL_ID_KEY],
+        ${PLUGIN_CONFIG}::FBL4B_PIXEL_NAME_KEY   => 'E2E pixel',
+        ${PLUGIN_CONFIG}::FBL4B_BUSINESS_ID_KEY  => '${FBL4B_BUSINESS}',
+      ));
+      $mbe[${PLUGIN_CONFIG}::IS_FBE_INSTALLED_KEY] = '0';
+      update_option(${PLUGIN_CONFIG}::SETTINGS_KEY, $mbe);
+    `);
+    // Events now go through Facebook Login for Business, with the QA token.
+    expect(
+      await php(`
+        $result = 'fbl4b' === ${OPTIONS}::get_connection_type()
+          && hash_equals((string) get_option(${PLUGIN_CONFIG}::SETTINGS_KEY)[${PLUGIN_CONFIG}::ACCESS_TOKEN_KEY], ${OPTIONS}::get_active_access_token());
+      `),
+    ).toBe(true);
+    await routeFbl4b(page, options);
   }
 
   // Asks Meta directly, with the site's pixel and token, for the score of the
@@ -646,36 +709,117 @@ test.describe('Lead event quality (live from Meta)', () => {
     expect(await requests()).toHaveLength(2);
   });
 
-  test('is hidden when Meta rejects the token, and asked again once it is replaced', async ({
+  const CONNECTIONS = {
+    mbe: 'legacy connection',
+    fbl4b: 'Facebook Login for Business',
+  };
+  for (const [connection, label] of Object.entries(CONNECTIONS)) {
+    test(`is hidden when Meta rejects the token, and asked again once it is replaced (${label})`, async ({
+      page,
+    }) => {
+      await reset();
+      const panel = page.locator('#fb-lead-quality');
+      try {
+        if (connection === 'fbl4b') {
+          await useFbl4b(page);
+        }
+
+        // A score, cached for a day.
+        const first = await openWithQuality(page);
+        expect(first.msg.status).toBe('ok');
+        await expect(panel).toBeVisible();
+        expect(await requests()).toHaveLength(1);
+
+        // A replaced token is not answered from the cache: Meta is asked,
+        // and its error hides the panel.
+        await invalidateToken();
+        let asked = 2;
+        if (connection === 'mbe') {
+          const rejected = await openWithQuality(page);
+          expect(rejected.msg.status).toBe('error');
+          expect(rejected.msg.message).not.toBe('');
+          await expect(page.locator('#fb-mapping-list')).toBeVisible();
+          await expect(panel).toBeHidden();
+        } else {
+          // Facebook Login for Business checks the token itself on load (for
+          // real here): Meta rejects it, so the plugin disconnects and the
+          // page reloads without the connected tabs. The panel's request may
+          // reach the site before or after that.
+          await page.unroute(VALIDATE_TOKEN);
+          const answer = page.waitForResponse((response) =>
+            response.url().includes(`action=${QUALITY_ACTION}`),
+          );
+          await gotoAdmin(page, SETTINGS_PATH);
+          const rejected = await (await answer).json();
+          expect(['error', 'not_connected']).toContain(rejected.msg.status);
+          if (rejected.msg.status === 'not_connected') {
+            asked = 1;
+          }
+          await expect(page.locator('#fb-settings')).not.toHaveClass(
+            /fb-settings--connected/,
+            { timeout: 30000 },
+          );
+          expect(
+            await php(`$result = ${OPTIONS}::get_connection_type();`),
+          ).not.toBe('fbl4b');
+          await expect(panel).toBeHidden();
+        }
+        expect(await requests()).toHaveLength(asked);
+
+        // Repairing it shows the score again at once, not after the error's
+        // hour in the cache.
+        await restoreSettings();
+        if (connection === 'fbl4b') {
+          await useFbl4b(page);
+        }
+        const repaired = await openWithQuality(page);
+        expect(repaired.msg.status).toBe('ok');
+        expect(await requests()).toHaveLength(asked + 1);
+        await expect(panel).toBeVisible();
+      } finally {
+        await restoreSettings();
+        await execWP(`delete_transient('${QUALITY_CACHE}');`);
+      }
+    });
+  }
+
+  test('is hidden while a replacement is picked for a lost pixel (Facebook Login for Business)', async ({
     page,
   }) => {
     await reset();
+    const panel = page.locator('#fb-lead-quality');
     try {
-      // A score, cached for a day.
-      const first = await openWithQuality(page);
-      expect(first.msg.status).toBe('ok');
-      await expect(page.locator('#fb-lead-quality')).toBeVisible();
-      expect(await requests()).toHaveLength(1);
+      // On load the plugin checks the pixel is still the business's: here it
+      // no longer is. That answer waits for the panel's, so the lost pixel's
+      // score is on screen first.
+      const answer = page.waitForResponse((response) =>
+        response.url().includes(`action=${QUALITY_ACTION}`),
+      );
+      await useFbl4b(page, {
+        pixels: [{ id: '1000000000000001', name: 'E2E other pixel' }],
+        before: answer,
+      });
+      const cleared = page.waitForResponse((response) =>
+        response.url().includes('action=fbl4b_clear_pixel'),
+      );
+      await gotoAdmin(page, SETTINGS_PATH);
+      expect((await (await answer).json()).msg.status).toBe('ok');
+      await cleared;
 
-      // A replaced token is not answered from the cache: Meta is asked, and
-      // its error hides the panel.
-      await invalidateToken();
-      const rejected = await openWithQuality(page);
-      expect(rejected.msg.status).toBe('error');
-      expect(rejected.msg.message).not.toBe('');
-      expect(await requests()).toHaveLength(2);
-      await expect(page.locator('#fb-mapping-list')).toBeVisible();
-      await expect(page.locator('#fb-lead-quality')).toBeHidden();
+      // The admin is asked to pick another pixel, and nothing of the lost
+      // one's is left on screen meanwhile.
+      await expect(page.locator('#fbl4b-pixel-select-inline')).toBeVisible();
+      await expect(panel).toHaveClass(/\bhidden\b/);
+      await expect(page.locator('#fb-settings')).not.toHaveClass(
+        /fb-settings--connected/,
+      );
 
-      // Repairing it shows the score again at once, not after the error's
-      // hour in the cache.
-      await restoreToken();
-      const repaired = await openWithQuality(page);
-      expect(repaired.msg.status).toBe('ok');
-      expect(await requests()).toHaveLength(3);
-      await expect(page.locator('#fb-lead-quality')).toBeVisible();
+      // Nor is its score kept for when the same pixel is picked again.
+      expect(
+        await php(`$result = false === get_transient('${QUALITY_CACHE}');`),
+      ).toBe(true);
     } finally {
-      await restoreToken();
+      await restoreSettings();
       await execWP(`delete_transient('${QUALITY_CACHE}');`);
     }
   });
@@ -712,7 +856,7 @@ test.describe('Lead event quality (live from Meta)', () => {
       await expect(panel).toHaveClass(/\bhidden\b/);
 
       // Connected with a working token: the score comes back.
-      await restoreToken();
+      await restoreSettings();
       expect((await connectionChanged(true)).msg.status).toBe('ok');
       await expect(panel).not.toHaveClass(/\bhidden\b/);
       expect(await requests()).toHaveLength(3);
@@ -726,7 +870,7 @@ test.describe('Lead event quality (live from Meta)', () => {
       await expect(panel).toHaveClass(/\bhidden\b/);
       expect(await requests()).toHaveLength(3);
     } finally {
-      await restoreToken();
+      await restoreSettings();
       await execWP(`delete_transient('${QUALITY_CACHE}');`);
     }
   });
