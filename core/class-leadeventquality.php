@@ -78,32 +78,45 @@ class LeadEventQuality {
     const FIELDS = 'web{event_name,event_match_quality{composite_score,match_key_feedback{identifier,coverage{percentage}}}}';
 
     /**
-     * Names for the identifiers Meta reports. The API documents the
-     * identifier as an open string, so others are shown humanized.
+     * Names for the identifiers Meta reports, by their long names and by the
+     * Conversions API's short user_data keys (fn, ct, ...), both of which it
+     * returns. The API documents the identifier as an open string, so others
+     * are shown humanized.
      *
      * @var array<string,string>
      */
     const PARAMETER_LABELS = array(
-        'email'         => 'Email',
-        'phone'         => 'Phone',
-        'first_name'    => 'First name',
-        'last_name'     => 'Last name',
-        'external_id'   => 'External ID',
-        'ip_address'    => 'IP address',
-        'user_agent'    => 'User agent',
-        'click_id'      => 'Click ID (fbc)',
-        'fbc'           => 'Click ID (fbc)',
-        'browser_id'    => 'Browser ID (fbp)',
-        'fbp'           => 'Browser ID (fbp)',
-        'city'          => 'City',
-        'state'         => 'State',
-        'zip'           => 'ZIP / postal code',
-        'zip_code'      => 'ZIP / postal code',
-        'country'       => 'Country',
-        'date_of_birth' => 'Date of birth',
-        'gender'        => 'Gender',
-        'fb_login_id'   => 'Facebook Login ID',
-        'lead_id'       => 'Lead ID',
+        'email'             => 'Email',
+        'em'                => 'Email',
+        'phone'             => 'Phone',
+        'ph'                => 'Phone',
+        'first_name'        => 'First name',
+        'fn'                => 'First name',
+        'last_name'         => 'Last name',
+        'ln'                => 'Last name',
+        'ct'                => 'City',
+        'st'                => 'State',
+        'zp'                => 'ZIP / postal code',
+        'db'                => 'Date of birth',
+        'ge'                => 'Gender',
+        'client_ip_address' => 'IP address',
+        'client_user_agent' => 'User agent',
+        'external_id'       => 'External ID',
+        'ip_address'        => 'IP address',
+        'user_agent'        => 'User agent',
+        'click_id'          => 'Click ID (fbc)',
+        'fbc'               => 'Click ID (fbc)',
+        'browser_id'        => 'Browser ID (fbp)',
+        'fbp'               => 'Browser ID (fbp)',
+        'city'              => 'City',
+        'state'             => 'State',
+        'zip'               => 'ZIP / postal code',
+        'zip_code'          => 'ZIP / postal code',
+        'country'           => 'Country',
+        'date_of_birth'     => 'Date of birth',
+        'gender'            => 'Gender',
+        'fb_login_id'       => 'Facebook Login ID',
+        'lead_id'           => 'Lead ID',
     );
 
     /**

@@ -415,6 +415,22 @@ final class LeadEventQualityTest extends FacebookWordpressTestBase {
     }
 
     /**
+     * Identifiers are named by their long names and by the Conversions API's
+     * short keys, which Meta also returns; unknown ones are humanized.
+     *
+     * @return void
+     */
+    public function testParameterLabel() {
+        $this->assertSame( 'First name', LeadEventQuality::parameter_label( 'fn' ) );
+        $this->assertSame( 'Last name', LeadEventQuality::parameter_label( 'ln' ) );
+        $this->assertSame( 'City', LeadEventQuality::parameter_label( 'ct' ) );
+        $this->assertSame( 'State', LeadEventQuality::parameter_label( 'st' ) );
+        $this->assertSame( 'Email', LeadEventQuality::parameter_label( 'email' ) );
+        $this->assertSame( 'IP address', LeadEventQuality::parameter_label( 'client_ip_address' ) );
+        $this->assertSame( 'Some new key', LeadEventQuality::parameter_label( 'some_new_key' ) );
+    }
+
+    /**
      * Clearing the cache deletes the transient.
      *
      * @return void
