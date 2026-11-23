@@ -1662,7 +1662,7 @@ class FacebookWordpressSettingsPage {
     <aside id="fb-lead-quality" class="fb-lead-quality hidden" aria-labelledby="fb-lead-quality-title">
         <h4 id="fb-lead-quality-title">Lead event quality</h4>
         <figure class="fb-lead-quality-gauge" role="meter" aria-valuemin="0" aria-valuemax="10" aria-labelledby="fb-lead-quality-title">
-            <svg viewBox="0 0 120 70" aria-hidden="true" focusable="false">
+            <svg viewBox="0 0 120 80" aria-hidden="true" focusable="false">
                 <defs>
                     <linearGradient id="fb-lead-quality-gradient" gradientUnits="userSpaceOnUse" x1="10" y1="0" x2="110" y2="0">
                         <stop offset="0" stop-color="#d03b3b"></stop>
@@ -1672,8 +1672,9 @@ class FacebookWordpressSettingsPage {
                 </defs>
                 <path class="fb-lead-quality-track" d="M10 60 A50 50 0 0 1 110 60" pathLength="100" stroke="url(#fb-lead-quality-gradient)"></path>
                 <path class="fb-lead-quality-fill" d="M10 60 A50 50 0 0 1 110 60" pathLength="100" stroke-dasharray="0 100" stroke="url(#fb-lead-quality-gradient)"></path>
-                <text class="fb-lead-quality-scale" x="10" y="69" text-anchor="middle">0</text>
-                <text class="fb-lead-quality-scale" x="110" y="69" text-anchor="middle">10</text>
+                <?php // Below the arc's round ends, which reach y=66. ?>
+                <text class="fb-lead-quality-scale" x="10" y="77" text-anchor="middle">0</text>
+                <text class="fb-lead-quality-scale" x="110" y="77" text-anchor="middle">10</text>
             </svg>
             <figcaption>
                 <span class="fb-lead-quality-score"></span><span class="fb-lead-quality-max">/10</span>

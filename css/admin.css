@@ -1355,13 +1355,17 @@
     margin: 10px 0 12px 25px;
 }
 
+/* The table keeps its columns readable and scrolls sideways inside its box
+   when the screen is narrower, instead of running off the page. */
 .fb-mapping-main {
     flex: 1 1 560px;
     min-width: 0;
     max-width: 760px;
+    overflow-x: auto;
 }
 
 .fb-mapping-main .fb-mapping-list {
+    min-width: 560px;
     margin: 0 0 12px;
     max-width: none;
 }
@@ -1395,15 +1399,15 @@
 }
 
 .fb-lead-quality-gauge {
-    margin: 0;
+    position: relative;
+    max-width: 200px;
+    margin: 0 auto;
     text-align: center;
 }
 
 .fb-lead-quality-gauge svg {
     display: block;
     width: 100%;
-    max-width: 200px;
-    margin: 0 auto;
 }
 
 .fb-lead-quality-track,
@@ -1424,9 +1428,14 @@
     font-size: 8px;
 }
 
+/* Inside the arc, its bottom level with the arc's ends (y=60 of the 80-high
+   viewBox), clear of the 0 and 10 below them at any width. */
 .fb-lead-quality-gauge figcaption {
-    margin-top: -34px;
-    line-height: 1.2;
+    position: absolute;
+    right: 0;
+    bottom: 25%;
+    left: 0;
+    line-height: 1;
 }
 
 .fb-lead-quality-score {
@@ -1456,6 +1465,10 @@
     font-variant-numeric: tabular-nums;
 }
 
+.fb-lead-quality-parameter-value--unknown {
+    font-style: italic;
+}
+
 .fb-lead-quality-bar {
     grid-column: 1 / -1;
     height: 6px;
@@ -1474,4 +1487,20 @@
 
 .fb-lead-quality-none {
     color: #646970;
+}
+
+/* Small screens: the section uses the full width, and the panel goes below
+   the table at full width. */
+@media screen and (max-width: 782px) {
+    .fb-mapping-layout {
+        margin-left: 0;
+    }
+
+    .fb-mapping-main {
+        flex-basis: 100%;
+    }
+
+    .fb-lead-quality {
+        flex: 1 1 100%;
+    }
 }
