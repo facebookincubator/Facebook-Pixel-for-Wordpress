@@ -364,6 +364,14 @@ test.describe('Lead event quality (live from Meta)', () => {
   const INVALID_TOKEN = 'e2e-invalid-token';
   const BACKUP = 'e2e_saved_meta_settings';
 
+  // Runs PHP that sets $result, and returns $result decoded.
+  async function php(code) {
+    const { stdout } = await execWP(
+      `${code}\necho '<<<' . wp_json_encode($result) . '>>>';`,
+    );
+    return JSON.parse(stdout.match(/<<<([\s\S]*)>>>/)[1]);
+  }
+
   // The Meta settings are backed up and restored inside PHP: the QA token
   // never passes through a command line, so a failed command cannot put it
   // in the test report. The first backup is kept until restoreSettings().
