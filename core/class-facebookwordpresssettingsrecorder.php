@@ -471,6 +471,7 @@ class FacebookWordpressSettingsRecorder {
         );
         \delete_option( FacebookPluginConfig::SETTINGS_KEY );
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
+        LeadEventQuality::clear_cache();
 
         return $this->handle_success_request( 'Done' );
     }
@@ -609,6 +610,7 @@ class FacebookWordpressSettingsRecorder {
 
         \delete_option( FacebookPluginConfig::FBL4B_SETTINGS_KEY );
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
+        LeadEventQuality::clear_cache();
         \delete_user_meta(
             get_current_user_id(),
             FacebookPluginConfig::ADMIN_IGNORE_FBL4B_UPGRADE_NOTICE
@@ -645,6 +647,9 @@ class FacebookWordpressSettingsRecorder {
             $existing
         );
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
+        // Access to the pixel was lost: its score is not shown again from
+        // the cache, even if the same pixel is picked again.
+        LeadEventQuality::clear_cache();
 
         return $this->handle_success_request( 'Pixel cleared' );
     }

@@ -30,6 +30,7 @@ namespace FacebookPixelPlugin\Tests\Core;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsRecorder;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
+use FacebookPixelPlugin\Core\LeadEventQuality;
 
 /**
  * FacebookWordpressSettingsRecorderTest class.
@@ -374,6 +375,57 @@ final class FacebookWordpressSettingsRecorderTest extends FacebookWordpressTestB
 
     $this->assertTrue( $result['success'] );
     $this->assertEquals( 'FBL4B settings deleted', $result['msg'] );
+  }
+
+  /**
+   * Mocks what disconnecting and clearing the FBL4B pixel use, recording
+   * the transients deleted.
+   *
+   * @return \ArrayObject The deleted transient names.
+   */
+  private function mock_disconnect() {
+    $deleted = new \ArrayObject();
+    \WP_Mock::userFunction( 'current_user_can', array( 'return' => true ) );
+    \WP_Mock::userFunction( 'check_admin_referer', array( 'return' => true ) );
+    \WP_Mock::userFunction( 'wp_send_json', array( 'return' => true ) );
+    \WP_Mock::userFunction( 'delete_option', array( 'return' => true ) );
+    \WP_Mock::userFunction( 'update_option', array( 'return' => true ) );
+    \WP_Mock::userFunction( 'get_current_user_id', array( 'return' => 1 ) );
+    \WP_Mock::userFunction( 'delete_user_meta', array( 'return' => true ) );
+    \WP_Mock::userFunction(
+      'get_option',
+      array(
+        'return' => array(
+          FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY => 'encrypted',
+          FacebookPluginConfig::FBL4B_PIXEL_ID_KEY     => '123',
+        ),
+      )
+    );
+    \WP_Mock::userFunction(
+      'delete_transient',
+      array(
+        'return' => function ( $name ) use ( $deleted ) {
+          $deleted[] = $name;
+          return true;
+        },
+      )
+    );
+    return $deleted;
+  }
+
+  /**
+   * Disconnecting (either connection) or losing the FBL4B pixel drops the
+   * cached Lead event quality, so the old pixel's score is not shown again.
+   */
+  public function testDisconnectAndClearPixelDropTheLeadQualityCache() {
+    foreach ( array( 'delete_fbe_settings', 'delete_fbl4b_settings', 'fbl4b_clear_pixel' ) as $handler ) {
+      $deleted = $this->mock_disconnect();
+      $result  = ( new FacebookWordpressSettingsRecorder() )->$handler();
+      $this->assertTrue( $result['success'], $handler );
+      $this->assertContains( LeadEventQuality::CACHE_KEY, (array) $deleted, $handler );
+      \WP_Mock::tearDown();
+      \WP_Mock::setUp();
+    }
   }
 
   /**
