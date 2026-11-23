@@ -463,27 +463,28 @@ test.describe('Lead event quality (live from Meta)', () => {
     });
   }
 
-  // Connects the site through Facebook Login for Business instead, with the
-  // QA pixel and token (the legacy connection is kept, marked uninstalled,
-  // as the plugin does), and answers its checks in the page.
+  // Connects the site through Facebook Login for Business only, as a site
+  // set up with it has: the QA pixel and token move to its settings, and the
+  // legacy ones are removed (restoreSettings() puts them back), so nothing
+  // falls back to them once it disconnects. Its checks are answered in the
+  // page.
   async function useFbl4b(page, options) {
     await backupSettings();
-    await execWP(`
-      $mbe = get_option(${PLUGIN_CONFIG}::SETTINGS_KEY);
-      update_option(${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY, array(
-        ${PLUGIN_CONFIG}::FBL4B_ACCESS_TOKEN_KEY => ${OPTIONS}::encrypt_token((string) $mbe[${PLUGIN_CONFIG}::ACCESS_TOKEN_KEY]),
-        ${PLUGIN_CONFIG}::FBL4B_PIXEL_ID_KEY     => (string) $mbe[${PLUGIN_CONFIG}::PIXEL_ID_KEY],
-        ${PLUGIN_CONFIG}::FBL4B_PIXEL_NAME_KEY   => 'E2E pixel',
-        ${PLUGIN_CONFIG}::FBL4B_BUSINESS_ID_KEY  => '${FBL4B_BUSINESS}',
-      ));
-      $mbe[${PLUGIN_CONFIG}::IS_FBE_INSTALLED_KEY] = '0';
-      update_option(${PLUGIN_CONFIG}::SETTINGS_KEY, $mbe);
-    `);
     // Events now go through Facebook Login for Business, with the QA token.
     expect(
       await php(`
+        $mbe   = get_option(${PLUGIN_CONFIG}::SETTINGS_KEY);
+        $token = (string) $mbe[${PLUGIN_CONFIG}::ACCESS_TOKEN_KEY];
+        update_option(${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY, array(
+          ${PLUGIN_CONFIG}::FBL4B_ACCESS_TOKEN_KEY => ${OPTIONS}::encrypt_token($token),
+          ${PLUGIN_CONFIG}::FBL4B_PIXEL_ID_KEY     => (string) $mbe[${PLUGIN_CONFIG}::PIXEL_ID_KEY],
+          ${PLUGIN_CONFIG}::FBL4B_PIXEL_NAME_KEY   => 'E2E pixel',
+          ${PLUGIN_CONFIG}::FBL4B_BUSINESS_ID_KEY  => '${FBL4B_BUSINESS}',
+        ));
+        delete_option(${PLUGIN_CONFIG}::SETTINGS_KEY);
         $result = 'fbl4b' === ${OPTIONS}::get_connection_type()
-          && hash_equals((string) get_option(${PLUGIN_CONFIG}::SETTINGS_KEY)[${PLUGIN_CONFIG}::ACCESS_TOKEN_KEY], ${OPTIONS}::get_active_access_token());
+          && '' !== $token
+          && hash_equals($token, ${OPTIONS}::get_active_access_token());
       `),
     ).toBe(true);
     await routeFbl4b(page, options);
@@ -767,9 +768,12 @@ test.describe('Lead event quality (live from Meta)', () => {
             /fb-settings--connected/,
             { timeout: 30000 },
           );
+          // Nothing is left to send events with, nor to show a score for.
           expect(
-            await php(`$result = ${OPTIONS}::get_connection_type();`),
-          ).not.toBe('fbl4b');
+            await php(
+              `$result = array(${OPTIONS}::get_connection_type(), '' === (string) ${OPTIONS}::get_active_access_token());`,
+            ),
+          ).toEqual(['none', true]);
           await expect(panel).toBeHidden();
         }
         expect(await requests()).toHaveLength(asked);
