@@ -13,11 +13,16 @@
  * - A mapping left behind by a deleted form is listed apart, without a link.
  * - The mapping editor opens in a popup that Escape and Cancel close, and
  *   saving from it updates the row.
+ * - The table fits a phone screen: it scrolls inside its box rather than
+ *   running off the page.
+ * - The Lead event quality panel says when Meta reports no share for a
+ *   parameter, or no parameters, rather than that none were received.
  * - The Lead event quality panel shows, to the right of the table, the score
  *   and parameters Meta's Dataset Quality API really returns for the Lead
  *   events this plugin sends (with the QA pixel and token), caches them for a
- *   day or until a mapping changes, and stays hidden when Meta rejects the
- *   request.
+ *   day or until a mapping or the pixel or token changes, stays hidden when
+ *   Meta rejects the request, and follows connection changes without a
+ *   reload.
  */
 
 const fs = require('fs');
@@ -263,6 +268,86 @@ test('the mapping editor opens in a popup', async ({ page }) => {
   await expect(status).toHaveText('Saved');
 });
 
+test('the forms table fits a phone screen', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  await openMappingTable(page);
+
+  // The page does not scroll sideways: the table scrolls inside its box,
+  // which stays within the screen.
+  const widths = await page.evaluate(() => ({
+    page: document.documentElement.scrollWidth,
+    screen: window.innerWidth,
+  }));
+  expect(widths.page).toBeLessThanOrEqual(widths.screen);
+  const main = page.locator('.fb-mapping-main');
+  const box = await main.boundingBox();
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(widths.screen);
+  const table = await page.locator('#fb-mapping-list').boundingBox();
+  if (table.x + table.width > box.x + box.width + 1) {
+    // Wider than its box: scrolled inside it, not spilled over the page.
+    expect(
+      await main.evaluate(
+        (element) => element.scrollWidth > element.clientWidth,
+      ),
+    ).toBe(true);
+    expect(
+      await main.evaluate((element) => getComputedStyle(element).overflowX),
+    ).not.toBe('visible');
+  }
+
+  await test.info().attach('forms-table-mobile', {
+    body: await page.locator('#fb-field-mapping').screenshot(),
+    contentType: 'image/png',
+  });
+});
+
+test('the Lead event quality panel says when Meta reports no coverage', async ({
+  page,
+}) => {
+  // The panel's answer is made up here, so this runs without Meta: a score
+  // whose parameters come without a share, then one with no parameters.
+  let parameters = [
+    { identifier: 'email', label: 'Email', coverage: 62.5 },
+    { identifier: 'phone', label: 'Phone', coverage: null },
+  ];
+  await page.route(
+    (url) =>
+      url.searchParams.get('action') === 'facebook_get_lead_event_quality',
+    (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          msg: { status: 'ok', score: 6.4, parameters, message: '' },
+        }),
+      }),
+  );
+  await openMappingTable(page);
+  const panel = page.locator('#fb-lead-quality');
+  await expect(panel).toBeVisible();
+
+  // A share Meta did not report is said to be unknown, without a bar that
+  // would read as 0%.
+  const phone = panel.locator(
+    '.fb-lead-quality-parameter[data-identifier="phone"]',
+  );
+  await expect(phone).toHaveText(/^Phone\s*Not reported$/);
+  await expect(phone.locator('.fb-lead-quality-bar')).toHaveCount(0);
+  const email = panel.locator(
+    '.fb-lead-quality-parameter[data-identifier="email"]',
+  );
+  await expect(email).toHaveText(/^Email\s*63%$/);
+  await expect(email.locator('.fb-lead-quality-bar')).toHaveCount(1);
+
+  // No parameters reported is not "no customer information received".
+  parameters = [];
+  await openMappingTable(page);
+  await expect(panel.locator('.fb-lead-quality-none')).toHaveText(
+    'Meta has not reported which parameters these events include.',
+  );
+});
+
 /**
  * Lead event quality, read live from Meta: the plugin is connected with the QA
  * pixel and token (FB_PIXEL_ID / FB_ACCESS_TOKEN), whose pixel receives the
@@ -274,7 +359,56 @@ test.describe('Lead event quality (live from Meta)', () => {
   const QUALITY_ACTION = 'facebook_get_lead_event_quality';
   const QUALITY_CACHE = 'facebook_lead_event_quality';
   const OPTIONS = '\\FacebookPixelPlugin\\Core\\FacebookWordpressOptions';
-  const CONFIG = 'facebook_business_extension_config';
+  const PLUGIN_CONFIG = '\\FacebookPixelPlugin\\Core\\FacebookPluginConfig';
+  const INVALID_TOKEN = 'e2e-invalid-token';
+  const BACKUP = 'e2e_saved_meta_settings';
+
+  // Replaces the token the plugin sends events with, whichever connection
+  // the site uses (Facebook Login for Business or the legacy one), with one
+  // Meta rejects. The settings are backed up and restored inside PHP: the
+  // QA token never passes through a command line, so a failed command
+  // cannot put it in the test report.
+  async function invalidateToken() {
+    await execWP(`
+      update_option('${BACKUP}', array(
+        'mbe'   => get_option(${PLUGIN_CONFIG}::SETTINGS_KEY),
+        'fbl4b' => get_option(${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY),
+      ), false);
+      if ('fbl4b' === ${OPTIONS}::get_connection_type()) {
+        $settings = get_option(${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY);
+        $settings[${PLUGIN_CONFIG}::FBL4B_ACCESS_TOKEN_KEY] = ${OPTIONS}::encrypt_token('${INVALID_TOKEN}');
+        update_option(${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY, $settings);
+      } else {
+        $settings = get_option(${PLUGIN_CONFIG}::SETTINGS_KEY);
+        $settings[${PLUGIN_CONFIG}::ACCESS_TOKEN_KEY] = '${INVALID_TOKEN}';
+        update_option(${PLUGIN_CONFIG}::SETTINGS_KEY, $settings);
+      }
+    `);
+    // The token the plugin now uses is the invalid one.
+    expect(
+      await php(
+        `$result = '${INVALID_TOKEN}' === ${OPTIONS}::get_active_access_token();`,
+      ),
+    ).toBe(true);
+  }
+
+  // Puts back the settings invalidateToken() replaced. The cached answer is
+  // left alone: the plugin must notice the token changed by itself.
+  const restoreToken = () =>
+    execWP(`
+      $saved = get_option('${BACKUP}');
+      if (is_array($saved)) {
+        foreach (array('mbe' => ${PLUGIN_CONFIG}::SETTINGS_KEY, 'fbl4b' => ${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY) as $key => $option) {
+          if (false === $saved[$key]) {
+            delete_option($option);
+          } else {
+            update_option($option, $saved[$key]);
+          }
+        }
+        delete_option('${BACKUP}');
+      }
+      delete_transient('facebook_pixel_connection_invalid');
+    `);
 
   // Runs PHP that sets $result, and returns $result decoded.
   async function php(code) {
@@ -406,7 +540,7 @@ test.describe('Lead event quality (live from Meta)', () => {
       answer.msg.parameters.map(
         (parameter) =>
           new RegExp(
-            `^${escapeRegExp(parameter.label)}\\s*${parameter.coverage === null ? '' : Math.round(parameter.coverage) + '%'}$`,
+            `^${escapeRegExp(parameter.label)}\\s*${parameter.coverage === null ? 'Not reported' : Math.round(parameter.coverage) + '%'}$`,
           ),
       ),
     );
@@ -414,6 +548,43 @@ test.describe('Lead event quality (live from Meta)', () => {
       Number(parameter.coverage),
     );
     expect(coverages).toEqual([...coverages].sort((a, b) => b - a));
+
+    // The score sits inside the arc, and the 0 and 10 below its ends: none
+    // of them overlap. (An SVG path's box leaves out its stroke, which is 12
+    // of the viewBox's 120 units wide.)
+    const geometry = await gauge.evaluate((figure) => {
+      const box = (element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+        };
+      };
+      const svg = figure.querySelector('svg');
+      return {
+        unit: svg.getBoundingClientRect().width / 120,
+        arc: box(figure.querySelector('.fb-lead-quality-track')),
+        caption: box(figure.querySelector('figcaption')),
+        scale: [...figure.querySelectorAll('.fb-lead-quality-scale')].map(box),
+      };
+    });
+    const overlaps = (a, b) =>
+      a.left < b.right &&
+      b.left < a.right &&
+      a.top < b.bottom &&
+      b.top < a.bottom;
+    expect(geometry.scale).toHaveLength(2);
+    for (const label of geometry.scale) {
+      expect(overlaps(label, geometry.caption)).toBe(false);
+      expect(label.top).toBeGreaterThanOrEqual(
+        geometry.arc.bottom + 6 * geometry.unit,
+      );
+    }
+    expect(geometry.caption.bottom).toBeLessThanOrEqual(
+      geometry.arc.bottom + 1,
+    );
 
     // For review in the report.
     await test.info().attach('lead-event-quality', {
@@ -475,26 +646,88 @@ test.describe('Lead event quality (live from Meta)', () => {
     expect(await requests()).toHaveLength(2);
   });
 
-  test('is hidden when Meta rejects the access token', async ({ page }) => {
+  test('is hidden when Meta rejects the token, and asked again once it is replaced', async ({
+    page,
+  }) => {
     await reset();
-    const saved = await php(`$result = get_option('${CONFIG}');`);
     try {
-      await execWP(
-        `$config = get_option('${CONFIG}'); $config['facebook_access_token'] = 'e2e-invalid-token'; update_option('${CONFIG}', $config);`,
-      );
-      const answer = await openWithQuality(page);
-
-      // Meta's own error, as it answered the plugin's request.
-      expect(answer.msg.status).toBe('error');
-      expect(answer.msg.message).not.toBe('');
+      // A score, cached for a day.
+      const first = await openWithQuality(page);
+      expect(first.msg.status).toBe('ok');
+      await expect(page.locator('#fb-lead-quality')).toBeVisible();
       expect(await requests()).toHaveLength(1);
+
+      // A replaced token is not answered from the cache: Meta is asked, and
+      // its error hides the panel.
+      await invalidateToken();
+      const rejected = await openWithQuality(page);
+      expect(rejected.msg.status).toBe('error');
+      expect(rejected.msg.message).not.toBe('');
+      expect(await requests()).toHaveLength(2);
       await expect(page.locator('#fb-mapping-list')).toBeVisible();
       await expect(page.locator('#fb-lead-quality')).toBeHidden();
+
+      // Repairing it shows the score again at once, not after the error's
+      // hour in the cache.
+      await restoreToken();
+      const repaired = await openWithQuality(page);
+      expect(repaired.msg.status).toBe('ok');
+      expect(await requests()).toHaveLength(3);
+      await expect(page.locator('#fb-lead-quality')).toBeVisible();
     } finally {
-      const json = Buffer.from(JSON.stringify(saved)).toString('base64');
-      await execWP(
-        `update_option('${CONFIG}', json_decode(base64_decode('${json}'), true)); delete_transient('${QUALITY_CACHE}'); delete_transient('facebook_pixel_connection_invalid');`,
+      await restoreToken();
+      await execWP(`delete_transient('${QUALITY_CACHE}');`);
+    }
+  });
+
+  test('follows connection changes without a reload', async ({ page }) => {
+    await reset();
+    const panel = page.locator('#fb-lead-quality');
+    // What js/lib/fbe.js fires once a connection or pixel is saved, or the
+    // plugin is disconnected; the panel must ask again for what is now
+    // active.
+    const connectionChanged = async (connected) => {
+      const answer = connected
+        ? page.waitForResponse((response) =>
+            response.url().includes(`action=${QUALITY_ACTION}`),
+          )
+        : null;
+      await page.evaluate(
+        (value) =>
+          jQuery(document).trigger('facebook-pixel:connection-changed', [
+            value,
+          ]),
+        connected,
       );
+      return answer ? (await answer).json() : null;
+    };
+
+    try {
+      expect((await openWithQuality(page)).msg.status).toBe('ok');
+      await expect(panel).toBeVisible();
+
+      // Connected again with a token Meta rejects: the old score goes.
+      await invalidateToken();
+      expect((await connectionChanged(true)).msg.status).toBe('error');
+      await expect(panel).toHaveClass(/\bhidden\b/);
+
+      // Connected with a working token: the score comes back.
+      await restoreToken();
+      expect((await connectionChanged(true)).msg.status).toBe('ok');
+      await expect(panel).not.toHaveClass(/\bhidden\b/);
+      expect(await requests()).toHaveLength(3);
+
+      // The settings page moves to the Connection tab on a change.
+      await page.locator('a[data-fb-tab="configuration"]').click();
+      await expect(panel).toBeVisible();
+
+      // Disconnected: nothing is shown, and Meta is not asked.
+      await connectionChanged(false);
+      await expect(panel).toHaveClass(/\bhidden\b/);
+      expect(await requests()).toHaveLength(3);
+    } finally {
+      await restoreToken();
+      await execWP(`delete_transient('${QUALITY_CACHE}');`);
     }
   });
 });

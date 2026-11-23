@@ -37,8 +37,9 @@ set -euo pipefail
 
 WP_CLI="${WP_CLI_PATH:-wp}"
 
-# Optional real Meta credentials (the QA ones in CI), trimmed and checked so
-# they are safe inside the PHP below.
+# Optional real Meta credentials (the QA ones in CI), trimmed and checked. The
+# PHP below reads them from the environment: they are never written into the
+# command, where a failure or a process listing could show them unmasked.
 FB_PIXEL_ID="$(printf '%s' "${FB_PIXEL_ID:-}" | tr -d '[:space:]')"
 FB_ACCESS_TOKEN="$(printf '%s' "${FB_ACCESS_TOKEN:-}" | tr -d '[:space:]')"
 if [ -n "$FB_PIXEL_ID" ] && ! printf '%s' "$FB_PIXEL_ID" | grep -Eq '^[0-9]+$'; then
@@ -49,6 +50,7 @@ if [ -n "$FB_ACCESS_TOKEN" ] && ! printf '%s' "$FB_ACCESS_TOKEN" | grep -Eq '^[A
   echo "❌ FB_ACCESS_TOKEN has unexpected characters — check the QA secret value." >&2
   exit 1
 fi
+export FB_PIXEL_ID FB_ACCESS_TOKEN
 mkdir -p "$(dirname "$FIELD_MAPPING_FORMS_FILE")"
 FORMS_FILE="$(cd "$(dirname "$FIELD_MAPPING_FORMS_FILE")" && pwd)/$(basename "$FIELD_MAPPING_FORMS_FILE")"
 
@@ -75,9 +77,11 @@ if (\$missing) {
 \$options_class = '\\FacebookPixelPlugin\\Core\\FacebookWordpressOptions';
 \$config        = get_option('facebook_business_extension_config', array());
 \$config        = is_array(\$config) ? \$config : array();
-if ('' !== '${FB_PIXEL_ID}' && '' !== '${FB_ACCESS_TOKEN}') {
-  \$config['facebook_pixel_id']         = '${FB_PIXEL_ID}';
-  \$config['facebook_access_token']     = '${FB_ACCESS_TOKEN}';
+\$pixel_id      = (string) getenv('FB_PIXEL_ID');
+\$access_token  = (string) getenv('FB_ACCESS_TOKEN');
+if ('' !== \$pixel_id && '' !== \$access_token) {
+  \$config['facebook_pixel_id']         = \$pixel_id;
+  \$config['facebook_access_token']     = \$access_token;
   \$config['facebook_is_fbe_installed'] = '1';
   update_option('facebook_business_extension_config', \$config);
   echo "Meta connection set from FB_PIXEL_ID / FB_ACCESS_TOKEN.\n";
