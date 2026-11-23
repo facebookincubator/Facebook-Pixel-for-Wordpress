@@ -69,6 +69,33 @@ final class LeadEventQualityTest extends FacebookWordpressTestBase {
     }
 
     /**
+     * The cache fingerprint of a pixel and token, as LeadEventQuality keys it.
+     *
+     * @param string $pixel_id     The pixel id.
+     * @param string $access_token The token.
+     * @return string
+     */
+    private function fingerprint( $pixel_id, $access_token ) {
+        return hash_hmac( 'sha256', $pixel_id . '|' . $access_token, 'e2e-salt' );
+    }
+
+    /**
+     * Mocks wp_salt(), which keys the cache fingerprint.
+     *
+     * @return void
+     */
+    public function setUp(): void {
+        parent::setUp();
+        \WP_Mock::userFunction(
+            'wp_salt',
+            array(
+                'args'   => array( 'auth' ),
+                'return' => 'e2e-salt',
+            )
+        );
+    }
+
+    /**
      * Mocks the HTTP functions around one Dataset Quality API call.
      *
      * @param int|\WP_Error $code The response status, or an error.
@@ -111,8 +138,8 @@ final class LeadEventQualityTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * Expects the answer to be cached for the pixel, for a number of seconds:
-     * a day (86400), or an hour (3600) after an error.
+     * Expects the answer to be cached for pixel 123 and its token, for a
+     * number of seconds: a day (86400), or an hour (3600) after an error.
      *
      * @param string $status Expected status of the cached answer.
      * @param int    $ttl    Expected lifetime.
@@ -127,7 +154,9 @@ final class LeadEventQualityTest extends FacebookWordpressTestBase {
                     LeadEventQuality::CACHE_KEY,
                     \Mockery::on(
                         function ( $value ) use ( $status ) {
-                            return '123' === $value['pixel_id'] && $status === $value['result']['status'];
+                            return $this->fingerprint( '123', 'token' ) === $value['credentials']
+                                && false === strpos( json_encode( $value ), 'token' )
+                                && $status === $value['result']['status'];
                         }
                     ),
                     $ttl,
@@ -190,12 +219,12 @@ final class LeadEventQualityTest extends FacebookWordpressTestBase {
     }
 
     /**
-     * A cached answer for the same pixel is used without asking Meta; one
-     * for another pixel is not.
+     * A cached answer for the same pixel and token is used without asking
+     * Meta.
      *
      * @return void
      */
-    public function testUsesTheCacheOfTheSamePixelOnly() {
+    public function testUsesTheCacheOfTheSameCredentials() {
         $cached = array(
             'status' => 'ok',
             'score'  => 9.0,
@@ -204,8 +233,8 @@ final class LeadEventQualityTest extends FacebookWordpressTestBase {
             'get_transient',
             array(
                 'return' => array(
-                    'pixel_id' => '123',
-                    'result'   => $cached,
+                    'credentials' => $this->fingerprint( '123', 'token' ),
+                    'result'      => $cached,
                 ),
             )
         );
@@ -223,8 +252,76 @@ final class LeadEventQualityTest extends FacebookWordpressTestBase {
             'get_transient',
             array(
                 'return' => array(
-                    'pixel_id' => '999',
-                    'result'   => array( 'status' => 'ok' ),
+                    'credentials' => $this->fingerprint( '999', 'token' ),
+                    'result'      => array( 'status' => 'ok' ),
+                ),
+            )
+        );
+        $this->mock_http( 200, array( 'web' => array() ) );
+        $this->expect_cached( 'no_data', 86400 );
+
+        $this->assertSame( 'no_data', ( new LeadEventQuality( '123', 'token' ) )->get()['status'] );
+    }
+
+    /**
+     * A score cached with another token of the same pixel is not kept: a
+     * replaced token is asked again.
+     *
+     * @return void
+     */
+    public function testRefetchesWhenTheTokenChanged() {
+        \WP_Mock::userFunction(
+            'get_transient',
+            array(
+                'return' => array(
+                    'credentials' => $this->fingerprint( '123', 'old-token' ),
+                    'result'      => array(
+                        'status' => 'ok',
+                        'score'  => 9.0,
+                    ),
+                ),
+            )
+        );
+        $this->mock_http( 403, array( 'error' => array( 'message' => 'Session has expired' ) ) );
+        $this->expect_cached( 'error', 3600 );
+
+        $this->assertSame( 'error', ( new LeadEventQuality( '123', 'token' ) )->get()['status'] );
+    }
+
+    /**
+     * An error cached for an invalid token is not kept once the token is
+     * repaired: the panel can show again at once.
+     *
+     * @return void
+     */
+    public function testRefetchesWhenAnInvalidTokenIsReplaced() {
+        \WP_Mock::userFunction(
+            'get_transient',
+            array(
+                'return' => array(
+                    'credentials' => $this->fingerprint( '123', 'invalid-token' ),
+                    'result'      => array( 'status' => 'error' ),
+                ),
+            )
+        );
+        $this->mock_http( 200, $this->response_body() );
+        $this->expect_cached( 'ok', 86400 );
+
+        $this->assertSame( 'ok', ( new LeadEventQuality( '123', 'token' ) )->get()['status'] );
+    }
+
+    /**
+     * A cached answer in an unexpected shape is replaced, not trusted.
+     *
+     * @return void
+     */
+    public function testRefetchesWhenTheCacheIsMalformed() {
+        \WP_Mock::userFunction(
+            'get_transient',
+            array(
+                'return' => array(
+                    'credentials' => array( 'not-a-string' ),
+                    'result'      => array( 'status' => 'ok' ),
                 ),
             )
         );

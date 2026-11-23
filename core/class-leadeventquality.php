@@ -45,15 +45,17 @@ class LeadEventQuality {
     const EVENT_NAME = 'Lead';
 
     /**
-     * Transient caching the last answer, with the pixel it is for.
+     * Transient caching the last answer, with a fingerprint of the pixel and
+     * token it is for.
      *
      * @var string
      */
     const CACHE_KEY = 'facebook_lead_event_quality';
 
     /**
-     * Seconds an answer is cached (a day), unless a form mapping changes
-     * first (see clear_cache()). A failed request is retried sooner.
+     * Seconds an answer is cached (a day), unless a form mapping (see
+     * clear_cache()), the pixel or the token changes first. A failed request
+     * is retried sooner.
      *
      * @var int
      */
@@ -142,8 +144,8 @@ class LeadEventQuality {
     }
 
     /**
-     * The quality of the Lead events, cached for a day or until a form
-     * mapping changes.
+     * The quality of the Lead events, cached for a day, until a form mapping
+     * changes, or until the pixel or token does.
      *
      * @return array [ 'status' =>, 'score' => float|null,
      *               'parameters' => [ [ 'identifier', 'label', 'coverage' ] ],
@@ -154,9 +156,13 @@ class LeadEventQuality {
             return self::result( self::STATUS_NOT_CONNECTED );
         }
 
-        $cached = get_transient( self::CACHE_KEY );
-        if ( is_array( $cached ) && isset( $cached['pixel_id'], $cached['result'] )
-            && $cached['pixel_id'] === $this->pixel_id ) {
+        // An answer is only reused for the same pixel and token: replacing an
+        // invalid token must not keep the panel hidden, nor a revoked one keep
+        // showing a score.
+        $credentials = $this->credentials_fingerprint();
+        $cached      = get_transient( self::CACHE_KEY );
+        if ( is_array( $cached ) && isset( $cached['credentials'], $cached['result'] )
+            && is_string( $cached['credentials'] ) && hash_equals( $cached['credentials'], $credentials ) ) {
             return $cached['result'];
         }
 
@@ -164,12 +170,22 @@ class LeadEventQuality {
         set_transient(
             self::CACHE_KEY,
             array(
-                'pixel_id' => $this->pixel_id,
-                'result'   => $result,
+                'credentials' => $credentials,
+                'result'      => $result,
             ),
             self::STATUS_ERROR === $result['status'] ? self::ERROR_CACHE_TTL : self::CACHE_TTL
         );
         return $result;
+    }
+
+    /**
+     * Identifies the pixel and token without storing the token: a keyed hash
+     * of both, so the cache can tell when either changes.
+     *
+     * @return string
+     */
+    private function credentials_fingerprint() {
+        return hash_hmac( 'sha256', $this->pixel_id . '|' . $this->access_token, wp_salt( 'auth' ) );
     }
 
     /**
