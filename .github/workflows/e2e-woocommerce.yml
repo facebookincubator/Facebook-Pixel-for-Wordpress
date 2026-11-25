@@ -1,0 +1,26 @@
+name: E2E - WooCommerce
+
+# Pixel/CAPI E2E coverage for the WooCommerce integration
+# (integration/class-facebookwordpresswoocommerce.php) and the core plugin
+# behaviour: PageView, ViewContent, AddToCart, InitiateCheckout, Purchase, signals
+# hold/release, isolated execution and Privacy Sandbox. Runs every test except the
+# Lead form tests, which each form integration's workflow covers.
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    uses: ./.github/workflows/e2e-reusable.yml
+    with:
+      grep-invert: '@lead'
+    secrets: inherit
