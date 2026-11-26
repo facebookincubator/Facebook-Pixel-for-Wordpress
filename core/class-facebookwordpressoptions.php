@@ -55,11 +55,18 @@ class FacebookWordpressOptions {
      */
     private static $version_info = array();
     /**
-     * AAM settings stored in an AdsPixelSettings object.
+     * The pixel's automatic advanced matching settings, loaded on first use
+     * by get_aam_settings().
      *
      * @var AdsPixelSettings|null
      */
     private static $aam_settings = null;
+    /**
+     * Whether $aam_settings has been loaded.
+     *
+     * @var bool
+     */
+    private static $aam_settings_loaded = false;
     /**
      * Whether CAPI integration is enabled.
      *
@@ -93,14 +100,16 @@ class FacebookWordpressOptions {
      *
      * This method is called by the Plugin class in its constructor.
      *
-     * It sets the options, version info, AAM settings, user info,
-     * CAPI integration status, CAPI integration events filter, and
-     * CAPI PII caching status.
+     * It sets the options, version info, user info, CAPI integration
+     * status, CAPI integration events filter, and CAPI PII caching status.
+     * The pixel's automatic advanced matching settings are loaded only when
+     * get_aam_settings() is first called.
      */
     public static function initialize() {
         self::init_options();
         self::set_version_info();
-        self::set_aam_settings();
+        self::$aam_settings        = null;
+        self::$aam_settings_loaded = false;
         self::set_user_info();
         self::set_capi_integration_status();
         self::set_capi_integration_events_filter();
@@ -499,7 +508,7 @@ class FacebookWordpressOptions {
                 }
             );
             self::$user_info =
-            AAMFieldsExtractor::get_normalized_user_data( $user_info );
+            UserDataNormalizer::normalize( $user_info );
         }
     }
 
@@ -585,130 +594,49 @@ class FacebookWordpressOptions {
     }
 
     /**
-     * Retrieves the AdsPixelSettings object from the AAM settings.
+     * Retrieves the pixel's automatic advanced matching settings, loading
+     * them on first use.
      *
-     * @return AdsPixelSettings The AdsPixelSettings object
-     * containing the AAM settings.
+     * They are shown on the settings page only: they control what the Meta
+     * Pixel reads from the page on its own, not the user data this plugin
+     * sends, so they are not loaded on every request.
+     *
+     * @return AdsPixelSettings|null The settings, or null when the plugin is
+     *                               not connected through Meta or they could
+     *                               not be read.
      */
     public static function get_aam_settings() {
+        if ( ! self::$aam_settings_loaded ) {
+            self::set_aam_settings();
+        }
         return self::$aam_settings;
     }
 
     /**
-     * Retrieves the AdsPixelSettings object from the AAM settings.
+     * Loads the automatic advanced matching settings of the pixel connected
+     * through Meta (FBL4B, or else FBE).
      *
-     * This method first checks if there are any AAM settings cached in the
-     * WordPress database. If there are, they are converted into an
-     * AdsPixelSettings object and returned. If there are no cached
-     * settings, the method fetches the settings from the Facebook
-     * domain and caches them in the WordPress
-     * database if they are not null.
-     *
-     * @return void
-     */
-    private static function set_fbe_based_aam_settings() {
-        $installed_pixel   = self::get_pixel_id();
-        $settings_as_array =
-        get_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
-        if ( false !== $settings_as_array ) {
-            $aam_settings = new AdsPixelSettings();
-            $aam_settings->setPixelId( $settings_as_array['pixelId'] );
-            $aam_settings->setEnableAutomaticMatching(
-                $settings_as_array['enableAutomaticMatching']
-            );
-            $aam_settings->setEnabledAutomaticMatchingFields(
-                $settings_as_array['enabledAutomaticMatchingFields']
-            );
-            if ( $installed_pixel == $aam_settings->getPixelId() ) { // phpcs:ignore Universal.Operators.StrictComparisons
-            self::$aam_settings = $aam_settings;
-            }
-        }
-        if ( ! self::$aam_settings ) {
-            $refresh_interval =
-            self::AAM_SETTINGS_REFRESH_IN_MINUTES * MINUTE_IN_SECONDS;
-            $aam_settings     =
-            AdsPixelSettings::buildFromPixelId( $installed_pixel );
-            if ( $aam_settings ) {
-                $settings_as_array = array(
-                    'pixelId'                        => $aam_settings->getPixelId(),
-                    'enableAutomaticMatching'        =>
-                    $aam_settings->getEnableAutomaticMatching(),
-                    'enabledAutomaticMatchingFields' =>
-                    $aam_settings->getEnabledAutomaticMatchingFields(),
-                );
-                set_transient(
-                    FacebookPluginConfig::AAM_SETTINGS_KEY,
-                    $settings_as_array,
-                    $refresh_interval
-                );
-                self::$aam_settings = $aam_settings;
-            }
-        }
-    }
-
-    /**
-     * If the old settings are present and the user has opted-in to use PII,
-     * the AAM settings are set to enable automatic matching and all its fields.
-     * Otherwise, the AAM settings are set to disable automatic matching
-     * and all its fields.
-     */
-    private static function set_old_aam_settings() {
-        $old_options = \get_option( FacebookPluginConfig::OLD_SETTINGS_KEY );
-        if ( $old_options
-            && isset( $old_options[ FacebookPluginConfig::OLD_USE_PII ] )
-            && $old_options[ FacebookPluginConfig::OLD_USE_PII ] ) {
-            self::$aam_settings = new AdsPixelSettings(
-                array(
-                    'enableAutomaticMatching'        => true,
-                    'enabledAutomaticMatchingFields' =>
-                    AAMSettingsFields::get_all_fields(),
-                )
-            );
-        } else {
-            self::$aam_settings = new AdsPixelSettings(
-                array(
-                    'enableAutomaticMatching'        => false,
-                    'enabledAutomaticMatchingFields' => array(),
-                )
-            );
-        }
-    }
-
-    /**
-     * Sets the AdsPixelSettings based on the installation status.
-     *
-     * This method initializes the AAM settings to null and
-     * checks if a pixel ID is set.
-     * If no pixel ID is found, the method returns early.
-     * If the Facebook Business Extension
-     * (FBE) is installed, the AAM settings are set using
-     * the FBE-based settings.
-     * Otherwise, the old AAM settings are used.
+     * The settings are cached in a transient for
+     * AAM_SETTINGS_REFRESH_IN_MINUTES. A cached copy for a different pixel
+     * is ignored and the settings are fetched from Meta again.
      *
      * @return void
      */
     private static function set_aam_settings() {
-        self::$aam_settings = null;
-        $active_pixel       = self::get_active_pixel_id();
-        if ( empty( $active_pixel ) ) {
+        self::$aam_settings        = null;
+        self::$aam_settings_loaded = true;
+        if ( empty( self::get_active_pixel_id() ) ) {
             return;
         }
         if ( self::get_is_fbl4b_installed()
             && ! empty( self::get_fbl4b_pixel_id() ) ) {
-            self::set_fbl4b_based_aam_settings();
+            $installed_pixel = self::get_fbl4b_pixel_id();
         } elseif ( self::get_is_fbe_installed() ) {
-            self::set_fbe_based_aam_settings();
+            $installed_pixel = self::get_pixel_id();
         } else {
-            self::set_old_aam_settings();
+            return;
         }
-    }
 
-    /**
-     * Sets AAM settings based on the FBL4B pixel.
-     * Uses the same transient cache as FBE but reads from the active pixel.
-     */
-    private static function set_fbl4b_based_aam_settings() {
-        $installed_pixel   = self::get_fbl4b_pixel_id();
         $settings_as_array =
         get_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
         if ( false !== $settings_as_array ) {
@@ -722,28 +650,24 @@ class FacebookWordpressOptions {
             );
             if ( $installed_pixel == $aam_settings->getPixelId() ) { // phpcs:ignore Universal.Operators.StrictComparisons
                 self::$aam_settings = $aam_settings;
+                return;
             }
         }
-        if ( ! self::$aam_settings ) {
-            $refresh_interval =
-            self::AAM_SETTINGS_REFRESH_IN_MINUTES * MINUTE_IN_SECONDS;
-            $aam_settings     =
-            AdsPixelSettings::buildFromPixelId( $installed_pixel );
-            if ( $aam_settings ) {
-                $settings_as_array = array(
+
+        $aam_settings = AdsPixelSettings::buildFromPixelId( $installed_pixel );
+        if ( $aam_settings ) {
+            set_transient(
+                FacebookPluginConfig::AAM_SETTINGS_KEY,
+                array(
                     'pixelId'                        => $aam_settings->getPixelId(),
                     'enableAutomaticMatching'        =>
                     $aam_settings->getEnableAutomaticMatching(),
                     'enabledAutomaticMatchingFields' =>
                     $aam_settings->getEnabledAutomaticMatchingFields(),
-                );
-                set_transient(
-                    FacebookPluginConfig::AAM_SETTINGS_KEY,
-                    $settings_as_array,
-                    $refresh_interval
-                );
-                self::$aam_settings = $aam_settings;
-            }
+                ),
+                self::AAM_SETTINGS_REFRESH_IN_MINUTES * MINUTE_IN_SECONDS
+            );
+            self::$aam_settings = $aam_settings;
         }
     }
 

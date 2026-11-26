@@ -96,7 +96,6 @@ class FacebookPluginConfig {
     const OLD_SETTINGS_KEY     = 'facebook_config';
     const OLD_PIXEL_ID_KEY     = 'pixel_id';
     const OLD_ACCESS_TOKEN_KEY = 'access_token';
-    const OLD_USE_PII          = 'use_pii';
 
     const DEFAULT_PIXEL_ID                    = null;
     const DEFAULT_ACCESS_TOKEN                = null;

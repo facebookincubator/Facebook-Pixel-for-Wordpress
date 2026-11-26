@@ -1,14 +1,14 @@
 <?php
 /**
- * Facebook Pixel Plugin AAMFieldsExtractor class.
+ * Facebook Pixel Plugin UserDataNormalizer class.
  *
- * This file contains the main logic for AAMFieldsExtractor.
+ * This file contains the main logic for UserDataNormalizer.
  *
  * @package FacebookPixelPlugin
  */
 
 /**
- * Define AAMFieldsExtractor class.
+ * Define UserDataNormalizer class.
  *
  * @return void
  */
@@ -30,23 +30,23 @@ namespace FacebookPixelPlugin\Core;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Normalizer;
 
 /**
- * Class AAMFieldsExtractor
+ * Normalizes the user data the plugin captures itself (from forms, the
+ * logged-in user, orders) into the format Meta expects, before it is sent
+ * with Pixel and Conversions API events.
  */
-final class AAMFieldsExtractor {
+final class UserDataNormalizer {
   /**
-   * Normalizes the user data the plugin captures itself (from forms, the
-   * logged-in user, orders) before it is sent with Pixel and Conversions API
-   * events.
+   * Normalizes user data keyed by AAMSettingsFields constants.
    *
-   * The pixel's automatic advanced matching setting is not consulted: it
-   * controls what the Meta Pixel reads from the page on its own, not the
-   * parameters this plugin passes explicitly. Keys that are not known user
-   * data fields are dropped.
+   * Keys that are not known user data fields are dropped. The pixel's
+   * automatic advanced matching setting is not consulted: it controls what
+   * the Meta Pixel reads from the page on its own, not the parameters this
+   * plugin passes explicitly.
    *
    * @param string[] $user_data_array The user data.
    * @return string[]
    */
-  public static function get_normalized_user_data( $user_data_array ) {
+  public static function normalize( $user_data_array ) {
     if ( ! $user_data_array ) {
       return array();
     }

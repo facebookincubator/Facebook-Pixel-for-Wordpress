@@ -1526,10 +1526,8 @@ class FacebookWordpressSettingsPage {
      *                from Meta, or the plugin is not connected through Meta).
      */
     private function get_field_mapping_matching() {
-        $settings  = FacebookWordpressOptions::get_aam_settings();
-        $from_meta = FacebookWordpressOptions::get_is_fbl4b_installed()
-            || FacebookWordpressOptions::get_is_fbe_installed();
-        if ( ! $settings || ! $from_meta ) {
+        $settings = FacebookWordpressOptions::get_aam_settings();
+        if ( ! $settings ) {
             return 'unknown';
         }
         return $settings->getEnableAutomaticMatching() ? 'on' : 'off';

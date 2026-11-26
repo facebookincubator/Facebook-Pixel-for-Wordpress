@@ -1,14 +1,14 @@
 <?php
 /**
- * Facebook Pixel Plugin AAMFieldsExtractorTest class.
+ * Facebook Pixel Plugin UserDataNormalizerTest class.
  *
- * This file contains the main logic for AAMFieldsExtractorTest.
+ * This file contains the main logic for UserDataNormalizerTest.
  *
  * @package FacebookPixelPlugin
  */
 
 /**
- * Define AAMFieldsExtractorTest class.
+ * Define UserDataNormalizerTest class.
  *
  * @return void
  */
@@ -27,14 +27,12 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
-
 use FacebookPixelPlugin\Core\AAMSettingsFields;
-use FacebookPixelPlugin\Core\AAMFieldsExtractor;
+use FacebookPixelPlugin\Core\UserDataNormalizer;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
 /**
- * AAMFieldsExtractorTest class.
+ * UserDataNormalizerTest class.
  *
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
@@ -43,16 +41,16 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
  * make sure tests are isolated.
  * Stop preserving global state from the parent process.
  */
-final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
+final class UserDataNormalizerTest extends FacebookWordpressTestBase {
   /**
-   * Test that get_normalized_user_data
-   * returns the expected normalized data.
+   * Every user data field is normalized: lowercased and trimmed, phone
+   * reduced to digits, gender to its first letter, date of birth to Ymd.
    *
    * @return void
    */
   public function testReturnsNormalizedData() {
     $user_data_normalized =
-    AAMFieldsExtractor::get_normalized_user_data( $this->getSampleUserData() );
+    UserDataNormalizer::normalize( $this->getSampleUserData() );
 
     $this->assertEquals(
       array(
@@ -73,44 +71,6 @@ final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * The pixel's automatic advanced matching setting does not gate the
-   * parameters the plugin captures: with it off, every field is returned.
-   *
-   * @return void
-   */
-  public function testReturnsAllFieldsWhenAamDisabled() {
-    $this->mockUseAAM( '1234', false );
-    $this->assertSameSize(
-      AAMSettingsFields::get_all_fields(),
-      AAMFieldsExtractor::get_normalized_user_data( $this->getSampleUserData() )
-    );
-  }
-
-  /**
-   * The types turned on in the pixel's automatic advanced matching setting
-   * do not limit the fields returned.
-   *
-   * @return void
-   */
-  public function testIgnoresAamEnabledFields() {
-    $this->mockUseAAM(
-      '1234',
-      true,
-      array( AAMSettingsFields::EMAIL )
-    );
-    $user_data_normalized =
-      AAMFieldsExtractor::get_normalized_user_data( $this->getSampleUserData() );
-    $this->assertSameSize(
-      AAMSettingsFields::get_all_fields(),
-      $user_data_normalized
-    );
-    $this->assertEquals(
-      'pedro',
-      $user_data_normalized[ AAMSettingsFields::FIRST_NAME ]
-    );
-  }
-
-  /**
    * Keys that are not user data fields are dropped.
    *
    * @return void
@@ -118,7 +78,7 @@ final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
   public function testDropsUnknownKeys() {
     $this->assertEquals(
       array( AAMSettingsFields::EMAIL => 'abc@mail.com' ),
-      AAMFieldsExtractor::get_normalized_user_data(
+      UserDataNormalizer::normalize(
         array(
           AAMSettingsFields::EMAIL => 'ABC@mail.com',
           'value'                  => '10',
@@ -135,43 +95,15 @@ final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
   public function testReturnsEmptyArrayForEmptyInput() {
     $this->assertSame(
       array(),
-      AAMFieldsExtractor::get_normalized_user_data( array() )
+      UserDataNormalizer::normalize( array() )
     );
-  }
-
-  /**
-   * Mocks the return value of FacebookWordpressOptions::get_aam_settings().
-   *
-   * @param string $pixel_id The pixel ID
-   * to set in the AAM settings.
-   * @param bool   $enable_aam Whether to enable automatic matching.
-   * @param array  $enable_aam_fields The
-   * fields to enable for automatic matching.
-   *
-   * @return AdsPixelSettings The mocked AdsPixelSettings object.
-   */
-  private function mockUseAAM(
-    $pixel_id = '1234',
-    $enable_aam = false,
-    $enable_aam_fields = array()
-  ) {
-    $aam_settings = new AdsPixelSettings();
-    $aam_settings->setPixelId( $pixel_id );
-    $aam_settings->setEnableAutomaticMatching( $enable_aam );
-    $aam_settings->setEnabledAutomaticMatchingFields( $enable_aam_fields );
-    $this->mocked_options = \Mockery::mock(
-      'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
-    );
-    $this->mocked_options->shouldReceive( 'get_aam_settings' )
-      ->andReturn( $aam_settings );
-    return $aam_settings;
   }
 
   /**
    * Returns a sample user data array.
    *
    * This function returns a sample user data
-   * array with all the fields that can be used in automatic matching.
+   * array with every user data field.
    *
    * @return array The sample user data array.
    */

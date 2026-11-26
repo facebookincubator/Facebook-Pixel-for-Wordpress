@@ -21,7 +21,7 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Normalizer;
 
-use FacebookPixelPlugin\Core\AAMFieldsExtractor;
+use FacebookPixelPlugin\Core\UserDataNormalizer;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\EventIdGenerator;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
@@ -402,7 +402,7 @@ class ServerEventFactory {
         $data_split        = self::split_user_data_and_custom_data( $data );
         $user_data_array   = $data_split['user_data'];
         $custom_data_array = $data_split['custom_data'];
-        $user_data_array   = AAMFieldsExtractor::get_normalized_user_data(
+        $user_data_array   = UserDataNormalizer::normalize(
             $user_data_array
         );
 

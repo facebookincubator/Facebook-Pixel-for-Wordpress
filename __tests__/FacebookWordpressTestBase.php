@@ -31,8 +31,6 @@ use PHPUnit\Framework\TestCase;
 use FacebookPixelPlugin\Core\FormFieldMapper;
 use FacebookPixelPlugin\Tests\Mocks\MockFormFieldMappingStore;
 use WP_Mock\Tools\Constraints\ExpectationsMet;
-use FacebookPixelPlugin\Core\AAMSettingsFields;
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\FacebookTrackingFacade;
 use FacebookPixelPlugin\Core\Capi;
@@ -346,16 +344,10 @@ abstract class FacebookWordpressTestBase extends TestCase {
      * for those methods. If a key is not provided, the method will return
      * a default value.
      *
-     * @param array            $options An associative
-     *                          array of method names and their
-     *                                  return values.
-     * @param AdsPixelSettings $aam_settings The return value for the
-     *                                       get_aam_settings() method.
+     * @param array $options An associative array of method names and their
+     *                       return values.
      */
-    protected function mockFacebookWordpressOptions(
-        $options = array(),
-        $aam_settings = null
-    ) {
+    protected function mockFacebookWordpressOptions( $options = array() ) {
     $this->mocked_options = \Mockery::mock(
         'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
     );
@@ -387,13 +379,6 @@ abstract class FacebookWordpressTestBase extends TestCase {
         $this->mocked_options->shouldReceive( 'get_is_fbe_installed' )
         ->andReturn( '0' );
     }
-    if ( is_null( $aam_settings ) ) {
-        $this->mocked_options->shouldReceive( 'get_aam_settings' )
-        ->andReturn( $this->getDefaultAAMSettings() );
-    } else {
-        $this->mocked_options->shouldReceive( 'get_aam_settings' )
-        ->andReturn( $aam_settings );
-    }
         $this->mocked_options->shouldReceive( 'get_capi_pii_caching_status' )
                             ->andReturn( 0 );
         $this->mocked_options->shouldReceive( 'get_capig' )
@@ -412,25 +397,5 @@ abstract class FacebookWordpressTestBase extends TestCase {
         ->andReturn( false );
     $this->mocked_options->shouldReceive( 'get_connection_type' )
         ->andReturn( 'mbe' );
-    }
-
-
-    /**
-     * Returns the default AdsPixelSettings object.
-     *
-     * The default AdsPixelSettings object returned by
-     * this method has the pixel ID
-     * set to '123', automatic matching enabled, and all
-     * automatic matching fields
-     * enabled.
-     *
-     * @return AdsPixelSettings The default AdsPixelSettings object.
-     */
-    protected function getDefaultAAMSettings() {
-        $aam_settings = new AdsPixelSettings();
-        $aam_settings->setPixelId( '123' );
-        $aam_settings->setEnableAutomaticMatching( true );
-        $aam_settings->setEnabledAutomaticMatchingFields( AAMSettingsFields::get_all_fields() );
-        return $aam_settings;
     }
 }

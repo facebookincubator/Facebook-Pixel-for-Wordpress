@@ -27,7 +27,6 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\FacebookWordpressSettingsPage;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 use FacebookPixelPlugin\Core\FormFieldMapper;
@@ -595,35 +594,29 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
   /**
    * Mocks the pixel's automatic advanced matching setting.
    *
-   * @param bool|null $enabled   Whether it is on; null when it could not be
-   *                             read from Meta.
-   * @param string[]  $fields    The types of customer information turned on.
-   * @param bool      $from_meta Whether the plugin is connected through Meta.
+   * @param bool|null $enabled Whether it is on; null when the plugin is not
+   *                           connected through Meta or it could not be read.
    * @return void
    */
-  private function mock_automatic_matching( $enabled, array $fields = array(), $from_meta = true ) {
+  private function mock_automatic_matching( $enabled ) {
     $settings = null;
     if ( null !== $enabled ) {
       $settings = new AdsPixelSettings();
       $settings->setEnableAutomaticMatching( $enabled );
-      $settings->setEnabledAutomaticMatchingFields( $fields );
     }
     $options = \Mockery::mock( 'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions' );
     $options->shouldReceive( 'get_aam_settings' )->andReturn( $settings );
-    $options->shouldReceive( 'get_is_fbl4b_installed' )->andReturn( $from_meta );
-    $options->shouldReceive( 'get_is_fbe_installed' )->andReturn( false );
   }
 
   /**
    * The note on automatic advanced matching follows the pixel's setting:
    * with it on, "Do not send" does not stop the Meta Pixel reading a field;
-   * when it is not known, that is explained as a condition. The pixel's
-   * enabled types do not limit what this plugin sends, so none are named.
+   * when it is not known, that is explained as a condition.
    */
   public function testFieldMappingMatchingNote() {
     $page = $this->make_field_mapping_page();
 
-    $this->mock_automatic_matching( true, array( 'em', 'fn', 'ln', 'ct', 'st', 'zp', 'country', 'external_id' ) );
+    $this->mock_automatic_matching( true );
     $note = $this->invoke_private( $page, 'get_field_mapping_matching_note', false );
     $this->assertStringContainsString( 'Automatic advanced matching is on for your pixel.', $note );
     $this->assertStringContainsString( 'The Meta Pixel on your site can still read customer information', $note );
@@ -652,20 +645,10 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
 
   /**
    * When the setting could not be read from Meta, or the plugin is not
-   * connected through Meta, the note explains both effects as conditions.
+   * connected through Meta, the note explains the effect as a condition.
    */
   public function testFieldMappingMatchingNoteWhenUnknown() {
     $this->mock_automatic_matching( null );
-    $note = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_matching_note', false );
-    $this->assertStringStartsWith( 'If automatic advanced matching is on for your pixel', $note );
-  }
-
-  /**
-   * Settings kept from the plugin's old connection flow do not come from
-   * the pixel, so the note does not claim the pixel's state.
-   */
-  public function testFieldMappingMatchingNoteWithoutMetaConnection() {
-    $this->mock_automatic_matching( true, AAMSettingsFields::get_all_fields(), false );
     $note = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_matching_note', false );
     $this->assertStringStartsWith( 'If automatic advanced matching is on for your pixel', $note );
   }
@@ -993,7 +976,7 @@ final class FacebookWordPressSettingsPageTest extends FacebookWordpressTestBase 
       )
     );
 
-    $this->mock_automatic_matching( true, AAMSettingsFields::get_all_fields() );
+    $this->mock_automatic_matching( true );
 
     $section = $this->invoke_private( $this->make_field_mapping_page(), 'get_field_mapping_section' );
     $this->assertStringContainsString( 'Supported form plugins', $section );
