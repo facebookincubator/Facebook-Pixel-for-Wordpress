@@ -1,14 +1,14 @@
 <?php
 /**
- * Facebook Pixel Plugin AAMFieldsExtractor class.
+ * Facebook Pixel Plugin UserDataNormalizer class.
  *
- * This file contains the main logic for AAMFieldsExtractor.
+ * This file contains the main logic for UserDataNormalizer.
  *
  * @package FacebookPixelPlugin
  */
 
 /**
- * Define AAMFieldsExtractor class.
+ * Define UserDataNormalizer class.
  *
  * @return void
  */
@@ -30,31 +30,31 @@ namespace FacebookPixelPlugin\Core;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Normalizer;
 
 /**
- * Class AAMFieldsExtractor
+ * Normalizes the user data the plugin captures itself (from forms, the
+ * logged-in user, orders) into the format Meta expects, before it is sent
+ * with Pixel and Conversions API events.
  */
-final class AAMFieldsExtractor {
+final class UserDataNormalizer {
   /**
-   * Filters the passed user data using the AAM settings of the pixel
+   * Normalizes user data keyed by AAMSettingsFields constants.
+   *
+   * Keys that are not known user data fields are dropped. The pixel's
+   * automatic advanced matching setting is not consulted: it controls what
+   * the Meta Pixel reads from the page on its own, not the parameters this
+   * plugin passes explicitly.
    *
    * @param string[] $user_data_array The user data.
    * @return string[]
    */
-  public static function get_normalized_user_data( $user_data_array ) {
-    $aam_setttings = FacebookWordpressOptions::get_aam_settings();
-    if ( ! $user_data_array || ! $aam_setttings ||
-      ! $aam_setttings->getEnableAutomaticMatching() ) {
+  public static function normalize( $user_data_array ) {
+    if ( ! $user_data_array ) {
       return array();
     }
 
-    foreach ( $user_data_array as $key => $value ) {
-    if ( ! in_array(
-        $key,
-        $aam_setttings->getEnabledAutomaticMatchingFields(),
-        true
-    ) ) {
-        unset( $user_data_array[ $key ] );
-      }
-    }
+    $user_data_array = array_intersect_key(
+        $user_data_array,
+        array_flip( AAMSettingsFields::get_all_fields() )
+    );
 
     if (
         isset( $user_data_array[ AAMSettingsFields::GENDER ] ) &&

@@ -21,7 +21,7 @@ use FacebookPixelPlugin\FacebookAds\Object\ServerSide\CustomData;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Content;
 use FacebookPixelPlugin\FacebookAds\Object\ServerSide\Normalizer;
 
-use FacebookPixelPlugin\Core\AAMFieldsExtractor;
+use FacebookPixelPlugin\Core\UserDataNormalizer;
 use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\EventIdGenerator;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
@@ -373,8 +373,7 @@ class ServerEventFactory {
      * with the arguments and extracts the user data and custom
      * data from the result.
      *
-     * It uses the AAM setting to normalize the user data and the custom data
-     * is used as is.
+     * The user data is normalized and the custom data is used as is.
      *
      * If an exception is thrown in the callback, it's caught and logged,
      * and the function returns an empty Event object.
@@ -403,7 +402,7 @@ class ServerEventFactory {
         $data_split        = self::split_user_data_and_custom_data( $data );
         $user_data_array   = $data_split['user_data'];
         $custom_data_array = $data_split['custom_data'];
-        $user_data_array   = AAMFieldsExtractor::get_normalized_user_data(
+        $user_data_array   = UserDataNormalizer::normalize(
             $user_data_array
         );
 

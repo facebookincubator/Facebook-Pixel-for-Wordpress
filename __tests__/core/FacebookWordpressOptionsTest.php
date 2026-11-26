@@ -27,7 +27,6 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\FacebookPluginConfig;
 use FacebookPixelPlugin\Core\FacebookWordpressOptions;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
@@ -57,11 +56,6 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
   public function testCanInitialize() {
     self::mockGetOption( '1234', '1234' );
     self::mockEscJs( '1234' );
-    self::mockGetTransientAAMSettings(
-      '1234',
-      true,
-      AAMSettingsFields::get_all_fields()
-    );
     \WP_Mock::expectActionAdded(
       'init',
       array(
@@ -103,11 +97,6 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 
     self::mockGetOption( '1234', '1234', '1' );
     self::mockEscJs( '1234' );
-    self::mockGetTransientAAMSettings(
-      '1234',
-      true,
-      AAMSettingsFields::get_all_fields()
-    );
     \WP_Mock::expectActionAdded(
       'init',
       array(
@@ -137,11 +126,6 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 
     self::mockGetOption( '1234', '1234' );
     self::mockEscJs( '1234' );
-    self::mockGetTransientAAMSettings(
-      '1234',
-      true,
-      AAMSettingsFields::get_all_fields()
-    );
     \WP_Mock::expectActionAdded(
       'init',
       array(
@@ -154,41 +138,6 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
 
     FacebookWordpressOptions::register_user_info();
     $user_info = FacebookWordpressOptions::get_user_info();
-    $this->assertEquals( \count( $user_info ), 0 );
-  }
-
-  /**
-   * Tests that the register_user_info method does
-   * not register the user information
-   * when the 'Use Personal Identifiable
-   * Information (PII)' setting is disabled.
-   *
-   * Asserts that:
-   *  - The user information is an empty array.
-   */
-  public function testCannotRegisterUserInfoWithoutUsePII() {
-    self::mockWpGetCurrentUser( '1234' );
-
-    self::mockGetOption( '1234', '1234' );
-    self::mockEscJs();
-    self::mockGetTransientAAMSettings(
-      '1234',
-      false,
-      AAMSettingsFields::get_all_fields()
-    );
-    \WP_Mock::expectActionAdded(
-      'init',
-      array(
-        'FacebookPixelPlugin\\Core\\FacebookWordpressOptions',
-        'register_user_info',
-      ),
-      0
-    );
-    FacebookWordpressOptions::initialize();
-
-    FacebookWordpressOptions::register_user_info();
-    $user_info = FacebookWordpressOptions::get_user_info();
-
     $this->assertEquals( \count( $user_info ), 0 );
   }
 
@@ -304,37 +253,6 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
       )
     );
   }
-
-  /**
-   * Mocks the return value of get_transient for AAM settings.
-   *
-   * This function takes in the mock values for the pixel ID, enable AAM,
-   * and enabled AAM fields. It then sets up the mock for get_transient
-   * to return an array with the mock values for the AAM settings.
-   *
-   * @param string|null $pixel_id The mock pixel ID.
-   * @param bool        $enable_aam The mock enable AAM value.
-   * @param array       $aam_fields The mock enabled AAM fields.
-   */
-  private function mockGetTransientAAMSettings(
-      $pixel_id = null,
-      $enable_aam = false,
-      $aam_fields = array()
-    ) {
-      if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
-        define( 'MINUTE_IN_SECONDS', 60 );
-      }
-      \WP_Mock::userFunction(
-        'get_transient',
-        array(
-          'return' => array(
-            'pixelId'                        => $pixel_id,
-            'enableAutomaticMatching'        => $enable_aam,
-            'enabledAutomaticMatchingFields' => $aam_fields,
-          ),
-        )
-      );
-    }
 
   /**
    * Mocks the esc_js function to return the provided string.

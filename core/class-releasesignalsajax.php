@@ -187,7 +187,7 @@ class ReleaseSignalsAjax {
             $sent_event_ids = self::acknowledged_event_ids( $events_to_send, $result );
         }
 
-        // Return fresh user_info so JS can initialise fbq with correct AAM data
+        // Return fresh user_info so JS can initialise fbq with the user data
         // after release, even when the cached page rendered with empty user_info.
         $user_info = array();
         try {

@@ -27,13 +27,11 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\FacebookParamBuilder;
 use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\ServerEventFactory;
 use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 
-use FacebookPixelPlugin\FacebookAds\Object\ServerSide\AdsPixelSettings;
 
 /**
  * ServerEventFactoryTest class.
@@ -785,21 +783,13 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * Tests the safe_create_event method with
-   * Personally Identifiable Information (PII).
-   *
-   * This test verifies that when PII extraction is enabled and all AAM fields
-   * are available, the safe_create_event
-   * method correctly creates a server event
-   * with the expected user data attributes,
-   * including email, phone, first name,
-   * last name, state, city, country code, zip code, and gender.
+   * Tests that safe_create_event sets every user data field the callback
+   * returns, normalized. The pixel's automatic advanced matching setting is
+   * not read, so none is mocked.
    *
    * @return void
    */
   public function testSafeCreateEventWithPII() {
-    $this->mockUseAAM( '1234', true, AAMSettingsFields::get_all_fields() );
-
     \WP_Mock::userFunction(
       'sanitize_text_field',
       array(
@@ -855,45 +845,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * Tests the safe_create_event method with
-   * Personally Identifiable Information (PII) extraction disabled.
-   *
-   * This test verifies that when PII extraction is
-   * disabled, the safe_create_event method correctly creates a server event
-   * with all user data attributes set to null.
-   *
-   * @return void
-   */
-  public function testSafeCreateEventWithPIIDisabled() {
-    \WP_Mock::userFunction(
-      'sanitize_text_field',
-      array(
-        'args'   => array( \Mockery::any() ),
-        'return' => function ( $input ) {
-          return $input;
-        },
-      )
-    );
-
-    $server_event = ServerEventFactory::safe_create_event(
-      'Lead',
-      array( $this, 'getEventData' ),
-      array(),
-      'test_integration'
-    );
-
-    $this->assertNull( $server_event->getUserData()->getEmail() );
-    $this->assertNull( $server_event->getUserData()->getFirstName() );
-    $this->assertNull( $server_event->getUserData()->getLastName() );
-    $this->assertNull( $server_event->getUserData()->getPhone() );
-    $this->assertNull( $server_event->getUserData()->getState() );
-    $this->assertNull( $server_event->getUserData()->getCity() );
-    $this->assertNull( $server_event->getUserData()->getCountryCode() );
-    $this->assertNull( $server_event->getUserData()->getZipCode() );
-    $this->assertNull( $server_event->getUserData()->getGender() );
-  }
-
-  /**
    * Returns a sample event data array.
    *
    * This method returns an associative array
@@ -916,41 +867,6 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
         'zip'        => '4321',
         'gender'     => 'M',
     );
-  }
-
-  /**
-   * Mocks the use of AAM settings for tests.
-   *
-   * This method sets up a mock of the AdsPixelSettings
-   * class and the FacebookWordpressOptions class.
-   * The AdsPixelSettings class is configured with the
-   * given pixel ID, whether AAM is enabled,
-   * and which fields are enabled for AAM.
-   *
-   * The method then sets up the FacebookWordpressOptions
-   * class to return the configured AdsPixelSettings
-   * instance when the get_aam_settings method is called.
-   *
-   * @param string $pixel_id The ID of the pixel.
-   * @param bool   $enable_aam Whether AAM is enabled.
-   * @param array  $enable_aam_fields The fields to enable for AAM.
-   *
-   * @return void
-   */
-  private function mockUseAAM(
-    $pixel_id = '1234',
-    $enable_aam = false,
-    $enable_aam_fields = array()
-  ) {
-    $aam_settings = new AdsPixelSettings();
-    $aam_settings->setPixelId( $pixel_id );
-    $aam_settings->setEnableAutomaticMatching( $enable_aam );
-    $aam_settings->setEnabledAutomaticMatchingFields( $enable_aam_fields );
-    $this->mocked_options = \Mockery::mock(
-      'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions'
-    );
-    $this->mocked_options->shouldReceive( 'get_aam_settings' )
-      ->andReturn( $aam_settings );
   }
 
   /**

@@ -27,7 +27,6 @@
 
 namespace FacebookPixelPlugin\Tests\Core;
 
-use FacebookPixelPlugin\Core\AAMSettingsFields;
 use FacebookPixelPlugin\Core\FacebookPixel;
 use FacebookPixelPlugin\Core\FacebookSignalState;
 use FacebookPixelPlugin\Core\FacebookWordpressPixelInjection;
@@ -58,11 +57,6 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
    */
   public function testPixelInjection() {
     self::mockGetOption( '1234' );
-    self::mockGetTransientAAMSettings(
-      1234,
-      false,
-      AAMSettingsFields::get_all_fields()
-    );
 
     $injection_obj = new FacebookWordpressPixelInjection();
     \WP_Mock::expectActionAdded(
@@ -105,39 +99,6 @@ final class FacebookWordpressPixelInjectionTest extends FacebookWordpressTestBas
         'return' => array(
           FacebookPluginConfig::PIXEL_ID_KEY     => $mock_pixel_id,
           FacebookPluginConfig::ACCESS_TOKEN_KEY => $mock_access_token,
-        ),
-      )
-    );
-  }
-
-  /**
-   * Mocks the return value of get_transient for AAM settings.
-   *
-   * This function sets up a mock for the get_transient function to return
-   * specific AAM settings. It allows testing scenarios that involve AAM
-   * settings without relying on actual WordPress transients.
-   *
-   * @param string|null $pixel_id The mock pixel ID to return.
-   * @param bool        $enable_aam Whether to mock AAM as enabled.
-   * @param array       $aam_fields The mock enabled AAM fields.
-   *
-   * @return void
-   */
-  private function mockGetTransientAAMSettings(
-    $pixel_id = null,
-    $enable_aam = false,
-    $aam_fields = array()
-  ) {
-    if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
-      define( 'MINUTE_IN_SECONDS', 60 );
-    }
-    \WP_Mock::userFunction(
-      'get_transient',
-      array(
-        'return' => array(
-          'pixelId'                        => $pixel_id,
-          'enableAutomaticMatching'        => $enable_aam,
-          'enabledAutomaticMatchingFields' => $aam_fields,
         ),
       )
     );

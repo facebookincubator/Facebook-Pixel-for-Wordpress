@@ -546,7 +546,7 @@ window.FacebookSignal = window.FacebookSignal || {
       document.cookie = fbcCookie;
     }
 
-    // Update user_info with fresh AAM data from the release response, then
+    // Update user_info with fresh user data from the release response, then
     // run (or re-run) fbq('init') so the pixel has correct user_info.
     if (
       data.user_info &&
