@@ -412,6 +412,8 @@ abstract class FacebookWordpressTestBase extends TestCase {
         ->andReturn( false );
     $this->mocked_options->shouldReceive( 'get_connection_type' )
         ->andReturn( 'mbe' );
+    $this->mocked_options->shouldReceive( 'is_connected' )
+        ->andReturn( ! empty( $active_pixel ) && ! empty( $active_token ) );
     }
 
 

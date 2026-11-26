@@ -145,11 +145,17 @@ class LeadEventQuality {
     }
 
     /**
-     * For the pixel and token the plugin sends events with.
+     * For the pixel the plugin is connected to. Not connected, it reports
+     * no score: not even for the legacy pixel the active credentials fall
+     * back to after a Facebook Login for Business disconnect, which the
+     * Connection settings do not show.
      *
      * @return LeadEventQuality
      */
     public static function from_options() {
+        if ( ! FacebookWordpressOptions::is_connected() ) {
+            return new self( '', '' );
+        }
         return new self(
             FacebookWordpressOptions::get_active_pixel_id(),
             FacebookWordpressOptions::get_active_access_token()

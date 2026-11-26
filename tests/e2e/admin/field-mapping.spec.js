@@ -836,6 +836,83 @@ test.describe('Lead event quality (live from Meta)', () => {
     }
   });
 
+  test('shows no score for the legacy pixel left once Facebook Login for Business disconnects', async ({
+    page,
+  }) => {
+    await reset();
+    const panel = page.locator('#fb-lead-quality');
+    const OTHER_PIXEL = '1000000000000002';
+    try {
+      // The site moved from the legacy connection (the QA pixel, A) to
+      // Facebook Login for Business with another pixel (B): the legacy
+      // settings stay behind, marked as no longer installed, as picking B
+      // leaves them. B's token has since been revoked.
+      await backupSettings();
+      expect(
+        await php(`
+          $mbe = get_option(${PLUGIN_CONFIG}::SETTINGS_KEY);
+          $mbe[${PLUGIN_CONFIG}::IS_FBE_INSTALLED_KEY] = '0';
+          update_option(${PLUGIN_CONFIG}::SETTINGS_KEY, $mbe);
+          update_option(${PLUGIN_CONFIG}::FBL4B_SETTINGS_KEY, array(
+            ${PLUGIN_CONFIG}::FBL4B_ACCESS_TOKEN_KEY => ${OPTIONS}::encrypt_token('${INVALID_TOKEN}'),
+            ${PLUGIN_CONFIG}::FBL4B_PIXEL_ID_KEY     => '${OTHER_PIXEL}',
+            ${PLUGIN_CONFIG}::FBL4B_PIXEL_NAME_KEY   => 'E2E pixel B',
+            ${PLUGIN_CONFIG}::FBL4B_BUSINESS_ID_KEY  => '${FBL4B_BUSINESS}',
+          ));
+          $result = array(${OPTIONS}::get_connection_type(), ${OPTIONS}::get_active_pixel_id());
+        `),
+      ).toEqual(['fbl4b', OTHER_PIXEL]);
+
+      // The page counts its loads, and which one each panel request is from.
+      let loads = 0;
+      const asked = [];
+      page.on('request', (request) => {
+        if (
+          request.isNavigationRequest() &&
+          request.frame() === page.mainFrame()
+        ) {
+          loads++;
+        } else if (request.url().includes(`action=${QUALITY_ACTION}`)) {
+          asked.push({ load: loads, request });
+        }
+      });
+
+      // On load Facebook Login for Business checks its token (for real):
+      // Meta rejects it, so the plugin disconnects and reloads the page.
+      const deleted = page.waitForResponse((response) =>
+        response.url().includes('action=delete_fbl4b_settings'),
+      );
+      await gotoAdmin(page, SETTINGS_PATH);
+      await deleted;
+      await expect.poll(() => loads, { timeout: 30000 }).toBe(2);
+      await expect
+        .poll(() => asked.filter((entry) => entry.load === 2).length)
+        .toBe(1);
+
+      // The active credentials still fall back to the legacy pixel...
+      expect(
+        await php(`
+          $result = array(${OPTIONS}::get_connection_type(), ${OPTIONS}::is_connected(),
+            (string) ${OPTIONS}::get_active_pixel_id() === (string) get_option(${PLUGIN_CONFIG}::SETTINGS_KEY)[${PLUGIN_CONFIG}::PIXEL_ID_KEY]);
+        `),
+      ).toEqual(['none', false, true]);
+
+      // ...which the Connection tab does not show as connected: no score is
+      // shown for it, nor the Configuration tab offered.
+      const reloaded = asked.find((entry) => entry.load === 2).request;
+      const answer = await (await reloaded.response()).json();
+      expect(answer.msg.status).toBe('not_connected');
+      await expect(page.locator('#fb-settings')).not.toHaveClass(
+        /fb-settings--connected/,
+      );
+      await expect(page.locator('a[data-fb-tab="configuration"]')).toBeHidden();
+      await expect(panel).toHaveClass(/\bhidden\b/);
+    } finally {
+      await restoreSettings();
+      await execWP(`delete_transient('${QUALITY_CACHE}');`);
+    }
+  });
+
   test('follows connection changes without a reload', async ({ page }) => {
     await reset();
     const panel = page.locator('#fb-lead-quality');

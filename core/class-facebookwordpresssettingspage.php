@@ -242,8 +242,7 @@ class FacebookWordpressSettingsPage {
         // Connected pages split the settings into tabs; until then the page
         // shows only the connection flow, as before. js/settings_page.js keeps
         // the class in sync when the connection changes without a reload.
-        $is_connected = ! empty( FacebookWordpressOptions::get_active_pixel_id() )
-            && ! empty( FacebookWordpressOptions::get_active_access_token() );
+        $is_connected = FacebookWordpressOptions::is_connected();
         ?>
 <div id="fb-settings" class="fb-settings<?php echo $is_connected ? ' fb-settings--connected' : ''; ?>">
     <nav class="nav-tab-wrapper fb-settings-tabs" role="tablist">

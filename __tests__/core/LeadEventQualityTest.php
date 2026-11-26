@@ -179,6 +179,26 @@ final class LeadEventQualityTest extends FacebookWordpressTestBase {
     }
 
     /**
+     * The score is for the pixel the plugin is connected to: none when it is
+     * not, even if the active credentials fall back to a legacy pixel (left
+     * after a Facebook Login for Business disconnect).
+     *
+     * @return void
+     */
+    public function testFromOptionsScoresOnlyAConnectedPixel() {
+        $options = \Mockery::mock( 'alias:FacebookPixelPlugin\Core\FacebookWordpressOptions' );
+        $options->shouldReceive( 'is_connected' )->andReturn( false, true );
+        $options->shouldReceive( 'get_active_pixel_id' )->andReturn( '123' );
+        $options->shouldReceive( 'get_active_access_token' )->andReturn( 'token' );
+        \WP_Mock::userFunction( 'get_transient', array( 'return' => false ) );
+        $this->mock_http( 200, $this->response_body() );
+        $this->expect_cached( 'ok', LeadEventQuality::CACHE_TTL );
+
+        $this->assertSame( 'not_connected', LeadEventQuality::from_options()->get()['status'] );
+        $this->assertSame( 'ok', LeadEventQuality::from_options()->get()['status'] );
+    }
+
+    /**
      * The Lead event's score and parameters are read and cached for a day:
      * most included parameter first, unknown identifiers humanized.
      *
