@@ -492,6 +492,68 @@ final class FacebookWordpressOptionsFBL4BTest extends FacebookWordpressTestBase 
   }
 
   // =========================================
+  // Connected State Tests
+  // =========================================
+
+  /**
+   * Sites, as their Facebook Login for Business and legacy settings, and
+   * whether the plugin is connected on them.
+   *
+   * @return array
+   */
+  public function connectedSites() {
+    $legacy = array(
+      FacebookPluginConfig::PIXEL_ID_KEY         => '111',
+      FacebookPluginConfig::ACCESS_TOKEN_KEY     => 'legacy_token',
+      FacebookPluginConfig::IS_FBE_INSTALLED_KEY => '1',
+    );
+    $left   = array( FacebookPluginConfig::IS_FBE_INSTALLED_KEY => '0' ) + $legacy;
+    $fbl4b  = array(
+      FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY => 'fbl4b_token',
+      FacebookPluginConfig::FBL4B_PIXEL_ID_KEY     => '222',
+    );
+    $picker = array( FacebookPluginConfig::FBL4B_PIXEL_ID_KEY => '' ) + $fbl4b;
+
+    return array(
+      'legacy connection'                       => array( array(), $legacy, true ),
+      'legacy pixel left after FBL4B disconnect' => array( array(), $left, false ),
+      'Facebook Login for Business'             => array( $fbl4b, $left, true ),
+      'FBL4B while a pixel is picked'           => array( $picker, $left, false ),
+      'nothing'                                 => array( array(), array(), false ),
+    );
+  }
+
+  /**
+   * Connected only through a connection the Connection settings show: not
+   * through the legacy pixel the active credentials fall back to after a
+   * Facebook Login for Business disconnect.
+   *
+   * @dataProvider connectedSites
+   * @param array $fbl4b     Facebook Login for Business settings.
+   * @param array $legacy    Legacy connection settings.
+   * @param bool  $connected Whether the plugin is connected.
+   */
+  public function testIsConnected( $fbl4b, $legacy, $connected ) {
+    $this->mockWpSalt();
+    if ( isset( $fbl4b[ FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY ] ) ) {
+      $fbl4b[ FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY ] =
+        FacebookWordpressOptions::encrypt_token( $fbl4b[ FacebookPluginConfig::FBL4B_ACCESS_TOKEN_KEY ] );
+    }
+    \WP_Mock::userFunction(
+      'get_option',
+      array(
+        'args'   => array( FacebookPluginConfig::FBL4B_SETTINGS_KEY, '*' ),
+        'return' => $fbl4b,
+      )
+    );
+    $options = new \ReflectionProperty( FacebookWordpressOptions::class, 'options' );
+    $options->setAccessible( true );
+    $options->setValue( null, $legacy );
+
+    $this->assertSame( $connected, FacebookWordpressOptions::is_connected() );
+  }
+
+  // =========================================
   // MBE & FBL4B Pixel Coexistence Tests
   // =========================================
 

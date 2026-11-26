@@ -888,6 +888,24 @@ class FacebookWordpressOptions {
     }
 
     /**
+     * Whether the plugin is connected to Meta, as its Connection settings
+     * show it: through Facebook Login for Business or the legacy connection,
+     * with a pixel and a token.
+     *
+     * The active pixel and token can be set while it is not: after a
+     * Facebook Login for Business disconnect on a site connected before
+     * through the legacy connection, they fall back to the legacy pixel,
+     * which the Connection settings no longer show as connected.
+     *
+     * @return bool True if connected.
+     */
+    public static function is_connected() {
+        return 'none' !== self::get_connection_type()
+            && ! empty( self::get_active_pixel_id() )
+            && ! empty( self::get_active_access_token() );
+    }
+
+    /**
      * Encrypts a token using AES-256-CBC with a random IV.
      *
      * @param string $token The plaintext token to encrypt.

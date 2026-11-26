@@ -755,6 +755,10 @@ var FBEFlowContainer = React.createClass({
               window.fbl4bConfig.pixelName = '';
               window.fbl4bConfig.pendingPixels = pixels;
               _this.setState({ fbl4bPixelId: '' });
+              // No pixel until the admin picks another: drop what was shown
+              // for the lost one (settings, Lead event quality). Picking a
+              // pixel shows them again (showEventsManagerSection).
+              _this.hideEventsManagerSection();
           }
         } else if (!response.success && response.data && response.data.code === 'no_pixels') {
           _this.clearFBL4BData();

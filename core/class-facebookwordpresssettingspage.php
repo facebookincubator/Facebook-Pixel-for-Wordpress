@@ -135,6 +135,13 @@ class FacebookWordpressSettingsPage {
             FacebookPluginConfig::PLUGIN_VERSION,
             true
         );
+        wp_register_script(
+            'meta_lead_quality_script',
+            plugins_url( '../js/lead_quality.js', __FILE__ ),
+            array( 'jquery' ),
+            FacebookPluginConfig::PLUGIN_VERSION,
+            true
+        );
         wp_register_style(
             'official-facebook-pixel',
             plugins_url( '../css/admin.css', __FILE__ ),
@@ -235,8 +242,7 @@ class FacebookWordpressSettingsPage {
         // Connected pages split the settings into tabs; until then the page
         // shows only the connection flow, as before. js/settings_page.js keeps
         // the class in sync when the connection changes without a reload.
-        $is_connected = ! empty( FacebookWordpressOptions::get_active_pixel_id() )
-            && ! empty( FacebookWordpressOptions::get_active_access_token() );
+        $is_connected = FacebookWordpressOptions::is_connected();
         ?>
 <div id="fb-settings" class="fb-settings<?php echo $is_connected ? ' fb-settings--connected' : ''; ?>">
     <nav class="nav-tab-wrapper fb-settings-tabs" role="tablist">
@@ -499,6 +505,17 @@ class FacebookWordpressSettingsPage {
             'meta_field_mapping_script',
             'const meta_field_mapping_params = ' . wp_json_encode(
                 $this->get_field_mapping_params()
+            ) . ';',
+            'before'
+        );
+
+        wp_enqueue_script( 'meta_lead_quality_script' );
+        wp_add_inline_script(
+            'meta_lead_quality_script',
+            'const meta_lead_quality_params = ' . wp_json_encode(
+                array(
+                    'url' => $this->get_field_mapping_ajax_url( FacebookPluginConfig::GET_LEAD_EVENT_QUALITY_ACTION_NAME ),
+                )
             ) . ';',
             'before'
         );
@@ -1630,6 +1647,52 @@ class FacebookWordpressSettingsPage {
     }
 
     /**
+     * The Lead event quality panel beside the forms table, filled by
+     * js/lead_quality.js from the Dataset Quality API: a gauge of the Lead
+     * events' Event Match Quality (0-10, red to green) and the share of them that include
+     * each customer information parameter. It stays hidden unless Meta
+     * returns a score.
+     *
+     * @return string The panel markup.
+     */
+    private function get_lead_quality_panel() {
+        ob_start();
+        ?>
+    <aside id="fb-lead-quality" class="fb-lead-quality hidden" aria-labelledby="fb-lead-quality-title">
+        <h4 id="fb-lead-quality-title">Lead event quality</h4>
+        <figure class="fb-lead-quality-gauge" role="meter" aria-valuemin="0" aria-valuemax="10" aria-labelledby="fb-lead-quality-title">
+            <svg viewBox="0 0 120 80" aria-hidden="true" focusable="false">
+                <defs>
+                    <linearGradient id="fb-lead-quality-gradient" gradientUnits="userSpaceOnUse" x1="10" y1="0" x2="110" y2="0">
+                        <stop offset="0" stop-color="#d03b3b"></stop>
+                        <stop offset="0.5" stop-color="#fab219"></stop>
+                        <stop offset="1" stop-color="#0ca30c"></stop>
+                    </linearGradient>
+                </defs>
+                <path class="fb-lead-quality-track" d="M10 60 A50 50 0 0 1 110 60" pathLength="100" stroke="url(#fb-lead-quality-gradient)"></path>
+                <path class="fb-lead-quality-fill" d="M10 60 A50 50 0 0 1 110 60" pathLength="100" stroke-dasharray="0 100" stroke="url(#fb-lead-quality-gradient)"></path>
+                <?php // Below the arc's round ends, which reach y=66. ?>
+                <text class="fb-lead-quality-scale" x="10" y="77" text-anchor="middle">0</text>
+                <text class="fb-lead-quality-scale" x="110" y="77" text-anchor="middle">10</text>
+            </svg>
+            <figcaption>
+                <span class="fb-lead-quality-score"></span><span class="fb-lead-quality-max">/10</span>
+            </figcaption>
+        </figure>
+        <h5>Customer information received</h5>
+        <p class="fb-lead-quality-desc">Share of Lead events that include each parameter.</p>
+        <ul class="fb-lead-quality-parameters"></ul>
+        <p class="fb-lead-quality-desc">
+            Event Match Quality of the Lead events this plugin sends through
+            the Conversions API, as Meta reports it. Sending
+            more customer information raises it.
+        </p>
+    </aside>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
      * Renders the Form Field Mapping section: the table of forms and the
      * popup editor (a native dialog) for one form's mapping, driven by
      * js/field_mapping.js.
@@ -1673,6 +1736,8 @@ class FacebookWordpressSettingsPage {
         form fields.
     </p>
     <?php endif; ?>
+    <div class="fb-mapping-layout">
+    <div class="fb-mapping-main">
     <table id="fb-mapping-list" class="widefat fb-mapping-list">
         <thead>
             <tr>
@@ -1686,6 +1751,9 @@ class FacebookWordpressSettingsPage {
         <tbody></tbody>
     </table>
     <p id="fb-mapping-status" class="fb-mapping-status"></p>
+    </div>
+        <?php echo $this->get_lead_quality_panel(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static markup. ?>
+    </div>
         <?php if ( ! empty( $integrations ) ) : ?>
     <dialog id="fb-mapping-editor" aria-labelledby="fb-mapping-editor-title">
         <h4 id="fb-mapping-editor-title"></h4>

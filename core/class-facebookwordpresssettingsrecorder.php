@@ -140,6 +140,10 @@ class FacebookWordpressSettingsRecorder {
             'wp_ajax_' . FacebookPluginConfig::DELETE_FIELD_MAPPING_ACTION_NAME,
             array( $this, 'delete_field_mapping' )
         );
+        add_action(
+            'wp_ajax_' . FacebookPluginConfig::GET_LEAD_EVENT_QUALITY_ACTION_NAME,
+            array( $this, 'get_lead_event_quality' )
+        );
     }
 
     /**
@@ -467,6 +471,7 @@ class FacebookWordpressSettingsRecorder {
         );
         \delete_option( FacebookPluginConfig::SETTINGS_KEY );
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
+        LeadEventQuality::clear_cache();
 
         return $this->handle_success_request( 'Done' );
     }
@@ -605,6 +610,7 @@ class FacebookWordpressSettingsRecorder {
 
         \delete_option( FacebookPluginConfig::FBL4B_SETTINGS_KEY );
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
+        LeadEventQuality::clear_cache();
         \delete_user_meta(
             get_current_user_id(),
             FacebookPluginConfig::ADMIN_IGNORE_FBL4B_UPGRADE_NOTICE
@@ -641,6 +647,9 @@ class FacebookWordpressSettingsRecorder {
             $existing
         );
         \delete_transient( FacebookPluginConfig::AAM_SETTINGS_KEY );
+        // Access to the pixel was lost: its score is not shown again from
+        // the cache, even if the same pixel is picked again.
+        LeadEventQuality::clear_cache();
 
         return $this->handle_success_request( 'Pixel cleared' );
     }
@@ -1031,5 +1040,20 @@ class FacebookWordpressSettingsRecorder {
         return $this->handle_success_request(
             array( 'list' => $this->get_field_mapping_overview() )
         );
+    }
+
+    /**
+     * The Event Match Quality of the pixel's Lead events, from Meta's
+     * Dataset Quality API (cached for a day, or until a form mapping changes).
+     *
+     * @return array response data
+     */
+    public function get_lead_event_quality() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return $this->handle_unauthorized_request();
+        }
+        check_admin_referer( FacebookPluginConfig::GET_LEAD_EVENT_QUALITY_ACTION_NAME );
+
+        return $this->handle_success_request( LeadEventQuality::from_options()->get() );
     }
 }
