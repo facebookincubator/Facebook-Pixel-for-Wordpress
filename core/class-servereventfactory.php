@@ -373,8 +373,7 @@ class ServerEventFactory {
      * with the arguments and extracts the user data and custom
      * data from the result.
      *
-     * It uses the AAM setting to normalize the user data and the custom data
-     * is used as is.
+     * The user data is normalized and the custom data is used as is.
      *
      * If an exception is thrown in the callback, it's caught and logged,
      * and the function returns an empty Event object.

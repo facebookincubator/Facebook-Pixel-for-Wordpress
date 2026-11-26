@@ -46,162 +46,97 @@ use FacebookPixelPlugin\Tests\FacebookWordpressTestBase;
 final class AAMFieldsExtractorTest extends FacebookWordpressTestBase {
   /**
    * Test that get_normalized_user_data
-   * returns the expected normalized data when AAM is enabled.
+   * returns the expected normalized data.
    *
    * @return void
    */
-  public function testReturnsNormalizedDataWhenAAMEnabled() {
-    $this->mockUseAAM( '1234', true, AAMSettingsFields::get_all_fields() );
-    $user_data_array      =
-    $this->getSampleUserData();
+  public function testReturnsNormalizedData() {
     $user_data_normalized =
-    AAMFieldsExtractor::get_normalized_user_data( $user_data_array );
+    AAMFieldsExtractor::get_normalized_user_data( $this->getSampleUserData() );
 
     $this->assertEquals(
-      'abc@mail.com',
-      $user_data_normalized[ AAMSettingsFields::EMAIL ]
+      array(
+        AAMSettingsFields::EMAIL         => 'abc@mail.com',
+        AAMSettingsFields::LAST_NAME     => 'perez',
+        AAMSettingsFields::FIRST_NAME    => 'pedro',
+        AAMSettingsFields::PHONE         => '567891234',
+        AAMSettingsFields::GENDER        => 'm',
+        AAMSettingsFields::EXTERNAL_ID   => '1',
+        AAMSettingsFields::COUNTRY       => 'us',
+        AAMSettingsFields::CITY          => 'seattle',
+        AAMSettingsFields::STATE         => 'wa',
+        AAMSettingsFields::ZIP_CODE      => '12345',
+        AAMSettingsFields::DATE_OF_BIRTH => '19900611',
+      ),
+      $user_data_normalized
     );
-    $this->assertEquals(
-      'perez',
-      $user_data_normalized[ AAMSettingsFields::LAST_NAME ]
+  }
+
+  /**
+   * The pixel's automatic advanced matching setting does not gate the
+   * parameters the plugin captures: with it off, every field is returned.
+   *
+   * @return void
+   */
+  public function testReturnsAllFieldsWhenAamDisabled() {
+    $this->mockUseAAM( '1234', false );
+    $this->assertSameSize(
+      AAMSettingsFields::get_all_fields(),
+      AAMFieldsExtractor::get_normalized_user_data( $this->getSampleUserData() )
+    );
+  }
+
+  /**
+   * The types turned on in the pixel's automatic advanced matching setting
+   * do not limit the fields returned.
+   *
+   * @return void
+   */
+  public function testIgnoresAamEnabledFields() {
+    $this->mockUseAAM(
+      '1234',
+      true,
+      array( AAMSettingsFields::EMAIL )
+    );
+    $user_data_normalized =
+      AAMFieldsExtractor::get_normalized_user_data( $this->getSampleUserData() );
+    $this->assertSameSize(
+      AAMSettingsFields::get_all_fields(),
+      $user_data_normalized
     );
     $this->assertEquals(
       'pedro',
       $user_data_normalized[ AAMSettingsFields::FIRST_NAME ]
     );
-    $this->assertEquals(
-      '567891234',
-      $user_data_normalized[ AAMSettingsFields::PHONE ]
-    );
-    $this->assertEquals(
-      'm',
-      $user_data_normalized[ AAMSettingsFields::GENDER ]
-    );
-    $this->assertEquals(
-      '1',
-      $user_data_normalized[ AAMSettingsFields::EXTERNAL_ID ]
-    );
-    $this->assertEquals(
-      'us',
-      $user_data_normalized[ AAMSettingsFields::COUNTRY ]
-    );
-    $this->assertEquals(
-      'seattle',
-      $user_data_normalized[ AAMSettingsFields::CITY ]
-    );
-    $this->assertEquals(
-      'wa',
-      $user_data_normalized[ AAMSettingsFields::STATE ]
-    );
-    $this->assertEquals(
-      '12345',
-      $user_data_normalized[ AAMSettingsFields::ZIP_CODE ]
-    );
-    $this->assertEquals(
-      '19900611',
-      $user_data_normalized[ AAMSettingsFields::DATE_OF_BIRTH ]
-    );
   }
 
   /**
-   * Verifies that get_normalized_user_data() returns
-   * an array with only the fields enabled in the AAM settings.
-   *
-   * This test runs 25 times, with each iteration
-   * testing a different subset of fields.
-   * The subset of fields is randomly generated and
-   * used to set the enabled fields in the AAM settings.
-   * The test then verifies that the returned array
-   * only contains the fields that were enabled in the AAM settings.
-   */
-  public function testReturnsArrayWithRequestedUserDataWhenAamEnabled() {
-    $possible_fields = AAMSettingsFields::get_all_fields();
-    $aam_settings    = $this->mockUseAAM( '1234', true );
-    $user_data_array = $this->getSampleUserData();
-    for ( $i = 0; $i < 25; ++$i ) {
-      $fields_subset = $this->createSubset( $possible_fields );
-      $aam_settings->setEnabledAutomaticMatchingFields( $fields_subset );
-      $user_data_array_normalized =
-        AAMFieldsExtractor::get_normalized_user_data( $user_data_array );
-      $this->assertOnlyRequestedFieldsPresentInUserDataArray(
-        $fields_subset,
-        $user_data_array_normalized
-      );
-    }
-  }
-
-  /**
-   * Tests that get_normalized_user_data
-   * returns an empty array when AAM is disabled.
-   *
-   * This test verifies that when AAM is
-   * disabled, the normalized user data array is empty.
+   * Keys that are not user data fields are dropped.
    *
    * @return void
    */
-  public function testReturnsEmptyArrayWhenAamDisabled() {
-    $user_data_array = $this->getSampleUserData();
-    $this->mockUseAAM( '1234', false );
-    $user_data_array_normalized =
-      AAMFieldsExtractor::get_normalized_user_data( $user_data_array );
-    $this->assertEmpty( $user_data_array_normalized );
+  public function testDropsUnknownKeys() {
+    $this->assertEquals(
+      array( AAMSettingsFields::EMAIL => 'abc@mail.com' ),
+      AAMFieldsExtractor::get_normalized_user_data(
+        array(
+          AAMSettingsFields::EMAIL => 'ABC@mail.com',
+          'value'                  => '10',
+        )
+      )
+    );
   }
 
   /**
-   * Test that get_normalized_user_data returns
-   * an empty array when AAM is not present.
-   *
-   * This test verifies that when AAM is not
-   * present in the AAM settings, the normalized user data array is empty.
-   */
-  public function testReturnsEmptyArrayWhenAamNotPresent() {
-    $user_data_array            = $this->getSampleUserData();
-    $user_data_array_normalized =
-      AAMFieldsExtractor::get_normalized_user_data( $user_data_array );
-    $this->assertEmpty( $user_data_array_normalized );
-  }
-
-  /**
-   * Asserts that the user data array only contains
-   * the fields specified in the fields subset.
-   *
-   * @param array $fields_subset The subset of fields to check.
-   * @param array $user_data_array The array of user data to check.
+   * Empty input gives an empty array.
    *
    * @return void
    */
-  private function assertOnlyRequestedFieldsPresentInUserDataArray(
-    $fields_subset,
-    $user_data_array
-  ) {
-    $this->assertEquals(
-      count( $fields_subset ),
-      count( $user_data_array )
+  public function testReturnsEmptyArrayForEmptyInput() {
+    $this->assertSame(
+      array(),
+      AAMFieldsExtractor::get_normalized_user_data( array() )
     );
-    foreach ( $fields_subset as $field ) {
-      $this->assertArrayHasKey( $field, $user_data_array );
-    }
-  }
-
-  /**
-   * Creates a random subset of the given fields.
-   *
-   * This is used by the
-   * testReturnsArrayWithRequestedUserDataWhenAamEnabled test to
-   * generate a random subset of the user data fields to check.
-   *
-   * @param array $fields The array of fields to create a subset of.
-   *
-   * @return array The subset of fields.
-   */
-  private function createSubset( $fields ) {
-    shuffle( $fields );
-    $rand_num = rand() % count( $fields );
-    $subset   = array();
-    for ( $i = 0; $i < $rand_num; ++$i ) {
-      $subset[] = $fields[ $i ];
-    }
-    return $subset;
   }
 
   /**

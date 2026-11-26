@@ -855,16 +855,33 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * Tests the safe_create_event method with
-   * Personally Identifiable Information (PII) extraction disabled.
-   *
-   * This test verifies that when PII extraction is
-   * disabled, the safe_create_event method correctly creates a server event
-   * with all user data attributes set to null.
+   * The pixel's automatic advanced matching setting does not gate the user
+   * data the plugin captures: with it off, the event still carries it.
    *
    * @return void
    */
-  public function testSafeCreateEventWithPIIDisabled() {
+  public function testSafeCreateEventWithAAMDisabledKeepsPII() {
+    $this->mockUseAAM( '1234', false );
+    $this->assertEventCarriesSamplePII();
+  }
+
+  /**
+   * When the pixel's automatic advanced matching setting is not available,
+   * the event still carries the user data the plugin captures.
+   *
+   * @return void
+   */
+  public function testSafeCreateEventWithoutAAMSettingsKeepsPII() {
+    $this->assertEventCarriesSamplePII();
+  }
+
+  /**
+   * Creates a Lead event from getEventData() and asserts every user data
+   * field is set.
+   *
+   * @return void
+   */
+  private function assertEventCarriesSamplePII() {
     \WP_Mock::userFunction(
       'sanitize_text_field',
       array(
@@ -875,22 +892,22 @@ final class ServerEventFactoryTest extends FacebookWordpressTestBase {
       )
     );
 
-    $server_event = ServerEventFactory::safe_create_event(
+    $user_data = ServerEventFactory::safe_create_event(
       'Lead',
       array( $this, 'getEventData' ),
       array(),
       'test_integration'
-    );
+    )->getUserData();
 
-    $this->assertNull( $server_event->getUserData()->getEmail() );
-    $this->assertNull( $server_event->getUserData()->getFirstName() );
-    $this->assertNull( $server_event->getUserData()->getLastName() );
-    $this->assertNull( $server_event->getUserData()->getPhone() );
-    $this->assertNull( $server_event->getUserData()->getState() );
-    $this->assertNull( $server_event->getUserData()->getCity() );
-    $this->assertNull( $server_event->getUserData()->getCountryCode() );
-    $this->assertNull( $server_event->getUserData()->getZipCode() );
-    $this->assertNull( $server_event->getUserData()->getGender() );
+    $this->assertEquals( 'pika.chu@s2s.com', $user_data->getEmail() );
+    $this->assertEquals( 'pika', $user_data->getFirstName() );
+    $this->assertEquals( 'chu', $user_data->getLastName() );
+    $this->assertEquals( '12345', $user_data->getPhone() );
+    $this->assertEquals( 'oh', $user_data->getState() );
+    $this->assertEquals( 'springfield', $user_data->getCity() );
+    $this->assertEquals( 'us', $user_data->getCountryCode() );
+    $this->assertEquals( '4321', $user_data->getZipCode() );
+    $this->assertEquals( 'm', $user_data->getGender() );
   }
 
   /**

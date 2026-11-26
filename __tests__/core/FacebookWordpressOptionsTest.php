@@ -158,15 +158,11 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
   }
 
   /**
-   * Tests that the register_user_info method does
-   * not register the user information
-   * when the 'Use Personal Identifiable
-   * Information (PII)' setting is disabled.
-   *
-   * Asserts that:
-   *  - The user information is an empty array.
+   * Tests that the register_user_info method registers the user
+   * information when automatic advanced matching is off for the pixel:
+   * that setting does not gate the parameters the plugin captures.
    */
-  public function testCannotRegisterUserInfoWithoutUsePII() {
+  public function testRegistersUserInfoWhenAAMDisabled() {
     self::mockWpGetCurrentUser( '1234' );
 
     self::mockGetOption( '1234', '1234' );
@@ -189,7 +185,7 @@ final class FacebookWordpressOptionsTest extends FacebookWordpressTestBase {
     FacebookWordpressOptions::register_user_info();
     $user_info = FacebookWordpressOptions::get_user_info();
 
-    $this->assertEquals( \count( $user_info ), 0 );
+    $this->assertEquals( 3, \count( $user_info ) );
   }
 
   /**

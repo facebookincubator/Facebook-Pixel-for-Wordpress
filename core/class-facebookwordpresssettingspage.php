@@ -1519,62 +1519,26 @@ class FacebookWordpressSettingsPage {
     /**
      * The pixel's automatic advanced matching setting, as it affects the
      * mappings. With it on, the Meta Pixel reads customer information from
-     * form fields in the browser, whatever the mappings say; this plugin
-     * also sends only the types of customer information turned on there
-     * (see AAMFieldsExtractor). With it off, this plugin sends Lead events
-     * without customer information.
+     * form fields in the browser, whatever the mappings say. It does not
+     * change what this plugin sends: the mapped fields are sent either way.
      *
-     * @return array{state: string, blocked: string[]} The state is 'on',
-     *         'off' or 'unknown' (the setting could not be read from Meta, or
-     *         the plugin is not connected through Meta); blocked lists the
-     *         labels of the types turned off while it is on.
+     * @return string 'on', 'off' or 'unknown' (the setting could not be read
+     *                from Meta, or the plugin is not connected through Meta).
      */
     private function get_field_mapping_matching() {
         $settings  = FacebookWordpressOptions::get_aam_settings();
         $from_meta = FacebookWordpressOptions::get_is_fbl4b_installed()
             || FacebookWordpressOptions::get_is_fbe_installed();
         if ( ! $settings || ! $from_meta ) {
-            return array(
-                'state'   => 'unknown',
-                'blocked' => array(),
-            );
+            return 'unknown';
         }
-        if ( ! $settings->getEnableAutomaticMatching() ) {
-            return array(
-                'state'   => 'off',
-                'blocked' => array(),
-            );
-        }
-        $labels  = array(
-            AAMSettingsFields::EMAIL         => 'email',
-            AAMSettingsFields::PHONE         => 'phone',
-            AAMSettingsFields::FIRST_NAME    => 'first name',
-            AAMSettingsFields::LAST_NAME     => 'last name',
-            AAMSettingsFields::CITY          => 'city',
-            AAMSettingsFields::STATE         => 'state',
-            AAMSettingsFields::ZIP_CODE      => 'ZIP or postal code',
-            AAMSettingsFields::COUNTRY       => 'country',
-            AAMSettingsFields::GENDER        => 'gender',
-            AAMSettingsFields::DATE_OF_BIRTH => 'date of birth',
-            AAMSettingsFields::EXTERNAL_ID   => 'external ID',
-        );
-        $enabled = (array) $settings->getEnabledAutomaticMatchingFields();
-        $blocked = array();
-        foreach ( $labels as $field => $label ) {
-            if ( ! in_array( $field, $enabled, true ) ) {
-                $blocked[] = $label;
-            }
-        }
-        return array(
-            'state'   => 'on',
-            'blocked' => $blocked,
-        );
+        return $settings->getEnableAutomaticMatching() ? 'on' : 'off';
     }
 
     /**
-     * Explains how the pixel's automatic advanced matching setting affects
-     * the mappings: "Do not send" does not stop the Meta Pixel reading a
-     * field, and this plugin sends only what that setting allows.
+     * Explains how the pixel's automatic advanced matching setting relates
+     * to the mappings: "Do not send" does not stop the Meta Pixel reading a
+     * field while it is on.
      *
      * @param bool $short Whether to return the one-line reminder shown in
      *                    the editor instead of the section note.
@@ -1582,29 +1546,19 @@ class FacebookWordpressSettingsPage {
      */
     private function get_field_mapping_matching_note( $short ) {
         $matching = $this->get_field_mapping_matching();
-        if ( 'off' === $matching['state'] ) {
+        if ( 'off' === $matching ) {
             return $short
-                ? 'Automatic advanced matching is off for your pixel, so nothing below is sent until it is turned on in Events Manager.'
-                : '<strong>Automatic advanced matching is off for your pixel</strong>, so Lead events from forms are sent without the customer information from the form, whatever the mappings say. To send the mapped fields, turn it on for your pixel in Events Manager.';
+                ? 'Automatic advanced matching is off for your pixel, so only the fields mapped below are sent.'
+                : '<strong>Automatic advanced matching is off for your pixel</strong>, so the Meta Pixel does not read customer information from form fields itself. Only the fields mapped below are sent with Lead events.';
         }
-        if ( 'on' === $matching['state'] ) {
-            if ( $short ) {
-                return 'Automatic advanced matching is on for your pixel, so the Meta Pixel can still read fields set to "Do not send".';
-            }
-            $note = '<strong>Automatic advanced matching is on for your pixel.</strong> "Do not send" only stops this plugin sending a field. The Meta Pixel on your site can still read customer information, such as email or phone, from form fields and send it hashed. To stop that, turn off automatic advanced matching, or the types of information you do not want sent, for your pixel in Events Manager.';
-            if ( ! empty( $matching['blocked'] ) ) {
-                $note .= ' ' . esc_html(
-                    sprintf(
-                        'These types are turned off there, so they are not sent even when mapped: %s.',
-                        implode( ', ', $matching['blocked'] )
-                    )
-                );
-            }
-            return $note;
+        if ( 'on' === $matching ) {
+            return $short
+                ? 'Automatic advanced matching is on for your pixel, so the Meta Pixel can still read fields set to "Do not send".'
+                : '<strong>Automatic advanced matching is on for your pixel.</strong> "Do not send" only stops this plugin sending a field. The Meta Pixel on your site can still read customer information, such as email or phone, from form fields and send it hashed. To stop that, turn off automatic advanced matching, or the types of information you do not want sent, for your pixel in Events Manager.';
         }
         return $short
             ? 'If automatic advanced matching is on for your pixel, the Meta Pixel can still read fields set to "Do not send".'
-            : 'If automatic advanced matching is on for your pixel, the Meta Pixel on your site can read customer information from form fields itself, including fields set to "Do not send". This plugin also sends only the types of customer information turned on there. You can change this for your pixel in Events Manager.';
+            : 'If automatic advanced matching is on for your pixel, the Meta Pixel on your site can read customer information from form fields itself, including fields set to "Do not send". You can change this for your pixel in Events Manager.';
     }
 
     /**
